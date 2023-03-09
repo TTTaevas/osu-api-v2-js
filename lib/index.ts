@@ -1,8 +1,9 @@
 import axios, { Axios, AxiosError, AxiosResponse } from "axios"
-import { Beatmap } from "./beatmap"
-import { User, UserCompact } from "./user"
+import { Beatmap, BeatmapCompact } from "./beatmap"
+import { KudosuHistory, User, UserCompact } from "./user"
 import { Leader, MultiplayerScore, PlaylistItem, Room } from "./multiplayer"
 import { GameModes } from "./misc"
+import { BeatmapUserScore, Score } from "./score"
 
 export class API {
 	client: {
@@ -152,13 +153,8 @@ export class API {
 		}
 	}
 
-	async getBeatmaps(ids?: number[]): Promise<Beatmap[] | Error> {
-		let lookup = ""
-		ids?.forEach((id) => lookup += `&ids[]=${id}`)
-		let response = await this.request("beatmaps", lookup.substring(1))
-		if (!response || !response.beatmaps || !response.beatmaps.length) {return new Error(`No Beatmap could be found (ids: ${ids})`)}
-		return response.beatmaps.map((b: Beatmap) => correctType(b)) as Beatmap[]
-	}
+
+	// USER STUFF
 
 	/**
 	 * REQUIRES A RESOURCE OWNER
@@ -169,6 +165,16 @@ export class API {
 		return correctType(response) as User
 	}
 
+	async getUser(user: {id?: number, username?: string} | UserCompact, gamemode?: GameModes): Promise<User | Error> {
+		if (!user.id && !user.username) {return new Error("No proper `user` argument was given")}
+		let key = user.id !== undefined ? "id" : "username"
+		let lookup = user.id !== undefined ? user.id : user.username
+
+		let response = await this.request(`users/${lookup}${gamemode !== undefined ? `/${GameModes[gamemode]}` : ""}`, key)
+		if (!response) {return new Error(`No User could be found (user id: ${user.id} / username: ${user.username})`)}
+		return correctType(response) as User
+	}
+
 	async getUsers(ids?: number[]): Promise<UserCompact[] | Error> {
 		let lookup = ""
 		ids?.forEach((id) => lookup += `&ids[]=${id}`)
@@ -176,6 +182,54 @@ export class API {
 		if (!response || !response.users || !response.users.length) {return new Error(`No User could be found (ids: ${ids})`)}
 		return response.users.map((u: UserCompact) => correctType(u)) as UserCompact[]
 	}
+
+	async getUserScores(limit: number, user: {id: number} | UserCompact, type: "best" | "firsts" | "recent",
+	options?: {gamemode?: GameModes, include_fails?: Boolean, offset?: number}): Promise<Score[] | Error> {
+		let parameters = `limit=${limit}`
+		if (options) {
+			if (options.gamemode !== undefined) {parameters += `&mode=${GameModes[options.gamemode]}`}
+			if (options.include_fails !== undefined) {parameters += `&include_fails=${Number(options.include_fails)}`}
+			if (options.offset !== undefined) {parameters += `&offset=${options.offset}`}
+		}
+		let response = await this.request(`users/${user.id}/scores/${type}`, parameters)
+		if (!response || !response.length) {return new Error(`No Score could be found (id: ${user.id} / type: ${type})`)}
+		return response.map((s: Score) => correctType(s)) as Score[]
+	}
+
+	async getUserKudosu(user: {id: number} | UserCompact, limit?: number, offset?: number): Promise<KudosuHistory[] | Error> {
+		let query = limit ? `limit=${limit}` : ""
+		query += offset ? `${query.length ? "&" : ""}offset=${offset}` : ""
+		let response = await this.request(`users/${user.id}/kudosu`, query)
+		if (!response || !response.length) {return new Error(`No Kudosu could be found (id: ${user.id})`)}
+		return response.map((k: KudosuHistory) => correctType(k)) as KudosuHistory[]
+	}
+
+	
+	// BEATMAP STUFF
+
+	async getBeatmap(beatmap: {id: number} | BeatmapCompact): Promise<Beatmap | Error> {
+		let response = await this.request(`beatmaps/${beatmap.id}`)
+		if (!response) {return new Error(`No Beatmap could be found (id: ${beatmap.id})`)}
+		return correctType(response) as Beatmap
+	}
+
+	async getBeatmaps(ids?: number[]): Promise<Beatmap[] | Error> {
+		let lookup = ""
+		ids?.forEach((id) => lookup += `&ids[]=${id}`)
+		let response = await this.request("beatmaps", lookup.substring(1))
+		if (!response || !response.beatmaps || !response.beatmaps.length) {return new Error(`No Beatmap could be found (ids: ${ids})`)}
+		return response.beatmaps.map((b: Beatmap) => correctType(b)) as Beatmap[]
+	}
+
+	async getBeatmapUserScore(beatmap: {id: number} | BeatmapCompact, user: {id: number} | UserCompact,
+	gamemode?: GameModes): Promise<BeatmapUserScore | Error> {
+		let response = await this.request(`beatmaps/${beatmap.id}/scores/users/${user.id}`)
+		if (!response) {return new Error(`No Score could be found (beatmap: ${beatmap.id} / user: ${user.id})`)}
+		return correctType(response) as BeatmapUserScore
+	}
+
+
+	// MULTIPLAYER STUFF
 
 	async getRoom(room: {id: number} | Room) {
 		let response = await this.request(`rooms/${room.id}`)

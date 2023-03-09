@@ -157,3 +157,19 @@ export interface UserStatistics {
 	total_score: number
 	user: UserCompact
 }
+
+export interface KudosuHistory {
+	id: number
+	action: "give" | "vote.give" | "reset" | "vote.reset" | "revoke" | "vote.revoke"
+	amount: number
+	model: string
+	created_at: Date
+	giver: {
+		url: string
+		username: string
+	} | null
+	post: {
+		url: string | null
+		title: string
+	}
+}
