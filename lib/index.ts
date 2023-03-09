@@ -1,6 +1,7 @@
 import axios, { Axios, AxiosError, AxiosResponse } from "axios"
 import { Beatmap } from "./beatmap"
 import { UserCompact } from "./user"
+import { MultiplayerScore, PlaylistItem, Room } from "./multiplayer"
 
 export class API {
 	client: {
@@ -161,6 +162,18 @@ export class API {
 		if (!response || !response.users || !response.users.length) {return new Error(`No User could be found (ids: ${ids})`)}
 		return response.users.map((u: UserCompact) => correctType(u)) as UserCompact[]
 	}
+
+	async getMultiplayerRoom(room: {id: number} | Room) {
+		let response = await this.request(`rooms/${room.id}`, "")
+		if (!response) {return new Error(`No Room could be found (id: ${room.id})`)}
+		return response as Room
+	}
+
+	async getPlaylistItemScores(item: PlaylistItem) {
+		let response = await this.request(`rooms/${item.room_id}/playlist/${item.id}/scores`, "")
+		if (!response || !response.scores || !response.scores.length) {return new Error(`No Item could be found (room: ${item.room_id} / item: ${item.id})`)}
+		return response.scores.map((s: MultiplayerScore) => correctType(s)) as MultiplayerScore[]
+	}
 }
 
 type Scope = "chat.write" | "delegate" | "forum.write" | "friends.read" | "identify" | "public"
@@ -180,6 +193,12 @@ function correctType(x: any): any {
 	} else if (!isNaN(x)) {
 		return x === null ? null : Number(x)
 	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(x)) {
+		return new Date(x)
+	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(x)) {
+		x += "Z"
+		return new Date(x)
+	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}$/.test(x)) {
+		x = x.substring(0, x.indexOf("+")) + "Z"
 		return new Date(x)
 	} else if (Array.isArray(x)) {
 		return x.map((e) => correctType(e))
