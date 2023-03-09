@@ -9,18 +9,14 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 	if (secret === undefined) {throw new Error("no SECRET env var")}
 	if (redirect_uri === undefined) {throw new Error("no REDIRECT_URI env var")}
 
-	let code = prompt(`What code do you get from: 
-	${osu.generateAuthorizationURL(Number(id), redirect_uri, ["identify", "public"])}\n\n`)
+	let url = osu.generateAuthorizationURL(Number(id), redirect_uri, ["identify", "public"])
+	require('child_process').exec(`xdg-open "${url}"`)
+	let code = prompt(`What code do you get from: ${url}\n\n`)
 
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri})
 	if (api) {
-		let room = await api.getMultiplayerRoom({id: 231069})
-		if (!(room instanceof Error)) {
-			for (let i = 0; i < 2; i++) { // or room.playlist.length
-				let item = await api.getPlaylistItemScores(room.playlist[i])
-				console.log(util.inspect(item, false, null, true))
-			}
-		}
+		let user = await api.getResourceOwner()
+		console.log(util.inspect(user, false, null, true))
 	}
 }
 

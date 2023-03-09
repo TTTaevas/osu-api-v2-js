@@ -36,12 +36,15 @@ export interface UserCompact {
 		permanent: Boolean
 		timestamp: Date
 		type: "note" | "restriction" | "silence"
-	}[]
+	}[] | 0
 	active_tournament_banner?: ProfileBanner | null
-	badges?: UserBadge[]
+	badges?: UserBadge[] | 0
 	beatmap_playcounts_count?: number
 	blocks?: any
-	country?: any
+	country?: {
+		code: string
+		name: string
+	}
 	cover?: { // poorly documented
 		custom_url: string | null
 		url: string
@@ -64,22 +67,34 @@ export interface UserCompact {
 	}[]
 	is_restricted?: Boolean | null
 	loved_beatmapset_count?: number
-	monthly_playcounts?: any[] // bro
-	page?: any
+	monthly_playcounts?: {
+		start_date: Date
+		count: number
+	}[]
+	page?: {
+		html: string
+		raw: string
+	}
 	pending_beatmapset_count?: any
-	previous_usernames?: any
+	previous_usernames?: string[]
 	rank_highest?: {
 		rank: number
 		updated_at: Date
 	} | null
-	rank_history?: any
+	rank_history?: {
+		mode: string
+		data: number[]
+	}
 	ranked_beatmapset_count?: any
-	replays_watched_count?: any
+	replays_watched_count?: {
+		start_date: Date
+		count: number
+	}[]
 	scores_best_count?: number
 	scores_recent_count?: number
 	statistics?: any
-	statistics_rulesets?: any // I'm not even sure
-	support_level?: any
+	statistics_rulesets?: any
+	support_level?: number
 	unread_pm_count?: any
 	user_achievements?: any
 	user_preferences?: any

@@ -1,7 +1,8 @@
 import axios, { Axios, AxiosError, AxiosResponse } from "axios"
 import { Beatmap } from "./beatmap"
-import { UserCompact } from "./user"
-import { MultiplayerScore, PlaylistItem, Room } from "./multiplayer"
+import { User, UserCompact } from "./user"
+import { Leader, MultiplayerScore, PlaylistItem, Room } from "./multiplayer"
+import { GameModes } from "./misc"
 
 export class API {
 	client: {
@@ -12,6 +13,7 @@ export class API {
 	expires: Date
 	access_token: string
 	refresh_token?: string
+	has_resource_owner: Boolean
 
 	// vvv Whole token handling thingie is down there vvv
 
@@ -20,6 +22,7 @@ export class API {
 		this.token_type = ""
 		this.expires = new Date()
 		this.access_token = ""
+		this.has_resource_owner = false
 	}
 	public static createAsync = async (client: {id: number, secret: string}, user?: {code: string, redirect_uri: string}) => {
 		const me = new API()
@@ -49,6 +52,7 @@ export class API {
 			me.expires = date
 			me.access_token = response.data.access_token
 			if (response.data.refresh_token) {me.refresh_token = response.data.refresh_token}
+			me.has_resource_owner = Boolean(response.data.refresh_token)
 		} else {
 			return null
 		}
@@ -90,7 +94,8 @@ export class API {
 	 * @param number_try How many attempts there's been to get the data
 	 * @returns A Promise with either the API's response or `false` upon failing
 	 */
-	private async request(type: string, params: string, number_try?: number): Promise<AxiosResponse["data"] | false> {
+	private async request(type: string, params?: string, number_try?: number): Promise<AxiosResponse["data"] | false> {
+		if (!params) {params = ""}
 		const max_tries = 5
 		if (!number_try) {number_try = 1}
 		let to_retry = false
@@ -155,6 +160,15 @@ export class API {
 		return response.beatmaps.map((b: Beatmap) => correctType(b)) as Beatmap[]
 	}
 
+	/**
+	 * REQUIRES A RESOURCE OWNER
+	 */
+	async getResourceOwner(gamemode?: GameModes) {
+		let response = await this.request("me", gamemode !== undefined ? GameModes[gamemode] : "")
+		if (!response) {return new Error(`No User could be found`)}
+		return correctType(response) as User
+	}
+
 	async getUsers(ids?: number[]): Promise<UserCompact[] | Error> {
 		let lookup = ""
 		ids?.forEach((id) => lookup += `&ids[]=${id}`)
@@ -163,14 +177,39 @@ export class API {
 		return response.users.map((u: UserCompact) => correctType(u)) as UserCompact[]
 	}
 
-	async getMultiplayerRoom(room: {id: number} | Room) {
-		let response = await this.request(`rooms/${room.id}`, "")
+	async getRoom(room: {id: number} | Room) {
+		let response = await this.request(`rooms/${room.id}`)
 		if (!response) {return new Error(`No Room could be found (id: ${room.id})`)}
-		return response as Room
+		return correctType(response) as Room
 	}
 
+	/**
+	 * REQUIRES A RESOURCE OWNER
+	 */
+	async getRooms(mode?: "owned" | "participated" | "ended") {
+		let response = await this.request(`rooms/${mode ? mode : ""}`)
+		if (!response || !response.length) {
+			{return new Error(`No Room could be found${mode ? ` (mode: ${mode})` : ""}`)}
+		}
+		return response.map((r: Room) => correctType(r)) as Room[]
+	}
+
+	/**
+	 * REQUIRES A RESOURCE OWNER
+	 */
+	async getRoomLeaderboard(room: {id: number} | Room) {
+		let response = await this.request(`rooms/${room.id}/leaderboard`)
+		if (!response || !response.leaderboard || !response.leaderboard.length) {
+			return new Error(`No Leaderboard could be found (id: ${room.id})`)
+		}
+		return response.leaderboard.map((l: Leader) => correctType(l)) as Leader[]
+	}
+
+	/**
+	 * REQUIRES A RESOURCE OWNER
+	 */
 	async getPlaylistItemScores(item: PlaylistItem) {
-		let response = await this.request(`rooms/${item.room_id}/playlist/${item.id}/scores`, "")
+		let response = await this.request(`rooms/${item.room_id}/playlist/${item.id}/scores`)
 		if (!response || !response.scores || !response.scores.length) {return new Error(`No Item could be found (room: ${item.room_id} / item: ${item.id})`)}
 		return response.scores.map((s: MultiplayerScore) => correctType(s)) as MultiplayerScore[]
 	}
@@ -192,7 +231,8 @@ function correctType(x: any): any {
 		return x
 	} else if (!isNaN(x)) {
 		return x === null ? null : Number(x)
-	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(x)) {
+	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(x) ||
+	/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}$/g.test(x)) {
 		return new Date(x)
 	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(x)) {
 		x += "Z"

@@ -1,4 +1,5 @@
 import { BeatmapCompact } from "./beatmap"
+import { Mod } from "./misc"
 import { User, UserCompact } from "./user"
 
 /**
@@ -35,14 +36,8 @@ export interface PlaylistItem {
 	room_id: number
 	beatmap_id: number
 	ruleset_id: number
-	allowed_mods: {
-		acronym: string
-		settings?: {[k: string]: any}
-	}[]
-	required_mods: {
-		acronym: string
-		settings?: {[k: string]: any}
-	}[]
+	allowed_mods: Mod[]
+	required_mods: Mod[]
 	expired: Boolean
 	owner_id: number
 	playlist_order: number
@@ -60,10 +55,7 @@ export interface MultiplayerScore {
 	total_score: number
 	accuracy: number
 	max_combo: number
-	mods: {
-		acronym: string
-		settings?: {[k: string]: any}
-	}[]
+	mods: Mod[]
 	statistics: any
 	passed: Boolean
 	started_at?: Date
@@ -82,4 +74,15 @@ export interface MultiplayerScores {
 	scores: MultiplayerScore[]
 	total: number | null
 	user_score: MultiplayerScore | null
+}
+
+export interface Leader {
+	accuracy: number
+	attempts: number
+	completed: number
+	pp: number
+	room_id: number
+	total_score: number
+	user_id: number
+	user: UserCompact
 }
