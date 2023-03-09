@@ -8,8 +8,8 @@ async function test(id: string | undefined, secret: string | undefined) {
 
 	let api = await osu.API.createAsync({id: Number(id), secret})
 	if (api) {
-		let beatmaps = await api.getBeatmaps([2592029])
-		console.log(util.inspect(beatmaps, false, null, true))
+		let users = await api.getUsers([7276846])
+		console.log(util.inspect(users, false, null, true))
 	}
 }
 

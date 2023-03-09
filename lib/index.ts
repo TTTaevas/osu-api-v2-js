@@ -1,5 +1,6 @@
 import axios, { Axios, AxiosError, AxiosResponse } from "axios"
 import { Beatmap } from "./beatmap"
+import { UserCompact } from "./user"
 
 export class API {
 	client: {
@@ -151,6 +152,14 @@ export class API {
 		let response = await this.request("beatmaps", lookup.substring(1))
 		if (!response || !response.beatmaps || !response.beatmaps.length) {return new Error(`No Beatmap could be found (ids: ${ids})`)}
 		return response.beatmaps.map((b: Beatmap) => correctType(b)) as Beatmap[]
+	}
+
+	async getUsers(ids?: number[]): Promise<UserCompact[] | Error> {
+		let lookup = ""
+		ids?.forEach((id) => lookup += `&ids[]=${id}`)
+		let response = await this.request("users", lookup.substring(1))
+		if (!response || !response.users || !response.users.length) {return new Error(`No User could be found (ids: ${ids})`)}
+		return response.users.map((u: UserCompact) => correctType(u)) as UserCompact[]
 	}
 }
 
