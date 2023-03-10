@@ -1,8 +1,8 @@
 export enum GameModes {
-	Osu 		= 0,
-	Taiko 	= 1,
-	Fruits	= 2,
-	Mania 	= 3
+	osu 		= 0,
+	taiko 	= 1,
+	fruits	= 2,
+	mania 	= 3
 }
 
 export type Mod = {

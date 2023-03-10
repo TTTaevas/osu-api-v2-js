@@ -64,7 +64,7 @@ export interface UserCompact {
 		name: string
 		playmodes: string[] | null
 		short_name: string
-	}[]
+	}[] | 0
 	is_restricted?: Boolean | null
 	loved_beatmapset_count?: number
 	monthly_playcounts?: {
@@ -75,7 +75,7 @@ export interface UserCompact {
 		html: string
 		raw: string
 	}
-	pending_beatmapset_count?: any
+	pending_beatmapset_count?: number
 	previous_usernames?: string[]
 	rank_highest?: {
 		rank: number
@@ -85,14 +85,14 @@ export interface UserCompact {
 		mode: string
 		data: number[]
 	}
-	ranked_beatmapset_count?: any
-	replays_watched_count?: {
+	ranked_beatmapset_count?: number
+	replays_watched_counts?: {
 		start_date: Date
 		count: number
 	}[]
 	scores_best_count?: number
 	scores_recent_count?: number
-	statistics?: any
+	statistics?: UserStatistics
 	statistics_rulesets?: any
 	support_level?: number
 	unread_pm_count?: any

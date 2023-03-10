@@ -15,8 +15,8 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri})
 	if (api) {
-		let user = await api.getResourceOwner()
-		console.log(util.inspect(user, false, null, true))
+		//let user = await api.getResourceOwner()
+		console.log(util.inspect(api, false, null, true))
 	}
 }
 

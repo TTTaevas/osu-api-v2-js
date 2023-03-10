@@ -1,9 +1,25 @@
-import axios, { Axios, AxiosError, AxiosResponse } from "axios"
+import axios, { AxiosError, AxiosResponse } from "axios"
 import { Beatmap, BeatmapCompact } from "./beatmap"
 import { KudosuHistory, User, UserCompact } from "./user"
 import { Leader, MultiplayerScore, PlaylistItem, Room } from "./multiplayer"
 import { GameModes } from "./misc"
 import { BeatmapUserScore, Score } from "./score"
+
+export {Beatmap, BeatmapCompact}
+export {User, UserCompact, KudosuHistory}
+export {BeatmapUserScore, Score}
+export {Room, Leader, PlaylistItem, MultiplayerScore}
+export {GameModes}
+
+export class APIError {
+	message: string
+	/**
+	 * @param message The reason why things didn't go as expected
+	 */
+	constructor(message: string) {
+		this.message = message
+	}
+}
 
 export class API {
 	client: {
@@ -14,7 +30,8 @@ export class API {
 	expires: Date
 	access_token: string
 	refresh_token?: string
-	has_resource_owner: Boolean
+	user?: number
+	scopes: Scope[]
 
 	// vvv Whole token handling thingie is down there vvv
 
@@ -23,7 +40,7 @@ export class API {
 		this.token_type = ""
 		this.expires = new Date()
 		this.access_token = ""
-		this.has_resource_owner = false
+		this.scopes = []
 	}
 	public static createAsync = async (client: {id: number, secret: string}, user?: {code: string, redirect_uri: string}) => {
 		const me = new API()
@@ -46,14 +63,19 @@ export class API {
 			"Content-Type": "application/json"
 		}}).catch((e: AxiosError) => console.log("osu!api v2 ->", `(${e.name}) ${e.message}`))
 		
-		if (response && response.data && response.data.token_type) {
+		if (response && response.data && response.data.access_token) {
+			let token = response.data.access_token
+
 			let date = new Date()
 			date.setSeconds(date.getSeconds() + response.data.expires_in)
 			me.token_type = response.data.token_type
 			me.expires = date
-			me.access_token = response.data.access_token
+			me.access_token = token
 			if (response.data.refresh_token) {me.refresh_token = response.data.refresh_token}
-			me.has_resource_owner = Boolean(response.data.refresh_token)
+
+			let token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
+			if (token_payload.sub && token_payload.sub.length) {me.user = Number(token_payload.sub)}
+			me.scopes = token_payload.scopes
 		} else {
 			return null
 		}
@@ -157,34 +179,34 @@ export class API {
 	// USER STUFF
 
 	/**
-	 * REQUIRES A RESOURCE OWNER
+	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
 	 */
-	async getResourceOwner(gamemode?: GameModes) {
+	async getResourceOwner(gamemode?: GameModes): Promise<User | APIError> {
 		let response = await this.request("me", gamemode !== undefined ? GameModes[gamemode] : "")
-		if (!response) {return new Error(`No User could be found`)}
+		if (!response) {return new APIError(`No User could be found`)}
 		return correctType(response) as User
 	}
 
-	async getUser(user: {id?: number, username?: string} | UserCompact, gamemode?: GameModes): Promise<User | Error> {
-		if (!user.id && !user.username) {return new Error("No proper `user` argument was given")}
+	async getUser(user: {id?: number, username?: string} | UserCompact, gamemode?: GameModes): Promise<User | APIError> {
+		if (!user.id && !user.username) {return new APIError("No proper `user` argument was given")}
 		let key = user.id !== undefined ? "id" : "username"
 		let lookup = user.id !== undefined ? user.id : user.username
 
 		let response = await this.request(`users/${lookup}${gamemode !== undefined ? `/${GameModes[gamemode]}` : ""}`, key)
-		if (!response) {return new Error(`No User could be found (user id: ${user.id} / username: ${user.username})`)}
+		if (!response) {return new APIError(`No User could be found (user id: ${user.id} / username: ${user.username})`)}
 		return correctType(response) as User
 	}
 
-	async getUsers(ids?: number[]): Promise<UserCompact[] | Error> {
+	async getUsers(ids?: number[]): Promise<UserCompact[] | APIError> {
 		let lookup = ""
 		ids?.forEach((id) => lookup += `&ids[]=${id}`)
 		let response = await this.request("users", lookup.substring(1))
-		if (!response || !response.users || !response.users.length) {return new Error(`No User could be found (ids: ${ids})`)}
+		if (!response || !response.users || !response.users.length) {return new APIError(`No User could be found (ids: ${ids})`)}
 		return response.users.map((u: UserCompact) => correctType(u)) as UserCompact[]
 	}
 
 	async getUserScores(limit: number, user: {id: number} | UserCompact, type: "best" | "firsts" | "recent",
-	options?: {gamemode?: GameModes, include_fails?: Boolean, offset?: number}): Promise<Score[] | Error> {
+	options?: {gamemode?: GameModes, include_fails?: Boolean, offset?: number}): Promise<Score[] | APIError> {
 		let parameters = `limit=${limit}`
 		if (options) {
 			if (options.gamemode !== undefined) {parameters += `&mode=${GameModes[options.gamemode]}`}
@@ -192,79 +214,79 @@ export class API {
 			if (options.offset !== undefined) {parameters += `&offset=${options.offset}`}
 		}
 		let response = await this.request(`users/${user.id}/scores/${type}`, parameters)
-		if (!response || !response.length) {return new Error(`No Score could be found (id: ${user.id} / type: ${type})`)}
+		if (!response || !response.length) {return new APIError(`No Score could be found (id: ${user.id} / type: ${type})`)}
 		return response.map((s: Score) => correctType(s)) as Score[]
 	}
 
-	async getUserKudosu(user: {id: number} | UserCompact, limit?: number, offset?: number): Promise<KudosuHistory[] | Error> {
+	async getUserKudosu(user: {id: number} | UserCompact, limit?: number, offset?: number): Promise<KudosuHistory[] | APIError> {
 		let query = limit ? `limit=${limit}` : ""
 		query += offset ? `${query.length ? "&" : ""}offset=${offset}` : ""
 		let response = await this.request(`users/${user.id}/kudosu`, query)
-		if (!response || !response.length) {return new Error(`No Kudosu could be found (id: ${user.id})`)}
+		if (!response || !response.length) {return new APIError(`No Kudosu could be found (id: ${user.id})`)}
 		return response.map((k: KudosuHistory) => correctType(k)) as KudosuHistory[]
 	}
 
 	
 	// BEATMAP STUFF
 
-	async getBeatmap(beatmap: {id: number} | BeatmapCompact): Promise<Beatmap | Error> {
+	async getBeatmap(beatmap: {id: number} | BeatmapCompact): Promise<Beatmap | APIError> {
 		let response = await this.request(`beatmaps/${beatmap.id}`)
-		if (!response) {return new Error(`No Beatmap could be found (id: ${beatmap.id})`)}
+		if (!response) {return new APIError(`No Beatmap could be found (id: ${beatmap.id})`)}
 		return correctType(response) as Beatmap
 	}
 
-	async getBeatmaps(ids?: number[]): Promise<Beatmap[] | Error> {
+	async getBeatmaps(ids?: number[]): Promise<Beatmap[] | APIError> {
 		let lookup = ""
 		ids?.forEach((id) => lookup += `&ids[]=${id}`)
 		let response = await this.request("beatmaps", lookup.substring(1))
-		if (!response || !response.beatmaps || !response.beatmaps.length) {return new Error(`No Beatmap could be found (ids: ${ids})`)}
+		if (!response || !response.beatmaps || !response.beatmaps.length) {return new APIError(`No Beatmap could be found (ids: ${ids})`)}
 		return response.beatmaps.map((b: Beatmap) => correctType(b)) as Beatmap[]
 	}
 
 	async getBeatmapUserScore(beatmap: {id: number} | BeatmapCompact, user: {id: number} | UserCompact,
-	gamemode?: GameModes): Promise<BeatmapUserScore | Error> {
+	gamemode?: GameModes): Promise<BeatmapUserScore | APIError> {
 		let response = await this.request(`beatmaps/${beatmap.id}/scores/users/${user.id}`)
-		if (!response) {return new Error(`No Score could be found (beatmap: ${beatmap.id} / user: ${user.id})`)}
+		if (!response) {return new APIError(`No Score could be found (beatmap: ${beatmap.id} / user: ${user.id})`)}
 		return correctType(response) as BeatmapUserScore
 	}
 
 
 	// MULTIPLAYER STUFF
 
-	async getRoom(room: {id: number} | Room) {
+	async getRoom(room: {id: number} | Room): Promise<Room | APIError> {
 		let response = await this.request(`rooms/${room.id}`)
-		if (!response) {return new Error(`No Room could be found (id: ${room.id})`)}
+		if (!response) {return new APIError(`No Room could be found (id: ${room.id})`)}
 		return correctType(response) as Room
 	}
 
 	/**
-	 * REQUIRES A RESOURCE OWNER
+	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
 	 */
-	async getRooms(mode?: "owned" | "participated" | "ended") {
+	async getRooms(mode?: "owned" | "participated" | "ended"): Promise<Room[] | APIError> {
 		let response = await this.request(`rooms/${mode ? mode : ""}`)
 		if (!response || !response.length) {
-			{return new Error(`No Room could be found${mode ? ` (mode: ${mode})` : ""}`)}
+			{return new APIError(`No Room could be found${mode ? ` (mode: ${mode})` : ""}`)}
 		}
 		return response.map((r: Room) => correctType(r)) as Room[]
 	}
 
 	/**
-	 * REQUIRES A RESOURCE OWNER
+	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
 	 */
-	async getRoomLeaderboard(room: {id: number} | Room) {
+	async getRoomLeaderboard(room: {id: number} | Room): Promise<Leader[] | APIError> {
 		let response = await this.request(`rooms/${room.id}/leaderboard`)
 		if (!response || !response.leaderboard || !response.leaderboard.length) {
-			return new Error(`No Leaderboard could be found (id: ${room.id})`)
+			return new APIError(`No Leaderboard could be found (id: ${room.id})`)
 		}
 		return response.leaderboard.map((l: Leader) => correctType(l)) as Leader[]
 	}
 
 	/**
-	 * REQUIRES A RESOURCE OWNER
+	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
 	 */
-	async getPlaylistItemScores(item: PlaylistItem) {
+	async getPlaylistItemScores(item: PlaylistItem): Promise<MultiplayerScore[] | APIError> {
 		let response = await this.request(`rooms/${item.room_id}/playlist/${item.id}/scores`)
-		if (!response || !response.scores || !response.scores.length) {return new Error(`No Item could be found (room: ${item.room_id} / item: ${item.id})`)}
+		if (!response || !response.scores || !response.scores.length) {return new APIError(`No Item could be found (room: ${item.room_id} / item: ${item.id})`)}
 		return response.scores.map((s: MultiplayerScore) => correctType(s)) as MultiplayerScore[]
 	}
 }
