@@ -21,6 +21,9 @@ export class APIError {
 	}
 }
 
+/**
+ * You can create an API instance using its `createAsync` function!
+ */
 export class API {
 	client: {
 		id: number
@@ -35,13 +38,25 @@ export class API {
 
 	// vvv Whole token handling thingie is down there vvv
 
-	private constructor() {
-		this.client = {id: 0, secret: ""}
-		this.token_type = ""
-		this.expires = new Date()
-		this.access_token = ""
-		this.scopes = []
+	/**
+	 * Use `createAsync` instead of the default constructor if you don't have at least an access_token
+	 */
+	constructor(client?: {id: number, secret: string}, token_type?: string, expires?: Date,
+	access_token?: string, scopes?: Scope[], refresh_token?: string, user?: number) {
+		this.client = client ?? {id: 0, secret: ""}
+		this.token_type = token_type ?? ""
+		this.expires = expires ?? new Date()
+		this.access_token = access_token ?? ""
+		this.scopes = scopes ?? []
+		if (refresh_token) {this.refresh_token = refresh_token}
+		if (user) {this.user = user}
 	}
+	/**
+	 * The normal way to create an API instance! Make sure to `await` it
+	 * @param client The ID and the secret of your client, can be found on https://osu.ppy.sh/home/account/edit#new-oauth-application
+	 * @param user If the instance is supposed to represent a user, use their code and the redirect_uri of your application!
+	 * @returns A promise with an API instance (or with null if something goes wrong)
+	 */
 	public static createAsync = async (client: {id: number, secret: string}, user?: {code: string, redirect_uri: string}) => {
 		const me = new API()
 		me.client = client
@@ -139,7 +154,7 @@ export class API {
 			if (axios.isAxiosError(error)) {
 				if (error.response) {
 					console.log("osu!api v2 ->", error.response.statusText, error.response.status, {type, params})
-					if (error.response.status === 401) console.log("osu!api v2 -> Server responded with status code 401, are you sure you're using a valid API key?")
+					if (error.response.status === 401) console.log("osu!api v2 -> Server responded with status code 401, maybe you need to do this action as an user?")
 					if (error.response.status === 429) {
 						console.log("osu!api v2 -> Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
 						if (number_try !== undefined && number_try < max_tries) {console.log(`osu!api v2 -> Will request again in a few instants... (Try #${number_try})`)}
@@ -284,7 +299,7 @@ export class API {
 	/**
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
 	 */
-	async getPlaylistItemScores(item: PlaylistItem): Promise<MultiplayerScore[] | APIError> {
+	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem): Promise<MultiplayerScore[] | APIError> {
 		let response = await this.request(`rooms/${item.room_id}/playlist/${item.id}/scores`)
 		if (!response || !response.scores || !response.scores.length) {return new APIError(`No Item could be found (room: ${item.room_id} / item: ${item.id})`)}
 		return response.scores.map((s: MultiplayerScore) => correctType(s)) as MultiplayerScore[]

@@ -13,7 +13,7 @@ export interface Room {
 	type: string
 	user_id: number
 	starts_at: Date
-	ends_at: Date
+	ends_at: Date | null
 	max_attempts: number | null
 	participant_count: number
 	channel_id: number
