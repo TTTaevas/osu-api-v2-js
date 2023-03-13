@@ -1,8 +1,8 @@
-import axios, { AxiosError, AxiosResponse } from "axios"
-import { Beatmap, BeatmapCompact } from "./beatmap"
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios"
+import { Beatmap, BeatmapAttributes, BeatmapCompact } from "./beatmap"
 import { KudosuHistory, User, UserCompact } from "./user"
 import { Leader, MultiplayerScore, PlaylistItem, Room } from "./multiplayer"
-import { GameModes } from "./misc"
+import { GameModes, Mod } from "./misc"
 import { BeatmapUserScore, Score } from "./score"
 
 export {Beatmap, BeatmapCompact}
@@ -127,33 +127,55 @@ export class API {
 	// ^^^ Whole token handling thingie is up there ^^^
 
 	/**
-	 * @param type Basically the endpoint, what comes in the URL after `api/`
-	 * @param params The things to specify in the request, such as the beatmap_id when looking for a beatmap
+	 * @param endpoint What comes in the URL after `api/`
+	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
 	 * @param number_try How many attempts there's been to get the data
 	 * @returns A Promise with either the API's response or `false` upon failing
 	 */
-	private async request(type: string, params?: string, number_try?: number): Promise<AxiosResponse["data"] | false> {
-		if (!params) {params = ""}
+	private async request(method: "get" | "post", endpoint: string,
+	parameters?: {[k: string]: any}, number_try?: number): Promise<AxiosResponse["data"] | false> {
 		const max_tries = 5
 		if (!number_try) {number_try = 1}
 		let to_retry = false
-	
-		const resp = await axios({
-			method: "get",
+
+		let data: {[k: string]: any} = {}
+		let params: {[k: string]: any} = {}
+
+		if (parameters !== undefined) {
+			for (let i = 0; i < Object.entries(parameters).length; i++) {
+				if (!String(Object.values(parameters)[i]).length || Object.values(parameters)[i] === undefined) {
+					i--
+					delete parameters[Object.keys(parameters)[i + 1]]
+				}
+			}
+
+			if (method === "post") {
+				data = parameters ?? {}
+			} else {
+				params = parameters ?? {}
+			}
+		}
+
+		let request: AxiosRequestConfig = {
+			method,
 			baseURL: "https://osu.ppy.sh/api/v2/",
-			url: `/${type}?${params}`,
+			url: endpoint,
 			headers: {
 				"Accept": "application/json",
 				"Accept-Encoding": "gzip",
 				"Content-Type": "application/json",
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`
-			}
-		})
+			},
+			data,
+			params
+		}
+	
+		const resp = await axios(request)
 		.catch((error: Error | AxiosError) => {
 			if (axios.isAxiosError(error)) {
 				if (error.response) {
-					console.log("osu!api v2 ->", error.response.statusText, error.response.status, {type, params})
+					console.log("osu!api v2 ->", error.response.statusText, error.response.status, {type: endpoint, parameters})
 					if (error.response.status === 401) console.log("osu!api v2 -> Server responded with status code 401, maybe you need to do this action as an user?")
 					if (error.response.status === 429) {
 						console.log("osu!api v2 -> Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
@@ -161,7 +183,7 @@ export class API {
 						to_retry = true
 					}
 				} else if (error.request) {
-					console.log("osu!api v2 ->", "Request made but server did not respond", `(Try #${number_try})`, {type, params})
+					console.log("osu!api v2 ->", "Request made but server did not respond", `(Try #${number_try})`, {type: endpoint, parameters})
 					to_retry = true
 				} else { // Something happened in setting up the request that triggered an error, I think
 					console.error(error)
@@ -172,7 +194,7 @@ export class API {
 		})
 		
 		if (resp) {
-			console.log("osu!api v2 ->", resp.statusText, resp.status, {type, params})
+			console.log("osu!api v2 ->", resp.statusText, resp.status, {type: endpoint, parameters})
 			return resp.data
 		} else {
 			/**
@@ -183,7 +205,7 @@ export class API {
 			if (to_retry && number_try < max_tries) {
 				let to_wait = (Math.floor(Math.random() * (500 - 100 + 1)) + 100) * 10
 				await new Promise(res => setTimeout(res, to_wait))
-				return await this.request(type, params, number_try + 1)
+				return await this.request(method, endpoint, parameters, number_try + 1)
 			} else {
 				return false
 			}
@@ -197,7 +219,7 @@ export class API {
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
 	 */
 	async getResourceOwner(gamemode?: GameModes): Promise<User | APIError> {
-		let response = await this.request("me", gamemode !== undefined ? GameModes[gamemode] : "")
+		let response = await this.request("get", "me", {mode: gamemode !== undefined ? GameModes[gamemode] : ""})
 		if (!response) {return new APIError(`No User could be found`)}
 		return correctType(response) as User
 	}
@@ -207,36 +229,30 @@ export class API {
 		let key = user.id !== undefined ? "id" : "username"
 		let lookup = user.id !== undefined ? user.id : user.username
 
-		let response = await this.request(`users/${lookup}${gamemode !== undefined ? `/${GameModes[gamemode]}` : ""}`, key)
+		let response = await this.request("get", `users/${lookup}${gamemode !== undefined ? `/${GameModes[gamemode]}` : ""}`, {key})
 		if (!response) {return new APIError(`No User could be found (user id: ${user.id} / username: ${user.username})`)}
 		return correctType(response) as User
 	}
 
 	async getUsers(ids?: number[]): Promise<UserCompact[] | APIError> {
-		let lookup = ""
-		ids?.forEach((id) => lookup += `&ids[]=${id}`)
-		let response = await this.request("users", lookup.substring(1))
+		let response = await this.request("get", "users", {ids})
 		if (!response || !response.users || !response.users.length) {return new APIError(`No User could be found (ids: ${ids})`)}
 		return response.users.map((u: UserCompact) => correctType(u)) as UserCompact[]
 	}
 
 	async getUserScores(limit: number, user: {id: number} | UserCompact, type: "best" | "firsts" | "recent",
 	options?: {gamemode?: GameModes, include_fails?: Boolean, offset?: number}): Promise<Score[] | APIError> {
-		let parameters = `limit=${limit}`
-		if (options) {
-			if (options.gamemode !== undefined) {parameters += `&mode=${GameModes[options.gamemode]}`}
-			if (options.include_fails !== undefined) {parameters += `&include_fails=${Number(options.include_fails)}`}
-			if (options.offset !== undefined) {parameters += `&offset=${options.offset}`}
-		}
-		let response = await this.request(`users/${user.id}/scores/${type}`, parameters)
+		let mode = options && options.gamemode !== undefined ? GameModes[options.gamemode] : ""
+		let offset = options && options.offset !== undefined ? options.offset : ""
+		let include_fails = options && options.include_fails !== undefined ? options.include_fails : ""
+
+		let response = await this.request("get", `users/${user.id}/scores/${type}`, {limit, mode, offset, include_fails})
 		if (!response || !response.length) {return new APIError(`No Score could be found (id: ${user.id} / type: ${type})`)}
 		return response.map((s: Score) => correctType(s)) as Score[]
 	}
 
 	async getUserKudosu(user: {id: number} | UserCompact, limit?: number, offset?: number): Promise<KudosuHistory[] | APIError> {
-		let query = limit ? `limit=${limit}` : ""
-		query += offset ? `${query.length ? "&" : ""}offset=${offset}` : ""
-		let response = await this.request(`users/${user.id}/kudosu`, query)
+		let response = await this.request("get", `users/${user.id}/kudosu`, {limit, offset})
 		if (!response || !response.length) {return new APIError(`No Kudosu could be found (id: ${user.id})`)}
 		return response.map((k: KudosuHistory) => correctType(k)) as KudosuHistory[]
 	}
@@ -245,22 +261,29 @@ export class API {
 	// BEATMAP STUFF
 
 	async getBeatmap(beatmap: {id: number} | BeatmapCompact): Promise<Beatmap | APIError> {
-		let response = await this.request(`beatmaps/${beatmap.id}`)
+		let response = await this.request("get", `beatmaps/${beatmap.id}`)
 		if (!response) {return new APIError(`No Beatmap could be found (id: ${beatmap.id})`)}
 		return correctType(response) as Beatmap
 	}
 
 	async getBeatmaps(ids?: number[]): Promise<Beatmap[] | APIError> {
-		let lookup = ""
-		ids?.forEach((id) => lookup += `&ids[]=${id}`)
-		let response = await this.request("beatmaps", lookup.substring(1))
+		let response = await this.request("get", "beatmaps", {ids})
 		if (!response || !response.beatmaps || !response.beatmaps.length) {return new APIError(`No Beatmap could be found (ids: ${ids})`)}
 		return response.beatmaps.map((b: Beatmap) => correctType(b)) as Beatmap[]
 	}
 
+	/**
+	 * @remarks Will ignore the settings of your mods
+	 */
+	async getBeatmapAttributes(beatmap: {id: number} | BeatmapCompact, gamemode: GameModes, mods: Mod[]): Promise<BeatmapAttributes | APIError> {
+		let response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: gamemode, mods})
+		if (!response) {return new APIError(`No Beatmap could be found (id: ${beatmap.id})`)}
+		return correctType(response) as BeatmapAttributes
+	}
+
 	async getBeatmapUserScore(beatmap: {id: number} | BeatmapCompact, user: {id: number} | UserCompact,
 	gamemode?: GameModes): Promise<BeatmapUserScore | APIError> {
-		let response = await this.request(`beatmaps/${beatmap.id}/scores/users/${user.id}`)
+		let response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`)
 		if (!response) {return new APIError(`No Score could be found (beatmap: ${beatmap.id} / user: ${user.id})`)}
 		return correctType(response) as BeatmapUserScore
 	}
@@ -269,7 +292,7 @@ export class API {
 	// MULTIPLAYER STUFF
 
 	async getRoom(room: {id: number} | Room): Promise<Room | APIError> {
-		let response = await this.request(`rooms/${room.id}`)
+		let response = await this.request("get", `rooms/${room.id}`)
 		if (!response) {return new APIError(`No Room could be found (id: ${room.id})`)}
 		return correctType(response) as Room
 	}
@@ -278,7 +301,7 @@ export class API {
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
 	 */
 	async getRooms(mode?: "owned" | "participated" | "ended"): Promise<Room[] | APIError> {
-		let response = await this.request(`rooms/${mode ? mode : ""}`)
+		let response = await this.request("get", `rooms/${mode ? mode : ""}`)
 		if (!response || !response.length) {
 			{return new APIError(`No Room could be found${mode ? ` (mode: ${mode})` : ""}`)}
 		}
@@ -289,7 +312,7 @@ export class API {
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
 	 */
 	async getRoomLeaderboard(room: {id: number} | Room): Promise<Leader[] | APIError> {
-		let response = await this.request(`rooms/${room.id}/leaderboard`)
+		let response = await this.request("get", `rooms/${room.id}/leaderboard`)
 		if (!response || !response.leaderboard || !response.leaderboard.length) {
 			return new APIError(`No Leaderboard could be found (id: ${room.id})`)
 		}
@@ -300,7 +323,7 @@ export class API {
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
 	 */
 	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem): Promise<MultiplayerScore[] | APIError> {
-		let response = await this.request(`rooms/${item.room_id}/playlist/${item.id}/scores`)
+		let response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`)
 		if (!response || !response.scores || !response.scores.length) {return new APIError(`No Item could be found (room: ${item.room_id} / item: ${item.id})`)}
 		return response.scores.map((s: MultiplayerScore) => correctType(s)) as MultiplayerScore[]
 	}

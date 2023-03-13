@@ -115,6 +115,55 @@ export interface Beatmapset extends BeatmapsetCompact {
 	has_favourited?: any
 }
 
+export interface BeatmapAttributes {
+	star_rating: number
+	max_combo: number
+	/**
+	 * osu
+	 */
+	aim_difficulty?: number
+	/**
+	 * osu, taiko, fruits
+	 */
+	approach_rate?: number
+	/**
+	 * osu
+	 */
+	flashlight_difficulty?: number
+	/**
+	 * osu
+	 */
+	overall_difficulty?: number
+	/**
+	 * osu
+	 */
+	slider_factor?: number
+	/**
+	 * osu
+	 */
+	speed_difficulty?: number
+	/**
+	 * taiko
+	 */
+	stamina_difficulty?: number
+	/**
+	 * taiko
+	 */
+	rhythm_difficulty: number
+	/**
+	 * taiko
+	 */
+	colour_difficulty: number
+	/**
+	 * taiko, mania
+	 */
+	great_hit_window: number
+	/**
+	 * mania
+	 */
+	score_multiplier: number
+}
+
 export interface Failtimes {
 	exit?: number[]
 	fail?: number[]

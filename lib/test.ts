@@ -15,6 +15,12 @@ async function test(id: string | undefined, secret: string | undefined) {
 	if (user.replays_watched_counts![0].start_date.toISOString() !== "2016-01-01T00:00:00.000Z") {
 		throw new Error("User is not what it should be")
 	}
+
+	let attributes = await api.getBeatmapAttributes({id: 809513}, osu.GameModes.osu, [{acronym: "DT"}, {acronym: "HD"},])
+	if (attributes instanceof osu.APIError) {throw new Error("Failed to get Beatmap Attributes")}
+	if (attributes.approach_rate! < 10.3) {
+		throw new Error("Beatmap Attributes are not what they should be")
+	}
 	
 	let room = await api.getRoom({id: 231069})
 	if (room instanceof osu.APIError) {throw new Error("Failed to get Room")}
