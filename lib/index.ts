@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios"
 import { Beatmap, BeatmapAttributes, BeatmapCompact } from "./beatmap"
 import { KudosuHistory, User, UserCompact } from "./user"
-import { Leader, MultiplayerScore, PlaylistItem, Room } from "./multiplayer"
+import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer"
 import { GameModes, Mod } from "./misc"
 import { BeatmapUserScore, Score } from "./score"
 
@@ -295,6 +295,18 @@ export class API {
 		let response = await this.request("get", `rooms/${room.id}`)
 		if (!response) {return new APIError(`No Room could be found (id: ${room.id})`)}
 		return correctType(response) as Room
+	}
+
+	async getMatch(id: number): Promise<Match | APIError> {
+		let response = await this.request("get", `matches/${id}`)
+		if (!response) {return new APIError(`No Match could be found (id: ${id})`)}
+		return correctType(response) as Match
+	}
+
+	async getMatches(): Promise<MatchInfo[] | APIError> {
+		let response = await this.request("get", "matches")
+		if (!response || !response.matches || !response.matches.length) {return new APIError(`No Match could be found`)}
+		return response.matches.map((m: MatchInfo) => correctType(m)) as MatchInfo[]
 	}
 
 	/**

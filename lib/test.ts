@@ -27,6 +27,15 @@ async function test(id: string | undefined, secret: string | undefined) {
 	if (room.playlist[room.playlist.length - 1].beatmap_id !== 809513) {
 		throw new Error("Room is not what it should be")
 	}
+
+	let matches = await api.getMatches()
+	if (matches instanceof osu.APIError) {throw new Error("Failed to get Matches")}
+
+	let match = await api.getMatch(106369699)
+	if (match instanceof osu.APIError) {throw new Error("Failed to get Match")}
+	if (match.latest_event_id !== 2203711864) {
+		throw new Error("Match is not what it should be")
+	}
 }
 
 test(process.env.ID, process.env.SECRET)

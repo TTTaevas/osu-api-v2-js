@@ -1,5 +1,5 @@
 import { BeatmapCompact } from "./beatmap"
-import { Mod } from "./misc"
+import { GameModes, Mod } from "./misc"
 import { User, UserCompact } from "./user"
 
 /**
@@ -85,4 +85,72 @@ export interface Leader {
 	total_score: number
 	user_id: number
 	user: UserCompact
+}
+
+export interface MatchInfo {
+	id: number
+	start_time: Date
+	end_time: Date | null
+	name: string
+}
+
+export interface Match {
+	match: MatchInfo
+	events: {
+		id: number
+		detail: {
+			type: string
+			text?: string
+		}
+		timestamp: Date
+		user_id: number | null
+		game?: {
+			beatmap_id: number
+			id: number
+			start_time: Date
+			end_time: Date | null
+			mode: string
+			mode_int: GameModes
+			scoring_type: string
+			team_type: string
+			mods: string[]
+			beatmap: BeatmapCompact
+		}
+		scores?: {
+			accuracy: number
+			best_id: number | null
+			created_at: Date
+			id: number | null
+			max_combo: number
+			mode: string
+			mode_int: GameModes
+			mods: string[]
+			passed: Boolean,
+			perfect: number
+			pp: number | null
+			rank: string
+			replay: Boolean
+			score: number
+			statistics: {
+				count_100: number
+				count_300: number
+				count_50: number
+				count_geki: number
+				count_katu: number
+				count_miss: number
+			}
+			type: string
+			user_id: number
+			current_user_attributes: {[k: string]: any}
+			match: {
+				slot: number
+				team: string
+				pass: Boolean
+			}
+		}[]
+	}
+	users: UserCompact[]
+	first_event_id: number
+	latest_event_id: number
+	current_game_id: number | null
 }
