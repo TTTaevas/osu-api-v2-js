@@ -216,7 +216,7 @@ export class API {
 	// USER STUFF
 
 	/**
-	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
+	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
 	 */
 	async getResourceOwner(gamemode?: GameModes): Promise<User | APIError> {
 		let response = await this.request("get", "me", {mode: gamemode !== undefined ? GameModes[gamemode] : ""})
@@ -255,6 +255,15 @@ export class API {
 		let response = await this.request("get", `users/${user.id}/kudosu`, {limit, offset})
 		if (!response || !response.length) {return new APIError(`No Kudosu could be found (id: ${user.id})`)}
 		return response.map((k: KudosuHistory) => correctType(k)) as KudosuHistory[]
+	}
+
+	/**
+	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (FRIENDS.READ SCOPE)
+	 */
+	async getFriends(): Promise<UserCompact[] | APIError> {
+		let response = await this.request("get", "friends")
+		if (!response || !response.length) {return new APIError(`No Friend could be found`)}
+		return response.map((f: UserCompact) => correctType(f)) as UserCompact[]
 	}
 
 	
@@ -310,7 +319,7 @@ export class API {
 	}
 
 	/**
-	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
+	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
 	 */
 	async getRooms(mode?: "owned" | "participated" | "ended"): Promise<Room[] | APIError> {
 		let response = await this.request("get", `rooms/${mode ? mode : ""}`)
@@ -321,7 +330,7 @@ export class API {
 	}
 
 	/**
-	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
+	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
 	 */
 	async getRoomLeaderboard(room: {id: number} | Room): Promise<Leader[] | APIError> {
 		let response = await this.request("get", `rooms/${room.id}/leaderboard`)
@@ -332,7 +341,7 @@ export class API {
 	}
 
 	/**
-	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT
+	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
 	 */
 	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem): Promise<MultiplayerScore[] | APIError> {
 		let response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`)

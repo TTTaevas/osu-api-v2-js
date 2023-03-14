@@ -106,8 +106,10 @@ export interface User extends UserCompact {
 	has_supported: Boolean
 	interests: string | null
 	join_date: Date
-	"kudosu.available": number
-	"kudosu.total": number
+	kudosu: {
+		available: number
+		total: number
+	}
 	location: string | null
 	max_blocks: number
 	max_friends: number
@@ -127,15 +129,19 @@ export interface UserStatistics {
 	count_300: number
 	count_50: number
 	count_miss: number
-	["grade_counts.a"]: number
-	["grade_counts.s"]: number
-	["grade_counts.sh"]: number
-	["grade_counts.ss"]: number
-	["grade_counts.ssh"]: number
+	grade_counts: {
+		a: number
+		s: number
+		sh: number
+		ss: number
+		ssh: number
+	}
 	hit_accuracy: number
 	is_ranked: number
-	["level.current"]: number
-	["level.progress"]: number
+	level: {
+		current: number
+		progress: number
+	}
 	maximum_combo: number
 	play_count: number
 	play_time: number
@@ -144,8 +150,8 @@ export interface UserStatistics {
 	 * Amount of pp in lazer
 	 * @remarks Not in official documentation
 	 */
-	pp_exp: number | null
-	global_rank: number
+	pp_exp: number
+	global_rank: number | null
 	/**
 	 * Global rank in lazer
 	 * @remarks Not in official documentation
