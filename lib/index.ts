@@ -4,6 +4,7 @@ import { KudosuHistory, User, UserCompact } from "./user"
 import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer"
 import { GameModes, Mod } from "./misc"
 import { BeatmapUserScore, Score } from "./score"
+import { Rankings, Spotlight } from "./ranking"
 
 export {Beatmap, BeatmapCompact}
 export {User, UserCompact, KudosuHistory}
@@ -284,7 +285,8 @@ export class API {
 	/**
 	 * @remarks Will ignore the settings of your mods
 	 */
-	async getBeatmapAttributes(beatmap: {id: number} | BeatmapCompact, gamemode: GameModes, mods: Mod[]): Promise<BeatmapAttributes | APIError> {
+	async getBeatmapAttributes(beatmap: {id: number} | BeatmapCompact,
+	gamemode: GameModes, mods: Mod[] | string[] | number): Promise<BeatmapAttributes | APIError> {
 		let response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: gamemode, mods})
 		if (!response) {return new APIError(`No Beatmap could be found (id: ${beatmap.id})`)}
 		return correctType(response) as BeatmapAttributes
@@ -347,6 +349,27 @@ export class API {
 		let response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`)
 		if (!response || !response.scores || !response.scores.length) {return new APIError(`No Item could be found (room: ${item.room_id} / item: ${item.id})`)}
 		return response.scores.map((s: MultiplayerScore) => correctType(s)) as MultiplayerScore[]
+	}
+
+
+	// RANKING STUFF
+
+	async getRanking(gamemode: GameModes, type: "charts" | "country" | "performance" | "score", filter: "all" | "friends",
+	options?: {country?: number, spotlight?: {id: number} | Spotlight, variant?: "4k" | "7k"}): Promise<Rankings | APIError> {
+		let response = await this.request("get", `rankings/${GameModes[gamemode]}/${type}`, {
+			filter,
+			country: options?.country,
+			spotlight: options?.spotlight,
+			variant: options?.variant
+		})
+		if (!response) {return new APIError(`No Ranking could be found (type: ${type})`)}
+		return correctType(response) as Rankings
+	}
+
+	async getSpotlights(): Promise<Spotlight[] | APIError> {
+		let response = await this.request("get", "spotlights")
+		if (!response || !response.spotlights || !response.spotlights.length) {return new APIError(`No Spotlight could be found`)}
+		return response.spotlights.map((s: Spotlight) => correctType(s)) as Spotlight[]
 	}
 }
 

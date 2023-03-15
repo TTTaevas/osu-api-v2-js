@@ -36,6 +36,12 @@ async function test(id: string | undefined, secret: string | undefined) {
 	if (match.latest_event_id !== 2203711864) {
 		throw new Error("Match is not what it should be")
 	}
+
+	let ranking = await api.getRanking(osu.GameModes.osu, "performance", "all")
+	if (ranking instanceof osu.APIError) {throw new Error("Failed to get Ranking")}
+
+	let spotlights = await api.getSpotlights()
+	if (spotlights instanceof osu.APIError) {throw new Error("Failed to get Spotlights")}
 }
 
 test(process.env.ID, process.env.SECRET)

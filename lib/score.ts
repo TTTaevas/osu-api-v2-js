@@ -10,12 +10,14 @@ export interface Score {
 	score: number
 	max_combo: number
 	perfect: any
-	["statistics.count_50"]: number
-	["statistics.count_100"]: number
-	["statistics.count_300"]: number
-	["statistics.count_geki"]: number
-	["statistics.count_katu"]: number
-	["statistics.count_miss"]: number
+	statistics: {
+		count_50: number
+		count_100: number
+		count_300: number
+		count_geki: number
+		count_katu: number
+		count_miss: number
+	}
 	passed: Boolean
 	pp: any
 	rank: any
