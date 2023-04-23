@@ -5,12 +5,14 @@ import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "
 import { GameModes, Mod } from "./misc"
 import { BeatmapUserScore, Score } from "./score"
 import { Rankings, Spotlight } from "./ranking"
+import { ChangelogBuild, UpdateStream } from "./changelog"
 
 export {Beatmap, BeatmapCompact}
 export {User, UserCompact, KudosuHistory}
 export {BeatmapUserScore, Score}
 export {Room, Leader, PlaylistItem, MultiplayerScore}
 export {GameModes}
+export {ChangelogBuild, UpdateStream}
 
 export class APIError {
 	message: string
@@ -297,6 +299,34 @@ export class API {
 		let response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`)
 		if (!response) {return new APIError(`No Score could be found (beatmap: ${beatmap.id} / user: ${user.id})`)}
 		return correctType(response) as BeatmapUserScore
+	}
+
+
+	// CHANGELOG STUFF
+
+	async getChangelogBuild(stream: string, build: string): Promise<ChangelogBuild | APIError> {
+		let response = await this.request("get", `changelog/${stream}/${build}`)
+		if (!response) {return new APIError(`No Build could be found (stream: ${stream} / build: ${build})`)}
+		return correctType(response) as ChangelogBuild
+	}
+
+	async getChangelogListing(format: "html" | "markdown", options?: {build_version_range?: {from?: string, to?: string},
+	max_id: number, stream: string}): Promise<ChangelogBuild[] | APIError> {
+		let message_format = [format]
+		let from = options ? options.build_version_range ? options.build_version_range.from ? options.build_version_range.from : "" : "" : ""
+		let to = options ? options.build_version_range ? options.build_version_range.from ? options.build_version_range.from : "" : "" : ""
+		let stream = options ? options.stream ? options.stream : "" : ""
+		let max_id = options ? options.max_id ? options.max_id : "" : ""
+
+		let response = await this.request("get", `changelog`, {message_format, from, to, stream, max_id})
+		if (!response || !response.builds) {return new APIError(`No Build could be found...`)}
+		return response.builds.map((b: ChangelogBuild) => correctType(b)) as ChangelogBuild[] 
+	}
+
+	async getChangelogStreams(): Promise<UpdateStream[] | APIError> {
+		let response = await this.request("get", `changelog`, {max_id: 1})
+		if (!response || !response.streams) {return new APIError(`No stream could be found...`)}
+		return response.streams.map((s: UpdateStream) => correctType(s)) as UpdateStream[] 
 	}
 
 
