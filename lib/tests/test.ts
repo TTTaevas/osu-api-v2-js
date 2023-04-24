@@ -1,4 +1,4 @@
-import * as osu from "."
+import * as osu from ".."
 import "dotenv/config"
 import util = require('util')
 // console.log(util.inspect(users, false, null, true))

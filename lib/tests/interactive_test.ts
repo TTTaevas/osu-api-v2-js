@@ -1,6 +1,6 @@
 import "dotenv/config"
 import util = require('util')
-import * as osu from "."
+import * as osu from ".."
 
 const prompt = require("prompt-sync")({sigint: true})
 
@@ -15,8 +15,10 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri})
 	if (api) {
-		let friends = await api.getFriends()
-		if (!(friends instanceof osu.APIError)) {console.log(friends[0].statistics?.level.current); console.log(util.inspect(friends[0], false, null, true))}
+		let match = await api.getRoom({id: 231069})
+		if (match instanceof osu.APIError) {throw new Error("yeah no")}
+		let point = await api.getPlaylistItemScores(match.playlist[16])
+		console.log(util.inspect(point, false, null, true))
 	}
 }
 

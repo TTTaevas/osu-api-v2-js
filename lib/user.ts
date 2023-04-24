@@ -179,3 +179,14 @@ export interface KudosuHistory {
 		title: string
 	}
 }
+
+export interface CurrentUserAttributes {
+	can_destroy: Boolean
+	can_reopen: Boolean
+	can_moderate_kudosu: Boolean
+	can_resolve: Boolean
+	vote_score: number
+	can_message: Boolean
+	can_message_error: string | null
+	last_read_id: number
+} 
