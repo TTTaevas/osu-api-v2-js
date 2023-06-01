@@ -15,7 +15,7 @@
   },
   "license": "WTFPL",
   "devDependencies": {
-    "@types/node": "^18.15.0",
+    "@types/node": "^20.2.5",
     "dotenv": "^16.0.3",
     "prompt-sync": "^4.2.0",
     "typescript": "^5.0.2"
