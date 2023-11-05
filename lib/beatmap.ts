@@ -1,6 +1,6 @@
 export enum RankStatus {
 	Graveyard 	= -2,
-	Wip			= -1,
+	Wip 		= -1,
 	Pending		= 0,
 	Ranked		= 1,
 	Approved	= 2,
@@ -8,7 +8,7 @@ export enum RankStatus {
 	Loved 		= 4
 }
 
-export interface BeatmapCompact {
+export interface Beatmap {
 	beatmapset_id: number
 	difficulty_rating: number
 	id: number
@@ -17,18 +17,18 @@ export interface BeatmapCompact {
 	total_length: number
 	user_id: number
 	version: string
-	beatmapset?: Beatmapset | BeatmapsetCompact | null
+	beatmapset?: BeatmapsetExtended | Beatmapset | null
 	checksum?: string
 	failtimes?: Failtimes
 	max_combo?: number
 }
 
-export interface Beatmap extends BeatmapCompact {
+export interface BeatmapExtended extends Beatmap {
 	accuracy: number
 	ar: number
 	beatmapset_id: number
 	bpm: number | null
-	convert: Boolean
+	convert: boolean
 	count_circles: number
 	count_sliders: number
 	count_spinners: number
@@ -36,7 +36,7 @@ export interface Beatmap extends BeatmapCompact {
 	deleted_at: Date | null
 	drain: number
 	hit_length: number
-	is_scoreable: Boolean
+	is_scoreable: boolean
 	last_updated: Date
 	mode_int: number
 	passcount: number
@@ -45,7 +45,7 @@ export interface Beatmap extends BeatmapCompact {
 	url: string
 }
 
-export interface BeatmapsetCompact {
+export interface Beatmapset {
 	artist: string
 	artist_unicode: string
 	covers: {
@@ -61,7 +61,7 @@ export interface BeatmapsetCompact {
 	creator: string
 	favourite_count: number
 	id: number
-	nsfw: Boolean
+	nsfw: boolean
 	play_count: number
 	preview_url: string
 	source: string
@@ -69,15 +69,15 @@ export interface BeatmapsetCompact {
 	title: string
 	title_unicode: string
 	user_id: number
-	video: Boolean
-	beatmaps?: Beatmap[]
+	video: boolean
+	beatmaps?: BeatmapExtended[]
 	converts?: any
 	current_user_attributes?: any
 	description?: any
 	discussions?: any
 	events?: any
 	genre?: any
-	has_favourited?: Boolean
+	has_favourited?: boolean
 	language?: any
 	nominations?: any
 	pack_tags?: string[]
@@ -87,19 +87,19 @@ export interface BeatmapsetCompact {
 	user?: any
 }
 
-export interface Beatmapset extends BeatmapsetCompact {
+export interface BeatmapsetExtended extends Beatmapset {
 	availability: {
 		download_disabled: boolean
 		more_information: string | null
 	}
 	bpm: number
-	can_be_hyped: Boolean
+	can_be_hyped: boolean
 	creator: string
 	deleted_at: string | null
-	discussion_locked: Boolean
+	discussion_locked: boolean
 	"hype.current": number
 	"hype.required": number
-	is_scoreable: Boolean
+	is_scoreable: boolean
 	last_updated: Date
 	legacy_thread_url: string | null
 	nominations: {
@@ -109,7 +109,7 @@ export interface Beatmapset extends BeatmapsetCompact {
 	ranked: RankStatus
 	ranked_date: Date | null
 	source: string
-	storyboard: Boolean
+	storyboard: boolean
 	submitted_date: Date | null
 	tags: string
 	has_favourited?: any
@@ -162,6 +162,30 @@ export interface BeatmapAttributes {
 	 * mania
 	 */
 	score_multiplier: number
+}
+
+export interface BeatmapPack {
+	author: string
+	date: Date
+	name: string
+	/**
+	 * Are difficulty reduction mods unable to be used to clear this pack?
+	 */
+	no_diff_reduction: boolean
+	ruleset_id: number,
+	tag: string,
+	url: string,
+	beatmapsets?: BeatmapsetExtended[],
+	user_completion_data?:{
+		/**
+		 * IDs of beatmapsets completed by the user (according to the requirements of the pack)
+		 */
+		beatmapset_ids: number[],
+		/**
+		 * Whether all beatmapsets are completed by the user or not
+		 */
+		completed: boolean
+	}
 }
 
 export interface Failtimes {

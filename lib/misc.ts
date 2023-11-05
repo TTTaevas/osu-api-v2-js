@@ -1,4 +1,4 @@
-export enum GameModes {
+export enum Rulesets {
 	osu 	= 0,
 	taiko 	= 1,
 	fruits	= 2,

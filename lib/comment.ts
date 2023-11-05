@@ -1,4 +1,4 @@
-import { CurrentUserAttributes, UserCompact } from "./user.js"
+import { CurrentUserAttributes, User } from "./user.js"
 
 export interface Comment {
 	commentable_id: number
@@ -12,7 +12,7 @@ export interface Comment {
 	message: string | null
 	message_html: string | null
 	parent_id: number | null
-	pinned: Boolean
+	pinned: boolean
 	replies_count: number
 	updated_at: Date
 	user_id: number
@@ -22,16 +22,16 @@ export interface Comment {
 export interface CommentBundle {
 	commentable_meta: CommentableMeta[]
 	comments: Comment[]
-	has_more: Boolean
+	has_more: boolean
 	has_more_id: number | null
 	included_comments: Comment[]
 	pinned_comments: Comment[]
 	sort: string
 	top_level_count: number | null
 	total: number | null
-	user_follow: Boolean
+	user_follow: boolean
 	user_votes: number[]
-	users: UserCompact[]
+	users: User[]
 }
 
 export interface CommentableMeta {

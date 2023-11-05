@@ -11,7 +11,7 @@ export interface ChangelogBuild {
 		github_pull_request_id: number | null
 		github_url: string | null
 		id: number | null
-		major: Boolean
+		major: boolean
 		repository: string | null
 		title: string | null
 		type: string
@@ -26,7 +26,7 @@ export interface ChangelogBuild {
 export interface UpdateStream {
 	display_name: string | null
 	id: number
-	is_featured: Boolean
+	is_featured: boolean
 	name: string
 	latest_build: ChangelogBuild | null
 	user_count: number

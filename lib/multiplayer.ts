@@ -1,6 +1,6 @@
-import { BeatmapCompact } from "./beatmap.js"
-import { GameModes, Mod } from "./misc.js"
-import { User, UserCompact } from "./user.js"
+import { Beatmap } from "./beatmap.js"
+import { Rulesets, Mod } from "./misc.js"
+import { UserExtended, User } from "./user.js"
 
 /**
  * @remarks This is entirely absent from the official documentation
@@ -17,14 +17,14 @@ export interface Room {
 	max_attempts: number | null
 	participant_count: number
 	channel_id: number
-	active: Boolean
-	has_password: Boolean
+	active: boolean
+	has_password: boolean
 	queue_mode: string
-	auto_skip: Boolean
+	auto_skip: boolean
 	current_user_score: {[k: string]: any}
-	host: UserCompact
+	host: User
 	playlist: PlaylistItem[]
-	recent_participants: UserCompact[]
+	recent_participants: User[]
 }
 
 /**
@@ -38,11 +38,11 @@ export interface PlaylistItem {
 	ruleset_id: number
 	allowed_mods: Mod[]
 	required_mods: Mod[]
-	expired: Boolean
+	expired: boolean
 	owner_id: number
 	playlist_order: number
 	played_at: Date
-	beatmap: BeatmapCompact
+	beatmap: Beatmap
 }
 
 export interface MultiplayerScore {
@@ -57,7 +57,7 @@ export interface MultiplayerScore {
 	max_combo: number
 	mods: Mod[]
 	statistics: any
-	passed: Boolean
+	passed: boolean
 	started_at?: Date
 	ended_at?: Date
 	position?: number | null
@@ -65,7 +65,7 @@ export interface MultiplayerScore {
 		higher: MultiplayerScores
 		lower: MultiplayerScores
 	}
-	user: User
+	user: UserExtended
 }
 
 export interface MultiplayerScores {
@@ -84,7 +84,7 @@ export interface Leader {
 	room_id: number
 	total_score: number
 	user_id: number
-	user: UserCompact
+	user: User
 }
 
 export interface MatchInfo {
@@ -110,11 +110,11 @@ export interface Match {
 			start_time: Date
 			end_time: Date | null
 			mode: string
-			mode_int: GameModes
+			mode_int: Rulesets
 			scoring_type: string
 			team_type: string
 			mods: string[]
-			beatmap: BeatmapCompact
+			beatmap: Beatmap
 		}
 		scores?: {
 			accuracy: number
@@ -123,13 +123,13 @@ export interface Match {
 			id: number | null
 			max_combo: number
 			mode: string
-			mode_int: GameModes
+			mode_int: Rulesets
 			mods: string[]
-			passed: Boolean,
+			passed: boolean,
 			perfect: number
 			pp: number | null
 			rank: string
-			replay: Boolean
+			replay: boolean
 			score: number
 			statistics: {
 				count_100: number
@@ -145,11 +145,11 @@ export interface Match {
 			match: {
 				slot: number
 				team: string
-				pass: Boolean
+				pass: boolean
 			}
 		}[]
 	}
-	users: UserCompact[]
+	users: User[]
 	first_event_id: number
 	latest_event_id: number
 	current_game_id: number | null

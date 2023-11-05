@@ -1,4 +1,4 @@
-import { CurrentUserAttributes, UserCompact } from "./user.js";
+import { CurrentUserAttributes, User } from "./user.js";
 
 export type ChannelType =
 "PUBLIC" |
@@ -22,7 +22,7 @@ export interface ChatChannel {
 	description: string | null
 	icon: string | null
 	type: ChannelType
-	moderated: Boolean
+	moderated: boolean
 	uuid: string | null
 	current_user_attributes?: CurrentUserAttributes | null
 	last_message_id?: number | null
@@ -32,11 +32,11 @@ export interface ChatChannel {
 export interface ChatMessage {
 	channel_id: number
 	content: string
-	is_action: Boolean
+	is_action: boolean
 	message_id: number
 	sender_id: number
 	timestamp: Date
 	type: string
 	uuid: string | null
-	sender?: UserCompact
+	sender?: User
 }

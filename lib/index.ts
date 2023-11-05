@@ -1,17 +1,17 @@
 import fetch, { FetchError } from "node-fetch"
-import { Beatmap, BeatmapAttributes, BeatmapCompact } from "./beatmap.js"
-import { KudosuHistory, User, UserCompact } from "./user.js"
+import { BeatmapExtended, BeatmapAttributes, Beatmap, BeatmapPack } from "./beatmap.js"
+import { KudosuHistory, UserExtended, User } from "./user.js"
 import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
-import { GameModes, Mod } from "./misc.js"
+import { Rulesets, Mod } from "./misc.js"
 import { BeatmapUserScore, Score } from "./score.js"
 import { Rankings, Spotlight } from "./ranking.js"
 import { ChangelogBuild, UpdateStream } from "./changelog.js"
 
-export {Beatmap, BeatmapCompact}
-export {User, UserCompact, KudosuHistory}
+export {BeatmapExtended, Beatmap}
+export {UserExtended, User, KudosuHistory}
 export {BeatmapUserScore, Score}
 export {Room, Leader, PlaylistItem, MultiplayerScore}
-export {GameModes}
+export {Rulesets}
 export {ChangelogBuild, UpdateStream}
 
 export class APIError {
@@ -144,21 +144,12 @@ export class API {
 		if (!number_try) {number_try = 1}
 		let to_retry = false
 
-		let data: {[k: string]: any} = {}
-		let params: {[k: string]: any} = {}
-
 		if (parameters !== undefined) {
 			for (let i = 0; i < Object.entries(parameters).length; i++) {
 				if (!String(Object.values(parameters)[i]).length || Object.values(parameters)[i] === undefined) {
 					i--
 					delete parameters[Object.keys(parameters)[i + 1]]
 				}
-			}
-
-			if (method === "post") {
-				data = parameters ?? {}
-			} else {
-				params = parameters ?? {}
 			}
 		}
 
@@ -212,31 +203,31 @@ export class API {
 	/**
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
 	 */
-	async getResourceOwner(gamemode?: GameModes): Promise<User | APIError> {
-		let response = await this.request("get", "me", {mode: gamemode !== undefined ? GameModes[gamemode] : ""})
+	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtended | APIError> {
+		let response = await this.request("get", "me", {mode: ruleset !== undefined ? Rulesets[ruleset] : ""})
 		if (!response) {return new APIError(`No User could be found`)}
-		return correctType(response) as User
+		return correctType(response) as UserExtended
 	}
 
-	async getUser(user: {id?: number, username?: string} | UserCompact, gamemode?: GameModes): Promise<User | APIError> {
+	async getUser(user: {id?: number, username?: string} | User, ruleset?: Rulesets): Promise<UserExtended | APIError> {
 		if (!user.id && !user.username) {return new APIError("No proper `user` argument was given")}
 		let key = user.id !== undefined ? "id" : "username"
 		let lookup = user.id !== undefined ? user.id : user.username
 
-		let response = await this.request("get", `users/${lookup}${gamemode !== undefined ? `/${GameModes[gamemode]}` : ""}`, {key})
+		let response = await this.request("get", `users/${lookup}${ruleset !== undefined ? `/${Rulesets[ruleset]}` : ""}`, {key})
 		if (!response) {return new APIError(`No User could be found (user id: ${user.id} / username: ${user.username})`)}
-		return correctType(response) as User
+		return correctType(response) as UserExtended
 	}
 
-	async getUsers(ids?: number[]): Promise<UserCompact[] | APIError> {
+	async getUsers(ids?: number[]): Promise<User[] | APIError> {
 		let response = await this.request("get", "users", {ids})
 		if (!response || !response.users || !response.users.length) {return new APIError(`No User could be found (ids: ${ids})`)}
-		return response.users.map((u: UserCompact) => correctType(u)) as UserCompact[]
+		return response.users.map((u: User) => correctType(u)) as User[]
 	}
 
-	async getUserScores(limit: number, user: {id: number} | UserCompact, type: "best" | "firsts" | "recent",
-	options?: {gamemode?: GameModes, include_fails?: Boolean, offset?: number}): Promise<Score[] | APIError> {
-		let mode = options && options.gamemode !== undefined ? GameModes[options.gamemode] : ""
+	async getUserScores(limit: number, user: {id: number} | User, type: "best" | "firsts" | "recent",
+	options?: {ruleset?: Rulesets, include_fails?: boolean, offset?: number}): Promise<Score[] | APIError> {
+		let mode = options && options.ruleset !== undefined ? Rulesets[options.ruleset] : ""
 		let offset = options && options.offset !== undefined ? options.offset : ""
 		let include_fails = options && options.include_fails !== undefined ? options.include_fails : ""
 
@@ -245,7 +236,7 @@ export class API {
 		return response.map((s: Score) => correctType(s)) as Score[]
 	}
 
-	async getUserKudosu(user: {id: number} | UserCompact, limit?: number, offset?: number): Promise<KudosuHistory[] | APIError> {
+	async getUserKudosu(user: {id: number} | User, limit?: number, offset?: number): Promise<KudosuHistory[] | APIError> {
 		let response = await this.request("get", `users/${user.id}/kudosu`, {limit, offset})
 		if (!response || !response.length) {return new APIError(`No Kudosu could be found (id: ${user.id})`)}
 		return response.map((k: KudosuHistory) => correctType(k)) as KudosuHistory[]
@@ -254,42 +245,57 @@ export class API {
 	/**
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (FRIENDS.READ SCOPE)
 	 */
-	async getFriends(): Promise<UserCompact[] | APIError> {
+	async getFriends(): Promise<User[] | APIError> {
 		let response = await this.request("get", "friends")
 		if (!response || !response.length) {return new APIError(`No Friend could be found`)}
-		return response.map((f: UserCompact) => correctType(f)) as UserCompact[]
+		return response.map((f: User) => correctType(f)) as User[]
 	}
 
 	
 	// BEATMAP STUFF
 
-	async getBeatmap(beatmap: {id: number} | BeatmapCompact): Promise<Beatmap | APIError> {
+	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtended | APIError> {
 		let response = await this.request("get", `beatmaps/${beatmap.id}`)
 		if (!response) {return new APIError(`No Beatmap could be found (id: ${beatmap.id})`)}
-		return correctType(response) as Beatmap
+		return correctType(response) as BeatmapExtended
 	}
 
-	async getBeatmaps(ids?: number[]): Promise<Beatmap[] | APIError> {
+	async getBeatmaps(ids?: number[]): Promise<BeatmapExtended[] | APIError> {
 		let response = await this.request("get", "beatmaps", {ids})
 		if (!response || !response.beatmaps || !response.beatmaps.length) {return new APIError(`No Beatmap could be found (ids: ${ids})`)}
-		return response.beatmaps.map((b: Beatmap) => correctType(b)) as Beatmap[]
+		return response.beatmaps.map((b: BeatmapExtended) => correctType(b)) as BeatmapExtended[]
 	}
 
 	/**
 	 * @remarks Will ignore the settings of your mods
 	 */
-	async getBeatmapAttributes(beatmap: {id: number} | BeatmapCompact,
-	gamemode: GameModes, mods: Mod[] | string[] | number): Promise<BeatmapAttributes | APIError> {
-		let response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: gamemode, mods})
+	async getBeatmapAttributes(beatmap: {id: number} | Beatmap,
+	ruleset: Rulesets, mods: Mod[] | string[] | number): Promise<BeatmapAttributes | APIError> {
+		let response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
 		if (!response) {return new APIError(`No Beatmap could be found (id: ${beatmap.id})`)}
 		return correctType(response) as BeatmapAttributes
 	}
 
-	async getBeatmapUserScore(beatmap: {id: number} | BeatmapCompact, user: {id: number} | UserCompact,
-	gamemode?: GameModes): Promise<BeatmapUserScore | APIError> {
+	/**
+	 * @remarks The specified ruleset will currently not affect the returned object
+	 */
+	async getBeatmapUserScore(beatmap: {id: number} | Beatmap, user: {id: number} | User,
+	ruleset?: Rulesets): Promise<BeatmapUserScore | APIError> {
 		let response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`)
 		if (!response) {return new APIError(`No Score could be found (beatmap: ${beatmap.id} / user: ${user.id})`)}
 		return correctType(response) as BeatmapUserScore
+	}
+
+	async getBeatmapPack(pack: {tag: string} | BeatmapPack): Promise<BeatmapPack | APIError> {
+		let response = await this.request("get", `beatmaps/packs/${pack.tag}`)
+		if (!response) {return new APIError(`No BeatmapPack could be found (pack: ${pack})`)}
+		return correctType(response) as BeatmapPack
+	}
+
+	async getBeatmapPacks(type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<BeatmapPack[] | APIError> {
+		let response = await this.request("get", "beatmaps/packs", {type})
+		if (!response || !response.beatmap_packs || !response.beatmap_packs.length) {return new APIError(`No BeatmapPack could be found (type: ${type})`)}
+		return correctType(response.beatmap_packs) as BeatmapPack[]
 	}
 
 
@@ -376,9 +382,9 @@ export class API {
 
 	// RANKING STUFF
 
-	async getRanking(gamemode: GameModes, type: "charts" | "country" | "performance" | "score", filter: "all" | "friends",
+	async getRanking(ruleset: Rulesets, type: "charts" | "country" | "performance" | "score", filter: "all" | "friends",
 	options?: {country?: number, spotlight?: {id: number} | Spotlight, variant?: "4k" | "7k"}): Promise<Rankings | APIError> {
-		let response = await this.request("get", `rankings/${GameModes[gamemode]}/${type}`, {
+		let response = await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {
 			filter,
 			country: options?.country,
 			spotlight: options?.spotlight,

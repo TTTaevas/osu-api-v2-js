@@ -14,18 +14,18 @@ type ProfileBanner = {
 	image: string
 }
 
-export interface UserCompact {
+export interface User {
 	avatar_url: string
 	country_code: string
 	default_group: string
 	id: number
-	is_active: Boolean
-	is_bot: Boolean
-	is_deleted: Boolean
-	is_online: Boolean
-	is_supported: Boolean
+	is_active: boolean
+	is_bot: boolean
+	is_deleted: boolean
+	is_online: boolean
+	is_supported: boolean
 	last_visit: Date | null
-	pm_friends_only: Boolean
+	pm_friends_only: boolean
 	profile_colour: string | null
 	username: string
 
@@ -33,7 +33,7 @@ export interface UserCompact {
 		description: string | null
 		id: number
 		length: number
-		permanent: Boolean
+		permanent: boolean
 		timestamp: Date
 		type: "note" | "restriction" | "silence"
 	}[] | 0
@@ -56,16 +56,16 @@ export interface UserCompact {
 	graveyard_beatmapset_count?: number
 	groups?: {
 		colour: string | null
-		has_listing: Boolean
-		has_playmodes: Boolean
+		has_listing: boolean
+		has_playmodes: boolean
 		id: number
 		identifier: string
-		is_probationary: Boolean
+		is_probationary: boolean
 		name: string
 		playmodes: string[] | null
 		short_name: string
 	}[] | 0
-	is_restricted?: Boolean | null
+	is_restricted?: boolean | null
 	loved_beatmapset_count?: number
 	monthly_playcounts?: {
 		start_date: Date
@@ -100,10 +100,10 @@ export interface UserCompact {
 	user_preferences?: any
 }
 
-export interface User extends UserCompact {
+export interface UserExtended extends User {
 	cover_url: string
 	discord: string | null
-	has_supported: Boolean
+	has_supported: boolean
 	interests: string | null
 	join_date: Date
 	kudosu: {
@@ -161,7 +161,7 @@ export interface UserStatistics {
 	replays_watched_by_others: number
 	total_hits: number
 	total_score: number
-	user: UserCompact
+	user: User
 }
 
 export interface KudosuHistory {
@@ -181,12 +181,12 @@ export interface KudosuHistory {
 }
 
 export interface CurrentUserAttributes {
-	can_destroy: Boolean
-	can_reopen: Boolean
-	can_moderate_kudosu: Boolean
-	can_resolve: Boolean
+	can_destroy: boolean
+	can_reopen: boolean
+	can_moderate_kudosu: boolean
+	can_resolve: boolean
 	vote_score: number
-	can_message: Boolean
+	can_message: boolean
 	can_message_error: string | null
 	last_read_id: number
 } 

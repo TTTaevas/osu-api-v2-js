@@ -1,5 +1,5 @@
-import { BeatmapCompact, BeatmapsetCompact } from "./beatmap.js"
-import { GameModes } from "./misc.js"
+import { Beatmap, Beatmapset } from "./beatmap.js"
+import { Rulesets } from "./misc.js"
 
 export interface Score {
 	id: number
@@ -18,15 +18,15 @@ export interface Score {
 		count_katu: number
 		count_miss: number
 	}
-	passed: Boolean
+	passed: boolean
 	pp: any
 	rank: any
 	created_at: Date
 	mode: any
-	mode_int: GameModes
+	mode_int: Rulesets
 	replay: any
-	beatmap?: BeatmapCompact
-	beatmapset?: BeatmapsetCompact
+	beatmap?: Beatmap
+	beatmapset?: Beatmapset
 	rank_country?: any
 	rank_global?: any
 	weight?: any

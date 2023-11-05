@@ -1,4 +1,4 @@
-import { Beatmapset } from "./beatmap.js"
+import { BeatmapsetExtended } from "./beatmap.js"
 import { UserStatistics } from "./user.js"
 
 export interface Spotlight {
@@ -7,12 +7,12 @@ export interface Spotlight {
 	start_date: Date
 	end_date: Date
 	type: string
-	mode_specific: Boolean
+	mode_specific: boolean
 	participant_count?: number
 }
 
 export interface Rankings {
-	beatmapsets?: Beatmapset[]
+	beatmapsets?: BeatmapsetExtended[]
 	ranking: UserStatistics[]
 	spotlight?: Spotlight
 	total: number
