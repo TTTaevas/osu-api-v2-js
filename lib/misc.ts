@@ -1,5 +1,5 @@
 export enum GameModes {
-	osu 		= 0,
+	osu 	= 0,
 	taiko 	= 1,
 	fruits	= 2,
 	mania 	= 3

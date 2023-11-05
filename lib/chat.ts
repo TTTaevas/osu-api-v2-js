@@ -1,4 +1,4 @@
-import { CurrentUserAttributes, UserCompact } from "./user";
+import { CurrentUserAttributes, UserCompact } from "./user.js";
 
 export type ChannelType =
 "PUBLIC" |

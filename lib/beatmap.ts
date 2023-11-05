@@ -1,6 +1,6 @@
 export enum RankStatus {
-	Graveyard = -2,
-	Wip 			= -1,
+	Graveyard 	= -2,
+	Wip			= -1,
 	Pending		= 0,
 	Ranked		= 1,
 	Approved	= 2,

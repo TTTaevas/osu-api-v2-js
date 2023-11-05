@@ -1,5 +1,5 @@
-import { Beatmapset } from "./beatmap"
-import { UserStatistics } from "./user"
+import { Beatmapset } from "./beatmap.js"
+import { UserStatistics } from "./user.js"
 
 export interface Spotlight {
 	id: number

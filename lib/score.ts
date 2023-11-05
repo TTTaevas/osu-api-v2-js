@@ -1,5 +1,5 @@
-import { BeatmapCompact, BeatmapsetCompact } from "./beatmap"
-import { GameModes } from "./misc"
+import { BeatmapCompact, BeatmapsetCompact } from "./beatmap.js"
+import { GameModes } from "./misc.js"
 
 export interface Score {
 	id: number

@@ -1,6 +1,6 @@
-import { BeatmapCompact } from "./beatmap"
-import { GameModes, Mod } from "./misc"
-import { User, UserCompact } from "./user"
+import { BeatmapCompact } from "./beatmap.js"
+import { GameModes, Mod } from "./misc.js"
+import { User, UserCompact } from "./user.js"
 
 /**
  * @remarks This is entirely absent from the official documentation

@@ -2,11 +2,13 @@
   "name": "osu-api-v2-js",
   "version": "0.2.0",
   "description": "Package to easily access osu!api version 2.0",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "prepublish": "yarn run build",
-    "build": "tsc"
+    "build": "tsc",
+    "doc": "npx typedoc lib/index.ts --cname osu-v2.taevas.xyz"
   },
   "author": "Taevas",
   "repository": {
@@ -15,12 +17,14 @@
   },
   "license": "WTFPL",
   "devDependencies": {
-    "@types/node": "^20.2.5",
-    "dotenv": "^16.0.3",
+    "@types/node": "^20.8.10",
+    "@types/prompt-sync": "^4.2.2",
+    "dotenv": "^16.3.1",
     "prompt-sync": "^4.2.0",
-    "typescript": "^5.0.2"
+    "typedoc": "^0.25.3",
+    "typescript": "^5.2.2"
   },
   "dependencies": {
-    "axios": "^1.3.4"
+    "node-fetch": "^3.3.2"
   }
 }

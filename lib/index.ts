@@ -1,11 +1,11 @@
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios"
-import { Beatmap, BeatmapAttributes, BeatmapCompact } from "./beatmap"
-import { KudosuHistory, User, UserCompact } from "./user"
-import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer"
-import { GameModes, Mod } from "./misc"
-import { BeatmapUserScore, Score } from "./score"
-import { Rankings, Spotlight } from "./ranking"
-import { ChangelogBuild, UpdateStream } from "./changelog"
+import fetch, { FetchError } from "node-fetch"
+import { Beatmap, BeatmapAttributes, BeatmapCompact } from "./beatmap.js"
+import { KudosuHistory, User, UserCompact } from "./user.js"
+import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
+import { GameModes, Mod } from "./misc.js"
+import { BeatmapUserScore, Score } from "./score.js"
+import { Rankings, Spotlight } from "./ranking.js"
+import { ChangelogBuild, UpdateStream } from "./changelog.js"
 
 export {Beatmap, BeatmapCompact}
 export {User, UserCompact, KudosuHistory}
@@ -54,6 +54,46 @@ export class API {
 		if (refresh_token) {this.refresh_token = refresh_token}
 		if (user) {this.user = user}
 	}
+
+	private log(...to_log: any[]): void {
+		console.log("osu!api v2 ->", ...to_log)
+	}
+
+	private async obtainToken(body: any, api: API): Promise<API | null> {
+		let response = await fetch(`https://osu.ppy.sh/oauth/token`, {
+			method: "post",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(body)
+		})
+		.catch((error: FetchError) => api.log(error.name, error.message))
+
+		if (!response || !response.ok) {
+			return null
+		}
+
+		let json: any = await response.json()
+		if (!json.access_token) {
+			return null
+		}
+		
+		let token = json.access_token
+		let token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
+		if (token_payload.sub && token_payload.sub.length) {api.user = Number(token_payload.sub)}
+		api.scopes = token_payload.scopes
+		api.access_token = token
+		api.token_type = json.token_type
+		if (json.refresh_token) {api.refresh_token = json.refresh_token}
+
+		let expiration_date = new Date()
+		expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
+		api.expires = expiration_date
+
+		return api
+	}
+
 	/**
 	 * The normal way to create an API instance! Make sure to `await` it
 	 * @param client The ID and the secret of your client, can be found on https://osu.ppy.sh/home/account/edit#new-oauth-application
@@ -61,70 +101,33 @@ export class API {
 	 * @returns A promise with an API instance (or with null if something goes wrong)
 	 */
 	public static createAsync = async (client: {id: number, secret: string}, user?: {code: string, redirect_uri: string}) => {
-		const me = new API()
-		me.client = client
+		const new_api = new API()
+		new_api.client = client
 		
-		let data: any = {
+		let body = {
 			client_id: client.id,
 			client_secret: client.secret,
-			grant_type: user ? "authorization_code" : "client_credentials"
+			grant_type: user ? "authorization_code" : "client_credentials",
+			redirect_uri: user ? user.redirect_uri : null,
+			code: user ? user.code : null,
+			scope: user ? null : "public"
 		}
-		if (user) {
-			data.redirect_uri = user.redirect_uri
-			data.code = user.code
-		} else {
-			data.scope = "public"
-		}
-		
-		let response = await axios.post(`https://osu.ppy.sh/oauth/token`, data, {headers: {
-			"Accept": "application/json",
-			"Content-Type": "application/json"
-		}}).catch((e: AxiosError) => console.log("osu!api v2 ->", `(${e.name}) ${e.message}`))
-		
-		if (response && response.data && response.data.access_token) {
-			let token = response.data.access_token
 
-			let date = new Date()
-			date.setSeconds(date.getSeconds() + response.data.expires_in)
-			me.token_type = response.data.token_type
-			me.expires = date
-			me.access_token = token
-			if (response.data.refresh_token) {me.refresh_token = response.data.refresh_token}
-
-			let token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
-			if (token_payload.sub && token_payload.sub.length) {me.user = Number(token_payload.sub)}
-			me.scopes = token_payload.scopes
-		} else {
-			return null
-		}
-		return me
+		let api = await new_api.obtainToken(body, new_api)
+		return api
 	}
 
 	async refreshToken() {
 		if (!this.refresh_token) {return false}
-		let data = {
+		let body = {
 			client_id: this.client.id,
 			client_secret: this.client.secret,
 			grant_type: "refresh_token",
 			refresh_token: this.refresh_token	
 		}
 
-		let response = await axios.post(`https://osu.ppy.sh/oauth/token`, data, {headers: {
-			"Accept": "application/json",
-			"Content-Type": "application/json"
-		}}).catch((e: AxiosError) => console.log("osu!api v2 ->", `(${e.name}) ${e.message}`))
-		
-		if (response && response.data && response.data.token_type) {
-			let date = new Date()
-			date.setSeconds(date.getSeconds() + response.data.expires_in)
-			this.token_type = response.data.token_type
-			this.expires = date
-			this.access_token = response.data.access_token
-			if (response.data.refresh_token) {this.refresh_token = response.data.refresh_token}
-		} else {
-			return false
-		}
-		return true
+		let response = await this.obtainToken(body, this)
+		return response ? true : false
 	}
 
 	// ^^^ Whole token handling thingie is up there ^^^
@@ -136,7 +139,7 @@ export class API {
 	 * @returns A Promise with either the API's response or `false` upon failing
 	 */
 	private async request(method: "get" | "post", endpoint: string,
-	parameters?: {[k: string]: any}, number_try?: number): Promise<AxiosResponse["data"] | false> {
+	parameters?: {[k: string]: any}, number_try?: number): Promise<any | false> {
 		const max_tries = 5
 		if (!number_try) {number_try = 1}
 		let to_retry = false
@@ -159,10 +162,8 @@ export class API {
 			}
 		}
 
-		let request: AxiosRequestConfig = {
+		let response = await fetch(`https://osu.ppy.sh/api/v2/${endpoint}?` + (method === "get" && parameters ? new URLSearchParams(parameters) : ""), {
 			method,
-			baseURL: "https://osu.ppy.sh/api/v2/",
-			url: endpoint,
 			headers: {
 				"Accept": "application/json",
 				"Accept-Encoding": "gzip",
@@ -170,42 +171,30 @@ export class API {
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`
 			},
-			data,
-			params
-		}
-	
-		const resp = await axios(request)
-		.catch((error: Error | AxiosError) => {
-			if (axios.isAxiosError(error)) {
-				if (error.response) {
-					console.log("osu!api v2 ->", error.response.statusText, error.response.status, {type: endpoint, parameters})
-					if (error.response.status === 401) console.log("osu!api v2 -> Server responded with status code 401, maybe you need to do this action as an user?")
-					if (error.response.status === 429) {
-						console.log("osu!api v2 -> Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
-						if (number_try !== undefined && number_try < max_tries) {console.log(`osu!api v2 -> Will request again in a few instants... (Try #${number_try})`)}
-						to_retry = true
-					}
-				} else if (error.request) {
-					console.log("osu!api v2 ->", "Request made but server did not respond", `(Try #${number_try})`, {type: endpoint, parameters})
-					to_retry = true
-				} else { // Something happened in setting up the request that triggered an error, I think
-					console.error(error)
-				}
-			} else {
-				console.error(error)
+			body: method === "post" ? JSON.stringify(parameters) : null
+		})
+		.catch((error: FetchError) => {
+			this.log(error.name, error.code, {type: endpoint, parameters})
+			if (error.code === "401") this.log("Server responded with status code 401, maybe you need to do this action as an user?")
+			if (error.code === "429") {
+				this.log("Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
+				if (number_try !== undefined && number_try < max_tries) this.log(`Will request again in a few instants... (Try #${number_try})`)
+				to_retry = true
 			}
 		})
-		
-		if (resp) {
-			console.log("osu!api v2 ->", resp.statusText, resp.status, {type: endpoint, parameters})
-			return resp.data
-		} else {
-			/**
-			 * Under specific circumstances, we want to retry our request automatically
-			 * However, spamming the server during the same second in any of these circumstances would be pointless
-			 * So we wait for 1 to 5 seconds to make our request, 5 times maximum
-			 */
-			if (to_retry && number_try < max_tries) {
+
+		if (!response) {
+			this.log("Request made but server did not respond", `(Try #${number_try})`, {type: endpoint, parameters})
+			to_retry = true
+		}
+
+		/**
+		* Under specific circumstances, we want to retry our request automatically
+		* However, spamming the server during the same second in any of these circumstances would be pointless
+		* So we wait for 1 to 5 seconds to make our request, 5 times maximum
+		*/
+		if (to_retry) {
+			if (number_try < max_tries) {
 				let to_wait = (Math.floor(Math.random() * (500 - 100 + 1)) + 100) * 10
 				await new Promise(res => setTimeout(res, to_wait))
 				return await this.request(method, endpoint, parameters, number_try + 1)
@@ -213,6 +202,8 @@ export class API {
 				return false
 			}
 		}
+
+		return response!.json()
 	}
 
 
@@ -374,6 +365,7 @@ export class API {
 
 	/**
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
+	 * @remarks (2023-11-05) Is currently broken on osu!'s side, gotta love the API not being stable!
 	 */
 	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem): Promise<MultiplayerScore[] | APIError> {
 		let response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`)

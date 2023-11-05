@@ -1,4 +1,4 @@
-import * as osu from ".."
+import * as osu from "../index.js"
 import "dotenv/config"
 import util = require('util')
 // console.log(util.inspect(users, false, null, true))
@@ -9,7 +9,7 @@ async function test(id: string | undefined, secret: string | undefined) {
 
 	let api = await osu.API.createAsync({id: Number(id), secret})
 	if (!api) {throw new Error("Failed to create the API object!")}
-
+	
 	let user = await api.getUser({id: 7276846}, osu.GameModes.osu)
 	if (user instanceof osu.APIError) {throw new Error("Failed to get User")}
 	if (user.replays_watched_counts![0].start_date.toISOString() !== "2016-01-01T00:00:00.000Z") {
