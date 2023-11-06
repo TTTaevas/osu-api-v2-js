@@ -1,7 +1,7 @@
 import "dotenv/config"
 import promptSync from "prompt-sync"
 import { exec } from "child_process"
-import util = require('util')
+import util from "util"
 import * as osu from "../index.js"
 
 const prompt = promptSync({sigint: true})

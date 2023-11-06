@@ -55,11 +55,16 @@ export class API {
 		if (user) {this.user = user}
 	}
 
-	private log(...to_log: any[]): void {
+	/**
+	 * Use this instead of `console.log` to log any information
+	 * @param is_error Is the logging happening because of an error?
+	 * @param to_log Whatever you would put between the parentheses of `console.log()`
+	 */
+	private log(is_error: boolean, ...to_log: any[]): void {
 		console.log("osu!api v2 ->", ...to_log)
 	}
 
-	private async obtainToken(body: any, api: API): Promise<API | null> {
+	private async obtainToken(body: any, api: API): Promise<API> {
 		const response = await fetch(`https://osu.ppy.sh/oauth/token`, {
 			method: "post",
 			headers: {
@@ -68,15 +73,11 @@ export class API {
 			},
 			body: JSON.stringify(body)
 		})
-		.catch((error: FetchError) => api.log(error.name, error.message))
-
-		if (!response || !response.ok) {
-			return null
-		}
 
 		const json: any = await response.json()
 		if (!json.access_token) {
-			return null
+			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
+			throw new APIError("No token obtained")
 		}
 		
 		const token = json.access_token
@@ -100,7 +101,7 @@ export class API {
 	 * @param user If the instance is supposed to represent a user, use their code and the redirect_uri of your application!
 	 * @returns A promise with an API instance (or with null if something goes wrong)
 	 */
-	public static createAsync = async (client: {id: number, secret: string}, user?: {code: string, redirect_uri: string}) => {
+	public static createAsync = async (client: {id: number, secret: string}, user?: {code: string, redirect_uri: string}): Promise<API> => {
 		const new_api = new API()
 		new_api.client = client
 		
@@ -139,9 +140,9 @@ export class API {
 	 * @returns A Promise with either the API's response or `false` upon failing
 	 */
 	private async request(method: "get" | "post", endpoint: string,
-	parameters?: {[k: string]: any}, number_try?: number): Promise<any | false> {
+	parameters?: {[k: string]: any}, number_try: number = 1): Promise<any> {
 		const max_tries = 5
-		if (!number_try) {number_try = 1}
+		let err = "none"
 		let to_retry = false
 
 		if (parameters !== undefined) {
@@ -165,36 +166,40 @@ export class API {
 			body: method === "post" ? JSON.stringify(parameters) : null
 		})
 		.catch((error: FetchError) => {
-			this.log(error.name, error.code, {type: endpoint, parameters})
-			if (error.code === "401") this.log("Server responded with status code 401, maybe you need to do this action as an user?")
-			if (error.code === "429") {
-				this.log("Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
-				if (number_try !== undefined && number_try < max_tries) this.log(`Will request again in a few instants... (Try #${number_try})`)
-				to_retry = true
-			}
+			this.log(true, error.message)
+			err = `${error.name} (${error.errno})`
 		})
 
-		if (!response) {
-			this.log("Request made but server did not respond", `(Try #${number_try})`, {type: endpoint, parameters})
-			to_retry = true
-		}
+		if (!response || !response.ok) {
+			if (response) {
+				err = response.statusText
+				if (response.status === 401) {
+					this.log(true, "Server responded with status code 401, maybe you need to do this action as an user?")
+				} else if (response.status === 429) {
+					this.log(true, "Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
+					to_retry = true
+				} else {
+					this.log(true, "Server responded with status:", response.status)
+				}
+			}
 
-		/**
-		* Under specific circumstances, we want to retry our request automatically
-		* However, spamming the server during the same second in any of these circumstances would be pointless
-		* So we wait for 1 to 5 seconds to make our request, 5 times maximum
-		*/
-		if (to_retry) {
-			if (number_try < max_tries) {
+			/**
+			 * Under specific circumstances, we want to retry our request automatically
+			 * However, spamming the server during the same second in any of these circumstances would be pointless
+			 * So we wait for 1 to 5 seconds to make our request, 5 times maximum
+			*/
+			if (to_retry === true && number_try < max_tries) {
+				this.log(true, "Will request again in a few instants...", `(Try #${number_try})`)
 				const to_wait = (Math.floor(Math.random() * (500 - 100 + 1)) + 100) * 10
 				await new Promise(res => setTimeout(res, to_wait))
 				return await this.request(method, endpoint, parameters, number_try + 1)
-			} else {
-				return false
 			}
+
+			throw new APIError(err)
 		}
 
-		return response!.json()
+		this.log(false, response.statusText, response.status, {endpoint, parameters})
+		return response.json()
 	}
 
 
@@ -203,67 +208,58 @@ export class API {
 	/**
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
 	 */
-	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtended | APIError> {
+	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtended> {
 		const response = await this.request("get", "me", {mode: ruleset})
-		if (!response) {return new APIError(`No User could be found`)}
 		return correctType(response) as UserExtended
 	}
 
-	async getUser(user: {id?: number, username?: string} | User, ruleset?: Rulesets): Promise<UserExtended | APIError> {
-		if (!user.id && !user.username) {return new APIError("No proper `user` argument was given")}
+	async getUser(user: {id?: number, username?: string} | User, ruleset?: Rulesets): Promise<UserExtended> {
 		const key = user.id !== undefined ? "id" : "username"
 		const lookup = user.id !== undefined ? user.id : user.username
 		const mode = ruleset ? `/${Rulesets[ruleset]}` : ""
 
 		const response = await this.request("get", `users/${lookup}${mode}`, {key})
-		if (!response) {return new APIError(`No User could be found (user id: ${user.id} / username: ${user.username})`)}
 		return correctType(response) as UserExtended
 	}
 
-	async getUsers(ids?: number[]): Promise<User[] | APIError> {
+	async getUsers(ids?: number[]): Promise<User[]> {
 		const response = await this.request("get", "users", {ids})
-		if (!response || !response.users || !response.users.length) {return new APIError(`No User could be found (ids: ${ids})`)}
 		return response.users.map((u: User) => correctType(u)) as User[]
 	}
 
 	async getUserScores(limit: number, user: {id: number} | User, type: "best" | "firsts" | "recent",
-	options?: {ruleset?: Rulesets, include_fails?: boolean, offset?: number}): Promise<Score[] | APIError> {
+	options?: {ruleset?: Rulesets, include_fails?: boolean, offset?: number}): Promise<Score[]> {
 		const mode = options && options.ruleset !== undefined ? Rulesets[options.ruleset] : ""
 		const offset = options && options.offset !== undefined ? options.offset : ""
 		const include_fails = options && options.include_fails !== undefined ? options.include_fails : ""
 
 		const response = await this.request("get", `users/${user.id}/scores/${type}`, {limit, mode, offset, include_fails})
-		if (!response || !response.length) {return new APIError(`No Score could be found (id: ${user.id} / type: ${type})`)}
 		return response.map((s: Score) => correctType(s)) as Score[]
 	}
 
-	async getUserKudosu(user: {id: number} | User, limit?: number, offset?: number): Promise<KudosuHistory[] | APIError> {
+	async getUserKudosu(user: {id: number} | User, limit?: number, offset?: number): Promise<KudosuHistory[]> {
 		const response = await this.request("get", `users/${user.id}/kudosu`, {limit, offset})
-		if (!response || !response.length) {return new APIError(`No Kudosu could be found (id: ${user.id})`)}
 		return response.map((k: KudosuHistory) => correctType(k)) as KudosuHistory[]
 	}
 
 	/**
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (FRIENDS.READ SCOPE)
 	 */
-	async getFriends(): Promise<User[] | APIError> {
+	async getFriends(): Promise<User[]> {
 		const response = await this.request("get", "friends")
-		if (!response || !response.length) {return new APIError(`No Friend could be found`)}
 		return response.map((f: User) => correctType(f)) as User[]
 	}
 
 	
 	// BEATMAP STUFF
 
-	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtended | APIError> {
+	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtended> {
 		const response = await this.request("get", `beatmaps/${beatmap.id}`)
-		if (!response) {return new APIError(`No Beatmap could be found (id: ${beatmap.id})`)}
 		return correctType(response) as BeatmapExtended
 	}
 
-	async getBeatmaps(ids?: number[]): Promise<BeatmapExtended[] | APIError> {
+	async getBeatmaps(ids?: number[]): Promise<BeatmapExtended[]> {
 		const response = await this.request("get", "beatmaps", {ids})
-		if (!response || !response.beatmaps || !response.beatmaps.length) {return new APIError(`No Beatmap could be found (ids: ${ids})`)}
 		return response.beatmaps.map((b: BeatmapExtended) => correctType(b)) as BeatmapExtended[]
 	}
 
@@ -271,15 +267,13 @@ export class API {
 	 * @remarks Will ignore the settings of your mods
 	 */
 	async getBeatmapAttributes(beatmap: {id: number} | Beatmap,
-	ruleset: Rulesets, mods: Mod[] | string[] | number): Promise<BeatmapAttributes | APIError> {
+	ruleset: Rulesets, mods: Mod[] | string[] | number): Promise<BeatmapAttributes> {
 		const response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
-		if (!response) {return new APIError(`No Beatmap could be found (id: ${beatmap.id})`)}
 		return correctType(response) as BeatmapAttributes
 	}
 
-	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtended | APIError> {
+	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtended> {
 		const response = await this.request("get", `beatmapsets/${beatmapset.id}`)
-		if (!response) {return new APIError(`No Beatmapset could be found (id: ${beatmapset.id})`)}
 		return correctType(response) as BeatmapsetExtended
 	}
 
@@ -287,35 +281,31 @@ export class API {
 	 * @remarks The specified ruleset will currently not affect the returned object
 	 */
 	async getBeatmapUserScore(beatmap: {id: number} | Beatmap, user: {id: number} | User,
-	ruleset?: Rulesets): Promise<BeatmapUserScore | APIError> {
+	ruleset?: Rulesets): Promise<BeatmapUserScore> {
 		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`)
-		if (!response) {return new APIError(`No Score could be found (beatmap: ${beatmap.id} / user: ${user.id})`)}
 		return correctType(response) as BeatmapUserScore
 	}
 
-	async getBeatmapPack(pack: {tag: string} | BeatmapPack): Promise<BeatmapPack | APIError> {
+	async getBeatmapPack(pack: {tag: string} | BeatmapPack): Promise<BeatmapPack> {
 		const response = await this.request("get", `beatmaps/packs/${pack.tag}`)
-		if (!response) {return new APIError(`No BeatmapPack could be found (pack: ${pack})`)}
 		return correctType(response) as BeatmapPack
 	}
 
-	async getBeatmapPacks(type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<BeatmapPack[] | APIError> {
+	async getBeatmapPacks(type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<BeatmapPack[]> {
 		const response = await this.request("get", "beatmaps/packs", {type})
-		if (!response || !response.beatmap_packs || !response.beatmap_packs.length) {return new APIError(`No BeatmapPack could be found (type: ${type})`)}
 		return correctType(response.beatmap_packs) as BeatmapPack[]
 	}
 
 
 	// CHANGELOG STUFF
 
-	async getChangelogBuild(stream: string, build: string): Promise<ChangelogBuild | APIError> {
+	async getChangelogBuild(stream: string, build: string): Promise<ChangelogBuild> {
 		const response = await this.request("get", `changelog/${stream}/${build}`)
-		if (!response) {return new APIError(`No Build could be found (stream: ${stream} / build: ${build})`)}
 		return correctType(response) as ChangelogBuild
 	}
 
 	async getChangelogListing(format: "html" | "markdown", options?: {build_version_range?: {from?: string, to?: string},
-	max_id: number, stream: string}): Promise<ChangelogBuild[] | APIError> {
+	max_id: number, stream: string}): Promise<ChangelogBuild[]> {
 		const message_format = [format]
 		const from = options ? options.build_version_range ? options.build_version_range.from ? options.build_version_range.from : "" : "" : ""
 		const to = options ? options.build_version_range ? options.build_version_range.from ? options.build_version_range.from : "" : "" : ""
@@ -323,56 +313,45 @@ export class API {
 		const max_id = options ? options.max_id ? options.max_id : "" : ""
 
 		const response = await this.request("get", `changelog`, {message_format, from, to, stream, max_id})
-		if (!response || !response.builds) {return new APIError(`No Build could be found...`)}
 		return response.builds.map((b: ChangelogBuild) => correctType(b)) as ChangelogBuild[] 
 	}
 
-	async getChangelogStreams(): Promise<UpdateStream[] | APIError> {
+	async getChangelogStreams(): Promise<UpdateStream[]> {
 		const response = await this.request("get", `changelog`, {max_id: 1})
-		if (!response || !response.streams) {return new APIError(`No stream could be found...`)}
 		return response.streams.map((s: UpdateStream) => correctType(s)) as UpdateStream[] 
 	}
 
 
 	// MULTIPLAYER STUFF
 
-	async getRoom(room: {id: number} | Room): Promise<Room | APIError> {
+	async getRoom(room: {id: number} | Room): Promise<Room> {
 		const response = await this.request("get", `rooms/${room.id}`)
-		if (!response) {return new APIError(`No Room could be found (id: ${room.id})`)}
 		return correctType(response) as Room
 	}
 
 	/**
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
 	 */
-	async getRooms(mode: "active" | "all" | "ended" | "participated" | "owned" = "active"): Promise<Room[] | APIError> {
+	async getRooms(mode: "active" | "all" | "ended" | "participated" | "owned" = "active"): Promise<Room[]> {
 		const response = await this.request("get", "rooms", {mode})
-		if (!response || !response.length) {
-			{return new APIError(`No Room could be found (mode: ${mode})`)}
-		}
 		return response.map((r: Room) => correctType(r)) as Room[]
 	}
 
 	/**
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
 	 */
-	async getRoomLeaderboard(room: {id: number} | Room): Promise<Leader[] | APIError> {
+	async getRoomLeaderboard(room: {id: number} | Room): Promise<Leader[]> {
 		const response = await this.request("get", `rooms/${room.id}/leaderboard`)
-		if (!response || !response.leaderboard || !response.leaderboard.length) {
-			return new APIError(`No Leaderboard could be found (id: ${room.id})`)
-		}
 		return response.leaderboard.map((l: Leader) => correctType(l)) as Leader[]
 	}
 
-	async getMatch(id: number): Promise<Match | APIError> {
+	async getMatch(id: number): Promise<Match> {
 		const response = await this.request("get", `matches/${id}`)
-		if (!response) {return new APIError(`No Match could be found (id: ${id})`)}
 		return correctType(response) as Match
 	}
 
-	async getMatches(): Promise<MatchInfo[] | APIError> {
+	async getMatches(): Promise<MatchInfo[]> {
 		const response = await this.request("get", "matches")
-		if (!response || !response.matches || !response.matches.length) {return new APIError(`No Match could be found`)}
 		return response.matches.map((m: MatchInfo) => correctType(m)) as MatchInfo[]
 	}
 
@@ -380,9 +359,8 @@ export class API {
 	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
 	 * @remarks (2023-11-05) Is currently broken on osu!'s side, gotta love the API not being stable!
 	 */
-	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem): Promise<MultiplayerScore[] | APIError> {
+	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem): Promise<MultiplayerScore[]> {
 		const response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`)
-		if (!response || !response.scores || !response.scores.length) {return new APIError(`No Item could be found (room: ${item.room_id} / item: ${item.id})`)}
 		return response.scores.map((s: MultiplayerScore) => correctType(s)) as MultiplayerScore[]
 	}
 
@@ -390,20 +368,18 @@ export class API {
 	// RANKING STUFF
 
 	async getRanking(ruleset: Rulesets, type: "charts" | "country" | "performance" | "score", filter: "all" | "friends",
-	options?: {country?: number, spotlight?: {id: number} | Spotlight, variant?: "4k" | "7k"}): Promise<Rankings | APIError> {
+	options?: {country?: number, spotlight?: {id: number} | Spotlight, variant?: "4k" | "7k"}): Promise<Rankings> {
 		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {
 			filter,
 			country: options?.country,
 			spotlight: options?.spotlight,
 			variant: options?.variant
 		})
-		if (!response) {return new APIError(`No Ranking could be found (type: ${type})`)}
 		return correctType(response) as Rankings
 	}
 
-	async getSpotlights(): Promise<Spotlight[] | APIError> {
+	async getSpotlights(): Promise<Spotlight[]> {
 		const response = await this.request("get", "spotlights")
-		if (!response || !response.spotlights || !response.spotlights.length) {return new APIError(`No Spotlight could be found`)}
 		return response.spotlights.map((s: Spotlight) => correctType(s)) as Spotlight[]
 	}
 }
