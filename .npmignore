@@ -1,6 +1,9 @@
 .env
 .github
+.gitignore
 lib/
 docs/
 test.*
 interactive_test.*
+yarn.lock
+tsconfig.json

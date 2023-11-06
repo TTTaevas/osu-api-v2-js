@@ -11,18 +11,14 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 	if (secret === undefined) {throw new Error("no SECRET env var")}
 	if (redirect_uri === undefined) {throw new Error("no REDIRECT_URI env var")}
 
-	let url = osu.generateAuthorizationURL(Number(id), redirect_uri, ["identify", "public", "friends.read"])
+	let url = osu.generateAuthorizationURL(Number(id), redirect_uri, ["identify", "public", "friends.read", "chat.read"])
 	exec(`xdg-open "${url}"`)
 	let code = prompt(`What code do you get from: ${url}\n\n`)
 
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri})
 	if (api) {
-		let match = await api.getRoom({id: 231069})
-		if (match instanceof osu.APIError) {throw new Error("yeah no")}
-		let leaders = await api.getRoomLeaderboard(match)
-		console.log(util.inspect(leaders, false, null, true))
-		// let point = await api.getPlaylistItemScores(match.playlist[16])
-		// console.log(util.inspect(point, false, null, true))
+		let rooms = await api.getRooms("owned")
+		console.log(util.inspect(rooms, false, null, true))
 	}
 }
 

@@ -1,3 +1,6 @@
+import { Rulesets } from "./misc.js"
+import { User } from "./user.js"
+
 export enum RankStatus {
 	Graveyard 	= -2,
 	Wip 		= -1,
@@ -17,6 +20,9 @@ export interface Beatmap {
 	total_length: number
 	user_id: number
 	version: string
+	/**
+	 * Beatmapset for Beatmap object, BeatmapsetExtended for BeatmapExtended object, null if the beatmap doesn't have associated beatmapset (e.g. deleted)
+	 */
 	beatmapset?: BeatmapsetExtended | Beatmapset | null
 	checksum?: string
 	failtimes?: Failtimes
@@ -71,20 +77,34 @@ export interface Beatmapset {
 	user_id: number
 	video: boolean
 	beatmaps?: BeatmapExtended[]
-	converts?: any
+	converts?: BeatmapExtended[] | 0
+	current_nominations?: {
+		beatmapset_id: number
+		rulesets: Rulesets[] | null
+		reset: boolean
+		user_id: number
+	}[]
 	current_user_attributes?: any
-	description?: any
+	description?: {
+		description: string
+	}
 	discussions?: any
 	events?: any
-	genre?: any
+	genre?: {
+		id: number
+		name: string
+	}
 	has_favourited?: boolean
-	language?: any
+	language?: {
+		id: number
+		name: string
+	}
 	nominations?: any
 	pack_tags?: string[]
-	ratings?: any
-	recent_favourites?: any
-	related_users?: any
-	user?: any
+	ratings?: number[]
+	recent_favourites?: User[]
+	related_users?: User[]
+	user?: User
 }
 
 export interface BeatmapsetExtended extends Beatmapset {

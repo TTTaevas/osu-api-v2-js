@@ -45,7 +45,7 @@ export interface User {
 		code: string
 		name: string
 	}
-	cover?: { // poorly documented
+	cover?: {
 		custom_url: string | null
 		url: string
 		id: string | null
@@ -93,10 +93,21 @@ export interface User {
 	scores_best_count?: number
 	scores_recent_count?: number
 	statistics?: UserStatistics
-	statistics_rulesets?: any
+	statistics_rulesets?: {
+		osu: UserStatistics
+		taiko: UserStatistics
+		fruits: UserStatistics
+		mania: UserStatistics
+	}
 	support_level?: number
-	unread_pm_count?: any
-	user_achievements?: any
+	/**
+	 * @remarks ...I actually don't know its type and have been unable to figure it out, I'm only presuming it is number
+	 */
+	unread_pm_count?: number
+	user_achievements?: {
+		achieved_at: Date
+		achievement_id: number
+	}[]
 	user_preferences?: any
 }
 
@@ -146,16 +157,8 @@ export interface UserStatistics {
 	play_count: number
 	play_time: number
 	pp: number
-	/**
-	 * Amount of pp in lazer
-	 * @remarks Not in official documentation
-	 */
 	pp_exp: number
 	global_rank: number | null
-	/**
-	 * Global rank in lazer
-	 * @remarks Not in official documentation
-	 */
 	global_rank_exp: number | null
 	ranked_score: number
 	replays_watched_by_others: number
