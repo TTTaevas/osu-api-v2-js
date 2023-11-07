@@ -1,3 +1,8 @@
+/**
+ * The Authorization Code way
+ * The token is considered by the API as myself
+ */
+
 import "dotenv/config"
 import promptSync from "prompt-sync"
 import { exec } from "child_process"
@@ -11,14 +16,13 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 	if (secret === undefined) {throw new Error("no SECRET env var")}
 	if (redirect_uri === undefined) {throw new Error("no REDIRECT_URI env var")}
 
-	let url = osu.generateAuthorizationURL(Number(id), redirect_uri, ["identify", "public", "friends.read", "chat.read"])
+	let url = osu.generateAuthorizationURL(Number(id), redirect_uri, ["identify"])
 	exec(`xdg-open "${url}"`)
 	let code = prompt(`What code do you get from: ${url}\n\n`)
 
-	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri})
+	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri}, "all")
 	if (api) {
-		let rooms = await api.getRooms("owned")
-		console.log(util.inspect(rooms, false, null, true))
+		let me = await api.getResourceOwner()
 	}
 }
 

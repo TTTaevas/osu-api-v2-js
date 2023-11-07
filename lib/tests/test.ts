@@ -1,13 +1,18 @@
+/**
+ * The Client Credentials way
+ * The token is considered by the API as a guest user
+ */
+
 import * as osu from "../index.js"
 import "dotenv/config"
-import util = require('util')
+import util from "util"
 // console.log(util.inspect(users, false, null, true))
 
 async function test(id: string | undefined, secret: string | undefined) {
 	if (id === undefined) {throw new Error("no ID env var")}
 	if (secret === undefined) {throw new Error("no SECRET env var")}
 
-	let api = await osu.API.createAsync({id: Number(id), secret})
+	let api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all")
 	
 	let user = await api.getUser({id: 7276846}, osu.Rulesets.osu)
 	if (user.replays_watched_counts![0].start_date.toISOString() !== "2016-01-01T00:00:00.000Z") {

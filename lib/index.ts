@@ -14,13 +14,43 @@ export {Room, Leader, PlaylistItem, MultiplayerScore}
 export {Rulesets}
 export {ChangelogBuild, UpdateStream}
 
+/**
+ * Scopes determine what the API instance can do as a user!
+ * @remarks "identify" is always implicity provided
+ */
+type Scope = "chat.read" | "chat.write" | "chat.write_manage" | "delegate" | "forum.write" | "friends.read" | "identify" | "public"
+
+/**
+ * Generates a link for users to click on in order to use your application!
+ * @param client_id The Client ID, find it at https://osu.ppy.sh/home/account/edit#new-oauth-application
+ * @param redirect_uri The specified Application Callback URL, aka where the user will be redirected upon clicking the button to authorize
+ * @param scopes What you want to do with/as the user
+ * @returns The link people should click on
+ */
+export function generateAuthorizationURL(client_id: number, redirect_uri: string, scopes: Scope[]): string {
+	const s = String(scopes).replace(/,/g, "%20")
+	return `https://osu.ppy.sh/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${s}&response_type=code`
+}
+
+/**
+ * If the `API` throws an error, it should always be an `APIError`!
+ */
 export class APIError {
 	message: string
+	server: string
+	endpoint: string
+	parameters: string
 	/**
 	 * @param message The reason why things didn't go as expected
+	 * @param server The server to which the request was sent
+	 * @param endpoint The type of resource that was requested from the server
+	 * @param parameters The filters that were used to specify what resource was wanted
 	 */
-	constructor(message: string) {
+	constructor(message: string, server: string, endpoint: string, parameters: string) {
 		this.message = message
+		this.server = server
+		this.endpoint = endpoint
+		this.parameters = parameters
 	}
 }
 
@@ -32,27 +62,47 @@ export class API {
 		id: number
 		secret: string
 	}
+	/**
+	 * Should always be "Bearer"
+	 */
 	token_type: string
 	expires: Date
 	access_token: string
+	/**
+	 * Valid for an unknown amount of time, allows you to get a new token without going through the Authorization Code Grant!
+	 * Use the API's `refreshToken` function to do that
+	 */
 	refresh_token?: string
+	/**
+	 * The osu! user id of the user who went through the Authorization Code Grant
+	 */
 	user?: number
 	scopes: Scope[]
-
-	// vvv Whole token handling thingie is down there vvv
+	/**
+	 * (default `none`) Which events should be logged
+	 */
+	verbose: "none" | "errors" | "all"
+	/**
+	 * (default `https://osu.ppy.sh`) The base url of the server where the requests should land
+	 * @remarks For tokens, requests will be sent to the `oauth/token` route, other requests will be sent to the `api/v2` route
+	 */
+	server: string
 
 	/**
 	 * Use `createAsync` instead of the default constructor if you don't have at least an access_token
 	 */
 	constructor(client?: {id: number, secret: string}, token_type?: string, expires?: Date,
-	access_token?: string, scopes?: Scope[], refresh_token?: string, user?: number) {
+	access_token?: string, scopes?: Scope[], refresh_token?: string, user?: number,
+	verbose: "none" | "errors" | "all" = "none", server: string = "https://osu.ppy.sh") {
 		this.client = client ?? {id: 0, secret: ""}
 		this.token_type = token_type ?? ""
 		this.expires = expires ?? new Date()
 		this.access_token = access_token ?? ""
 		this.scopes = scopes ?? []
-		if (refresh_token) {this.refresh_token = refresh_token}
-		if (user) {this.user = user}
+		this.refresh_token = refresh_token
+		this.user = user
+		this.verbose = verbose
+		this.server = server
 	}
 
 	/**
@@ -60,12 +110,14 @@ export class API {
 	 * @param is_error Is the logging happening because of an error?
 	 * @param to_log Whatever you would put between the parentheses of `console.log()`
 	 */
-	private log(is_error: boolean, ...to_log: any[]): void {
-		console.log("osu!api v2 ->", ...to_log)
+	private log(is_error: boolean, ...to_log: any[]) {
+		if (this.verbose === "all" || (this.verbose === "errors" && is_error === true)) {
+			console.log("osu!api v2 ->", ...to_log)
+		}
 	}
 
 	private async obtainToken(body: any, api: API): Promise<API> {
-		const response = await fetch(`https://osu.ppy.sh/oauth/token`, {
+		const response = await fetch(`${this.server}/oauth/token`, {
 			method: "post",
 			headers: {
 				"Accept": "application/json",
@@ -77,7 +129,7 @@ export class API {
 		const json: any = await response.json()
 		if (!json.access_token) {
 			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-			throw new APIError("No token obtained")
+			throw new APIError("No token obtained", this.server, "oauth/token", body)
 		}
 		
 		const token = json.access_token
@@ -98,12 +150,25 @@ export class API {
 	/**
 	 * The normal way to create an API instance! Make sure to `await` it
 	 * @param client The ID and the secret of your client, can be found on https://osu.ppy.sh/home/account/edit#new-oauth-application
-	 * @param user If the instance is supposed to represent a user, use their code and the redirect_uri of your application!
-	 * @returns A promise with an API instance (or with null if something goes wrong)
+	 * @param user If the instance is supposed to represent a user, use their Authorization Code and the Application Callback URL of your application!
+	 * @returns A promise with an API instance
 	 */
-	public static createAsync = async (client: {id: number, secret: string}, user?: {code: string, redirect_uri: string}): Promise<API> => {
+	public static async createAsync(
+		client: {
+			id: number,
+			secret: string
+		},
+		user?: {
+			code: string,
+			redirect_uri: string
+		},
+		verbose: "none" | "errors" | "all" = "none",
+		server: string = "https://osu.ppy.sh"
+	): Promise<API> {
 		const new_api = new API()
 		new_api.client = client
+		new_api.verbose = verbose
+		new_api.server = server
 		
 		const body = {
 			client_id: client.id,
@@ -118,7 +183,7 @@ export class API {
 		return api
 	}
 
-	async refreshToken() {
+	public async refreshToken() {
 		if (!this.refresh_token) {return false}
 		const body = {
 			client_id: this.client.id,
@@ -130,8 +195,6 @@ export class API {
 		const response = await this.obtainToken(body, this)
 		return response ? true : false
 	}
-
-	// ^^^ Whole token handling thingie is up there ^^^
 
 	/**
 	 * @param endpoint What comes in the URL after `api/`
@@ -154,7 +217,7 @@ export class API {
 			}
 		}
 
-		const response = await fetch(`https://osu.ppy.sh/api/v2/${endpoint}?` + (method === "get" && parameters ? new URLSearchParams(parameters) : ""), {
+		const response = await fetch(`${this.server}/api/v2/${endpoint}?` + (method === "get" && parameters ? new URLSearchParams(parameters) : ""), {
 			method,
 			headers: {
 				"Accept": "application/json",
@@ -175,6 +238,8 @@ export class API {
 				err = response.statusText
 				if (response.status === 401) {
 					this.log(true, "Server responded with status code 401, maybe you need to do this action as an user?")
+				} else if (response.status === 403) {
+					this.log(true, "Server responded with status code 403, you may lack the necessary scope for this action!")
 				} else if (response.status === 429) {
 					this.log(true, "Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
 					to_retry = true
@@ -195,7 +260,7 @@ export class API {
 				return await this.request(method, endpoint, parameters, number_try + 1)
 			}
 
-			throw new APIError(err)
+			throw new APIError(err, `${this.server}/api/v2`, endpoint, JSON.stringify(parameters))
 		}
 
 		this.log(false, response.statusText, response.status, {endpoint, parameters})
@@ -206,7 +271,8 @@ export class API {
 	// USER STUFF
 
 	/**
-	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
+	 * Get user data of the authorized user
+	 * @scope identify
 	 */
 	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtended> {
 		const response = await this.request("get", "me", {mode: ruleset})
@@ -243,7 +309,8 @@ export class API {
 	}
 
 	/**
-	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (FRIENDS.READ SCOPE)
+	 * Get user data of each friend of the authorized user
+	 * @scope friends.read
 	 */
 	async getFriends(): Promise<User[]> {
 		const response = await this.request("get", "friends")
@@ -264,7 +331,7 @@ export class API {
 	}
 
 	/**
-	 * @remarks Will ignore the settings of your mods
+	 * @remarks Will ignore the customization of your mods
 	 */
 	async getBeatmapAttributes(beatmap: {id: number} | Beatmap,
 	ruleset: Rulesets, mods: Mod[] | string[] | number): Promise<BeatmapAttributes> {
@@ -330,7 +397,8 @@ export class API {
 	}
 
 	/**
-	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
+	 * Get room data for each room fitting the given criterias
+	 * @scope public
 	 */
 	async getRooms(mode: "active" | "all" | "ended" | "participated" | "owned" = "active"): Promise<Room[]> {
 		const response = await this.request("get", "rooms", {mode})
@@ -338,30 +406,40 @@ export class API {
 	}
 
 	/**
-	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
+	 * Get the room stats of a user from the room, for each user of that room
+	 * @scope public
 	 */
 	async getRoomLeaderboard(room: {id: number} | Room): Promise<Leader[]> {
 		const response = await this.request("get", `rooms/${room.id}/leaderboard`)
 		return response.leaderboard.map((l: Leader) => correctType(l)) as Leader[]
 	}
 
-	async getMatch(id: number): Promise<Match> {
-		const response = await this.request("get", `matches/${id}`)
-		return correctType(response) as Match
-	}
-
-	async getMatches(): Promise<MatchInfo[]> {
-		const response = await this.request("get", "matches")
-		return response.matches.map((m: MatchInfo) => correctType(m)) as MatchInfo[]
-	}
-
 	/**
-	 * REQUIRES A USER ASSOCIATED TO THE API OBJECT (PUBLIC SCOPE)
+	 * Get the scores on a specific item of a room
+	 * @scope public
 	 * @remarks (2023-11-05) Is currently broken on osu!'s side, gotta love the API not being stable!
 	 */
 	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem): Promise<MultiplayerScore[]> {
 		const response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`)
 		return response.scores.map((s: MultiplayerScore) => correctType(s)) as MultiplayerScore[]
+	}
+
+	/**
+	 * @remarks For multiplayer lobbies from the stable (non-lazer) client, with URLs having `community/matches` or `mp`
+	 * @param id Can be found at the end of the URL of said match
+	 */
+	async getMatch(id: number): Promise<Match> {
+		const response = await this.request("get", `matches/${id}`)
+		return correctType(response) as Match
+	}
+
+	/**
+	 * Gets the info of the 50 most recently created matches, descending order (most recent is at index 0)
+	 * @remarks For multiplayer lobbies from the stable (non-lazer) client, with URLs having `community/matches` or `mp`
+	 */
+	async getMatches(): Promise<MatchInfo[]> {
+		const response = await this.request("get", "matches")
+		return response.matches.map((m: MatchInfo) => correctType(m)) as MatchInfo[]
 	}
 
 
@@ -382,12 +460,6 @@ export class API {
 		const response = await this.request("get", "spotlights")
 		return response.spotlights.map((s: Spotlight) => correctType(s)) as Spotlight[]
 	}
-}
-
-type Scope = "chat.read" | "chat.write" | "chat.write_manage" | "delegate" | "forum.write" | "friends.read" | "identify" | "public"
-export function generateAuthorizationURL(client_id: number, redirect_uri: string, scopes: Scope[]) {
-	const s = String(scopes).replace(/,/g, "%20")
-	return `https://osu.ppy.sh/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${s}&response_type=code`
 }
 
 /**
@@ -415,6 +487,7 @@ function correctType(x: any): any {
 		const k = Object.keys(x)
 		const v = Object.values(x)
 		for (let i = 0; i < k.length; i++) {
+			if (k[i] == "name") continue // don't turn names made of numbers into integers
 			x[k[i]] = correctType(v[i])
 		}
 	}
