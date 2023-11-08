@@ -1,4 +1,5 @@
 import fetch, { FetchError } from "node-fetch"
+import querystring from "querystring"
 import { BeatmapExtended, BeatmapAttributes, Beatmap, BeatmapPack, Beatmapset, BeatmapsetExtended } from "./beatmap.js"
 import { KudosuHistory, UserExtended, User } from "./user.js"
 import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
@@ -209,15 +210,24 @@ export class API {
 		let to_retry = false
 
 		if (parameters !== undefined) {
+			// If a parameter is an empty string or is undefined, remove it
 			for (let i = 0; i < Object.entries(parameters).length; i++) {
 				if (!String(Object.values(parameters)[i]).length || Object.values(parameters)[i] === undefined) {
 					i--
 					delete parameters[Object.keys(parameters)[i + 1]]
 				}
 			}
+			// If a parameter is an Array, add "[]" to its name, so the server understands the request properly
+			for (let i = 0; i < Object.entries(parameters).length; i++) {
+				if (Array.isArray(Object.values(parameters)[i]) && !Object.keys(parameters)[i].includes("[]")) {
+					i--
+					parameters[`${Object.keys(parameters)[i + 1]}[]`] = Object.values(parameters)[i + 1]
+					delete parameters[Object.keys(parameters)[i + 1]]
+				}
+			}
 		}
 
-		const response = await fetch(`${this.server}/api/v2/${endpoint}?` + (method === "get" && parameters ? new URLSearchParams(parameters) : ""), {
+		const response = await fetch(`${this.server}/api/v2/${endpoint}?` + (method === "get" && parameters ? querystring.stringify(parameters) : ""), {
 			method,
 			headers: {
 				"Accept": "application/json",
@@ -226,7 +236,8 @@ export class API {
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`
 			},
-			body: method === "post" ? JSON.stringify(parameters) : null
+			body: method === "post" ? JSON.stringify(parameters) : null,
+			
 		})
 		.catch((error: FetchError) => {
 			this.log(true, error.message)
@@ -288,7 +299,7 @@ export class API {
 		return correctType(response) as UserExtended
 	}
 
-	async getUsers(ids?: number[]): Promise<User[]> {
+	async getUsers(ids: number[]): Promise<User[]> {
 		const response = await this.request("get", "users", {ids})
 		return response.users.map((u: User) => correctType(u)) as User[]
 	}

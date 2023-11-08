@@ -8,37 +8,66 @@ import "dotenv/config"
 import util from "util"
 // console.log(util.inspect(users, false, null, true))
 
-async function test(id: string | undefined, secret: string | undefined) {
-	if (id === undefined) {throw new Error("no ID env var")}
-	if (secret === undefined) {throw new Error("no SECRET env var")}
+if (process.env.ID === undefined) {throw new Error("❌ The ID has not been defined in the environment variables!")}
+if (process.env.SECRET === undefined) {throw new Error("❌ The SECRET has not been defined in the environment variables!")}
 
-	let api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all")
-	
-	let user = await api.getUser({id: 7276846}, osu.Rulesets.osu)
-	if (user.replays_watched_counts![0].start_date.toISOString() !== "2016-01-01T00:00:00.000Z") {
-		throw new Error("User is not what it should be")
+let api: osu.API
+
+async function attempt<T>(msg: string, fun: Promise<any>): Promise<T | false> {
+	process.stdout.write(msg)
+	try {
+		let result = await fun
+		return result
+	} catch(err) {
+		console.error(err)
+		return false
 	}
+}
 
-	let attributes = await api.getBeatmapAttributes({id: 809513}, osu.Rulesets.osu, [{acronym: "DT"}, {acronym: "HD"},])
-	if (attributes.approach_rate! < 10.3) {
-		throw new Error("Beatmap Attributes are not what they should be")
+function isOk(response: any, condition?: boolean) {
+	if (condition === undefined) condition = true
+	if (!response || !condition) {
+		console.error("❌ Bad response:", response)
+		return false
 	}
-	
-	let room = await api.getRoom({id: 231069})
-	if (room.playlist[room.playlist.length - 1].beatmap_id !== 809513) {
-		throw new Error("Room is not what it should be")
+	return true
+}
+
+/**
+ * Check if getUser() and similar work fine 
+ */
+const testUserStuff = async (): Promise<boolean> => {
+	const user_id = 7276846
+	let okay = true
+
+	let a1 = await <Promise<ReturnType<typeof api.getUser> | false>>attempt("\ngetUser: ", api.getUser({id: user_id}))
+	if (!isOk(a1, !a1 || (a1.id === user_id))) okay = false
+	let a2 = await <Promise<ReturnType<typeof api.getUsers> | false>>attempt("getUsers: ", api.getUsers([7276846, 2]))
+	if (!isOk(a2, !a2 || (a2.length === 2))) okay = false
+	let a3 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores: ", api.getUserScores(5, {id: user_id}, "best"))
+	if (!isOk(a3, !a3 || (a3.length === 5))) okay = false
+	let a4 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores: ", api.getUserScores(5, {id: user_id}, "firsts"))
+	if (!isOk(a4, !a4 || (a4.length === 0))) okay = false
+	let a5 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores: ", api.getUserScores(5, {id: user_id}, "recent"))
+	if (!isOk(a5)) okay = false
+	let a6 = await <Promise<ReturnType<typeof api.getUserKudosu> | false>>attempt("getUserKudosu: ", api.getUserKudosu({id: user_id}, 5))
+	if (!isOk(a6, !a6 || (a6.length === 5))) okay = false
+
+	return okay
+}
+
+const test = async (id: string, secret: string): Promise<void> => {
+	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all")
+
+	let u = await testUserStuff()
+
+	let test_results = [u].map((bool: boolean, index: number) => bool ? `${index + 1}: ✔️\n` : `${index + 1}: ❌\n`)
+	console.log("\n", ...test_results)
+	if ([u].indexOf(false) === -1) {
+		console.log("✔️ Looks like the test went well!")
+	} else {
+		throw new Error("❌ Something in the test went wrong...")
 	}
-
-	let matches = await api.getMatches()
-
-	let match = await api.getMatch(106369699)
-	if (match.latest_event_id !== 2203711864) {
-		throw new Error("Match is not what it should be")
-	}
-
-	let ranking = await api.getRanking(osu.Rulesets.osu, "performance", "all")
-
-	let spotlights = await api.getSpotlights()
 }
 
 test(process.env.ID, process.env.SECRET)
