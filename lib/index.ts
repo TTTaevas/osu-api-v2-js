@@ -1,6 +1,6 @@
 import fetch, { FetchError } from "node-fetch"
 import querystring from "querystring"
-import { BeatmapExtended, BeatmapAttributes, Beatmap, BeatmapPack, Beatmapset, BeatmapsetExtended } from "./beatmap.js"
+import { BeatmapExtended, BeatmapDifficultyAttributes, Beatmap, BeatmapPack, Beatmapset, BeatmapsetExtended } from "./beatmap.js"
 import { KudosuHistory, UserExtended, User } from "./user.js"
 import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
 import { Rulesets, Mod } from "./misc.js"
@@ -209,7 +209,7 @@ export class API {
 		let err = "none"
 		let to_retry = false
 
-		if (parameters !== undefined) {
+		if (parameters !== undefined && method === "get") {
 			// If a parameter is an empty string or is undefined, remove it
 			for (let i = 0; i < Object.entries(parameters).length; i++) {
 				if (!String(Object.values(parameters)[i]).length || Object.values(parameters)[i] === undefined) {
@@ -343,25 +343,43 @@ export class API {
 
 	/**
 	 * @remarks Will ignore the customization of your mods
+	 * @param beatmap The Beatmap in question
+	 * @param mods Defaults to No Mod, can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+	 * @param ruleset Defaults to the Ruleset the Beatmap was made for, useful to specify if you want a convert
+	 * @returns The (beatmap) difficulty attributes of the Beatmap
+	 * @example ```ts
+	 * await api.getBeatmapDifficultyAttributes({id: 811925}, ["HR", "HD"])
+	 * ```
 	 */
-	async getBeatmapAttributes(beatmap: {id: number} | Beatmap,
-	ruleset: Rulesets, mods: Mod[] | string[] | number): Promise<BeatmapAttributes> {
+	async getBeatmapDifficultyAttributes(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number,
+	ruleset?: Rulesets): Promise<BeatmapDifficultyAttributes> {
 		const response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
-		return correctType(response) as BeatmapAttributes
+		return correctType(response.attributes) as BeatmapDifficultyAttributes
+	}
+
+	/**
+	 * @param beatmap The Beatmap the score was made on
+	 * @param user The User who made the score
+	 * @param mods The Mods used to make the score, defaults to any, you can use `["NM"]` to filter out scores with mods
+	 * @param ruleset The Ruleset used to make the score, useful if it was made on a convert
+	 * @returns An Object with the position of the score according to the specified Mods and Ruleset, and with the score itself
+	 */
+	async getBeatmapUserScore(beatmap: {id: number} | Beatmap, user: {id: number} | User,
+		mods?: string[], ruleset?: Rulesets): Promise<BeatmapUserScore> {
+		const mode = ruleset ? Rulesets[ruleset] : undefined
+		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`, {mods, mode})
+		return correctType(response) as BeatmapUserScore
+	}
+
+	async getBeatmapUserScores(beatmap: {id: number} | Beatmap, user: {id: number} | User, ruleset?: Rulesets): Promise<Score[]> {
+		const mode = ruleset ? Rulesets[ruleset] : undefined
+		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}/all`, {mode})
+		return response.scores.map((s: Score) => correctType(s)) as Score[] 
 	}
 
 	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtended> {
 		const response = await this.request("get", `beatmapsets/${beatmapset.id}`)
 		return correctType(response) as BeatmapsetExtended
-	}
-
-	/**
-	 * @remarks The specified ruleset will currently not affect the returned object
-	 */
-	async getBeatmapUserScore(beatmap: {id: number} | Beatmap, user: {id: number} | User,
-	ruleset?: Rulesets): Promise<BeatmapUserScore> {
-		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`)
-		return correctType(response) as BeatmapUserScore
 	}
 
 	async getBeatmapPack(pack: {tag: string} | BeatmapPack): Promise<BeatmapPack> {
@@ -484,7 +502,7 @@ function correctType(x: any): any {
 	} else if (!isNaN(x)) {
 		return x === null ? null : Number(x)
 	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(x) ||
-	/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}$/g.test(x)) {
+	/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}$/g.test(x) || /^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{0,}Z$/g.test(x)) {
 		return new Date(x)
 	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(x)) {
 		x += "Z"

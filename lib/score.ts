@@ -6,10 +6,13 @@ export interface Score {
 	best_id: number
 	user_id: number
 	accuracy: number
-	mods: any
+	/**
+	 * 0 when NoMod
+	 */
+	mods: 0 | string[]
 	score: number
 	max_combo: number
-	perfect: any
+	perfect: boolean
 	statistics: {
 		count_50: number
 		count_100: number
@@ -19,12 +22,15 @@ export interface Score {
 		count_miss: number
 	}
 	passed: boolean
-	pp: any
-	rank: any
+	/**
+	 * null when Beatmap is Loved (for example)
+	 */
+	pp: null | number
+	rank: string
 	created_at: Date
-	mode: any
+	mode: string
 	mode_int: Rulesets
-	replay: any
+	replay: boolean
 	beatmap?: Beatmap
 	beatmapset?: Beatmapset
 	rank_country?: any
@@ -32,9 +38,21 @@ export interface Score {
 	weight?: any
 	user?: any
 	match?: any
+	/**
+	 * @remarks Not in the API's documentation, expect it to either be unreliable or disappear 
+	 */
+	current_user_attributes?: {
+		/**
+		 * @remarks Seems to remain null even if the score is pinned on the user's profile
+		 */
+		pin: null
+	}
 }
 
 export interface BeatmapUserScore {
+	/**
+	 * Value depends on the requested mode and mods!
+	 */
 	position: number
 	score: Score
 }

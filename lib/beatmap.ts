@@ -135,7 +135,7 @@ export interface BeatmapsetExtended extends Beatmapset {
 	has_favourited?: any
 }
 
-export interface BeatmapAttributes {
+export interface BeatmapDifficultyAttributes {
 	star_rating: number
 	max_combo: number
 	/**
@@ -189,7 +189,7 @@ export interface BeatmapPack {
 	date: Date
 	name: string
 	/**
-	 * Are difficulty reduction mods unable to be used to clear this pack?
+	 * Are difficulty reduction mods unable to be used to clear this pack? (is `false` if you can use such mods)
 	 */
 	no_diff_reduction: boolean
 	ruleset_id: number,
