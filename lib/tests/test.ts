@@ -44,11 +44,11 @@ const testUserStuff = async (): Promise<boolean> => {
 	if (!isOk(a1, !a1 || (a1.id === user_id))) okay = false
 	let a2 = await <Promise<ReturnType<typeof api.getUsers> | false>>attempt("getUsers: ", api.getUsers([user_id, 2]))
 	if (!isOk(a2, !a2 || (a2.length === 2))) okay = false
-	let a3 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores: ", api.getUserScores(5, {id: user_id}, "best"))
+	let a3 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores: ", api.getUserScores({id: user_id}, "best", 5))
 	if (!isOk(a3, !a3 || (a3.length === 5))) okay = false
-	let a4 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores: ", api.getUserScores(5, {id: user_id}, "firsts"))
+	let a4 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores: ", api.getUserScores({id: user_id}, "firsts", 5))
 	if (!isOk(a4, !a4 || (a4.length === 0))) okay = false
-	let a5 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores: ", api.getUserScores(5, {id: user_id}, "recent"))
+	let a5 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores: ", api.getUserScores({id: user_id}, "recent", 5))
 	if (!isOk(a5)) okay = false
 	let a6 = await <Promise<ReturnType<typeof api.getUserKudosu> | false>>attempt("getUserKudosu: ", api.getUserKudosu({id: user_id}, 5))
 	if (!isOk(a6, !a6 || (a6.length === 5))) okay = false
@@ -81,7 +81,7 @@ const testBeatmapStuff = async (): Promise<boolean> => {
 	let b7 = await <Promise<ReturnType<typeof api.getBeatmapPack> | false>>attempt("getBeatmapPack", api.getBeatmapPack({tag: "P217"}))
 	if (!isOk(b7, !b7 || (b7.tag === "P217"))) okay = false
 	let b8 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks", api.getBeatmapPacks("tournament"))
-	if (!isOk(b8, !b8 || (b8.length > 3))) okay = false
+	if (!isOk(b8, !b8 || (b8.length >= 100))) okay = false
 
 	return okay
 }

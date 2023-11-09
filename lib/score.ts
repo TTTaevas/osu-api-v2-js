@@ -4,7 +4,13 @@ import { Rulesets } from "./misc.js"
 export interface Score {
 	id: number
 	best_id: number
+	/**
+	 * The ID of the user who made the score
+	 */
 	user_id: number
+	/**
+	 * In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero)
+	 */
 	accuracy: number
 	/**
 	 * 0 when NoMod
@@ -35,6 +41,9 @@ export interface Score {
 	beatmapset?: Beatmapset
 	rank_country?: any
 	rank_global?: any
+	/**
+	 * @remarks Should only exist from the returned object of `getUserScores` if `type` is set to `best`
+	 */
 	weight?: any
 	user?: any
 	match?: any

@@ -1,15 +1,15 @@
 import fetch, { FetchError } from "node-fetch"
 import querystring from "querystring"
-import { BeatmapExtended, BeatmapDifficultyAttributes, Beatmap, BeatmapPack, Beatmapset, BeatmapsetExtended } from "./beatmap.js"
-import { KudosuHistory, UserExtended, User } from "./user.js"
+import { User, UserExtended, KudosuHistory } from "./user.js"
+import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended } from "./beatmap.js"
 import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
 import { Rulesets, Mod } from "./misc.js"
 import { BeatmapUserScore, Score } from "./score.js"
 import { Rankings, Spotlight } from "./ranking.js"
 import { ChangelogBuild, UpdateStream } from "./changelog.js"
 
-export {BeatmapExtended, Beatmap}
-export {UserExtended, User, KudosuHistory}
+export {User, UserExtended, KudosuHistory}
+export {Beatmap, BeatmapExtended, Beatmapset, BeatmapsetExtended}
 export {BeatmapUserScore, Score}
 export {Room, Leader, PlaylistItem, MultiplayerScore}
 export {Rulesets}
@@ -90,7 +90,8 @@ export class API {
 	server: string
 
 	/**
-	 * Use `createAsync` instead of the default constructor if you don't have at least an access_token
+	 * Use the API's `createAsync` instead of the default constructor if you don't have at least an access_token!
+	 * `createAsync` should always be your way of creating API instances!!
 	 */
 	constructor(client?: {id: number, secret: string}, token_type?: string, expires?: Date,
 	access_token?: string, scopes?: Scope[], refresh_token?: string, user?: number,
@@ -282,14 +283,20 @@ export class API {
 	// USER STUFF
 
 	/**
-	 * Get user data of the authorized user
+	 * Get extensive user data about the authorized user
+	 * @param ruleset Defaults to the user's default/favourite Ruleset
 	 * @scope identify
 	 */
 	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtended> {
 		const response = await this.request("get", "me", {mode: ruleset})
 		return correctType(response) as UserExtended
 	}
-
+	
+	/**
+	 * Get extensive user data about whoever you want!
+	 * @param user An object with either the id or the username of the user you're trying to get
+	 * @param ruleset Defaults to the user's default/favourite Ruleset
+	 */
 	async getUser(user: {id?: number, username?: string} | User, ruleset?: Rulesets): Promise<UserExtended> {
 		const key = user.id !== undefined ? "id" : "username"
 		const lookup = user.id !== undefined ? user.id : user.username
@@ -299,21 +306,37 @@ export class API {
 		return correctType(response) as UserExtended
 	}
 
+	/**
+	 * Get user data for up to 50 users at once!
+	 * @param ids An array composed of the ids of the users you want
+	 */
 	async getUsers(ids: number[]): Promise<User[]> {
 		const response = await this.request("get", "users", {ids})
 		return response.users.map((u: User) => correctType(u)) as User[]
 	}
 
-	async getUserScores(limit: number, user: {id: number} | User, type: "best" | "firsts" | "recent",
-	options?: {ruleset?: Rulesets, include_fails?: boolean, offset?: number}): Promise<Score[]> {
-		const mode = options && options.ruleset !== undefined ? Rulesets[options.ruleset] : ""
-		const offset = options && options.offset !== undefined ? options.offset : ""
-		const include_fails = options && options.include_fails !== undefined ? options.include_fails : ""
-
-		const response = await this.request("get", `users/${user.id}/scores/${type}`, {limit, mode, offset, include_fails})
+	/**
+	 * Get "notable" scores from a user
+	 * @param user The user who set the scores
+	 * @param type Do you want scores: in the user's top 100, that are top 1 on a beatmap, that have been recently set?
+	 * @param limit The maximum amount of scores to be returned
+	 * @param ruleset The Ruleset the scores were made in, defaults to the user's default/favourite Ruleset
+	 * @param include_fails Do you want scores where the user didn't survive or quit the map? Defaults to false
+	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
+	 */
+	async getUserScores(user: {id: number} | User, type: "best" | "firsts" | "recent", limit?: number,
+	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<Score[]> {
+		const mode = ruleset ? Rulesets[ruleset] : undefined
+		const response = await this.request("get", `users/${user.id}/scores/${type}`, {limit, mode, offset, include_fails: String(Number(include_fails))})
 		return response.map((s: Score) => correctType(s)) as Score[]
 	}
 
+	/**
+	 * Get data about the activity of a user kudosu-wise!
+	 * @param user The user in question
+	 * @param limit The maximum amount of activities in the returned array, defaults to 5
+	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
+	 */
 	async getUserKudosu(user: {id: number} | User, limit?: number, offset?: number): Promise<KudosuHistory[]> {
 		const response = await this.request("get", `users/${user.id}/kudosu`, {limit, offset})
 		return response.map((k: KudosuHistory) => correctType(k)) as KudosuHistory[]
@@ -331,17 +354,26 @@ export class API {
 	
 	// BEATMAP STUFF
 
+	/**
+	 * Get extensive beatmap data about whichever beatmap you want!
+	 * @param beatmap An object with the id of the beatmap you're trying to get
+	 */
 	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtended> {
 		const response = await this.request("get", `beatmaps/${beatmap.id}`)
 		return correctType(response) as BeatmapExtended
 	}
 
+	/**
+	 * Get extensive beatmap data for up to 50 beatmaps at once!
+	 * @param ids An array composed of the ids of the beatmaps you want
+	 */
 	async getBeatmaps(ids?: number[]): Promise<BeatmapExtended[]> {
 		const response = await this.request("get", "beatmaps", {ids})
 		return response.beatmaps.map((b: BeatmapExtended) => correctType(b)) as BeatmapExtended[]
 	}
 
 	/**
+	 * Get various data about the difficulty of a beatmap!
 	 * @remarks Will ignore the customization of your mods
 	 * @param beatmap The Beatmap in question
 	 * @param mods Defaults to No Mod, can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
@@ -358,6 +390,7 @@ export class API {
 	}
 
 	/**
+	 * Get the score on a beatmap made by a specific user (with specific mods and on a specific ruleset if needed)
 	 * @param beatmap The Beatmap the score was made on
 	 * @param user The User who made the score
 	 * @param mods The Mods used to make the score, defaults to any, you can use `["NM"]` to filter out scores with mods
@@ -371,22 +404,41 @@ export class API {
 		return correctType(response) as BeatmapUserScore
 	}
 
+	/**
+	 * Get the score on a beatmap made by a specific user (with the possibility to specify if the scores are on a convert)
+	 * @param beatmap The Beatmap the scores were made on
+	 * @param user The User who made the scores
+	 * @param ruleset The Ruleset used to make the scores, defaults to the Ruleset the Beatmap was made for
+	 */
 	async getBeatmapUserScores(beatmap: {id: number} | Beatmap, user: {id: number} | User, ruleset?: Rulesets): Promise<Score[]> {
 		const mode = ruleset ? Rulesets[ruleset] : undefined
 		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}/all`, {mode})
 		return response.scores.map((s: Score) => correctType(s)) as Score[] 
 	}
 
+	/**
+	 * Get extensive beatmapset data about whichever beatmapset you want!
+	 * @param beatmap An object with the id of the beatmapset you're trying to get
+	 */
 	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtended> {
 		const response = await this.request("get", `beatmapsets/${beatmapset.id}`)
 		return correctType(response) as BeatmapsetExtended
 	}
 
+	/**
+	 * Get data about a BeatmapPack using its tag!
+	 * @param pack An object with the tag of the beatmappack you're trying to get
+	 * @remarks Currently in https://osu.ppy.sh/beatmaps/packs, when hovering a pack, its link with its tag should show up on your browser's bottom left
+	 */
 	async getBeatmapPack(pack: {tag: string} | BeatmapPack): Promise<BeatmapPack> {
 		const response = await this.request("get", `beatmaps/packs/${pack.tag}`)
 		return correctType(response) as BeatmapPack
 	}
 
+	/**
+	 * Get an Array of up to 100 BeatmapPacks of a specific type!
+	 * @param type The type of the BeatmapPacks, defaults to "standard"
+	 */
 	async getBeatmapPacks(type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<BeatmapPack[]> {
 		const response = await this.request("get", "beatmaps/packs", {type})
 		return correctType(response.beatmap_packs) as BeatmapPack[]

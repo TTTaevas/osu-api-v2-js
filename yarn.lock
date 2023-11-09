@@ -3,16 +3,16 @@
 
 
 "@types/node@^20.8.10":
-  version "20.8.10"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.8.10.tgz#a5448b895c753ae929c26ce85cab557c6d4a365e"
-  integrity sha512-TlgT8JntpcbmKUFzjhsyhGfP2fsiz1Mv56im6enJ905xG1DAYesxJaeSbGqQmAw8OWPdhyJGhGSQGKRNJ45u9w==
+  version "20.9.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.9.0.tgz#bfcdc230583aeb891cf51e73cfdaacdd8deae298"
+  integrity sha512-nekiGu2NDb1BcVofVcEKMIwzlx4NjHlcjhoxxKBNLtz15Y1z7MYf549DFvkHSId02Ax6kGwWntIBPC3l/JZcmw==
   dependencies:
     undici-types "~5.26.4"
 
 "@types/prompt-sync@^4.2.2":
-  version "4.2.2"
-  resolved "https://registry.yarnpkg.com/@types/prompt-sync/-/prompt-sync-4.2.2.tgz#df2bc03694ac28f15fb3d5f64356b6e6a1243d2a"
-  integrity sha512-S8GBVdrchd7egtwrWtnhzZ3mFKgwlFpOCsiemzYgd5Bg75SwR5RquDlE7G4ijPbbNtAATpdn/Km3u5PEAnTsAw==
+  version "4.2.3"
+  resolved "https://registry.yarnpkg.com/@types/prompt-sync/-/prompt-sync-4.2.3.tgz#b6a9fe88fc4b4cacb8ab59f87f2614d6e674e177"
+  integrity sha512-Ox77gCSx0YyeakGt/qfOZUSFNSSi+sh3ABoGOiCwiO2KODx492BJnUm9oIXS+AHJtqp12iM4RduY6viTJ9bYwA==
 
 ansi-regex@^4.1.0:
   version "4.1.1"
