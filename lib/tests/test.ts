@@ -86,15 +86,30 @@ const testBeatmapStuff = async (): Promise<boolean> => {
 	return okay
 }
 
+const testChangelogStuff = async (): Promise<boolean> => {
+	let okay = true
+
+	let c1 = await <Promise<ReturnType<typeof api.getChangelogBuild> | false>>attempt("\ngetChangelogBuild: ", api.getChangelogBuild("lazer", "2023.1008.1"))
+	if (!isOk(c1, !c1 || (c1.id === 7156))) okay = false
+	let c2 = await <Promise<ReturnType<typeof api.getChangelogBuilds> | false>>attempt(
+		"getChangelogBuilds: ", api.getChangelogBuilds({from: "2023.1031.0", to: "20231102.3"}, 7184, undefined, ["markdown"]))
+	if (!isOk(c2, !c2 || (c2.length === 4))) okay = false
+	let c3 = await <Promise<ReturnType<typeof api.getChangelogStreams> | false>>attempt("getChangelogStreams: ", api.getChangelogStreams())
+	if (!isOk(c3, !c3 || (c3.length > 2))) okay = false
+
+	return okay
+}
+
 const test = async (id: string, secret: string): Promise<void> => {
 	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all")
 
 	let a = await testUserStuff()
 	let b = await testBeatmapStuff()
+	let c = await testChangelogStuff()
 
-	let test_results = [a,b].map((bool: boolean, index: number) => bool ? `${index + 1}: ✔️\n` : `${index + 1}: ❌\n`)
+	let test_results = [a,b,c].map((bool: boolean, index: number) => bool ? `${index + 1}: ✔️\n` : `${index + 1}: ❌\n`)
 	console.log("\n", ...test_results)
-	if ([a,b].indexOf(false) === -1) {
+	if ([a,b,c].indexOf(false) === -1) {
 		console.log("✔️ Looks like the test went well!")
 	} else {
 		throw new Error("❌ Something in the test went wrong...")

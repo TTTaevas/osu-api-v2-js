@@ -441,31 +441,44 @@ export class API {
 	 */
 	async getBeatmapPacks(type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<BeatmapPack[]> {
 		const response = await this.request("get", "beatmaps/packs", {type})
-		return correctType(response.beatmap_packs) as BeatmapPack[]
+		return response.beatmap_packs.map((b: BeatmapPack) => correctType(b)) as BeatmapPack[]
 	}
 
 
 	// CHANGELOG STUFF
 
+	/**
+	 * Get details about the version/update/build of something related to osu!
+	 * @param stream The name of the thing related to osu!, like `lazer`, `web`, `cuttingedge`, `beta40`, `stable40`
+	 * @param build The name of the version! Usually something like `2023.1026.0` for lazer, or `20230326` for stable
+	 */
 	async getChangelogBuild(stream: string, build: string): Promise<ChangelogBuild> {
 		const response = await this.request("get", `changelog/${stream}/${build}`)
 		return correctType(response) as ChangelogBuild
 	}
 
-	async getChangelogListing(format: "html" | "markdown", options?: {build_version_range?: {from?: string, to?: string},
-	max_id: number, stream: string}): Promise<ChangelogBuild[]> {
-		const message_format = [format]
-		const from = options ? options.build_version_range ? options.build_version_range.from ? options.build_version_range.from : "" : "" : ""
-		const to = options ? options.build_version_range ? options.build_version_range.from ? options.build_version_range.from : "" : "" : ""
-		const stream = options ? options.stream ? options.stream : "" : ""
-		const max_id = options ? options.max_id ? options.max_id : "" : ""
-
-		const response = await this.request("get", `changelog`, {message_format, from, to, stream, max_id})
-		return response.builds.map((b: ChangelogBuild) => correctType(b)) as ChangelogBuild[] 
+	/**
+	 * Get up to 21 versions/updates/builds!
+	 * @param versions Get builds that were released before/after (and including) those versions (use the name of the versions, e.g. `2023.1109.0`)
+	 * @param max_id Filter out builds that have an id higher than this (this takes priority over `versions.to`)
+	 * @param stream Only get builds from a specific stream
+	 * @param message_formats Each element of `changelog_entries` will have a `message` property if `markdown`, `message_html` if `html`, defaults to both
+	 */
+	async getChangelogBuilds(versions?: {from?: string, to?: string}, max_id?: number,
+	stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<ChangelogBuild[]> {
+		const [from, to] = [versions?.from, versions?.to]
+		const response = await this.request("get", "changelog", {from, to, max_id, stream, message_formats})
+		return response.builds.map((b: ChangelogBuild) => correctType(b)) as ChangelogBuild[]
 	}
 
+	/**
+	 * An effective way to get all available streams, as well as their latest version!
+	 * @example ```ts
+	 * const names_of_streams = (await api.getChangelogStreams()).map(s => s.name)
+	 * ```
+	 */
 	async getChangelogStreams(): Promise<UpdateStream[]> {
-		const response = await this.request("get", `changelog`, {max_id: 1})
+		const response = await this.request("get", `changelog`, {max_id: 0})
 		return response.streams.map((s: UpdateStream) => correctType(s)) as UpdateStream[] 
 	}
 
@@ -551,8 +564,6 @@ export class API {
 function correctType(x: any): any {
 	if (typeof x === "boolean") {
 		return x
-	} else if (!isNaN(x)) {
-		return x === null ? null : Number(x)
 	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(x) ||
 	/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}$/g.test(x) || /^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{0,}Z$/g.test(x)) {
 		return new Date(x)
@@ -564,11 +575,13 @@ function correctType(x: any): any {
 		return new Date(x)
 	} else if (Array.isArray(x)) {
 		return x.map((e) => correctType(e))
+	} else if (!isNaN(x)) {
+		return x === null ? null : Number(x)
 	} else if (typeof x === "object" && x !== null) {
 		const k = Object.keys(x)
 		const v = Object.values(x)
 		for (let i = 0; i < k.length; i++) {
-			if (k[i] == "name") continue // don't turn names made of numbers into integers
+			if (k[i].includes("name") || k[i].includes("version")) continue // don't turn names made of numbers into integers
 			x[k[i]] = correctType(v[i])
 		}
 	}
