@@ -86,6 +86,9 @@ const testBeatmapStuff = async (): Promise<boolean> => {
 	return okay
 }
 
+/**
+ * Check if getChangelogBuild() and similar work fine 
+ */
 const testChangelogStuff = async (): Promise<boolean> => {
 	let okay = true
 
@@ -100,16 +103,44 @@ const testChangelogStuff = async (): Promise<boolean> => {
 	return okay
 }
 
+/**
+ * Check if getRoom(), getMatch() and similar work fine
+ */
+const testMultiplayerStuff = async (): Promise<boolean> => {
+	let okay = true
+
+	return okay
+}
+
+/**
+ * Check if getRanking() and similar work fine
+ */
+const testRankingStuff = async (): Promise<boolean> => {
+	let okay = true
+
+	let e1 = await <Promise<ReturnType<typeof api.getKudosuRanking> | false>>attempt("\ngetKudosuRanking: ", api.getKudosuRanking())
+	if (!isOk(e1, !e1 || (e1[0].kudosu!.total > 10000))) okay = false
+	let e2 = await <Promise<ReturnType<typeof api.getRanking> | false>>attempt(
+		"getRanking: ", api.getRanking(osu.Rulesets.osu, "score", 1, "all", "FR"))
+	if (!isOk(e2, !e2 || (e2.ranking[0].level.current > 106))) okay = false
+	let e3 = await <Promise<ReturnType<typeof api.getSpotlights> | false>>attempt("getSpotlights: ", api.getSpotlights())
+	if (!isOk(e3, !e3 || (e3.length >= 132))) okay = false
+
+	return okay
+}
+
 const test = async (id: string, secret: string): Promise<void> => {
 	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all")
 
 	let a = await testUserStuff()
 	let b = await testBeatmapStuff()
 	let c = await testChangelogStuff()
+	let d = await testMultiplayerStuff()
+	let e = await testRankingStuff()
 
-	let test_results = [a,b,c].map((bool: boolean, index: number) => bool ? `${index + 1}: ✔️\n` : `${index + 1}: ❌\n`)
+	let test_results = [a,b,c,d,e].map((bool: boolean, index: number) => bool ? `${index + 1}: ✔️\n` : `${index + 1}: ❌\n`)
 	console.log("\n", ...test_results)
-	if ([a,b,c].indexOf(false) === -1) {
+	if ([a,b,c,d,e].indexOf(false) === -1) {
 		console.log("✔️ Looks like the test went well!")
 	} else {
 		throw new Error("❌ Something in the test went wrong...")

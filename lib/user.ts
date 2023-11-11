@@ -66,6 +66,10 @@ export interface User {
 		short_name: string
 	}[] | 0
 	is_restricted?: boolean | null
+	kudosu?: {
+		available: number
+		total: number
+	}
 	loved_beatmapset_count?: number
 	monthly_playcounts?: {
 		start_date: Date
@@ -112,6 +116,15 @@ export interface User {
 }
 
 export interface UserExtended extends User {
+	country: {
+		code: string
+		name: string
+	}
+	cover: {
+		custom_url: string | null
+		url: string
+		id: string | null
+	}
 	cover_url: string
 	discord: string | null
 	has_supported: boolean

@@ -17,7 +17,7 @@ export {ChangelogBuild, UpdateStream}
 
 /**
  * Scopes determine what the API instance can do as a user!
- * @remarks "identify" is always implicity provided
+ * @remarks "identify" is always implicity provided, "public" is implicitly needed for almost everything
  */
 type Scope = "chat.read" | "chat.write" | "chat.write_manage" | "delegate" | "forum.write" | "friends.read" | "identify" | "public"
 
@@ -478,7 +478,7 @@ export class API {
 	 * ```
 	 */
 	async getChangelogStreams(): Promise<UpdateStream[]> {
-		const response = await this.request("get", `changelog`, {max_id: 0})
+		const response = await this.request("get", "changelog", {max_id: 0})
 		return response.streams.map((s: UpdateStream) => correctType(s)) as UpdateStream[] 
 	}
 
@@ -511,7 +511,8 @@ export class API {
 	/**
 	 * Get the scores on a specific item of a room
 	 * @scope public
-	 * @remarks (2023-11-05) Is currently broken on osu!'s side, gotta love the API not being stable!
+	 * @remarks (2023-11-10) Items are broken for multiplayer (real-time) rooms, not for playlists (like spotlights), that's an osu! bug
+	 * https://github.com/ppy/osu-web/issues/10725
 	 */
 	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem): Promise<MultiplayerScore[]> {
 		const response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`)
@@ -539,17 +540,36 @@ export class API {
 
 	// RANKING STUFF
 
-	async getRanking(ruleset: Rulesets, type: "charts" | "country" | "performance" | "score", filter: "all" | "friends",
-	options?: {country?: number, spotlight?: {id: number} | Spotlight, variant?: "4k" | "7k"}): Promise<Rankings> {
-		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {
-			filter,
-			country: options?.country,
-			spotlight: options?.spotlight,
-			variant: options?.variant
-		})
+	/**
+	 * Get the top 50 players who have the most total kudosu!
+	 */
+	async getKudosuRanking(): Promise<User[]> {
+		const response = await this.request("get", "rankings/kudosu")
+		return response.ranking.map((u: User) => correctType(u)) as User[]
+	}
+
+	/**
+	 * Get the top players of the game, with some filters!
+	 * @param ruleset Self-explanatory, is also known as "Gamemode"
+	 * @param type `charts` is essentially for older spotlights, the rest should be obvious enough
+	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 players, while 50 others may be on the next one
+	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
+	 * @param country Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`)
+	 * @param spotlight If `type` is `charts`, you can specify the id of a spotlight! Defaults to the latest spotlight
+	 * @param variant If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k!
+	 * @scope public (only if there's an authorized user) (the `friends.read` scope isn't needed to use the `friends` filter)
+	 */
+	async getRanking(ruleset: Rulesets, type: "charts" | "country" | "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
+	country?: string, spotlight?: {id: number} | Spotlight, variant?: "4k" | "7k"): Promise<Rankings> {
+		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, spotlight, variant})
 		return correctType(response) as Rankings
 	}
 
+	/**
+	 * Get ALL legacy spotlights! (2009-2020, somewhat known as charts/ranking charts, available @ https://osu.ppy.sh/rankings/osu/charts)
+	 * @remarks The data for newer spotlights (2020-, somewhat known as seasons) can be obtained through `getRoom()`
+	 * but you can't really get their id without going through the website's URLs (https://osu.ppy.sh/seasons/latest) as far as I know :(
+	 */
 	async getSpotlights(): Promise<Spotlight[]> {
 		const response = await this.request("get", "spotlights")
 		return response.spotlights.map((s: Spotlight) => correctType(s)) as Spotlight[]
