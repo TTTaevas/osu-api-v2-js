@@ -418,7 +418,7 @@ export class API {
 
 	/**
 	 * Get extensive beatmapset data about whichever beatmapset you want!
-	 * @param beatmap An object with the id of the beatmapset you're trying to get
+	 * @param beatmapset An object with the id of the beatmapset you're trying to get
 	 */
 	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtended> {
 		const response = await this.request("get", `beatmapsets/${beatmapset.id}`)
@@ -485,13 +485,18 @@ export class API {
 
 	// MULTIPLAYER STUFF
 
+	/**
+	 * Get data about a lazer multiplayer room (realtime or playlists)!
+	 * @param room An object with the id of the room, is at the end of its URL (after `/multiplayer/rooms/`)
+	 */
 	async getRoom(room: {id: number} | Room): Promise<Room> {
 		const response = await this.request("get", `rooms/${room.id}`)
 		return correctType(response) as Room
 	}
 
 	/**
-	 * Get room data for each room fitting the given criterias
+	 * Get rooms that are active, that have ended, that the user participated in, that the user made, or just simply any room!
+	 * @param mode Self-explanatory enough, defaults to `active`
 	 * @scope public
 	 */
 	async getRooms(mode: "active" | "all" | "ended" | "participated" | "owned" = "active"): Promise<Room[]> {
@@ -500,7 +505,8 @@ export class API {
 	}
 
 	/**
-	 * Get the room stats of a user from the room, for each user of that room
+	 * Get the room stats of all the users of that room!
+	 * @param room An object with the id of the room in question
 	 * @scope public
 	 */
 	async getRoomLeaderboard(room: {id: number} | Room): Promise<Leader[]> {
@@ -509,8 +515,7 @@ export class API {
 	}
 
 	/**
-	 * Get the scores on a specific item of a room
-	 * @scope public
+	 * Get the scores on a specific item of a room, for a maximum of 50!
 	 * @remarks (2023-11-10) Items are broken for multiplayer (real-time) rooms, not for playlists (like spotlights), that's an osu! bug
 	 * https://github.com/ppy/osu-web/issues/10725
 	 */
@@ -520,7 +525,7 @@ export class API {
 	}
 
 	/**
-	 * @remarks For multiplayer lobbies from the stable (non-lazer) client, with URLs having `community/matches` or `mp`
+	 * Get data of a multiplayer lobby from the stable (non-lazer) client that have URLs with `community/matches` or `mp`
 	 * @param id Can be found at the end of the URL of said match
 	 */
 	async getMatch(id: number): Promise<Match> {
@@ -529,8 +534,7 @@ export class API {
 	}
 
 	/**
-	 * Gets the info of the 50 most recently created matches, descending order (most recent is at index 0)
-	 * @remarks For multiplayer lobbies from the stable (non-lazer) client, with URLs having `community/matches` or `mp`
+	 * Gets the info of the 50 most recently created stable (non-lazer) matches, descending order (most recent is at index 0)
 	 */
 	async getMatches(): Promise<MatchInfo[]> {
 		const response = await this.request("get", "matches")
