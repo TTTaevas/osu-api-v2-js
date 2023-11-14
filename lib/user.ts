@@ -1,3 +1,13 @@
+// ORPHANS, SUPPOSED TO EXIST YET DON'T AFAIK
+// blocks?: any
+// friends?: any
+// is_restricted?: boolean | null
+// /**
+//  * @remarks ...I actually don't know its type and have been unable to figure it out, I'm only presuming it is number
+//  */
+// unread_pm_count?: number
+// user_preferences?: any
+
 type ProfilePage = "me" | "recent_activity" | "beatmaps" |
 "historical" | "kudosu" | "top_ranks" | "medals"
 
@@ -28,33 +38,41 @@ export interface User {
 	pm_friends_only: boolean
 	profile_colour: string | null
 	username: string
+}
 
-	account_history?: {
-		description: string | null
-		id: number
-		length: number
-		permanent: boolean
-		timestamp: Date
-		type: "note" | "restriction" | "silence"
-	}[] | 0
-	active_tournament_banner?: ProfileBanner | null
-	badges?: UserBadge[] | 0
-	beatmap_playcounts_count?: number
-	blocks?: any
-	country?: {
+/**
+ * Expected from api.getKudosuRanking()
+ */
+export interface UserWithKudosu extends User {
+	kudosu: {
+		available: number
+		total: number
+	}
+}
+
+/**
+ * Expected from api.getMatch(), Leader
+ */
+export interface UserWithCountry extends User {
+	country: {
 		code: string
 		name: string
 	}
-	cover?: {
+}
+
+/**
+ * Expected from UserStatisticsWithUser, MultiplayerScore
+ */
+export interface UserWithCountryCover extends UserWithCountry {
+	cover: {
 		custom_url: string | null
 		url: string
 		id: string | null
 	}
-	favourite_beatmapset_count?: number
-	follower_count?: number
-	friends?: any
-	graveyard_beatmapset_count?: number
-	groups?: {
+}
+
+interface UserWithCountryCoverGroups extends UserWithCountryCover {
+	groups: {
 		colour: string | null
 		has_listing: boolean
 		has_playmodes: boolean
@@ -64,76 +82,38 @@ export interface User {
 		name: string
 		playmodes: string[] | null
 		short_name: string
-	}[] | 0
-	is_restricted?: boolean | null
-	kudosu?: {
-		available: number
-		total: number
-	}
-	loved_beatmapset_count?: number
-	monthly_playcounts?: {
-		start_date: Date
-		count: number
 	}[]
-	page?: {
-		html: string
-		raw: string
-	}
-	pending_beatmapset_count?: number
-	previous_usernames?: string[]
-	rank_highest?: {
-		rank: number
-		updated_at: Date
-	} | null
-	rank_history?: {
-		mode: string
-		data: number[]
-	}
-	ranked_beatmapset_count?: number
-	replays_watched_counts?: {
-		start_date: Date
-		count: number
-	}[]
-	scores_best_count?: number
-	scores_recent_count?: number
-	statistics?: UserStatistics
-	statistics_rulesets?: {
+}
+
+/**
+ * Expected from api.getUsers()
+ */
+export interface UserWithCountryCoverGroupsStatisticsrulesets extends UserWithCountryCoverGroups {
+	statistics_rulesets: {
 		osu: UserStatistics
 		taiko: UserStatistics
 		fruits: UserStatistics
 		mania: UserStatistics
 	}
-	support_level?: number
-	/**
-	 * @remarks ...I actually don't know its type and have been unable to figure it out, I'm only presuming it is number
-	 */
-	unread_pm_count?: number
-	user_achievements?: {
-		achieved_at: Date
-		achievement_id: number
-	}[]
-	user_preferences?: any
 }
 
-export interface UserExtended extends User {
-	country: {
-		code: string
-		name: string
-	}
-	cover: {
-		custom_url: string | null
-		url: string
-		id: string | null
-	}
+/**
+ * Expected from api.getFriends()
+ */
+export interface UserWithCountryCoverGroupsStatisticsSupport extends UserWithCountryCoverGroups {
+	statistics: UserStatistics
+	support_level: number
+}
+
+/**
+ * Expected from api.getUser()
+ */
+export interface UserExtended extends UserWithCountryCoverGroupsStatisticsSupport, UserWithKudosu {
 	cover_url: string
 	discord: string | null
 	has_supported: boolean
 	interests: string | null
 	join_date: Date
-	kudosu: {
-		available: number
-		total: number
-	}
 	location: string | null
 	max_blocks: number
 	max_friends: number
@@ -146,6 +126,85 @@ export interface UserExtended extends User {
 	title_url: string | null
 	twitter: string | null
 	website: string | null
+	account_history: {
+		description: string | null
+		id: number
+		length: number
+		permanent: boolean
+		timestamp: Date
+		type: "note" | "restriction" | "silence"
+	}[]
+	active_tournament_banner: ProfileBanner | null
+	/**
+	 * This is not documented by osu!, likely because support for multiple banners has been recently added (OWC2023)
+	 */
+	active_tournament_banners: ProfileBanner[]
+	badges: UserBadge[]
+	beatmap_playcounts_count: number
+	comments_count: number
+	favourite_beatmapset_count: number
+	follower_count: number
+	graveyard_beatmapset_count: number
+	groups: {
+		colour: string | null
+		has_listing: boolean
+		has_playmodes: boolean
+		id: number
+		identifier: string
+		is_probationary: boolean
+		name: string
+		playmodes: string[] | null
+		short_name: string
+	}[]
+	guest_beatmapset_count: number
+	loved_beatmapset_count: number
+	mapping_follower_count: number
+	monthly_playcounts: {
+		start_date: Date
+		count: number
+	}[]
+	nominated_beatmapset_count: number
+	page: {
+		html: string
+		/**
+		 * Basically the text with the BBCode
+		 */
+		raw: string
+	}
+	pending_beatmapset_count: number
+	previous_usernames: string[]
+	rank_highest: {
+		rank: number
+		updated_at: Date
+	} | null
+	replays_watched_counts: {
+		start_date: Date
+		count: number
+	}[]
+	scores_best_count: number
+	scores_first_count: number
+	/**
+	 * Specific to the Ruleset (`playmode`)
+	 */
+	scores_pinned_count: number
+	scores_recent_count: number
+	statistics: UserStatisticsWithCountryrank
+	support_level: number
+	user_achievements: {
+		achieved_at: Date
+		achievement_id: number
+	}[]
+	rank_history: {
+		mode: string
+		data: number[]
+	}
+}
+
+/**
+ * Expected from api.getResourceOwner()
+ */
+export interface UserExtendedWithStatisticsrulesets extends UserExtended, UserWithCountryCoverGroupsStatisticsrulesets {
+	
 }
 
 export interface UserStatistics {
@@ -177,7 +236,20 @@ export interface UserStatistics {
 	replays_watched_by_others: number
 	total_hits: number
 	total_score: number
-	user: User
+}
+
+/**
+ * Expected from UserExtended
+ */
+export interface UserStatisticsWithCountryrank extends UserStatistics {
+	country_rank: number
+}
+
+/**
+ * Expected from Rankings
+ */
+export interface UserStatisticsWithUser extends UserStatisticsWithCountryrank {
+	user: UserWithCountryCover
 }
 
 export interface KudosuHistory {

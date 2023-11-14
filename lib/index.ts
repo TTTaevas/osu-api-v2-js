@@ -1,6 +1,6 @@
 import fetch, { FetchError } from "node-fetch"
 import querystring from "querystring"
-import { User, UserExtended, KudosuHistory } from "./user.js"
+import { User, UserExtended, KudosuHistory, UserWithKudosu, UserWithCountryCoverGroupsStatisticsSupport, UserExtendedWithStatisticsrulesets, UserWithCountryCoverGroupsStatisticsrulesets } from "./user.js"
 import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended } from "./beatmap.js"
 import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
 import { Rulesets, Mod } from "./misc.js"
@@ -287,9 +287,9 @@ export class API {
 	 * @param ruleset Defaults to the user's default/favourite Ruleset
 	 * @scope identify
 	 */
-	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtended> {
+	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtendedWithStatisticsrulesets> {
 		const response = await this.request("get", "me", {mode: ruleset})
-		return correctType(response) as UserExtended
+		return correctType(response) as UserExtendedWithStatisticsrulesets
 	}
 	
 	/**
@@ -310,9 +310,9 @@ export class API {
 	 * Get user data for up to 50 users at once!
 	 * @param ids An array composed of the ids of the users you want
 	 */
-	async getUsers(ids: number[]): Promise<User[]> {
+	async getUsers(ids: number[]): Promise<UserWithCountryCoverGroupsStatisticsrulesets[]> {
 		const response = await this.request("get", "users", {ids})
-		return response.users.map((u: User) => correctType(u)) as User[]
+		return response.users.map((u: UserWithCountryCoverGroupsStatisticsrulesets) => correctType(u)) as UserWithCountryCoverGroupsStatisticsrulesets[]
 	}
 
 	/**
@@ -346,9 +346,9 @@ export class API {
 	 * Get user data of each friend of the authorized user
 	 * @scope friends.read
 	 */
-	async getFriends(): Promise<User[]> {
+	async getFriends(): Promise<UserWithCountryCoverGroupsStatisticsSupport[]> {
 		const response = await this.request("get", "friends")
-		return response.map((f: User) => correctType(f)) as User[]
+		return response.map((f: UserWithCountryCoverGroupsStatisticsSupport) => correctType(f)) as UserWithCountryCoverGroupsStatisticsSupport[]
 	}
 
 	
@@ -547,9 +547,9 @@ export class API {
 	/**
 	 * Get the top 50 players who have the most total kudosu!
 	 */
-	async getKudosuRanking(): Promise<User[]> {
+	async getKudosuRanking(): Promise<UserWithKudosu[]> {
 		const response = await this.request("get", "rankings/kudosu")
-		return response.ranking.map((u: User) => correctType(u)) as User[]
+		return response.ranking.map((u: UserWithKudosu) => correctType(u)) as UserWithKudosu[]
 	}
 
 	/**

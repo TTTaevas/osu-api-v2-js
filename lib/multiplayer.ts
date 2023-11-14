@@ -1,6 +1,6 @@
 import { Beatmap } from "./beatmap.js"
 import { Rulesets, Mod } from "./misc.js"
-import { UserExtended, User } from "./user.js"
+import { User, UserWithCountry, UserWithCountryCover } from "./user.js"
 
 /**
  * @remarks This is entirely absent from the official documentation
@@ -47,12 +47,18 @@ export interface PlaylistItem {
 
 export interface MultiplayerScore {
 	id: number
+	/**
+	 * The ID of the user who made the score
+	 */
 	user_id: number
 	room_id: number
 	playlist_item_id: number
 	beatmap_id: number
 	rank: string
 	total_score: number
+	/**
+	 * In a format where `96.40%` would be `0.9640` (and no number afterwards)
+	 */
 	accuracy: number
 	max_combo: number
 	mods: Mod[]
@@ -61,11 +67,14 @@ export interface MultiplayerScore {
 	started_at?: Date
 	ended_at?: Date
 	position?: number | null
-	scores_around: {
+	/**
+	 * (2023-11-14) Doesn't seem to be there anymore for getPlaylistItemScores?
+	 */
+	scores_around?: {
 		higher: MultiplayerScores
 		lower: MultiplayerScores
 	}
-	user: UserExtended
+	user: UserWithCountryCover
 }
 
 export interface MultiplayerScores {
@@ -77,6 +86,9 @@ export interface MultiplayerScores {
 }
 
 export interface Leader {
+	/**
+	 * In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero)
+	 */
 	accuracy: number
 	attempts: number
 	completed: number
@@ -84,7 +96,7 @@ export interface Leader {
 	room_id: number
 	total_score: number
 	user_id: number
-	user: User
+	user: UserWithCountry
 }
 
 export interface MatchInfo {
@@ -149,7 +161,7 @@ export interface Match {
 			}
 		}[]
 	}
-	users: User[]
+	users: UserWithCountry[]
 	first_event_id: number
 	latest_event_id: number
 	current_game_id: number | null

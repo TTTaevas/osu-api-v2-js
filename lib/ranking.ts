@@ -1,5 +1,5 @@
 import { BeatmapsetExtended } from "./beatmap.js"
-import { UserStatistics } from "./user.js"
+import { UserStatisticsWithUser } from "./user.js"
 
 export interface Spotlight {
 	id: number
@@ -12,7 +12,7 @@ export interface Spotlight {
 }
 
 export interface Rankings {
-	ranking: UserStatistics[]
+	ranking: UserStatisticsWithUser[]
 	/**
 	 * Total amount of users available across all pages, not on this specific page! Maximum of 10000
 	 */
