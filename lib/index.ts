@@ -5,7 +5,7 @@ import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Bea
 import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
 import { Rulesets, Mod } from "./misc.js"
 import { BeatmapUserScore, Score } from "./score.js"
-import { Rankings, Spotlight } from "./ranking.js"
+import { Rankings, RankingsCountry, RankingsSpotlight, Spotlight } from "./ranking.js"
 import { ChangelogBuild, UpdateStream } from "./changelog.js"
 
 export {User, UserExtended, KudosuHistory}
@@ -555,18 +555,37 @@ export class API {
 	/**
 	 * Get the top players of the game, with some filters!
 	 * @param ruleset Self-explanatory, is also known as "Gamemode"
-	 * @param type `charts` is essentially for older spotlights, the rest should be obvious enough
+	 * @param type Rank players by their performance points or by their ranked score?
 	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 players, while 50 others may be on the next one
 	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
 	 * @param country Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`)
-	 * @param spotlight If `type` is `charts`, you can specify the id of a spotlight! Defaults to the latest spotlight
 	 * @param variant If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k!
-	 * @scope public (only if there's an authorized user) (the `friends.read` scope isn't needed to use the `friends` filter)
 	 */
-	async getRanking(ruleset: Rulesets, type: "charts" | "country" | "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
-	country?: string, spotlight?: {id: number} | Spotlight, variant?: "4k" | "7k"): Promise<Rankings> {
-		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, spotlight, variant})
+	async getRanking(ruleset: Rulesets, type: "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
+	country?: string, variant?: "4k" | "7k"): Promise<Rankings> {
+		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, variant})
 		return correctType(response) as Rankings
+	}
+
+	/**
+	 * Get the top countries of a specific ruleset!
+	 * @param ruleset On which Ruleset should the countries be compared?
+	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one
+	 */
+	async getCountryRanking(ruleset: Rulesets, page: number = 1): Promise<RankingsCountry> {
+		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/country`, {page})
+		return correctType(response) as RankingsCountry
+	}
+
+	/**
+	 * Get the rankings of a spotlight from 2009 to 2020 on a specific ruleset!
+	 * @param ruleset Each spotlight has a different ranking (and often maps) depending on the ruleset
+	 * @param spotlight The spotlight in question
+	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
+	 */
+	async getSpotlightRanking(ruleset: Rulesets, spotlight: {id: number} | Spotlight, filter: "all" | "friends" = "all"): Promise<RankingsSpotlight> {
+		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: spotlight.id, filter})
+		return correctType(response) as RankingsSpotlight
 	}
 
 	/**

@@ -142,8 +142,13 @@ const testRankingStuff = async (): Promise<boolean> => {
 	let e2 = await <Promise<ReturnType<typeof api.getRanking> | false>>attempt(
 		"getRanking: ", api.getRanking(osu.Rulesets.osu, "score", 1, "all", "FR"))
 	if (!isOk(e2, !e2 || (e2.ranking[0].level.current > 106))) okay = false
-	let e3 = await <Promise<ReturnType<typeof api.getSpotlights> | false>>attempt("getSpotlights: ", api.getSpotlights())
-	if (!isOk(e3, !e3 || (e3.length >= 132))) okay = false
+	let e3 = await <Promise<ReturnType<typeof api.getCountryRanking> | false>>attempt("getCountryRanking: ", api.getCountryRanking(osu.Rulesets.osu))
+	if (!isOk(e3, !e3 || (e3.ranking[0].code === "US"))) okay = false
+	let e4 = await <Promise<ReturnType<typeof api.getSpotlightRanking> | false>>attempt(
+		"getSpotlightRanking: ", api.getSpotlightRanking(osu.Rulesets.taiko, {id: 48}))
+	if (!isOk(e4, !e4 || (e4.ranking[0].hit_accuracy === 97.85))) okay = false
+	let e5 = await <Promise<ReturnType<typeof api.getSpotlights> | false>>attempt("getSpotlights: ", api.getSpotlights())
+	if (!isOk(e5, !e5 || (e5.length >= 132))) okay = false
 
 	return okay
 }

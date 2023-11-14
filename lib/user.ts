@@ -8,8 +8,7 @@
 // unread_pm_count?: number
 // user_preferences?: any
 
-type ProfilePage = "me" | "recent_activity" | "beatmaps" |
-"historical" | "kudosu" | "top_ranks" | "medals"
+type ProfilePage = "me" | "recent_activity" | "beatmaps" | "historical" | "kudosu" | "top_ranks" | "medals"
 
 type UserBadge = {
 	awarded_at: Date
@@ -212,6 +211,8 @@ export interface UserStatistics {
 	count_300: number
 	count_50: number
 	count_miss: number
+	global_rank: number | null
+	global_rank_exp: number | null
 	grade_counts: {
 		a: number
 		s: number
@@ -219,6 +220,9 @@ export interface UserStatistics {
 		ss: number
 		ssh: number
 	}
+	/**
+	 * Accuracy in the normal format, where 96.56% would be `96.56`
+	 */
 	hit_accuracy: number
 	is_ranked: number
 	level: {
@@ -227,11 +231,9 @@ export interface UserStatistics {
 	}
 	maximum_combo: number
 	play_count: number
-	play_time: number
-	pp: number
+	play_time: number | null
+	pp: number | null
 	pp_exp: number
-	global_rank: number | null
-	global_rank_exp: number | null
 	ranked_score: number
 	replays_watched_by_others: number
 	total_hits: number

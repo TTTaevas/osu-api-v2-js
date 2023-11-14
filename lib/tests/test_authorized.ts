@@ -22,8 +22,11 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri}, "all")
 	if (api) {
-		let a = await api.getResourceOwner()
-		console.log(util.inspect(a, false, null, true))
+		let ranking = await api.getSpotlightRanking(osu.Rulesets.osu, {id: 271})
+		ranking.beatmapsets = [ranking.beatmapsets[0]]
+		ranking.ranking = [ranking.ranking[0]]
+		console.log(ranking)
+
 	}
 }
 
