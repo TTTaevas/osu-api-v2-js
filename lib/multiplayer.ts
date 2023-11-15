@@ -1,4 +1,4 @@
-import { Beatmap } from "./beatmap.js"
+import { BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo } from "./beatmap.js"
 import { Rulesets, Mod } from "./misc.js"
 import { User, UserWithCountry, UserWithCountryCover } from "./user.js"
 
@@ -42,7 +42,7 @@ export interface PlaylistItem {
 	owner_id: number
 	playlist_order: number
 	played_at: Date
-	beatmap: Beatmap
+	beatmap: BeatmapWithBeatmapsetChecksumMaxcombo
 }
 
 export interface MultiplayerScore {
@@ -126,7 +126,7 @@ export interface Match {
 			scoring_type: string
 			team_type: string
 			mods: string[]
-			beatmap: Beatmap
+			beatmap: BeatmapWithBeatmapset
 		}
 		scores?: {
 			accuracy: number
@@ -160,7 +160,7 @@ export interface Match {
 				pass: boolean
 			}
 		}[]
-	}
+	}[]
 	users: UserWithCountry[]
 	first_event_id: number
 	latest_event_id: number

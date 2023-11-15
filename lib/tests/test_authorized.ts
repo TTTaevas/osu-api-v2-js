@@ -4,10 +4,10 @@
  */
 
 import "dotenv/config"
+import * as osu from "../index.js"
 import promptSync from "prompt-sync"
 import { exec } from "child_process"
 import util from "util"
-import * as osu from "../index.js"
 
 const prompt = promptSync({sigint: true})
 
@@ -21,13 +21,8 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 	let code = prompt(`What code do you get from: ${url}\n\n`)
 
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri}, "all")
-	if (api) {
-		let ranking = await api.getSpotlightRanking(osu.Rulesets.osu, {id: 271})
-		ranking.beatmapsets = [ranking.beatmapsets[0]]
-		ranking.ranking = [ranking.ranking[0]]
-		console.log(ranking)
-
-	}
+	let beatmap = await api.getBeatmap({id: 4118175})
+	console.log(beatmap)
 }
 
 test(process.env.ID, process.env.SECRET, process.env.REDIRECT_URI)

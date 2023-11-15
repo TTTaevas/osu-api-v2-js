@@ -1,5 +1,6 @@
-import { Beatmap, Beatmapset } from "./beatmap.js"
+import { BeatmapExtended, Beatmapset } from "./beatmap.js"
 import { Rulesets } from "./misc.js"
+import { User } from "./user.js"
 
 export interface Score {
 	id: number
@@ -37,15 +38,18 @@ export interface Score {
 	mode: string
 	mode_int: Rulesets
 	replay: boolean
-	beatmap?: Beatmap
+	beatmap?: BeatmapExtended
 	beatmapset?: Beatmapset
 	rank_country?: any
 	rank_global?: any
 	/**
-	 * @remarks Should only exist from the returned object of `getUserScores` if `type` is set to `best`
+	 * @remarks Only if `type` is set to `best` on `getUserScores`
 	 */
-	weight?: any
-	user?: any
+	weight?: {
+		percentage: number
+		pp: number
+	}
+	user?: User
 	match?: any
 	/**
 	 * @remarks Not in the API's documentation, expect it to either be unreliable or disappear 

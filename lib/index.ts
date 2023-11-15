@@ -1,7 +1,7 @@
 import fetch, { FetchError } from "node-fetch"
 import querystring from "querystring"
 import { User, UserExtended, KudosuHistory, UserWithKudosu, UserWithCountryCoverGroupsStatisticsSupport, UserExtendedWithStatisticsrulesets, UserWithCountryCoverGroupsStatisticsrulesets } from "./user.js"
-import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended } from "./beatmap.js"
+import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapsetExtendedPlus } from "./beatmap.js"
 import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
 import { Rulesets, Mod } from "./misc.js"
 import { BeatmapUserScore, Score } from "./score.js"
@@ -358,9 +358,9 @@ export class API {
 	 * Get extensive beatmap data about whichever beatmap you want!
 	 * @param beatmap An object with the id of the beatmap you're trying to get
 	 */
-	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtended> {
+	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtendedWithFailtimesBeatmapsetextended> {
 		const response = await this.request("get", `beatmaps/${beatmap.id}`)
-		return correctType(response) as BeatmapExtended
+		return correctType(response) as BeatmapExtendedWithFailtimesBeatmapsetextended
 	}
 
 	/**
@@ -420,9 +420,9 @@ export class API {
 	 * Get extensive beatmapset data about whichever beatmapset you want!
 	 * @param beatmapset An object with the id of the beatmapset you're trying to get
 	 */
-	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtended> {
+	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtendedPlus> {
 		const response = await this.request("get", `beatmapsets/${beatmapset.id}`)
-		return correctType(response) as BeatmapsetExtended
+		return correctType(response) as BeatmapsetExtendedPlus
 	}
 
 	/**
