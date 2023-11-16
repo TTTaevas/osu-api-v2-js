@@ -4,7 +4,7 @@ import { User, UserExtended, KudosuHistory, UserWithKudosu, UserWithCountryCover
 import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapsetExtendedPlus } from "./beatmap.js"
 import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
 import { Rulesets, Mod } from "./misc.js"
-import { BeatmapUserScore, Score } from "./score.js"
+import { BeatmapUserScore, Score, ScoreWithUser, ScoreWithUserBeatmapBeatmapset } from "./score.js"
 import { Rankings, RankingsCountry, RankingsSpotlight, Spotlight } from "./ranking.js"
 import { ChangelogBuild, UpdateStream } from "./changelog.js"
 
@@ -325,10 +325,10 @@ export class API {
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
 	async getUserScores(user: {id: number} | User, type: "best" | "firsts" | "recent", limit?: number,
-	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<Score[]> {
+	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<ScoreWithUserBeatmapBeatmapset[]> {
 		const mode = ruleset ? Rulesets[ruleset] : undefined
 		const response = await this.request("get", `users/${user.id}/scores/${type}`, {limit, mode, offset, include_fails: String(Number(include_fails))})
-		return response.map((s: Score) => correctType(s)) as Score[]
+		return response.map((s: ScoreWithUserBeatmapBeatmapset) => correctType(s)) as ScoreWithUserBeatmapBeatmapset[]
 	}
 
 	/**
@@ -387,6 +387,19 @@ export class API {
 	ruleset?: Rulesets): Promise<BeatmapDifficultyAttributes> {
 		const response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
 		return correctType(response.attributes) as BeatmapDifficultyAttributes
+	}
+
+	/**
+	 * Get the top scores of a beatmap!
+	 * @param beatmap The Beatmap in question
+	 * @param ruleset The Ruleset used to make the scores, useful if they were made on a convert
+	 * @param mods (2023-11-16) Currently doesn't do anything
+	 * @param type (2023-11-16) Currently doesn't do anything
+	 */
+	async getBeatmapScores(beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<ScoreWithUser[]> {
+		const mode = ruleset ? Rulesets[ruleset] : undefined
+		const response = await this.request("get", `beatmaps/${beatmap.id}/scores`, {mode, mods, type})
+		return response.scores.map((s: ScoreWithUser) => correctType(s)) as ScoreWithUser[]
 	}
 
 	/**

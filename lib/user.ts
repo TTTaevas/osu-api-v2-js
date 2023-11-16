@@ -1,13 +1,3 @@
-// ORPHANS, SUPPOSED TO EXIST YET DON'T AFAIK
-// blocks?: any
-// friends?: any
-// is_restricted?: boolean | null
-// /**
-//  * @remarks ...I actually don't know its type and have been unable to figure it out, I'm only presuming it is number
-//  */
-// unread_pm_count?: number
-// user_preferences?: any
-
 type ProfilePage = "me" | "recent_activity" | "beatmaps" | "historical" | "kudosu" | "top_ranks" | "medals"
 
 type UserBadge = {
@@ -23,6 +13,9 @@ type ProfileBanner = {
 	image: string
 }
 
+/**
+ * Expected from BeatmapsetExtendedPlus, Room
+ */
 export interface User {
 	avatar_url: string
 	country_code: string
@@ -60,7 +53,7 @@ export interface UserWithCountry extends User {
 }
 
 /**
- * Expected from UserStatisticsWithUser, MultiplayerScore
+ * Expected from UserStatisticsWithUser, MultiplayerScore, ScoreWithUser
  */
 export interface UserWithCountryCover extends UserWithCountry {
 	cover: {

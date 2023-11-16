@@ -1,25 +1,37 @@
 import { BeatmapExtended, Beatmapset } from "./beatmap.js"
 import { Rulesets } from "./misc.js"
-import { User } from "./user.js"
+import { User, UserWithCountryCover } from "./user.js"
 
+/**
+ * Expected from api.getBeatmapUserScores()
+ */
 export interface Score {
-	id: number
-	best_id: number
-	/**
-	 * The ID of the user who made the score
-	 */
-	user_id: number
 	/**
 	 * In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero)
 	 */
 	accuracy: number
-	/**
-	 * 0 when NoMod
-	 */
-	mods: 0 | string[]
-	score: number
+	best_id: number
+	created_at: Date
+	id: number
 	max_combo: number
+	mode: string
+	mode_int: Rulesets
+	mods: string[]
+	passed: boolean
 	perfect: boolean
+	/**
+	 * null when Beatmap is Loved (for example)
+	 */
+	pp: null | number
+	/**
+	 * Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%)
+	 */
+	rank: string
+	/**
+	 * Can this score's replay be downloaded from the website?
+	 */
+	replay: boolean
+	score: number
 	statistics: {
 		count_50: number
 		count_100: number
@@ -28,20 +40,11 @@ export interface Score {
 		count_katu: number
 		count_miss: number
 	}
-	passed: boolean
+	type: string
 	/**
-	 * null when Beatmap is Loved (for example)
+	 * The ID of the user who made the score
 	 */
-	pp: null | number
-	rank: string
-	created_at: Date
-	mode: string
-	mode_int: Rulesets
-	replay: boolean
-	beatmap?: BeatmapExtended
-	beatmapset?: Beatmapset
-	rank_country?: any
-	rank_global?: any
+	user_id: number
 	/**
 	 * @remarks Only if `type` is set to `best` on `getUserScores`
 	 */
@@ -49,29 +52,38 @@ export interface Score {
 		percentage: number
 		pp: number
 	}
-	user?: User
-	match?: any
-	/**
-	 * @remarks Not in the API's documentation, expect it to either be unreliable or disappear 
-	 */
-	current_user_attributes?: {
-		/**
-		 * @remarks Seems to remain null even if the score is pinned on the user's profile
-		 */
-		pin: null
-	}
 }
 
+/**
+ * Expected from api.getBeatmapScores()
+ */
+export interface ScoreWithUser extends Score {
+	user: UserWithCountryCover
+}
+
+/**
+ * Expected from BeatmapUserScore
+ * @privateRemarks Doesn't extend ScoreWithUser as the User here lacks Country and Cover
+ */
+export interface ScoreWithUserBeatmap extends Score {
+	user: User
+	beatmap: BeatmapExtended
+}
+
+/**
+ * Expected from api.getUserScores()
+ */
+export interface ScoreWithUserBeatmapBeatmapset extends ScoreWithUserBeatmap {
+	beatmapset: Beatmapset
+}
+
+/**
+ * Expected from api.getBeatmapUserScore()
+ */
 export interface BeatmapUserScore {
 	/**
 	 * Value depends on the requested mode and mods!
 	 */
 	position: number
-	score: Score
-}
-
-export interface BeatmapScores {
-	scores: Score[]
-	userScore: BeatmapUserScore | null
-	user_score: BeatmapUserScore | null | undefined
+	score: ScoreWithUserBeatmap
 }

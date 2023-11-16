@@ -84,6 +84,9 @@ export interface BeatmapExtendedWithFailtimesBeatmapsetextended extends BeatmapE
 	beatmapset: BeatmapsetExtended
 }
 
+/**
+ * Expected from BeatmapWithBeatmapset, Score
+ */
 export interface Beatmapset {
 	artist: string
 	artist_unicode: string
@@ -109,7 +112,7 @@ export interface Beatmapset {
 	source: string
 	spotlight: boolean
 	/**
-	 * Is it ranked, is it graveyard, etc
+	 * Is it ranked, is it graveyarded, etc
 	 */
 	status: string
 	/**

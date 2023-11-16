@@ -76,12 +76,14 @@ const testBeatmapStuff = async (): Promise<boolean> => {
 	let b5 = await <Promise<ReturnType<typeof api.getBeatmapUserScores> | false>>attempt(
 		"getBeatmapUserScores: ", api.getBeatmapUserScores({id: 203993}, {id: 7276846}, osu.Rulesets.fruits))
 	if (!isOk(b5, !b5 || (b5.length === 1))) okay = false
-	let b6 = await <Promise<ReturnType<typeof api.getBeatmapset> | false>>attempt("getBeatmapset", api.getBeatmapset({id: 1971037}))
+	let b6 = await <Promise<ReturnType<typeof api.getBeatmapset> | false>>attempt("getBeatmapset: ", api.getBeatmapset({id: 1971037}))
 	if (!isOk(b6, !b6 || (b6.submitted_date?.toISOString().substring(0, 10) === "2023-04-07"))) okay = false
-	let b7 = await <Promise<ReturnType<typeof api.getBeatmapPack> | false>>attempt("getBeatmapPack", api.getBeatmapPack({tag: "P217"}))
+	let b7 = await <Promise<ReturnType<typeof api.getBeatmapPack> | false>>attempt("getBeatmapPack: ", api.getBeatmapPack({tag: "P217"}))
 	if (!isOk(b7, !b7 || (b7.tag === "P217"))) okay = false
-	let b8 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks", api.getBeatmapPacks("tournament"))
+	let b8 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks: ", api.getBeatmapPacks("tournament"))
 	if (!isOk(b8, !b8 || (b8.length >= 100))) okay = false
+	let b9 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}))
+	if (!isOk(b9, !b9 || (b9[0].score >= 132408001))) okay = false
 
 	return okay
 }
