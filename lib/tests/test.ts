@@ -8,6 +8,9 @@ import "dotenv/config"
 import util from "util"
 // console.log(util.inspect(users, false, null, true))
 
+import tsj from "ts-json-schema-generator"
+import ajv from "ajv"
+
 if (process.env.ID === undefined) {throw new Error("❌ The ID has not been defined in the environment variables!")}
 if (process.env.SECRET === undefined) {throw new Error("❌ The SECRET has not been defined in the environment variables!")}
 
@@ -33,15 +36,42 @@ function isOk(response: any, condition?: boolean) {
 	return true
 }
 
+function fixDate(x: any) {
+	if (typeof x === "object" && x !== null) {
+		if (x["format"] && x["format"] === "date-time" && x["type"] && x["type"] === "string") {
+			x["type"] = "object"
+		}
+
+		const k = Object.keys(x)
+		const v = Object.values(x)
+		for (let i = 0; i < k.length; i++) {
+			x[k[i]] = fixDate(v[i])
+		}
+	}
+
+	return x
+}
+
+function validate<T>(file: string, object: T): boolean {
+	const schema = fixDate(tsj.createGenerator({path: `lib/${file}.ts`, additionalProperties: true}).createSchema("User"))
+	const ajv_const = new ajv.default({strict: false})
+	ajv_const.addFormat("date-time", true)
+	
+	let validator = ajv_const.compile<T>(schema)
+	let result = validator(object)
+	if (validator.errors) console.log(validator.errors)
+	return result
+}
+
 /**
  * Check if getUser() and similar work fine 
  */
 const testUserStuff = async (): Promise<boolean> => {
 	const user_id = 7276846
 	let okay = true
-
+	
 	let a1 = await <Promise<ReturnType<typeof api.getUser> | false>>attempt("\ngetUser: ", api.getUser({id: user_id}))
-	if (!isOk(a1, !a1 || (a1.id === user_id))) okay = false
+	if (!isOk(a1, !a1 || validate<Awaited<ReturnType<typeof api.getUser>>>("user", a1) || (a1.id === user_id))) okay = false
 	let a2 = await <Promise<ReturnType<typeof api.getUsers> | false>>attempt("getUsers: ", api.getUsers([user_id, 2]))
 	if (!isOk(a2, !a2 || (a2.length === 2))) okay = false
 	let a3 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores: ", api.getUserScores({id: user_id}, "best", 5))
