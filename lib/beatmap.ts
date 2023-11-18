@@ -11,6 +11,9 @@ export enum RankStatus {
 	Loved 		= 4
 }
 
+/**
+ * @privateRemarks While not expected from anywhere, it should be exported for ease of use purposes
+ */
 export interface Beatmap {
 	beatmapset_id: number
 	difficulty_rating: number
@@ -20,20 +23,33 @@ export interface Beatmap {
 	total_length: number
 	user_id: number
 	version: string
-	/**
-	 * Beatmapset for Beatmap object, BeatmapsetExtended for BeatmapExtended object, null if the beatmap doesn't have associated beatmapset (e.g. deleted)
-	 */
-	beatmapset?: BeatmapsetExtended | Beatmapset | null
-	checksum?: string
-	failtimes?: Failtimes
-	max_combo?: number
 }
 
-export interface BeatmapExtended extends Beatmap {
+/**
+ * Expected from Match
+ */
+export interface BeatmapWithBeatmapset extends Beatmap {
+	beatmapset: Beatmapset
+}
+
+interface BeatmapWithChecksum extends Beatmap {
+	checksum: string
+}
+
+/**
+ * Expected from PlaylistItem
+ */
+export interface BeatmapWithBeatmapsetChecksumMaxcombo extends BeatmapWithBeatmapset, BeatmapWithChecksum {
+	max_combo: number
+}
+
+/**
+ * Expected from Score
+ */
+export interface BeatmapExtended extends BeatmapWithChecksum {
 	accuracy: number
 	ar: number
-	beatmapset_id: number
-	bpm: number | null
+	bpm: number
 	convert: boolean
 	count_circles: number
 	count_sliders: number
@@ -51,6 +67,26 @@ export interface BeatmapExtended extends Beatmap {
 	url: string
 }
 
+/**
+ * Expected from BeatmapsetExtendedPlus
+ */
+export interface BeatmapExtendedWithFailtimes extends BeatmapExtended {
+	failtimes: {
+		exit: number[]
+		fail: number[]
+	}
+}
+
+/**
+ * Expected from api.getBeatmap()
+ */
+export interface BeatmapExtendedWithFailtimesBeatmapsetextended extends BeatmapExtendedWithFailtimes {
+	beatmapset: BeatmapsetExtended
+}
+
+/**
+ * Expected from BeatmapWithBeatmapset, Score
+ */
 export interface Beatmapset {
 	artist: string
 	artist_unicode: string
@@ -69,46 +105,36 @@ export interface Beatmapset {
 	id: number
 	nsfw: boolean
 	play_count: number
+	/**
+	 * A string like that, where id is the `id` of the beatmapset: `//b.ppy.sh/preview/58951.mp3`
+	 */
 	preview_url: string
 	source: string
+	spotlight: boolean
+	/**
+	 * Is it ranked, is it graveyarded, etc
+	 */
 	status: string
+	/**
+	 * A title readable by any english-speaking person, so it'd be romaji if the song's title is in Japanese
+	 */
 	title: string
+	/**
+	 * Basically the title is the original language, so with hiraganas and kanji if Japanese
+	 */
 	title_unicode: string
 	user_id: number
 	video: boolean
-	beatmaps?: BeatmapExtended[]
-	converts?: BeatmapExtended[] | 0
-	current_nominations?: {
-		beatmapset_id: number
-		rulesets: Rulesets[] | null
-		reset: boolean
-		user_id: number
-	}[]
-	current_user_attributes?: any
-	description?: {
-		description: string
-	}
-	discussions?: any
-	events?: any
-	genre?: {
-		id: number
-		name: string
-	}
-	has_favourited?: boolean
-	language?: {
-		id: number
-		name: string
-	}
-	nominations?: any
-	pack_tags?: string[]
-	ratings?: number[]
-	recent_favourites?: User[]
-	related_users?: User[]
-	user?: User
 }
 
+/**
+ * Expected from RankingsSpotlight, BeatmapExtendedWithFailtimesBeatmapsetextended
+ */
 export interface BeatmapsetExtended extends Beatmapset {
 	availability: {
+		/**
+		 * So it's `false` if you can download it
+		 */
 		download_disabled: boolean
 		more_information: string | null
 	}
@@ -117,12 +143,14 @@ export interface BeatmapsetExtended extends Beatmapset {
 	creator: string
 	deleted_at: string | null
 	discussion_locked: boolean
-	"hype.current": number
-	"hype.required": number
+	hype: {
+		current: number
+		required: number
+	}
 	is_scoreable: boolean
 	last_updated: Date
-	legacy_thread_url: string | null
-	nominations: {
+	legacy_thread_url: string
+	nominations_summary: {
 		current: number
 		required: number
 	}
@@ -131,8 +159,50 @@ export interface BeatmapsetExtended extends Beatmapset {
 	source: string
 	storyboard: boolean
 	submitted_date: Date | null
-	tags: string
-	has_favourited?: any
+	/**
+	 * 0 if no tags at all, a string with tags separated from each other by a whitespace
+	 */
+	tags: string | 0
+}
+
+/**
+ * Expected from api.getBeatmapset()
+ */
+export interface BeatmapsetExtendedPlus extends BeatmapsetExtended {
+	/**
+	 * The different beatmaps/difficulties this beatmapset has
+	 */
+	beatmaps: BeatmapExtendedWithFailtimes[]
+	/**
+	 * The different beatmaps made for osu!, but converted to the other Rulesets
+	 */
+	converts: BeatmapExtendedWithFailtimes[]
+	current_nominations: {
+		beatmapset_id: number
+		rulesets: Rulesets[]
+		reset: boolean
+		user_id: number
+	}[]
+	description: {
+		/**
+		 * In HTML
+		 */
+		description: string
+	}
+	genre: {
+		id: number
+		name: string
+	}
+	has_favourited: boolean
+	language: {
+		id: number
+		name: string
+	}
+	pack_tags: string[]
+	ratings: number[]
+	recent_favourites: User[]
+	related_users: User[]
+	user: User
 }
 
 export interface BeatmapDifficultyAttributes {
@@ -206,9 +276,4 @@ export interface BeatmapPack {
 		 */
 		completed: boolean
 	}
-}
-
-export interface Failtimes {
-	exit?: number[]
-	fail?: number[]
 }
