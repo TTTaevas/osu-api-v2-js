@@ -1,11 +1,11 @@
 import fetch, { FetchError } from "node-fetch"
 import querystring from "querystring"
-import { User, UserExtended, KudosuHistory } from "./user.js"
-import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended } from "./beatmap.js"
-import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
+import { User, UserExtended, KudosuHistory, UserWithKudosu, UserWithCountryCoverGroupsStatisticsSupport, UserExtendedWithStatisticsrulesets, UserWithCountryCoverGroupsStatisticsrulesets } from "./user.js"
+import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapsetExtendedPlus } from "./beatmap.js"
+import { Leader, Match, MatchInfo, MultiplayerScore, MultiplayerScores, PlaylistItem, Room } from "./multiplayer.js"
 import { Rulesets, Mod } from "./misc.js"
-import { BeatmapUserScore, Score } from "./score.js"
-import { Rankings, Spotlight } from "./ranking.js"
+import { BeatmapUserScore, Score, ScoreWithUser, ScoreWithUserBeatmapBeatmapset } from "./score.js"
+import { Rankings, RankingsCountry, RankingsSpotlight, Spotlight } from "./ranking.js"
 import { ChangelogBuild, UpdateStream } from "./changelog.js"
 
 export {User, UserExtended, KudosuHistory}
@@ -287,9 +287,9 @@ export class API {
 	 * @param ruleset Defaults to the user's default/favourite Ruleset
 	 * @scope identify
 	 */
-	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtended> {
+	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtendedWithStatisticsrulesets> {
 		const response = await this.request("get", "me", {mode: ruleset})
-		return correctType(response) as UserExtended
+		return correctType(response) as UserExtendedWithStatisticsrulesets
 	}
 	
 	/**
@@ -310,9 +310,9 @@ export class API {
 	 * Get user data for up to 50 users at once!
 	 * @param ids An array composed of the ids of the users you want
 	 */
-	async getUsers(ids: number[]): Promise<User[]> {
+	async getUsers(ids: number[]): Promise<UserWithCountryCoverGroupsStatisticsrulesets[]> {
 		const response = await this.request("get", "users", {ids})
-		return response.users.map((u: User) => correctType(u)) as User[]
+		return response.users.map((u: UserWithCountryCoverGroupsStatisticsrulesets) => correctType(u)) as UserWithCountryCoverGroupsStatisticsrulesets[]
 	}
 
 	/**
@@ -325,10 +325,10 @@ export class API {
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
 	async getUserScores(user: {id: number} | User, type: "best" | "firsts" | "recent", limit?: number,
-	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<Score[]> {
+	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<ScoreWithUserBeatmapBeatmapset[]> {
 		const mode = ruleset ? Rulesets[ruleset] : undefined
 		const response = await this.request("get", `users/${user.id}/scores/${type}`, {limit, mode, offset, include_fails: String(Number(include_fails))})
-		return response.map((s: Score) => correctType(s)) as Score[]
+		return response.map((s: ScoreWithUserBeatmapBeatmapset) => correctType(s)) as ScoreWithUserBeatmapBeatmapset[]
 	}
 
 	/**
@@ -346,9 +346,9 @@ export class API {
 	 * Get user data of each friend of the authorized user
 	 * @scope friends.read
 	 */
-	async getFriends(): Promise<User[]> {
+	async getFriends(): Promise<UserWithCountryCoverGroupsStatisticsSupport[]> {
 		const response = await this.request("get", "friends")
-		return response.map((f: User) => correctType(f)) as User[]
+		return response.map((f: UserWithCountryCoverGroupsStatisticsSupport) => correctType(f)) as UserWithCountryCoverGroupsStatisticsSupport[]
 	}
 
 	
@@ -358,9 +358,9 @@ export class API {
 	 * Get extensive beatmap data about whichever beatmap you want!
 	 * @param beatmap An object with the id of the beatmap you're trying to get
 	 */
-	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtended> {
+	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtendedWithFailtimesBeatmapsetextended> {
 		const response = await this.request("get", `beatmaps/${beatmap.id}`)
-		return correctType(response) as BeatmapExtended
+		return correctType(response) as BeatmapExtendedWithFailtimesBeatmapsetextended
 	}
 
 	/**
@@ -387,6 +387,19 @@ export class API {
 	ruleset?: Rulesets): Promise<BeatmapDifficultyAttributes> {
 		const response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
 		return correctType(response.attributes) as BeatmapDifficultyAttributes
+	}
+
+	/**
+	 * Get the top scores of a beatmap!
+	 * @param beatmap The Beatmap in question
+	 * @param ruleset The Ruleset used to make the scores, useful if they were made on a convert
+	 * @param mods (2023-11-16) Currently doesn't do anything
+	 * @param type (2023-11-16) Currently doesn't do anything
+	 */
+	async getBeatmapScores(beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<ScoreWithUser[]> {
+		const mode = ruleset ? Rulesets[ruleset] : undefined
+		const response = await this.request("get", `beatmaps/${beatmap.id}/scores`, {mode, mods, type})
+		return response.scores.map((s: ScoreWithUser) => correctType(s)) as ScoreWithUser[]
 	}
 
 	/**
@@ -420,9 +433,9 @@ export class API {
 	 * Get extensive beatmapset data about whichever beatmapset you want!
 	 * @param beatmapset An object with the id of the beatmapset you're trying to get
 	 */
-	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtended> {
+	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtendedPlus> {
 		const response = await this.request("get", `beatmapsets/${beatmapset.id}`)
-		return correctType(response) as BeatmapsetExtended
+		return correctType(response) as BeatmapsetExtendedPlus
 	}
 
 	/**
@@ -515,13 +528,18 @@ export class API {
 	}
 
 	/**
-	 * Get the scores on a specific item of a room, for a maximum of 50!
+	 * Get the scores on a specific item of a room!
+	 * @param item An object with the id of the item in question, as well as the id of the room
+	 * @param limit How many scores maximum? Defaults to 50, the maximum the API will return
+	 * @param sort Sort by scores, ascending or descending? Defaults to descending
+	 * @param cursor_string Use a MultiplayerScores' `params` and `cursor_string` to get the next page (scores 51 to 100 for example)
 	 * @remarks (2023-11-10) Items are broken for multiplayer (real-time) rooms, not for playlists (like spotlights), that's an osu! bug
 	 * https://github.com/ppy/osu-web/issues/10725
 	 */
-	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem): Promise<MultiplayerScore[]> {
-		const response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`)
-		return response.scores.map((s: MultiplayerScore) => correctType(s)) as MultiplayerScore[]
+	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem, limit: number = 50,
+	sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<MultiplayerScores> {
+		const response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
+		return correctType(response) as MultiplayerScores
 	}
 
 	/**
@@ -547,26 +565,45 @@ export class API {
 	/**
 	 * Get the top 50 players who have the most total kudosu!
 	 */
-	async getKudosuRanking(): Promise<User[]> {
+	async getKudosuRanking(): Promise<UserWithKudosu[]> {
 		const response = await this.request("get", "rankings/kudosu")
-		return response.ranking.map((u: User) => correctType(u)) as User[]
+		return response.ranking.map((u: UserWithKudosu) => correctType(u)) as UserWithKudosu[]
 	}
 
 	/**
 	 * Get the top players of the game, with some filters!
 	 * @param ruleset Self-explanatory, is also known as "Gamemode"
-	 * @param type `charts` is essentially for older spotlights, the rest should be obvious enough
+	 * @param type Rank players by their performance points or by their ranked score?
 	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 players, while 50 others may be on the next one
 	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
 	 * @param country Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`)
-	 * @param spotlight If `type` is `charts`, you can specify the id of a spotlight! Defaults to the latest spotlight
 	 * @param variant If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k!
-	 * @scope public (only if there's an authorized user) (the `friends.read` scope isn't needed to use the `friends` filter)
 	 */
-	async getRanking(ruleset: Rulesets, type: "charts" | "country" | "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
-	country?: string, spotlight?: {id: number} | Spotlight, variant?: "4k" | "7k"): Promise<Rankings> {
-		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, spotlight, variant})
+	async getRanking(ruleset: Rulesets, type: "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
+	country?: string, variant?: "4k" | "7k"): Promise<Rankings> {
+		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, variant})
 		return correctType(response) as Rankings
+	}
+
+	/**
+	 * Get the top countries of a specific ruleset!
+	 * @param ruleset On which Ruleset should the countries be compared?
+	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one
+	 */
+	async getCountryRanking(ruleset: Rulesets, page: number = 1): Promise<RankingsCountry> {
+		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/country`, {page})
+		return correctType(response) as RankingsCountry
+	}
+
+	/**
+	 * Get the rankings of a spotlight from 2009 to 2020 on a specific ruleset!
+	 * @param ruleset Each spotlight has a different ranking (and often maps) depending on the ruleset
+	 * @param spotlight The spotlight in question
+	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
+	 */
+	async getSpotlightRanking(ruleset: Rulesets, spotlight: {id: number} | Spotlight, filter: "all" | "friends" = "all"): Promise<RankingsSpotlight> {
+		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: spotlight.id, filter})
+		return correctType(response) as RankingsSpotlight
 	}
 
 	/**
