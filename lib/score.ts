@@ -55,6 +55,17 @@ export interface Score {
 }
 
 /**
+ * Expected from Match
+ */
+export interface ScoreWithMatch extends Score {
+	match: {
+		slot: number
+		team: string
+		pass: boolean
+	}
+}
+
+/**
  * Expected from api.getBeatmapScores()
  */
 export interface ScoreWithUser extends Score {

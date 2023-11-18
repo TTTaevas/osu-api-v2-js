@@ -21,8 +21,8 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 	let code = prompt(`What code do you get from: ${url}\n\n`)
 
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri}, "all")
-	let beatmap = await api.getBeatmap({id: 4118175})
-	console.log(beatmap)
+	let d2 = await api.getRoom({id: 464285})
+	let a = await api.getPlaylistItemScores({id: d2.playlist[0].id, room_id: d2.id})
 }
 
 test(process.env.ID, process.env.SECRET, process.env.REDIRECT_URI)

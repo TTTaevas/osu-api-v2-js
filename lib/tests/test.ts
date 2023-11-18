@@ -118,12 +118,12 @@ const testMultiplayerStuff = async (): Promise<boolean> => {
 	if (d1) { // can't bother getting and writing down the id of a playlist item
 		let d3 = await <Promise<ReturnType<typeof api.getPlaylistItemScores> | false>>attempt(
 			"getPlaylistItemScores (realtime): ", api.getPlaylistItemScores({id: d1.playlist[0].id, room_id: d1.id}))
-		!isOk(d3, !d3 || (d3.length > 0)) ? console.log("Bug not fixed yet...") : console.log("Bug fixed!!! :partying_face:")
+		!isOk(d3, !d3 || (d3.scores.length > 0)) ? console.log("Bug not fixed yet...") : console.log("Bug fixed!!! :partying_face:")
 	}
 	if (d2) { // still can't bother getting and writing down the id of a playlist item
 		let d4 = await <Promise<ReturnType<typeof api.getPlaylistItemScores> | false>>attempt(
 			"getPlaylistItemScores (playlist): ", api.getPlaylistItemScores({id: d2.playlist[0].id, room_id: d2.id}))
-		if (!isOk(d4, !d4 || (d4.length >= 50))) okay = false
+		if (!isOk(d4, !d4 || (d4.scores.length >= 50))) okay = false
 	}
 	let d5 = await <Promise<ReturnType<typeof api.getMatch> | false>>attempt("getMatch: ", api.getMatch(62006076))
 	if (!isOk(d5, !d5 || (d5.match.name === "CWC2020: (Italy) vs (Indonesia)"))) okay = false

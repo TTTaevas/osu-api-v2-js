@@ -2,7 +2,7 @@ import fetch, { FetchError } from "node-fetch"
 import querystring from "querystring"
 import { User, UserExtended, KudosuHistory, UserWithKudosu, UserWithCountryCoverGroupsStatisticsSupport, UserExtendedWithStatisticsrulesets, UserWithCountryCoverGroupsStatisticsrulesets } from "./user.js"
 import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapsetExtendedPlus } from "./beatmap.js"
-import { Leader, Match, MatchInfo, MultiplayerScore, PlaylistItem, Room } from "./multiplayer.js"
+import { Leader, Match, MatchInfo, MultiplayerScore, MultiplayerScores, PlaylistItem, Room } from "./multiplayer.js"
 import { Rulesets, Mod } from "./misc.js"
 import { BeatmapUserScore, Score, ScoreWithUser, ScoreWithUserBeatmapBeatmapset } from "./score.js"
 import { Rankings, RankingsCountry, RankingsSpotlight, Spotlight } from "./ranking.js"
@@ -528,13 +528,18 @@ export class API {
 	}
 
 	/**
-	 * Get the scores on a specific item of a room, for a maximum of 50!
+	 * Get the scores on a specific item of a room!
+	 * @param item An object with the id of the item in question, as well as the id of the room
+	 * @param limit How many scores maximum? Defaults to 50, the maximum the API will return
+	 * @param sort Sort by scores, ascending or descending? Defaults to descending
+	 * @param cursor_string Use a MultiplayerScores' `params` and `cursor_string` to get the next page (scores 51 to 100 for example)
 	 * @remarks (2023-11-10) Items are broken for multiplayer (real-time) rooms, not for playlists (like spotlights), that's an osu! bug
 	 * https://github.com/ppy/osu-web/issues/10725
 	 */
-	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem): Promise<MultiplayerScore[]> {
-		const response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`)
-		return response.scores.map((s: MultiplayerScore) => correctType(s)) as MultiplayerScore[]
+	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem, limit: number = 50,
+	sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<MultiplayerScores> {
+		const response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
+		return correctType(response) as MultiplayerScores
 	}
 
 	/**
