@@ -25,7 +25,7 @@ export interface User {
 	is_bot: boolean
 	is_deleted: boolean
 	is_online: boolean
-	is_supported: boolean
+	is_supporter: boolean
 	last_visit: Date | null
 	pm_friends_only: boolean
 	profile_colour: string | null
@@ -217,7 +217,10 @@ export interface UserStatistics {
 	 * Accuracy in the normal format, where 96.56% would be `96.56`
 	 */
 	hit_accuracy: number
-	is_ranked: number
+	/**
+	 * Hasn't went inactive in the rankings
+	 */
+	is_ranked: boolean
 	level: {
 		current: number
 		progress: number

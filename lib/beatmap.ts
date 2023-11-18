@@ -104,12 +104,16 @@ export interface Beatmapset {
 	favourite_count: number
 	id: number
 	nsfw: boolean
+	offset: number
 	play_count: number
 	/**
 	 * A string like that, where id is the `id` of the beatmapset: `//b.ppy.sh/preview/58951.mp3`
 	 */
 	preview_url: string
-	source: string
+	/**
+	 * Can be/Is 0 if there is no source
+	 */
+	source: string | 0
 	spotlight: boolean
 	/**
 	 * Is it ranked, is it graveyarded, etc
