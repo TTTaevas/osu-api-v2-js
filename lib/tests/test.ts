@@ -137,12 +137,12 @@ const testChangelogStuff = async (): Promise<boolean> => {
 	let okay = true
 
 	let c1 = await <Promise<ReturnType<typeof api.getChangelogBuild> | false>>attempt("\ngetChangelogBuild: ", api.getChangelogBuild("lazer", "2023.1008.1"))
-	if (!isOk(c1, !c1 || (c1.id === 7156 && validate(c1, "ChangelogBuild", generator)))) okay = false
+	if (!isOk(c1, !c1 || (c1.id === 7156 && validate(c1, "ChangelogBuildWithChangelogentriesVersions", generator)))) okay = false
 	let c2 = await <Promise<ReturnType<typeof api.getChangelogBuilds> | false>>attempt(
 		"getChangelogBuilds: ", api.getChangelogBuilds({from: "2023.1031.0", to: "20231102.3"}, 7184, undefined, ["markdown"]))
-	if (!isOk(c2, !c2 || (c2.length === 4 && validate(c2[0], "ChangelogBuild", generator)))) okay = false
+	if (!isOk(c2, !c2 || (c2.length === 4 && validate(c2[0], "ChangelogBuildWithUpdatestreamsChangelogentries", generator)))) okay = false
 	let c3 = await <Promise<ReturnType<typeof api.getChangelogStreams> | false>>attempt("getChangelogStreams: ", api.getChangelogStreams())
-	if (!isOk(c3, !c3 || (c3.length > 2 && validate(c3[0], "UpdateStream", generator)))) okay = false
+	if (!isOk(c3, !c3 || (c3.length > 2 && validate(c3[0], "UpdateStreamWithLatestbuildUsercount", generator)))) okay = false
 
 	return okay
 }

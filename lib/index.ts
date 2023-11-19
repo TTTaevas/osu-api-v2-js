@@ -6,14 +6,14 @@ import { Leader, Match, MatchInfo, MultiplayerScore, MultiplayerScores, Playlist
 import { Rulesets, Mod } from "./misc.js"
 import { BeatmapUserScore, Score, ScoreWithUser, ScoreWithUserBeatmapBeatmapset } from "./score.js"
 import { Rankings, RankingsCountry, RankingsSpotlight, Spotlight } from "./ranking.js"
-import { ChangelogBuild, UpdateStream } from "./changelog.js"
+import { ChangelogBuildWithChangelogentriesVersions, ChangelogBuildWithUpdatestreamsChangelogentries, UpdateStream } from "./changelog.js"
 
 export {User, UserExtended, KudosuHistory}
 export {Beatmap, BeatmapExtended, Beatmapset, BeatmapsetExtended}
 export {BeatmapUserScore, Score}
 export {Room, Leader, PlaylistItem, MultiplayerScore}
 export {Rulesets}
-export {ChangelogBuild, UpdateStream}
+export {UpdateStream}
 
 /**
  * Scopes determine what the API instance can do as a user!
@@ -465,9 +465,9 @@ export class API {
 	 * @param stream The name of the thing related to osu!, like `lazer`, `web`, `cuttingedge`, `beta40`, `stable40`
 	 * @param build The name of the version! Usually something like `2023.1026.0` for lazer, or `20230326` for stable
 	 */
-	async getChangelogBuild(stream: string, build: string): Promise<ChangelogBuild> {
+	async getChangelogBuild(stream: string, build: string): Promise<ChangelogBuildWithChangelogentriesVersions> {
 		const response = await this.request("get", `changelog/${stream}/${build}`)
-		return correctType(response) as ChangelogBuild
+		return correctType(response) as ChangelogBuildWithChangelogentriesVersions
 	}
 
 	/**
@@ -478,10 +478,10 @@ export class API {
 	 * @param message_formats Each element of `changelog_entries` will have a `message` property if `markdown`, `message_html` if `html`, defaults to both
 	 */
 	async getChangelogBuilds(versions?: {from?: string, to?: string}, max_id?: number,
-	stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<ChangelogBuild[]> {
+	stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<ChangelogBuildWithUpdatestreamsChangelogentries[]> {
 		const [from, to] = [versions?.from, versions?.to]
 		const response = await this.request("get", "changelog", {from, to, max_id, stream, message_formats})
-		return response.builds.map((b: ChangelogBuild) => correctType(b)) as ChangelogBuild[]
+		return response.builds.map((b: ChangelogBuildWithUpdatestreamsChangelogentries) => correctType(b)) as ChangelogBuildWithUpdatestreamsChangelogentries[]
 	}
 
 	/**
@@ -642,7 +642,7 @@ function correctType(x: any): any {
 		const k = Object.keys(x)
 		const v = Object.values(x)
 		for (let i = 0; i < k.length; i++) {
-			if (k[i].includes("name") || k[i].includes("version")) continue // don't turn names made of numbers into integers
+			if (typeof v[i] === "string" && (k[i].includes("name") || k[i].includes("version"))) continue // don't turn names made of numbers into integers
 			x[k[i]] = correctType(v[i])
 		}
 	}
