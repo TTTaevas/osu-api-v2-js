@@ -10,7 +10,7 @@ export interface Score {
 	 * In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero)
 	 */
 	accuracy: number
-	best_id: number
+	best_id: number | null
 	created_at: Date
 	id: number
 	max_combo: number

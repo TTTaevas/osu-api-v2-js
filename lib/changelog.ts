@@ -1,8 +1,7 @@
-export interface ChangelogBuild {
+interface ChangelogBuild {
 	created_at: Date
 	display_version: string
 	id: number
-	update_stream: UpdateStream | null
 	/**
 	 * How many users are playing on this version of the game? (if lazer/web, should be 0, lazer doesn't show such stats)
 	 */
@@ -16,28 +15,33 @@ export interface ChangelogBuild {
 	 * @remarks The ID of a Youtube video is whatever comes after `/watch?v=` in its url
 	 */
 	youtube_id: string | null
-	changelog_entries?: {
+}
+
+/**
+ * Expected from ChangelogBuildWithChangelogentriesVersions
+ */
+export interface ChangelogBuildWithUpdatestreams extends ChangelogBuild {
+	update_stream: UpdateStream
+}
+
+interface ChangelogBuildWithChangelogentries extends ChangelogBuild {
+	changelog_entries: {
+		id: number | null
+		repository: string | null
+		github_pull_request_id: number | null
+		github_url: string | null
+		url: string | null
+		type: string
 		category: string
+		title: string | null
+		major: boolean
 		/**
 		 * Can be January 1st 1970!
 		 */
-		created_at: Date | null
-		github_pull_request_id: number | null
-		github_url: string | null
-		id: number | null
-		major: boolean
-		repository: string | null
-		title: string | null
-		type: string
-		url: string | null
+		created_at: Date
 		/**
-		 * Entry message in Markdown format, embedded HTML is allowed, exists only if Markdown was requested
+		 * Doesn't exist if no github user is associated with who's credited with the change
 		 */
-		message?: string | null
-		/**
-		 * Entry message in HTML format, exists only if HTML was requested
-		 */
-		message_html?: string | null
 		github_user?: {
 			display_name: string
 			github_url: string | null
@@ -47,21 +51,49 @@ export interface ChangelogBuild {
 			user_id: number | null
 			user_url: string | null
 		}
-	}
-	/**
-	 * The ChangelogBuilds in `versions` will not have `changelog_entries` or `versions`, and `users` will be 0
-	 */
-	versions?: {
-		next: ChangelogBuild | null
-		previous: ChangelogBuild | null
+		/**
+		 * Entry message in Markdown format, embedded HTML is allowed, exists only if Markdown was requested
+		 */
+		message?: string | null
+		/**
+		 * Entry message in HTML format, exists only if HTML was requested
+		 */
+		message_html?: string | null
+		
+	}[]
+}
+
+/**
+ * Expected from api.getChangelogBuilds()
+ */
+export interface ChangelogBuildWithUpdatestreamsChangelogentries extends ChangelogBuildWithUpdatestreams, ChangelogBuildWithChangelogentries {
+
+}
+
+/**
+ * Expected from api.getChangelogBuild()
+ */
+export interface ChangelogBuildWithChangelogentriesVersions extends ChangelogBuildWithChangelogentries {
+	versions: {
+		next: ChangelogBuildWithUpdatestreams | null
+		previous: ChangelogBuildWithUpdatestreams | null
 	}
 }
 
+/**
+ * Expected from ChangelogBuildWithUpdatestreams
+ */
 export interface UpdateStream {
-	display_name: string | null
 	id: number
-	is_featured: boolean
 	name: string
+	display_name: string | null
+	is_featured: boolean
+}
+
+/**
+ * Expected from api.getChangelogStreams()
+ */
+export interface UpdateStreamWithLatestbuildUsercount extends UpdateStream {
 	latest_build: ChangelogBuild | null
 	/**
 	 * How many users are playing on this? (if lazer/web, should be 0, lazer doesn't show such stats)
