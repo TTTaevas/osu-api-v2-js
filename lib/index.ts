@@ -642,7 +642,7 @@ function correctType(x: any): any {
 		return new Date(x)
 	} else if (Array.isArray(x)) {
 		return x.map((e) => correctType(e))
-	} else if (!isNaN(x)) {
+	} else if (!isNaN(x) && x !== "") {
 		return x === null ? null : Number(x)
 	} else if (typeof x === "object" && x !== null) {
 		const k = Object.keys(x)

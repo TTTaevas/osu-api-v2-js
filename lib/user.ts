@@ -246,7 +246,7 @@ export interface UserStatisticsWithCountryrank extends UserStatistics {
 /**
  * Expected from Rankings
  */
-export interface UserStatisticsWithUser extends UserStatisticsWithCountryrank {
+export interface UserStatisticsWithUser extends UserStatistics {
 	user: UserWithCountryCover
 }
 

@@ -150,7 +150,7 @@ export interface BeatmapsetExtended extends Beatmapset {
 	hype: {
 		current: number
 		required: number
-	}
+	} | null
 	is_scoreable: boolean
 	last_updated: Date
 	legacy_thread_url: string
