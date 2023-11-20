@@ -197,7 +197,6 @@ export interface BeatmapsetExtendedPlus extends BeatmapsetExtended {
 		id: number
 		name: string
 	}
-	has_favourited: boolean
 	language: {
 		id: number
 		name: string
@@ -207,57 +206,65 @@ export interface BeatmapsetExtendedPlus extends BeatmapsetExtended {
 	recent_favourites: User[]
 	related_users: User[]
 	user: User
+	/**
+	 * Only exists if authorized user
+	 */
+	has_favourited?: boolean
 }
 
+/**
+ * @privateRemarks While not expected from anywhere, it should be exported for ease of use purposes
+ */
 export interface BeatmapDifficultyAttributes {
 	star_rating: number
 	max_combo: number
-	/**
-	 * osu
-	 */
-	aim_difficulty?: number
-	/**
-	 * osu, taiko, fruits
-	 */
-	approach_rate?: number
-	/**
-	 * osu
-	 */
-	flashlight_difficulty?: number
-	/**
-	 * osu
-	 */
-	overall_difficulty?: number
-	/**
-	 * osu
-	 */
-	slider_factor?: number
-	/**
-	 * osu
-	 */
-	speed_difficulty?: number
-	/**
-	 * taiko
-	 */
-	stamina_difficulty?: number
-	/**
-	 * taiko
-	 */
-	rhythm_difficulty: number
-	/**
-	 * taiko
-	 */
-	colour_difficulty: number
-	/**
-	 * taiko, mania
-	 */
-	great_hit_window: number
-	/**
-	 * mania
-	 */
-	score_multiplier: number
 }
 
+/**
+ * Expected from api.getBeatmapDifficultyAttributesOsu()
+ */
+export interface BeatmapDifficultyAttributesOsu extends BeatmapDifficultyAttributes {
+	aim_difficulty: number
+	speed_difficulty: number
+	speed_note_count: number
+	flashlight_difficulty: number
+	slider_factor: number
+	approach_rate: number
+	overall_difficulty: number
+}
+
+/**
+ * Expected from api.getBeatmapDifficultyAttributesTaiko()
+ */
+export interface BeatmapDifficultyAttributesTaiko extends BeatmapDifficultyAttributes {
+	stamina_difficulty: number
+	rhythm_difficulty: number
+	colour_difficulty: number
+	peak_difficulty: number
+	great_hit_window: number
+}
+
+/**
+ * Expected from api.getBeatmapDifficultyAttributesFruits()
+ */
+export interface BeatmapDifficultyAttributesFruits extends BeatmapDifficultyAttributes {
+	approach_rate: number
+}
+
+/**
+ * Expected from api.getBeatmapDifficultyAttributesMania()
+ */
+export interface BeatmapDifficultyAttributesMania extends BeatmapDifficultyAttributes {
+	great_hit_window: number
+	/**
+	 * @remarks (2023-11-20) Doesn't exist anymore?
+	 */
+	score_multiplier?: number
+}
+
+/**
+ * Expected from api.getBeatmapPack(), api.getBeatmapPacks()
+ */
 export interface BeatmapPack {
 	author: string
 	date: Date
@@ -266,7 +273,7 @@ export interface BeatmapPack {
 	 * Are difficulty reduction mods unable to be used to clear this pack? (is `false` if you can use such mods)
 	 */
 	no_diff_reduction: boolean
-	ruleset_id: number,
+	ruleset_id: number | null,
 	tag: string,
 	url: string,
 	beatmapsets?: BeatmapsetExtended[],

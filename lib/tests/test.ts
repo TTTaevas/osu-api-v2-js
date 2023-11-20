@@ -30,7 +30,7 @@ function isOk(response: any, condition?: boolean, depth: number = Infinity) {
 	if (condition === undefined) condition = true
 	if (!response || !condition) {
 		if (Array.isArray(response) && response[0]) {
-			console.log("(only printing the first element of the response array for the following error:")
+			console.log("(only printing the first element of the response array for the error below)")
 			response = response[0]
 		}
 		console.error("❌ Bad response:", util.inspect(response, {colors: true, compact: true, breakLength: 400, depth: depth}))
@@ -113,23 +113,34 @@ const testBeatmapStuff = async (): Promise<boolean> => {
 	if (!isOk(b1, !b1 || (b1.id === beatmap_id && validate(b1, "BeatmapExtendedWithFailtimesBeatmapsetextended", generator)))) okay = false
 	let b2 = await <Promise<ReturnType<typeof api.getBeatmaps> | false>>attempt("getBeatmaps: ", api.getBeatmaps([beatmap_id, 4089655]))
 	if (!isOk(b2, !b2 || (b2.length === 2 && validate(b2[0], "BeatmapExtended", generator)))) okay = false
-	let b3 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributes> | false>>attempt(
-		"getBeatmapAttributes: ", api.getBeatmapDifficultyAttributes({id: beatmap_id}, ["DT"]))
-	if (!isOk(b3, !b3 || (b3.great_hit_window < 35 && validate(b3, "BeatmapDifficultyAttributes", generator)))) okay = false
-	let b4 = await <Promise<ReturnType<typeof api.getBeatmapUserScore> | false>>attempt(
+
+	let b3 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesOsu> | false>>attempt(
+		"getBeatmapAttributesOsu: ", api.getBeatmapDifficultyAttributesOsu({id: 125660}, ["DT"]))
+	if (!isOk(b3, !b3 || (b3.approach_rate.toFixed(2) === "9.67" && validate(b3, "BeatmapDifficultyAttributesOsu", generator)))) okay = false
+	let b4 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesTaiko> | false>>attempt(
+		"getBeatmapAttributesTaiko: ", api.getBeatmapDifficultyAttributesTaiko({id: beatmap_id}, ["DT"]))
+	if (!isOk(b4, !b4 || (b4.great_hit_window < 35 && validate(b4, "BeatmapDifficultyAttributesTaiko", generator)))) okay = false
+	let b5 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesFruits> | false>>attempt(
+		"getBeatmapAttributesFruits: ", api.getBeatmapDifficultyAttributesFruits({id: 705339}, ["DT"]))
+	if (!isOk(b5, !b5 || (b5.approach_rate.toFixed(2) === "10.33" && validate(b5, "BeatmapDifficultyAttributesFruits", generator)))) okay = false
+	let b6 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesMania> | false>>attempt(
+		"getBeatmapAttributesMania: ", api.getBeatmapDifficultyAttributesMania({id: 3980252}, ["DT"]))
+	if (!isOk(b6, !b6 || (b6.great_hit_window === 40 && validate(b6, "BeatmapDifficultyAttributesMania", generator)))) okay = false
+	
+	let b7 = await <Promise<ReturnType<typeof api.getBeatmapUserScore> | false>>attempt(
 		"getBeatmapUserScore: ", api.getBeatmapUserScore({id: 176960}, {id: 7276846}, ["NM"]))
-	if (!isOk(b4, !b4 || (b4.score.accuracy < 0.99 && validate(b4, "BeatmapUserScore", score_gen)))) okay = false
-	let b5 = await <Promise<ReturnType<typeof api.getBeatmapUserScores> | false>>attempt(
+	if (!isOk(b7, !b7 || (b7.score.accuracy < 0.99 && validate(b7, "BeatmapUserScore", score_gen)))) okay = false
+	let b8 = await <Promise<ReturnType<typeof api.getBeatmapUserScores> | false>>attempt(
 		"getBeatmapUserScores: ", api.getBeatmapUserScores({id: 203993}, {id: 7276846}, osu.Rulesets.fruits))
-	if (!isOk(b5, !b5 || (b5.length === 1 && validate(b5[0], "Score", score_gen)))) okay = false
-	let b6 = await <Promise<ReturnType<typeof api.getBeatmapset> | false>>attempt("getBeatmapset: ", api.getBeatmapset({id: 1971037}))
-	if (!isOk(b6, !b6 || (b6.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(b6, "BeatmapsetExtendedPlus", generator)))) okay = false
-	let b7 = await <Promise<ReturnType<typeof api.getBeatmapPack> | false>>attempt("getBeatmapPack: ", api.getBeatmapPack({tag: "P217"}))
-	if (!isOk(b7, !b7 || (b7.tag === "P217" && validate(b7, "BeatmapPack", generator)))) okay = false
-	let b8 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks: ", api.getBeatmapPacks("tournament"))
-	if (!isOk(b8, !b8 || (b8.length >= 100 && validate(b8[0], "BeatmapPack", generator)))) okay = false
-	let b9 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}))
-	if (!isOk(b9, !b9 || (b9[0].score >= 132408001 && validate(b9[0], "ScoreWithUser", score_gen)))) okay = false
+	if (!isOk(b8, !b8 || (b8.length === 1 && validate(b8[0], "Score", score_gen)))) okay = false
+	let b9 = await <Promise<ReturnType<typeof api.getBeatmapset> | false>>attempt("getBeatmapset: ", api.getBeatmapset({id: 1971037}))
+	if (!isOk(b9, !b9 || (b9.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(b9, "BeatmapsetExtendedPlus", generator)))) okay = false
+	let b10 = await <Promise<ReturnType<typeof api.getBeatmapPack> | false>>attempt("getBeatmapPack: ", api.getBeatmapPack({tag: "P217"}))
+	if (!isOk(b10, !b10 || (b10.tag === "P217" && validate(b10, "BeatmapPack", generator)))) okay = false
+	let b11 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks: ", api.getBeatmapPacks("tournament"))
+	if (!isOk(b11, !b11 || (b11.length >= 100 && validate(b11[0], "BeatmapPack", generator)))) okay = false
+	let b12 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}))
+	if (!isOk(b12, !b12 || (b12[0].score >= 132408001 && validate(b12[0], "ScoreWithUser", score_gen)))) okay = false
 
 	return okay
 }

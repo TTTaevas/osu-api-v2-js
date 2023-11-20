@@ -1,7 +1,7 @@
 import fetch, { FetchError } from "node-fetch"
 import querystring from "querystring"
 import { User, UserExtended, KudosuHistory, UserWithKudosu, UserWithCountryCoverGroupsStatisticsSupport, UserExtendedWithStatisticsrulesets, UserWithCountryCoverGroupsStatisticsrulesets } from "./user.js"
-import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapsetExtendedPlus } from "./beatmap.js"
+import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapsetExtendedPlus, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania, BeatmapDifficultyAttributesTaiko } from "./beatmap.js"
 import { Leader, Match, MatchInfo, MultiplayerScore, MultiplayerScores, PlaylistItem, Room } from "./multiplayer.js"
 import { Rulesets, Mod } from "./misc.js"
 import { BeatmapUserScore, Score, ScoreWithUser, ScoreWithUserBeatmapBeatmapset } from "./score.js"
@@ -252,6 +252,8 @@ export class API {
 					this.log(true, "Server responded with status code 401, maybe you need to do this action as an user?")
 				} else if (response.status === 403) {
 					this.log(true, "Server responded with status code 403, you may lack the necessary scope for this action!")
+				} else if (response.status === 422) {
+					this.log(true, "Server responded with status code 422, you may be unable to use those parameters together!")
 				} else if (response.status === 429) {
 					this.log(true, "Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
 					to_retry = true
@@ -372,21 +374,45 @@ export class API {
 		return response.beatmaps.map((b: BeatmapExtended) => correctType(b)) as BeatmapExtended[]
 	}
 
+	private async getBeatmapDifficultyAttributes(id: number, mods?: Mod[] | string[] | number, ruleset?: Rulesets): Promise<BeatmapDifficultyAttributes> {
+		const response = await this.request("post", `beatmaps/${id}/attributes`, {ruleset_id: ruleset, mods})
+		return correctType(response.attributes) as BeatmapDifficultyAttributes
+	}
 	/**
 	 * Get various data about the difficulty of a beatmap!
 	 * @remarks Will ignore the customization of your mods
 	 * @param beatmap The Beatmap in question
 	 * @param mods Defaults to No Mod, can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
-	 * @param ruleset Defaults to the Ruleset the Beatmap was made for, useful to specify if you want a convert
-	 * @returns The (beatmap) difficulty attributes of the Beatmap
-	 * @example ```ts
-	 * await api.getBeatmapDifficultyAttributes({id: 811925}, ["HR", "HD"])
-	 * ```
 	 */
-	async getBeatmapDifficultyAttributes(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number,
-	ruleset?: Rulesets): Promise<BeatmapDifficultyAttributes> {
-		const response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
-		return correctType(response.attributes) as BeatmapDifficultyAttributes
+	async getBeatmapDifficultyAttributesOsu(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesOsu> {
+		return await this.getBeatmapDifficultyAttributes(beatmap.id, mods, Rulesets.osu) as BeatmapDifficultyAttributesOsu
+	}
+	/**
+	 * Get various data about the difficulty of a beatmap!
+	 * @remarks Will ignore the customization of your mods
+	 * @param beatmap The Beatmap in question
+	 * @param mods Defaults to No Mod, can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+	 */
+	async getBeatmapDifficultyAttributesTaiko(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesTaiko> {
+		return await this.getBeatmapDifficultyAttributes(beatmap.id, mods, Rulesets.taiko) as BeatmapDifficultyAttributesTaiko
+	}
+	/**
+	 * Get various data about the difficulty of a beatmap!
+	 * @remarks Will ignore the customization of your mods
+	 * @param beatmap The Beatmap in question
+	 * @param mods Defaults to No Mod, can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+	 */
+	async getBeatmapDifficultyAttributesFruits(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesFruits> {
+		return await this.getBeatmapDifficultyAttributes(beatmap.id, mods, Rulesets.fruits) as BeatmapDifficultyAttributesFruits
+	}
+	/**
+	 * Get various data about the difficulty of a beatmap!
+	 * @remarks Will ignore the customization of your mods
+	 * @param beatmap The Beatmap in question
+	 * @param mods Defaults to No Mod, can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+	 */
+	async getBeatmapDifficultyAttributesMania(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesMania> {
+		return await this.getBeatmapDifficultyAttributes(beatmap.id, mods, Rulesets.mania) as BeatmapDifficultyAttributesMania
 	}
 
 	/**
