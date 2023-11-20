@@ -26,10 +26,14 @@ async function attempt<T>(msg: string, fun: Promise<any>): Promise<T | false> {
 	}
 }
 
-function isOk(response: any, condition?: boolean) {
+function isOk(response: any, condition?: boolean, depth: number = Infinity) {
 	if (condition === undefined) condition = true
 	if (!response || !condition) {
-		console.error("❌ Bad response:", util.inspect(response, {colors: true, compact: true, breakLength: 400, depth: Infinity}))
+		if (Array.isArray(response) && response[0]) {
+			console.log("(only printing the first element of the response array for the following error:")
+			response = response[0]
+		}
+		console.error("❌ Bad response:", util.inspect(response, {colors: true, compact: true, breakLength: 400, depth: depth}))
 		return false
 	}
 	return true
@@ -86,7 +90,8 @@ const testUserStuff = async (): Promise<boolean> => {
 	if (!isOk(a3, !a3 || (a3.length === 5 && validate(a3[0], "ScoreWithUserBeatmapBeatmapset", score_gen)))) okay = false
 	let a4 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores (firsts): ", api.getUserScores({id: 6503700}, "firsts", 3))
 	if (!isOk(a4, !a4 || (a4.length === 3 && validate(a4[0], "ScoreWithUserBeatmapBeatmapset", score_gen)))) okay = false
-	let a5 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores (recent): ", api.getUserScores({id: 12337864}, "recent", 1))
+	let a5 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt(
+		"getUserScores (recent): ", api.getUserScores({id: 12337864}, "recent", 1, undefined, true))
 	// Due to the nature of the test, it might fail, you may adapt the user id
 	if (!isOk(a5, !a5 || (a5.length === 1 && validate(a5[0], "ScoreWithUserBeatmapBeatmapset", score_gen)))) okay = false
 	let a6 = await <Promise<ReturnType<typeof api.getUserKudosu> | false>>attempt("getUserKudosu: ", api.getUserKudosu({id: user_id}, 5))
@@ -161,16 +166,16 @@ const testMultiplayerStuff = async (): Promise<boolean> => {
 	if (d1) { // can't bother getting and writing down the id of a playlist item
 		let d3 = await <Promise<ReturnType<typeof api.getPlaylistItemScores> | false>>attempt(
 			"getPlaylistItemScores (realtime): ", api.getPlaylistItemScores({id: d1.playlist[0].id, room_id: d1.id}))
-		!isOk(d3, !d3 || (d3.scores.length > 0 && validate(d3.scores[0], "MultiplayerScores", generator))) ?
+		!isOk(d3, !d3 || (d3.scores.length > 0 && validate(d3, "MultiplayerScores", generator)), 1) ?
 			console.log("Bug not fixed yet...") : console.log("Bug fixed!!! :partying_face:")
 	}
 	if (d2) { // still can't bother getting and writing down the id of a playlist item
 		let d4 = await <Promise<ReturnType<typeof api.getPlaylistItemScores> | false>>attempt(
 			"getPlaylistItemScores (playlist): ", api.getPlaylistItemScores({id: d2.playlist[0].id, room_id: d2.id}))
-		if (!isOk(d4, !d4 || (d4.scores.length >= 50 && validate(d4.scores[0], "MultiplayerScores", generator)))) okay = false
+		if (!isOk(d4, !d4 || (d4.scores.length >= 50 && validate(d4, "MultiplayerScores", generator)), 1)) okay = false
 	}
 	let d5 = await <Promise<ReturnType<typeof api.getMatch> | false>>attempt("getMatch: ", api.getMatch(62006076))
-	if (!isOk(d5, !d5 || (d5.match.name === "CWC2020: (Italy) vs (Indonesia)" && validate(d5, "Match", generator)))) okay = false
+	if (!isOk(d5, !d5 || (d5.match.name === "CWC2020: (Italy) vs (Indonesia)" && validate(d5, "Match", generator)), 3)) okay = false
 	let d6 = await <Promise<ReturnType<typeof api.getMatches> | false>>attempt("getMatches: ", api.getMatches())
 	if (!isOk(d6, !d6 || (d6[0].id > 111250329 && validate(d6[0], "MatchInfo", generator)))) okay = false
 

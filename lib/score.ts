@@ -12,7 +12,7 @@ export interface Score {
 	accuracy: number
 	best_id: number | null
 	created_at: Date
-	id: number
+	id: number | null
 	max_combo: number
 	mode: string
 	mode_int: Rulesets
@@ -22,7 +22,7 @@ export interface Score {
 	/**
 	 * null when Beatmap is Loved (for example)
 	 */
-	pp: null | number
+	pp: number | null
 	/**
 	 * Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%)
 	 */

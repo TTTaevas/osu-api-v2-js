@@ -547,7 +547,13 @@ export class API {
 	 * @param id Can be found at the end of the URL of said match
 	 */
 	async getMatch(id: number): Promise<Match> {
-		const response = await this.request("get", `matches/${id}`)
+		let response = await this.request("get", `matches/${id}`) as Match
+		// I know `events[i].game.scores[e].perfect` can at least be 0 instead of being false; fix that
+		for (let i = 0; i < response.events.length; i++) {
+			for (let e = 0; e < Number(response.events[i].game?.scores.length); e++) {
+				response.events[i].game!.scores[e].perfect = Boolean(response.events[i].game!.scores[e].perfect)
+			}
+		}
 		return correctType(response) as Match
 	}
 

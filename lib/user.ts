@@ -59,7 +59,7 @@ export interface UserWithCountryCover extends UserWithCountry {
 	cover: {
 		custom_url: string | null
 		url: string
-		id: string | null
+		id: number | null
 	}
 }
 

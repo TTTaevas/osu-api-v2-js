@@ -60,8 +60,14 @@ export interface PlaylistItem {
 	required_mods: Mod[]
 	expired: boolean
 	owner_id: number
-	playlist_order: number
-	played_at: Date
+	/**
+	 * Should be null if the room isn't the realtime multiplayer kind
+	 */
+	playlist_order: number | null
+	/**
+	 * Should be null if the room isn't the realtime multiplayer kind
+	 */
+	played_at: Date | null
 	beatmap: BeatmapWithBeatmapsetChecksumMaxcombo
 }
 
@@ -77,7 +83,7 @@ export interface MultiplayerScore {
 	beatmap_id: number
 	ended_at: Date
 	max_combo: number
-	max_statistics: {
+	maximum_statistics: {
 		great: number
 		ignore_hit: number
 		large_tick_hit: number
@@ -88,16 +94,21 @@ export interface MultiplayerScore {
 	rank: string
 	ruleset_id: number
 	started_at: Date
+	/**
+	 * All of its properties are optional because instead of being 0, the property actually disappears instead!
+	 * (so if the score has no miss, the miss property is simply not there)
+	 * @privateRemarks lmao wtf nanaya
+	 */
 	statistics: {
-		great: number
-		large_bonus: number
-		large_tick_hit: number
-		meh: number
-		miss: number
-		ok: number
-		small_bonus: number
-		small_tick_hit: number
-		small_tick_miss: number
+		great?: number
+		large_bonus?: number
+		large_tick_hit?: number
+		meh?: number
+		miss?: number
+		ok?: number
+		small_bonus?: number
+		small_tick_hit?: number
+		small_tick_miss?: number
 	}
 	total_score: number
 	user_id: number
@@ -118,11 +129,11 @@ export interface MultiplayerScores {
 		limit: number
 		sort: string
 	}
+	scores: MultiplayerScore[]
 	/**
 	 * How many scores there are across all pages, not necessarily `scores.length`
 	 */
 	total: number
-	scores: MultiplayerScore[]
 	/**
 	 * Will be null if not an authorized user or if the authorized user has no score
 	 */
