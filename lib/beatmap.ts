@@ -44,7 +44,7 @@ export interface BeatmapWithBeatmapsetChecksumMaxcombo extends BeatmapWithBeatma
 }
 
 /**
- * Expected from Score
+ * Expected from ScoreWithUserBeatmapBeatmapset
  */
 export interface BeatmapExtended extends BeatmapWithChecksum {
 	accuracy: number

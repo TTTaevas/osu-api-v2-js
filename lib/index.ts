@@ -1,25 +1,36 @@
 import fetch, { FetchError } from "node-fetch"
 import querystring from "querystring"
-import { User, UserExtended, KudosuHistory, UserWithKudosu, UserWithCountryCoverGroupsStatisticsSupport, UserExtendedWithStatisticsrulesets, UserWithCountryCoverGroupsStatisticsrulesets } from "./user.js"
-import { Beatmap, BeatmapExtended, BeatmapDifficultyAttributes, BeatmapPack, Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapsetExtendedPlus, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania, BeatmapDifficultyAttributesTaiko } from "./beatmap.js"
-import { Leader, Match, MatchInfo, MultiplayerScore, MultiplayerScores, PlaylistItem, Room } from "./multiplayer.js"
-import { Rulesets, Mod } from "./misc.js"
-import { BeatmapUserScore, Score, ScoreWithUser, ScoreWithUserBeatmapBeatmapset } from "./score.js"
-import { Rankings, RankingsCountry, RankingsSpotlight, Spotlight } from "./ranking.js"
-import { ChangelogBuildWithChangelogentriesVersions, ChangelogBuildWithUpdatestreamsChangelogentries, UpdateStream } from "./changelog.js"
 
-export {User, UserExtended, KudosuHistory}
-export {Beatmap, BeatmapExtended, Beatmapset, BeatmapsetExtended}
-export {BeatmapUserScore, Score}
-export {Room, Leader, PlaylistItem, MultiplayerScore}
-export {Rulesets}
-export {UpdateStream}
+import { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
+	UserExtended, UserExtendedWithStatisticsrulesets,
+	UserStatistics, UserStatisticsWithUser, UserStatisticsWithCountryrank, KudosuHistory, ProfileBanner } from "./user.js"
+import { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, 
+	BeatmapDifficultyAttributes, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesTaiko, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania,
+	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedPlus, BeatmapPack, RankStatus } from "./beatmap.js"
 
-/**
- * Scopes determine what the API instance can do as a user!
- * @remarks "identify" is always implicity provided, "public" is implicitly needed for almost everything
- */
-type Scope = "chat.read" | "chat.write" | "chat.write_manage" | "delegate" | "forum.write" | "friends.read" | "identify" | "public"
+import { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
+import { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
+import { Rankings, RankingsCountry, Spotlight, SpotlightWithParticipantcount, RankingsSpotlight } from "./ranking.js"
+
+import { ChangelogBuildWithUpdatestreams,  ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
+	UpdateStream } from "./changelog.js"
+import { Rulesets, Mod, Scope } from "./misc.js"
+
+export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
+	UserExtended, UserExtendedWithStatisticsrulesets,
+	UserStatistics, UserStatisticsWithUser, UserStatisticsWithCountryrank, KudosuHistory, ProfileBanner } from "./user.js"
+export { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, 
+	BeatmapDifficultyAttributes, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesTaiko, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania,
+	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedPlus, BeatmapPack, RankStatus } from "./beatmap.js"
+
+export { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
+export { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
+export { Rankings, RankingsCountry, Spotlight, SpotlightWithParticipantcount, RankingsSpotlight } from "./ranking.js"
+
+export { ChangelogBuildWithUpdatestreams,  ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
+	UpdateStream } from "./changelog.js"
+export { Rulesets, Mod, Scope } from "./misc.js"
+
 
 /**
  * Generates a link for users to click on in order to use your application!

@@ -1,13 +1,7 @@
-type ProfilePage = "me" | "recent_activity" | "beatmaps" | "historical" | "kudosu" | "top_ranks" | "medals"
-
-type UserBadge = {
-	awarded_at: Date
-	description: string
-	image_url: string
-	url: string
-}
-
-type ProfileBanner = {
+/**
+ * Expected from UserExtended
+ */
+export type ProfileBanner = {
 	id: number
 	tournament_id: number
 	image: string
@@ -113,7 +107,7 @@ export interface UserExtended extends UserWithCountryCoverGroupsStatisticsSuppor
 	playmode: string
 	playstyle: string[]
 	post_count: number
-	profile_order: ProfilePage[]
+	profile_order: ("me" | "recent_activity" | "beatmaps" | "historical" | "kudosu" | "top_ranks" | "medals")[]
 	title: string | null
 	title_url: string | null
 	twitter: string | null
@@ -131,7 +125,12 @@ export interface UserExtended extends UserWithCountryCoverGroupsStatisticsSuppor
 	 * This is not documented by osu!, likely because support for multiple banners has been recently added (OWC2023)
 	 */
 	active_tournament_banners: ProfileBanner[]
-	badges: UserBadge[]
+	badges: {
+		awarded_at: Date
+		description: string
+		image_url: string
+		url: string
+	}[]
 	beatmap_playcounts_count: number
 	comments_count: number
 	favourite_beatmapset_count: number
