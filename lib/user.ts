@@ -8,7 +8,7 @@ export type ProfileBanner = {
 }
 
 /**
- * Expected from BeatmapsetExtendedPlus, Room
+ * Expected from BeatmapsetExtendedPlus, Room, SearchResultUser
  */
 export interface User {
 	avatar_url: string

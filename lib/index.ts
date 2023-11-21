@@ -14,6 +14,7 @@ import { Rankings, RankingsCountry, Spotlight, SpotlightWithParticipantcount, Ra
 
 import { ChangelogBuildWithUpdatestreams,  ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
 	UpdateStream } from "./changelog.js"
+import { SearchResultUser, SearchResultWiki } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
 
 export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
@@ -29,6 +30,7 @@ export { Rankings, RankingsCountry, Spotlight, SpotlightWithParticipantcount, Ra
 
 export { ChangelogBuildWithUpdatestreams,  ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
 	UpdateStream } from "./changelog.js"
+export { SearchResultUser, SearchResultWiki } from "./home.js"
 export { Rulesets, Mod, Scope } from "./misc.js"
 
 
@@ -657,6 +659,29 @@ export class API {
 	async getSpotlights(): Promise<Spotlight[]> {
 		const response = await this.request("get", "spotlights")
 		return response.spotlights.map((s: Spotlight) => correctType(s)) as Spotlight[]
+	}
+
+
+	// HOME STUFF
+
+	/**
+	 * Look for a user like you would on the website!
+	 * @param query What you would put in the searchbar
+	 * @param page (defaults to 1) You normally get the first 20 results, but if page is 2, you'd get results 21 to 40 instead for example!
+	 */
+	async searchUser(query: string, page: number = 1): Promise<SearchResultUser> {
+		const response = await this.request("get", "search", {mode: "user", query, page})
+		return correctType(response.user) as SearchResultUser
+	}
+
+	/**
+	 * Look for a wiki page like you would on the website!
+	 * @param query What you would put in the searchbar
+	 * @param page (defaults to 1) You normally get the first 50 results, but if page is 2, you'd get results 51 to 100 instead for example!
+	 */
+	async searchWiki(query: string, page: number = 1): Promise<SearchResultWiki> {
+		const response = await this.request("get", "search", {mode: "wiki_page", query, page})
+		return correctType(response.wiki_page) as SearchResultWiki
 	}
 }
 

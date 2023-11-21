@@ -216,18 +216,36 @@ const testRankingStuff = async (): Promise<boolean> => {
 	return okay
 }
 
+/**
+ * Check if searchUser() and similar work fine
+ */
+const testHomeStuff = async (): Promise<boolean> => {
+	const generator = tsj.createGenerator({path: "lib/home.ts", additionalProperties: true})
+	let okay = true
+
+	let f1 = await <Promise<ReturnType<typeof api.searchUser> | false>>attempt("\nsearchUser: ", api.searchUser("Tae", 2))
+	if (!isOk(f1, !f1 || (f1.data.length === 20 && validate(f1, "SearchResultUser", generator)))) okay = false
+	let f2 = await <Promise<ReturnType<typeof api.searchWiki> | false>>attempt("searchWiki: ", api.searchWiki("Beat", 2))
+	if (!isOk(f2, !f2 || (f2.data.length === 50 && validate(f2, "SearchResultWiki", generator)))) okay = false
+
+	return okay
+}
+
 const test = async (id: string, secret: string): Promise<void> => {
 	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all")
 
-	let a = await testUserStuff()
-	let b = await testBeatmapStuff()
-	let c = await testChangelogStuff()
-	let d = await testMultiplayerStuff()
-	let e = await testRankingStuff()
+	const a = await testUserStuff()
+	const b = await testBeatmapStuff()
+	const c = await testChangelogStuff()
+	const d = await testMultiplayerStuff()
+	const e = await testRankingStuff()
+	const f = await testHomeStuff()
 
-	let test_results = [a,b,c,d,e].map((bool: boolean, index: number) => bool ? `${index + 1}: ✔️\n` : `${index + 1}: ❌\n`)
+	const arr = [a,b,c,d,e,f]
+
+	const test_results = arr.map((bool: boolean, index: number) => bool ? `${index + 1}: ✔️\n` : `${index + 1}: ❌\n`)
 	console.log("\n", ...test_results)
-	if ([a,b,c,d,e].indexOf(false) === -1) {
+	if (arr.indexOf(false) === -1) {
 		console.log("✔️ Looks like the test went well!")
 	} else {
 		throw new Error("❌ Something in the test went wrong...")
