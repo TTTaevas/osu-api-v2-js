@@ -198,6 +198,9 @@ export interface UserExtendedWithStatisticsrulesets extends UserExtended, UserWi
 	
 }
 
+/**
+ * Expected from UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport
+ */
 export interface UserStatistics {
 	count_100: number
 	count_300: number

@@ -233,7 +233,7 @@ export interface BeatmapPlaycount {
 }
 
 /**
- * @privateRemarks While not expected from anywhere, it should be exported for ease of use purposes
+ * Expected from api.getBeatmapDifficultyAttributes()
  */
 export interface BeatmapDifficultyAttributes {
 	star_rating: number

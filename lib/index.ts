@@ -6,7 +6,8 @@ import { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCo
 	UserStatistics, UserStatisticsWithUser, UserStatisticsWithCountryrank, KudosuHistory, ProfileBanner } from "./user.js"
 import { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, BeatmapPlaycount,
 	BeatmapDifficultyAttributes, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesTaiko, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania,
-	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedPlus, BeatmapPack, RankStatus, BeatmapsetExtendedWithBeatmapExtended } from "./beatmap.js"
+	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedWithBeatmapExtended, BeatmapsetExtendedPlus, BeatmapPack, RankStatus }
+	from "./beatmap.js"
 
 import { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
 import { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
@@ -26,7 +27,8 @@ export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCo
 	UserStatistics, UserStatisticsWithUser, UserStatisticsWithCountryrank, KudosuHistory, ProfileBanner } from "./user.js"
 export { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, BeatmapPlaycount,
 	BeatmapDifficultyAttributes, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesTaiko, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania,
-	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedPlus, BeatmapPack, RankStatus } from "./beatmap.js"
+	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedWithBeatmapExtended, BeatmapsetExtendedPlus, BeatmapPack, RankStatus }
+	from "./beatmap.js"
 
 export { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
 export { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
@@ -40,6 +42,33 @@ export { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangel
 export { WikiPage } from "./wiki.js"
 export { SearchResultUser, SearchResultWiki } from "./home.js"
 export { Rulesets, Mod, Scope } from "./misc.js"
+
+/**
+ * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
+ * @param x Anything, but should be a string, an array that contains a string, or an object which has a string
+ * @returns x, but with it (or what it contains) now having the correct type
+ */
+function correctType(x: any): any {
+	if (typeof x === "boolean") {
+		return x
+	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}/.test(x)) {
+		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(x)) x += "Z"
+		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}$/.test(x)) x = x.substring(0, x.indexOf("+")) + "Z"
+		return new Date(x)
+	} else if (Array.isArray(x)) {
+		return x.map((e) => correctType(e))
+	} else if (!isNaN(x) && x !== "") {
+		return x === null ? null : Number(x)
+	} else if (typeof x === "object" && x !== null) {
+		const k = Object.keys(x)
+		const v = Object.values(x)
+		for (let i = 0; i < k.length; i++) {
+			if (typeof v[i] === "string" && (k[i].includes("name") || k[i].includes("version"))) continue // don't turn names made of numbers into integers
+			x[k[i]] = correctType(v[i])
+		}
+	}
+	return x
+}
 
 
 /**
@@ -292,14 +321,14 @@ export class API {
 				this.log(true, "Will request again in a few instants...", `(Try #${number_try})`)
 				const to_wait = (Math.floor(Math.random() * (500 - 100 + 1)) + 100) * 10
 				await new Promise(res => setTimeout(res, to_wait))
-				return await this.request(method, endpoint, parameters, number_try + 1)
+				return correctType(await this.request(method, endpoint, parameters, number_try + 1))
 			}
 
 			throw new APIError(err, `${this.server}/api/v2`, endpoint, JSON.stringify(parameters))
 		}
 
 		this.log(false, response.statusText, response.status, {endpoint, parameters})
-		return response.json()
+		return correctType(await response.json())
 	}
 
 
@@ -311,8 +340,7 @@ export class API {
 	 * @scope identify
 	 */
 	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtendedWithStatisticsrulesets> {
-		const response = await this.request("get", "me", {mode: ruleset})
-		return correctType(response) as UserExtendedWithStatisticsrulesets
+		return await this.request("get", "me", {mode: ruleset})
 	}
 	
 	/**
@@ -323,10 +351,9 @@ export class API {
 	async getUser(user: {id?: number, username?: string} | User, ruleset?: Rulesets): Promise<UserExtended> {
 		const key = user.id !== undefined ? "id" : "username"
 		const lookup = user.id !== undefined ? user.id : user.username
-		const mode = ruleset ? `/${Rulesets[ruleset]}` : ""
+		const mode = ruleset !== undefined ? `/${Rulesets[ruleset]}` : ""
 
-		const response = await this.request("get", `users/${lookup}${mode}`, {key})
-		return correctType(response)
+		return await this.request("get", `users/${lookup}${mode}`, {key})
 	}
 
 	/**
@@ -335,7 +362,7 @@ export class API {
 	 */
 	async getUsers(ids: number[]): Promise<UserWithCountryCoverGroupsStatisticsrulesets[]> {
 		const response = await this.request("get", "users", {ids})
-		return correctType(response.users)
+		return response.users
 	}
 
 	/**
@@ -349,9 +376,8 @@ export class API {
 	 */
 	async getUserScores(user: {id: number} | User, type: "best" | "firsts" | "recent", limit?: number,
 	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<ScoreWithUserBeatmapBeatmapset[]> {
-		const mode = ruleset ? Rulesets[ruleset] : undefined
-		const response = await this.request("get", `users/${user.id}/scores/${type}`, {mode, limit, offset, include_fails: String(Number(include_fails))})
-		return correctType(response)
+		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
+		return await this.request("get", `users/${user.id}/scores/${type}`, {mode, limit, offset, include_fails: String(Number(include_fails))})
 	}
 
 	/**
@@ -363,8 +389,7 @@ export class API {
 	 */
 	async getUserBeatmaps(user: {id: number} | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
 	limit: number = 5, offset?: number): Promise<BeatmapsetExtendedWithBeatmapExtended[]> {
-		const response = await this.request("get", `users/${user.id}/beatmapsets/${type}`, {limit, offset})
-		return correctType(response)
+		return await this.request("get", `users/${user.id}/beatmapsets/${type}`, {limit, offset})
 	}
 
 	/**
@@ -374,8 +399,7 @@ export class API {
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
 	async getUserMostPlayed(user: {id: number} | User, limit: number = 5, offset?: number): Promise<BeatmapPlaycount[]> {
-		const response = await this.request("get", `users/${user.id}/beatmapsets/most_played`, {limit, offset})
-		return correctType(response)
+		return await this.request("get", `users/${user.id}/beatmapsets/most_played`, {limit, offset})
 	}
 
 	/**
@@ -387,8 +411,7 @@ export class API {
 	async getUserRecentActivity(user: {id: number} | User, limit: number = 5, offset?: number): Promise<Array<EventAchievement | EventBeatmapsetApprove |
 	EventBeatmapsetRevive | EventBeatmapsetUpdate | EventBeatmapsetUpload | EventRank | EventRankLost |
 	EventUserSupportAgain | EventUserSupportFirst | EventUserSupportGift | EventUsernameChange>> {
-		const response = await this.request("get", `users/${user.id}/recent_activity`, {limit, offset})
-		return correctType(response)
+		return await this.request("get", `users/${user.id}/recent_activity`, {limit, offset})
 	}
 
 	/**
@@ -398,8 +421,7 @@ export class API {
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
 	async getUserKudosu(user: {id: number} | User, limit?: number, offset?: number): Promise<KudosuHistory[]> {
-		const response = await this.request("get", `users/${user.id}/kudosu`, {limit, offset})
-		return correctType(response)
+		return await this.request("get", `users/${user.id}/kudosu`, {limit, offset})
 	}
 
 	/**
@@ -407,8 +429,7 @@ export class API {
 	 * @scope friends.read
 	 */
 	async getFriends(): Promise<UserWithCountryCoverGroupsStatisticsSupport[]> {
-		const response = await this.request("get", "friends")
-		return correctType(response)
+		return await this.request("get", "friends")
 	}
 
 	
@@ -419,8 +440,7 @@ export class API {
 	 * @param beatmap An object with the id of the beatmap you're trying to get
 	 */
 	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtendedWithFailtimesBeatmapsetextended> {
-		const response = await this.request("get", `beatmaps/${beatmap.id}`)
-		return correctType(response)
+		return await this.request("get", `beatmaps/${beatmap.id}`)
 	}
 
 	/**
@@ -429,48 +449,53 @@ export class API {
 	 */
 	async getBeatmaps(ids?: number[]): Promise<BeatmapExtended[]> {
 		const response = await this.request("get", "beatmaps", {ids})
-		return correctType(response.beatmaps)
+		return response.beatmaps
 	}
 
-	private async getBeatmapDifficultyAttributes(id: number, mods?: Mod[] | string[] | number, ruleset?: Rulesets): Promise<BeatmapDifficultyAttributes> {
-		const response = await this.request("post", `beatmaps/${id}/attributes`, {ruleset_id: ruleset, mods})
-		return correctType(response.attributes)
-	}
 	/**
 	 * Get various data about the difficulty of a beatmap!
-	 * @remarks Will ignore the customization of your mods
+	 * @remarks You may want to use getBeatmapDifficultyAttributesOsu (or Taiko or whatever) instead for better type safety
 	 * @param beatmap The Beatmap in question
-	 * @param mods Defaults to No Mod, can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+	 * @param ruleset (defaults to the ruleset the beatmap was intended for) Useful to specify if the beatmap is a convert
+	 */
+	async getBeatmapDifficultyAttributes(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number, ruleset?: Rulesets):
+	Promise<BeatmapDifficultyAttributes | BeatmapDifficultyAttributesOsu |BeatmapDifficultyAttributesTaiko |
+	BeatmapDifficultyAttributesFruits | BeatmapDifficultyAttributesMania> {
+		const response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
+		return response.attributes
+	}
+	/**
+	 * Get various data about the difficulty of an osu! beatmap!
+	 * @param beatmap The Beatmap in question
+	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
 	 */
 	async getBeatmapDifficultyAttributesOsu(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesOsu> {
-		return await this.getBeatmapDifficultyAttributes(beatmap.id, mods, Rulesets.osu) as BeatmapDifficultyAttributesOsu
+		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.osu) as BeatmapDifficultyAttributesOsu
 	}
 	/**
-	 * Get various data about the difficulty of a beatmap!
-	 * @remarks Will ignore the customization of your mods
+	 * Get various data about the difficulty of a taiko beatmap!
 	 * @param beatmap The Beatmap in question
-	 * @param mods Defaults to No Mod, can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
 	 */
 	async getBeatmapDifficultyAttributesTaiko(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesTaiko> {
-		return await this.getBeatmapDifficultyAttributes(beatmap.id, mods, Rulesets.taiko) as BeatmapDifficultyAttributesTaiko
+		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.taiko) as BeatmapDifficultyAttributesTaiko
 	}
 	/**
-	 * Get various data about the difficulty of a beatmap!
-	 * @remarks Will ignore the customization of your mods
+	 * Get various data about the difficulty of a ctb beatmap!
 	 * @param beatmap The Beatmap in question
-	 * @param mods Defaults to No Mod, can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
 	 */
 	async getBeatmapDifficultyAttributesFruits(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesFruits> {
-		return await this.getBeatmapDifficultyAttributes(beatmap.id, mods, Rulesets.fruits) as BeatmapDifficultyAttributesFruits
+		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.fruits) as BeatmapDifficultyAttributesFruits
 	}
 	/**
-	 * Get various data about the difficulty of a beatmap!
-	 * @remarks Will ignore the customization of your mods
+	 * Get various data about the difficulty of a mania beatmap!
 	 * @param beatmap The Beatmap in question
-	 * @param mods Defaults to No Mod, can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
 	 */
 	async getBeatmapDifficultyAttributesMania(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesMania> {
-		return await this.getBeatmapDifficultyAttributes(beatmap.id, mods, Rulesets.mania) as BeatmapDifficultyAttributesMania
+		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.mania) as BeatmapDifficultyAttributesMania
 	}
 
 	/**
@@ -481,9 +506,9 @@ export class API {
 	 * @param type (2023-11-16) Currently doesn't do anything
 	 */
 	async getBeatmapScores(beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<ScoreWithUser[]> {
-		const mode = ruleset ? Rulesets[ruleset] : undefined
+		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
 		const response = await this.request("get", `beatmaps/${beatmap.id}/scores`, {mode, mods, type})
-		return correctType(response.scores)
+		return response.scores
 	}
 
 	/**
@@ -496,9 +521,8 @@ export class API {
 	 */
 	async getBeatmapUserScore(beatmap: {id: number} | Beatmap, user: {id: number} | User,
 		mods?: string[], ruleset?: Rulesets): Promise<BeatmapUserScore> {
-		const mode = ruleset ? Rulesets[ruleset] : undefined
-		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`, {mods, mode})
-		return correctType(response)
+		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
+		return await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`, {mods, mode})
 	}
 
 	/**
@@ -508,9 +532,9 @@ export class API {
 	 * @param ruleset The Ruleset used to make the scores, defaults to the Ruleset the Beatmap was made for
 	 */
 	async getBeatmapUserScores(beatmap: {id: number} | Beatmap, user: {id: number} | User, ruleset?: Rulesets): Promise<Score[]> {
-		const mode = ruleset ? Rulesets[ruleset] : undefined
+		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
 		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}/all`, {mode})
-		return correctType(response.scores)
+		return response.scores
 	}
 
 	/**
@@ -518,8 +542,7 @@ export class API {
 	 * @param beatmapset An object with the id of the beatmapset you're trying to get
 	 */
 	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtendedPlus> {
-		const response = await this.request("get", `beatmapsets/${beatmapset.id}`)
-		return correctType(response)
+		return await this.request("get", `beatmapsets/${beatmapset.id}`)
 	}
 
 	/**
@@ -528,8 +551,7 @@ export class API {
 	 * @remarks Currently in https://osu.ppy.sh/beatmaps/packs, when hovering a pack, its link with its tag should show up on your browser's bottom left
 	 */
 	async getBeatmapPack(pack: {tag: string} | BeatmapPack): Promise<BeatmapPack> {
-		const response = await this.request("get", `beatmaps/packs/${pack.tag}`)
-		return correctType(response)
+		return await this.request("get", `beatmaps/packs/${pack.tag}`)
 	}
 
 	/**
@@ -538,7 +560,7 @@ export class API {
 	 */
 	async getBeatmapPacks(type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<BeatmapPack[]> {
 		const response = await this.request("get", "beatmaps/packs", {type})
-		return correctType(response.beatmap_packs)
+		return response.beatmap_packs
 	}
 
 
@@ -550,8 +572,7 @@ export class API {
 	 * @param build The name of the version! Usually something like `2023.1026.0` for lazer, or `20230326` for stable
 	 */
 	async getChangelogBuild(stream: string, build: string): Promise<ChangelogBuildWithChangelogentriesVersions> {
-		const response = await this.request("get", `changelog/${stream}/${build}`)
-		return correctType(response)
+		return await this.request("get", `changelog/${stream}/${build}`)
 	}
 
 	/**
@@ -565,7 +586,7 @@ export class API {
 	stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<ChangelogBuildWithUpdatestreamsChangelogentries[]> {
 		const [from, to] = [versions?.from, versions?.to]
 		const response = await this.request("get", "changelog", {from, to, max_id, stream, message_formats})
-		return correctType(response.builds)
+		return response.builds
 	}
 
 	/**
@@ -576,7 +597,7 @@ export class API {
 	 */
 	async getChangelogStreams(): Promise<UpdateStream[]> {
 		const response = await this.request("get", "changelog", {max_id: 0})
-		return correctType(response.streams)
+		return response.streams
 	}
 
 
@@ -587,8 +608,7 @@ export class API {
 	 * @param room An object with the id of the room, is at the end of its URL (after `/multiplayer/rooms/`)
 	 */
 	async getRoom(room: {id: number} | Room): Promise<Room> {
-		const response = await this.request("get", `rooms/${room.id}`)
-		return correctType(response)
+		return await this.request("get", `rooms/${room.id}`)
 	}
 
 	/**
@@ -597,8 +617,7 @@ export class API {
 	 * @scope public
 	 */
 	async getRooms(mode: "active" | "all" | "ended" | "participated" | "owned" = "active"): Promise<Room[]> {
-		const response = await this.request("get", "rooms", {mode})
-		return correctType(response)
+		return await this.request("get", "rooms", {mode})
 	}
 
 	/**
@@ -608,7 +627,7 @@ export class API {
 	 */
 	async getRoomLeaderboard(room: {id: number} | Room): Promise<Leader[]> {
 		const response = await this.request("get", `rooms/${room.id}/leaderboard`)
-		return correctType(response.leaderboard)
+		return response.leaderboard
 	}
 
 	/**
@@ -622,8 +641,7 @@ export class API {
 	 */
 	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem, limit: number = 50,
 	sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<MultiplayerScores> {
-		const response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
-		return correctType(response)
+		return await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
 	}
 
 	/**
@@ -638,7 +656,7 @@ export class API {
 				response.events[i].game!.scores[e].perfect = Boolean(response.events[i].game!.scores[e].perfect)
 			}
 		}
-		return correctType(response)
+		return response
 	}
 
 	/**
@@ -646,7 +664,7 @@ export class API {
 	 */
 	async getMatches(): Promise<MatchInfo[]> {
 		const response = await this.request("get", "matches")
-		return correctType(response.matches)
+		return response.matches
 	}
 
 
@@ -657,7 +675,7 @@ export class API {
 	 */
 	async getKudosuRanking(): Promise<UserWithKudosu[]> {
 		const response = await this.request("get", "rankings/kudosu")
-		return correctType(response.ranking)
+		return response.ranking
 	}
 
 	/**
@@ -671,8 +689,7 @@ export class API {
 	 */
 	async getRanking(ruleset: Rulesets, type: "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
 	country?: string, variant?: "4k" | "7k"): Promise<Rankings> {
-		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, variant})
-		return correctType(response)
+		return await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, variant})
 	}
 
 	/**
@@ -681,8 +698,7 @@ export class API {
 	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one
 	 */
 	async getCountryRanking(ruleset: Rulesets, page: number = 1): Promise<RankingsCountry> {
-		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/country`, {page})
-		return correctType(response)
+		return await this.request("get", `rankings/${Rulesets[ruleset]}/country`, {page})
 	}
 
 	/**
@@ -692,8 +708,7 @@ export class API {
 	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
 	 */
 	async getSpotlightRanking(ruleset: Rulesets, spotlight: {id: number} | Spotlight, filter: "all" | "friends" = "all"): Promise<RankingsSpotlight> {
-		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: spotlight.id, filter})
-		return correctType(response)
+		return await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: spotlight.id, filter})
 	}
 
 	/**
@@ -703,7 +718,7 @@ export class API {
 	 */
 	async getSpotlights(): Promise<Spotlight[]> {
 		const response = await this.request("get", "spotlights")
-		return correctType(response.spotlights)
+		return response.spotlights
 	}
 
 
@@ -716,7 +731,7 @@ export class API {
 	 */
 	async searchUser(query: string, page: number = 1): Promise<SearchResultUser> {
 		const response = await this.request("get", "search", {mode: "user", query, page})
-		return correctType(response.user)
+		return response.user
 	}
 
 	/**
@@ -726,7 +741,7 @@ export class API {
 	 */
 	async searchWiki(query: string, page: number = 1): Promise<SearchResultWiki> {
 		const response = await this.request("get", "search", {mode: "wiki_page", query, page})
-		return correctType(response.wiki_page)
+		return response.wiki_page
 	}
 
 	/**
@@ -736,39 +751,6 @@ export class API {
 	 * @param locale (defaults to "en") The BCP 47 language (sub)tag, lowercase (for example, for the article in french, use "fr")
 	 */
 	async getWikiPage(path: string, locale: string = "en"): Promise<WikiPage> {
-		const response = await this.request("get", `wiki/${locale}/${path}`)
-		return correctType(response)
+		return await this.request("get", `wiki/${locale}/${path}`)
 	}
-}
-
-/**
- * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
- * @param x Anything, but should be a string, an array that contains a string, or an object which has a string
- * @returns x, but with it (or what it contains) now having the correct type
- */
-function correctType(x: any): any {
-	if (typeof x === "boolean") {
-		return x
-	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/.test(x) ||
-	/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}$/g.test(x) || /^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{0,}Z$/g.test(x)) {
-		return new Date(x)
-	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(x)) {
-		x += "Z"
-		return new Date(x)
-	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}$/.test(x)) {
-		x = x.substring(0, x.indexOf("+")) + "Z"
-		return new Date(x)
-	} else if (Array.isArray(x)) {
-		return x.map((e) => correctType(e))
-	} else if (!isNaN(x) && x !== "") {
-		return x === null ? null : Number(x)
-	} else if (typeof x === "object" && x !== null) {
-		const k = Object.keys(x)
-		const v = Object.values(x)
-		for (let i = 0; i < k.length; i++) {
-			if (typeof v[i] === "string" && (k[i].includes("name") || k[i].includes("version"))) continue // don't turn names made of numbers into integers
-			x[k[i]] = correctType(v[i])
-		}
-	}
-	return x
 }
