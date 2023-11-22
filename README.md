@@ -15,8 +15,6 @@ pnpm add osu-api-v2-js # if using pnpm
 bun a osu-api-v2-js # if using bun
 ```
 
-Make sure to add `"type": "module"` to your `package.json`!
-
 To use (import) the package in your project and start interacting with the API, you may do something like that:
 
 ```typescript
@@ -112,8 +110,8 @@ logUserTopPlayBeatmap("Doomsday fanboy")
 - [x] /rooms/{room}/leaderboard
 
 ### News
-- [ ] Get News Listing
-- [ ] Get News Post
+- [x] Get News Listing // removing everything except `news_sidebar.news_posts`
+- [x] Get News Post
 
 ### Ranking
 - [x] Get Kudosu Ranking

@@ -19,6 +19,7 @@ import { Event, EventUser, EventBeatmap, EventBeatmapset, EventBeatmapPlaycount,
 import { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
 	UpdateStream } from "./changelog.js"
 import { WikiPage } from "./wiki.js"
+import { NewsPost, NewsPostWithContentNavigation } from "./news.js"
 import { SearchResultUser, SearchResultWiki } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
 
@@ -40,6 +41,7 @@ export { Event, EventUser, EventBeatmap, EventBeatmapset, EventBeatmapPlaycount,
 export { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
 	UpdateStream } from "./changelog.js"
 export { WikiPage } from "./wiki.js"
+export { NewsPost, NewsPostWithContentNavigation } from "./news.js"
 export { SearchResultUser, SearchResultWiki } from "./home.js"
 export { Rulesets, Mod, Scope } from "./misc.js"
 
@@ -49,9 +51,11 @@ export { Rulesets, Mod, Scope } from "./misc.js"
  * @returns x, but with it (or what it contains) now having the correct type
  */
 function correctType(x: any): any {
+	const bannedProperties = ["name", "version", "author"]
+
 	if (typeof x === "boolean") {
 		return x
-	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}/.test(x)) {
+	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}($|[ T])/.test(x)) {
 		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(x)) x += "Z"
 		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}$/.test(x)) x = x.substring(0, x.indexOf("+")) + "Z"
 		return new Date(x)
@@ -63,7 +67,7 @@ function correctType(x: any): any {
 		const k = Object.keys(x)
 		const v = Object.values(x)
 		for (let i = 0; i < k.length; i++) {
-			if (typeof v[i] === "string" && (k[i].includes("name") || k[i].includes("version"))) continue // don't turn names made of numbers into integers
+			if (typeof v[i] === "string" && bannedProperties.some((p) => k[i].includes(p))) continue // don't turn names made of numbers into integers
 			x[k[i]] = correctType(v[i])
 		}
 	}
@@ -752,5 +756,28 @@ export class API {
 	 */
 	async getWikiPage(path: string, locale: string = "en"): Promise<WikiPage> {
 		return await this.request("get", `wiki/${locale}/${path}`)
+	}
+
+
+	// NEWS STUFF
+
+	/**
+	 * Get all the NewsPosts of a specific year!
+	 * @remarks If the specified year is invalid/has no news, it fallbacks to the default year
+	 * @param year (defaults to current year) The year the posts were made
+	 */
+	async getNewsPosts(year?: number): Promise<NewsPost[]> {
+		const response = await this.request("get", "news", {year, limit: 1})
+		return response.news_sidebar.news_posts
+	}
+
+	/**
+	 * Get a NewsPost, its content, and the NewsPosts right before and right after it!
+	 * @param post An object with the id or the slug of a NewsPost (the slug being the filename minus the extension, used in its URL)
+	 */
+	async getNewsPost(post: {id?: number, slug?: string} | NewsPost): Promise<NewsPostWithContentNavigation> {
+		const key = post.id !== undefined ? "id" : undefined
+		const lookup = post.id !== undefined ? post.id : post.slug
+		return await this.request("get", `news/${lookup}`, {key})
 	}
 }

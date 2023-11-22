@@ -232,7 +232,7 @@ const testRankingStuff = async (rank_gen: tsj.SchemaGenerator): Promise<boolean>
 /**
  * Check if searchUser() and similar work fine
  */
-const testHomeStuff = async (home_gen: tsj.SchemaGenerator): Promise<boolean> => {
+const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.SchemaGenerator): Promise<boolean> => {
 	let okay = true
 
 	let f1 = await <Promise<ReturnType<typeof api.searchUser> | false>>attempt("\nsearchUser: ", api.searchUser("Tae", 2))
@@ -241,6 +241,10 @@ const testHomeStuff = async (home_gen: tsj.SchemaGenerator): Promise<boolean> =>
 	if (!isOk(f2, !f2 || (f2.data.length === 50 && validate(f2, "SearchResultWiki", home_gen)))) okay = false
 	let f3 = await <Promise<ReturnType<typeof api.getWikiPage> | false>>attempt("getWikiPage: ", api.getWikiPage("Rules"))
 	if (!isOk(f3, !f3 || (f3.title === "Rules" && validate(f3, "WikiPage", home_gen)))) okay = false
+	let f4 = await <Promise<ReturnType<typeof api.getNewsPosts> | false>>attempt("getNews: ", api.getNewsPosts())
+	if (!isOk(f4, !f4 || (f4.length >= 1 && validate(f4, "NewsPost", news_gen)))) okay = false
+	let f5 = await <Promise<ReturnType<typeof api.getNewsPost> | false>>attempt("getNewsPost: ", api.getNewsPost({id: 26}))
+	if (!isOk(f5, !f5 || (f5.title === "Official osu! Fanart Contest 5 Begins!" && validate(f5, "NewsPostWithContentNavigation", news_gen)))) okay = false
 
 	return okay
 }
@@ -258,7 +262,10 @@ const test = async (id: string, secret: string): Promise<void> => {
 	const c = await testChangelogStuff(tsj.createGenerator({path: "lib/changelog.ts", additionalProperties: true}))
 	const d = await testMultiplayerStuff(tsj.createGenerator({path: "lib/multiplayer.ts", additionalProperties: true}))
 	const e = await testRankingStuff(tsj.createGenerator({path: "lib/ranking.ts", additionalProperties: true}))
-	const f = await testHomeStuff(tsj.createGenerator({path: "lib/home.ts", additionalProperties: true}))
+	const f = await testHomeStuff(
+		tsj.createGenerator({path: "lib/home.ts", additionalProperties: true}),
+		tsj.createGenerator({path: "lib/news.ts", additionalProperties: true})
+	)
 
 	const arr = [a,b,c,d,e,f]
 
