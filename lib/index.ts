@@ -4,32 +4,40 @@ import querystring from "querystring"
 import { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
 	UserExtended, UserExtendedWithStatisticsrulesets,
 	UserStatistics, UserStatisticsWithUser, UserStatisticsWithCountryrank, KudosuHistory, ProfileBanner } from "./user.js"
-import { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, 
+import { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, BeatmapPlaycount,
 	BeatmapDifficultyAttributes, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesTaiko, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania,
-	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedPlus, BeatmapPack, RankStatus } from "./beatmap.js"
+	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedPlus, BeatmapPack, RankStatus, BeatmapsetExtendedWithBeatmapExtended } from "./beatmap.js"
 
 import { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
 import { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
 import { Rankings, RankingsCountry, Spotlight, SpotlightWithParticipantcount, RankingsSpotlight } from "./ranking.js"
+import { Event, EventUser, EventBeatmap, EventBeatmapset, EventBeatmapPlaycount, EventBeatmapsetDelete, EventAchievement, EventBeatmapsetApprove,
+	EventBeatmapsetRevive, EventBeatmapsetUpdate, EventBeatmapsetUpload, EventRank, EventRankLost, EventUserSupportAgain, EventUserSupportFirst,
+	EventUserSupportGift, EventUsernameChange } from "./event.js"
 
-import { ChangelogBuildWithUpdatestreams,  ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
+import { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
 	UpdateStream } from "./changelog.js"
+import { WikiPage } from "./wiki.js"
 import { SearchResultUser, SearchResultWiki } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
 
 export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
 	UserExtended, UserExtendedWithStatisticsrulesets,
 	UserStatistics, UserStatisticsWithUser, UserStatisticsWithCountryrank, KudosuHistory, ProfileBanner } from "./user.js"
-export { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, 
+export { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, BeatmapPlaycount,
 	BeatmapDifficultyAttributes, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesTaiko, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania,
 	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedPlus, BeatmapPack, RankStatus } from "./beatmap.js"
 
 export { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
 export { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
 export { Rankings, RankingsCountry, Spotlight, SpotlightWithParticipantcount, RankingsSpotlight } from "./ranking.js"
+export { Event, EventUser, EventBeatmap, EventBeatmapset, EventBeatmapPlaycount, EventBeatmapsetDelete, EventAchievement, EventBeatmapsetApprove,
+	EventBeatmapsetRevive, EventBeatmapsetUpdate, EventBeatmapsetUpload, EventRank, EventRankLost, EventUserSupportAgain, EventUserSupportFirst,
+	EventUserSupportGift, EventUsernameChange } from "./event.js"
 
-export { ChangelogBuildWithUpdatestreams,  ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
+export { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
 	UpdateStream } from "./changelog.js"
+export { WikiPage } from "./wiki.js"
 export { SearchResultUser, SearchResultWiki } from "./home.js"
 export { Rulesets, Mod, Scope } from "./misc.js"
 
@@ -318,7 +326,7 @@ export class API {
 		const mode = ruleset ? `/${Rulesets[ruleset]}` : ""
 
 		const response = await this.request("get", `users/${lookup}${mode}`, {key})
-		return correctType(response) as UserExtended
+		return correctType(response)
 	}
 
 	/**
@@ -327,7 +335,7 @@ export class API {
 	 */
 	async getUsers(ids: number[]): Promise<UserWithCountryCoverGroupsStatisticsrulesets[]> {
 		const response = await this.request("get", "users", {ids})
-		return response.users.map((u: UserWithCountryCoverGroupsStatisticsrulesets) => correctType(u)) as UserWithCountryCoverGroupsStatisticsrulesets[]
+		return correctType(response.users)
 	}
 
 	/**
@@ -336,25 +344,62 @@ export class API {
 	 * @param type Do you want scores: in the user's top 100, that are top 1 on a beatmap, that have been recently set?
 	 * @param limit The maximum amount of scores to be returned
 	 * @param ruleset The Ruleset the scores were made in, defaults to the user's default/favourite Ruleset
-	 * @param include_fails Do you want scores where the user didn't survive or quit the map? Defaults to false
+	 * @param include_fails (defaults to false) Do you want scores where the user didn't survive or quit the map?
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
 	async getUserScores(user: {id: number} | User, type: "best" | "firsts" | "recent", limit?: number,
 	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<ScoreWithUserBeatmapBeatmapset[]> {
 		const mode = ruleset ? Rulesets[ruleset] : undefined
-		const response = await this.request("get", `users/${user.id}/scores/${type}`, {limit, mode, offset, include_fails: String(Number(include_fails))})
-		return response.map((s: ScoreWithUserBeatmapBeatmapset) => correctType(s)) as ScoreWithUserBeatmapBeatmapset[]
+		const response = await this.request("get", `users/${user.id}/scores/${type}`, {mode, limit, offset, include_fails: String(Number(include_fails))})
+		return correctType(response)
+	}
+
+	/**
+	 * Get beatmaps favourited or made by a user!
+	 * @param user The user in question
+	 * @param type The relation between the user and the beatmaps
+	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
+	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
+	 */
+	async getUserBeatmaps(user: {id: number} | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
+	limit: number = 5, offset?: number): Promise<BeatmapsetExtendedWithBeatmapExtended[]> {
+		const response = await this.request("get", `users/${user.id}/beatmapsets/${type}`, {limit, offset})
+		return correctType(response)
+	}
+
+	/**
+	 * Get the beatmaps most played by a user!
+	 * @param user The user who played the beatmaps
+	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
+	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
+	 */
+	async getUserMostPlayed(user: {id: number} | User, limit: number = 5, offset?: number): Promise<BeatmapPlaycount[]> {
+		const response = await this.request("get", `users/${user.id}/beatmapsets/most_played`, {limit, offset})
+		return correctType(response)
+	}
+
+	/**
+	 * Get an array of Events of different `type`s that relate to a user's activity during the last 31 days! (or 100 activities, whatever comes first)
+	 * @param user The user in question
+	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
+	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
+	 */
+	async getUserRecentActivity(user: {id: number} | User, limit: number = 5, offset?: number): Promise<Array<EventAchievement | EventBeatmapsetApprove |
+	EventBeatmapsetRevive | EventBeatmapsetUpdate | EventBeatmapsetUpload | EventRank | EventRankLost |
+	EventUserSupportAgain | EventUserSupportFirst | EventUserSupportGift | EventUsernameChange>> {
+		const response = await this.request("get", `users/${user.id}/recent_activity`, {limit, offset})
+		return correctType(response)
 	}
 
 	/**
 	 * Get data about the activity of a user kudosu-wise!
 	 * @param user The user in question
-	 * @param limit The maximum amount of activities in the returned array, defaults to 5
+	 * @param limit (defaults to 5) The maximum amount of activities in the returned array
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
 	async getUserKudosu(user: {id: number} | User, limit?: number, offset?: number): Promise<KudosuHistory[]> {
 		const response = await this.request("get", `users/${user.id}/kudosu`, {limit, offset})
-		return response.map((k: KudosuHistory) => correctType(k)) as KudosuHistory[]
+		return correctType(response)
 	}
 
 	/**
@@ -363,7 +408,7 @@ export class API {
 	 */
 	async getFriends(): Promise<UserWithCountryCoverGroupsStatisticsSupport[]> {
 		const response = await this.request("get", "friends")
-		return response.map((f: UserWithCountryCoverGroupsStatisticsSupport) => correctType(f)) as UserWithCountryCoverGroupsStatisticsSupport[]
+		return correctType(response)
 	}
 
 	
@@ -375,7 +420,7 @@ export class API {
 	 */
 	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtendedWithFailtimesBeatmapsetextended> {
 		const response = await this.request("get", `beatmaps/${beatmap.id}`)
-		return correctType(response) as BeatmapExtendedWithFailtimesBeatmapsetextended
+		return correctType(response)
 	}
 
 	/**
@@ -384,12 +429,12 @@ export class API {
 	 */
 	async getBeatmaps(ids?: number[]): Promise<BeatmapExtended[]> {
 		const response = await this.request("get", "beatmaps", {ids})
-		return response.beatmaps.map((b: BeatmapExtended) => correctType(b)) as BeatmapExtended[]
+		return correctType(response.beatmaps)
 	}
 
 	private async getBeatmapDifficultyAttributes(id: number, mods?: Mod[] | string[] | number, ruleset?: Rulesets): Promise<BeatmapDifficultyAttributes> {
 		const response = await this.request("post", `beatmaps/${id}/attributes`, {ruleset_id: ruleset, mods})
-		return correctType(response.attributes) as BeatmapDifficultyAttributes
+		return correctType(response.attributes)
 	}
 	/**
 	 * Get various data about the difficulty of a beatmap!
@@ -438,7 +483,7 @@ export class API {
 	async getBeatmapScores(beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<ScoreWithUser[]> {
 		const mode = ruleset ? Rulesets[ruleset] : undefined
 		const response = await this.request("get", `beatmaps/${beatmap.id}/scores`, {mode, mods, type})
-		return response.scores.map((s: ScoreWithUser) => correctType(s)) as ScoreWithUser[]
+		return correctType(response.scores)
 	}
 
 	/**
@@ -453,7 +498,7 @@ export class API {
 		mods?: string[], ruleset?: Rulesets): Promise<BeatmapUserScore> {
 		const mode = ruleset ? Rulesets[ruleset] : undefined
 		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`, {mods, mode})
-		return correctType(response) as BeatmapUserScore
+		return correctType(response)
 	}
 
 	/**
@@ -465,7 +510,7 @@ export class API {
 	async getBeatmapUserScores(beatmap: {id: number} | Beatmap, user: {id: number} | User, ruleset?: Rulesets): Promise<Score[]> {
 		const mode = ruleset ? Rulesets[ruleset] : undefined
 		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}/all`, {mode})
-		return response.scores.map((s: Score) => correctType(s)) as Score[] 
+		return correctType(response.scores)
 	}
 
 	/**
@@ -474,7 +519,7 @@ export class API {
 	 */
 	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtendedPlus> {
 		const response = await this.request("get", `beatmapsets/${beatmapset.id}`)
-		return correctType(response) as BeatmapsetExtendedPlus
+		return correctType(response)
 	}
 
 	/**
@@ -484,7 +529,7 @@ export class API {
 	 */
 	async getBeatmapPack(pack: {tag: string} | BeatmapPack): Promise<BeatmapPack> {
 		const response = await this.request("get", `beatmaps/packs/${pack.tag}`)
-		return correctType(response) as BeatmapPack
+		return correctType(response)
 	}
 
 	/**
@@ -493,7 +538,7 @@ export class API {
 	 */
 	async getBeatmapPacks(type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<BeatmapPack[]> {
 		const response = await this.request("get", "beatmaps/packs", {type})
-		return response.beatmap_packs.map((b: BeatmapPack) => correctType(b)) as BeatmapPack[]
+		return correctType(response.beatmap_packs)
 	}
 
 
@@ -506,7 +551,7 @@ export class API {
 	 */
 	async getChangelogBuild(stream: string, build: string): Promise<ChangelogBuildWithChangelogentriesVersions> {
 		const response = await this.request("get", `changelog/${stream}/${build}`)
-		return correctType(response) as ChangelogBuildWithChangelogentriesVersions
+		return correctType(response)
 	}
 
 	/**
@@ -520,7 +565,7 @@ export class API {
 	stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<ChangelogBuildWithUpdatestreamsChangelogentries[]> {
 		const [from, to] = [versions?.from, versions?.to]
 		const response = await this.request("get", "changelog", {from, to, max_id, stream, message_formats})
-		return response.builds.map((b: ChangelogBuildWithUpdatestreamsChangelogentries) => correctType(b)) as ChangelogBuildWithUpdatestreamsChangelogentries[]
+		return correctType(response.builds)
 	}
 
 	/**
@@ -531,7 +576,7 @@ export class API {
 	 */
 	async getChangelogStreams(): Promise<UpdateStream[]> {
 		const response = await this.request("get", "changelog", {max_id: 0})
-		return response.streams.map((s: UpdateStream) => correctType(s)) as UpdateStream[] 
+		return correctType(response.streams)
 	}
 
 
@@ -543,7 +588,7 @@ export class API {
 	 */
 	async getRoom(room: {id: number} | Room): Promise<Room> {
 		const response = await this.request("get", `rooms/${room.id}`)
-		return correctType(response) as Room
+		return correctType(response)
 	}
 
 	/**
@@ -553,7 +598,7 @@ export class API {
 	 */
 	async getRooms(mode: "active" | "all" | "ended" | "participated" | "owned" = "active"): Promise<Room[]> {
 		const response = await this.request("get", "rooms", {mode})
-		return response.map((r: Room) => correctType(r)) as Room[]
+		return correctType(response)
 	}
 
 	/**
@@ -563,7 +608,7 @@ export class API {
 	 */
 	async getRoomLeaderboard(room: {id: number} | Room): Promise<Leader[]> {
 		const response = await this.request("get", `rooms/${room.id}/leaderboard`)
-		return response.leaderboard.map((l: Leader) => correctType(l)) as Leader[]
+		return correctType(response.leaderboard)
 	}
 
 	/**
@@ -578,7 +623,7 @@ export class API {
 	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem, limit: number = 50,
 	sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<MultiplayerScores> {
 		const response = await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
-		return correctType(response) as MultiplayerScores
+		return correctType(response)
 	}
 
 	/**
@@ -586,14 +631,14 @@ export class API {
 	 * @param id Can be found at the end of the URL of said match
 	 */
 	async getMatch(id: number): Promise<Match> {
-		let response = await this.request("get", `matches/${id}`) as Match
+		const response = await this.request("get", `matches/${id}`) as Match
 		// I know `events[i].game.scores[e].perfect` can at least be 0 instead of being false; fix that
 		for (let i = 0; i < response.events.length; i++) {
 			for (let e = 0; e < Number(response.events[i].game?.scores.length); e++) {
 				response.events[i].game!.scores[e].perfect = Boolean(response.events[i].game!.scores[e].perfect)
 			}
 		}
-		return correctType(response) as Match
+		return correctType(response)
 	}
 
 	/**
@@ -601,7 +646,7 @@ export class API {
 	 */
 	async getMatches(): Promise<MatchInfo[]> {
 		const response = await this.request("get", "matches")
-		return response.matches.map((m: MatchInfo) => correctType(m)) as MatchInfo[]
+		return correctType(response.matches)
 	}
 
 
@@ -612,7 +657,7 @@ export class API {
 	 */
 	async getKudosuRanking(): Promise<UserWithKudosu[]> {
 		const response = await this.request("get", "rankings/kudosu")
-		return response.ranking.map((u: UserWithKudosu) => correctType(u)) as UserWithKudosu[]
+		return correctType(response.ranking)
 	}
 
 	/**
@@ -627,7 +672,7 @@ export class API {
 	async getRanking(ruleset: Rulesets, type: "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
 	country?: string, variant?: "4k" | "7k"): Promise<Rankings> {
 		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, variant})
-		return correctType(response) as Rankings
+		return correctType(response)
 	}
 
 	/**
@@ -637,7 +682,7 @@ export class API {
 	 */
 	async getCountryRanking(ruleset: Rulesets, page: number = 1): Promise<RankingsCountry> {
 		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/country`, {page})
-		return correctType(response) as RankingsCountry
+		return correctType(response)
 	}
 
 	/**
@@ -648,7 +693,7 @@ export class API {
 	 */
 	async getSpotlightRanking(ruleset: Rulesets, spotlight: {id: number} | Spotlight, filter: "all" | "friends" = "all"): Promise<RankingsSpotlight> {
 		const response = await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: spotlight.id, filter})
-		return correctType(response) as RankingsSpotlight
+		return correctType(response)
 	}
 
 	/**
@@ -658,11 +703,11 @@ export class API {
 	 */
 	async getSpotlights(): Promise<Spotlight[]> {
 		const response = await this.request("get", "spotlights")
-		return response.spotlights.map((s: Spotlight) => correctType(s)) as Spotlight[]
+		return correctType(response.spotlights)
 	}
 
 
-	// HOME STUFF
+	// HOME STUFF & WIKI STUFF
 
 	/**
 	 * Look for a user like you would on the website!
@@ -671,7 +716,7 @@ export class API {
 	 */
 	async searchUser(query: string, page: number = 1): Promise<SearchResultUser> {
 		const response = await this.request("get", "search", {mode: "user", query, page})
-		return correctType(response.user) as SearchResultUser
+		return correctType(response.user)
 	}
 
 	/**
@@ -681,7 +726,18 @@ export class API {
 	 */
 	async searchWiki(query: string, page: number = 1): Promise<SearchResultWiki> {
 		const response = await this.request("get", "search", {mode: "wiki_page", query, page})
-		return correctType(response.wiki_page) as SearchResultWiki
+		return correctType(response.wiki_page)
+	}
+
+	/**
+	 * Get a wiki page!
+	 * @param path What's in the page's URL after `https://osu.ppy.sh/wiki/` (so the title, after the subtitle if there is a subtitle)
+	 * (An example for `https://osu.ppy.sh/wiki/en/Game_mode/osu!` would be `Game_mode/osu!`)
+	 * @param locale (defaults to "en") The BCP 47 language (sub)tag, lowercase (for example, for the article in french, use "fr")
+	 */
+	async getWikiPage(path: string, locale: string = "en"): Promise<WikiPage> {
+		const response = await this.request("get", `wiki/${locale}/${path}`)
+		return correctType(response)
 	}
 }
 

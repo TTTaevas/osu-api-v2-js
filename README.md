@@ -26,6 +26,7 @@ import * as osu from "osu-api-v2-js"
 async function logUserTopPlayBeatmap(username: string) {
     // Because of how the API server works, it's more convenient to use `osu.API.createAsync()` instead of `new osu.API()`!
     // In a proper application, you'd use this function as soon as the app starts so you can use that object everywhere
+    // (or if it acts as a user, you'd use this function at the end of the authorization flow)
     const api = await osu.API.createAsync({id: "<client_id>", "<client_secret>"})
 
     const user = await api.getUser({username}) // We need to get the id of the user in order to request what we want
@@ -99,7 +100,7 @@ logUserTopPlayBeatmap("Doomsday fanboy")
 - [ ] Edit Topic
 - [ ] Edit Post
 
-### Home
+### Home
 - [x] Search // split between searchUser() and searchWiki()
 
 ### Multiplayer
@@ -123,14 +124,14 @@ logUserTopPlayBeatmap("Doomsday fanboy")
 - [x] Get Own Data
 - [x] Get User Kudosu
 - [x] Get User Scores
-- [ ] Get User Beatmaps
-- [ ] Get User Recent Activity
+- [x] Get User Beatmaps // split between getUserBeatmaps() and getUserMostPlayed()
+- [x] Get User Recent Activity
 - [x] Get User
 - [x] Get Users
 - [x] /friends
 
 ### Wiki
-- [ ] Get Wiki Page
+- [x] Get Wiki Page
 
 ### Misc Undocumented Stuff
 - [ ] /seasonal-backgrounds

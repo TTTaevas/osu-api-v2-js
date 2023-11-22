@@ -249,6 +249,9 @@ export interface UserStatisticsWithUser extends UserStatistics {
 	user: UserWithCountryCover
 }
 
+/**
+ * Expected from api.getUserKudosu()
+ */
 export interface KudosuHistory {
 	id: number
 	action: "give" | "vote.give" | "reset" | "vote.reset" | "revoke" | "vote.revoke"

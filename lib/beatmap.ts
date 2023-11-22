@@ -12,7 +12,7 @@ export enum RankStatus {
 }
 
 /**
- * @privateRemarks While not expected from anywhere, it should be exported for ease of use purposes
+ * Expected from BeatmapPlaycount
  */
 export interface Beatmap {
 	beatmapset_id: number
@@ -85,7 +85,7 @@ export interface BeatmapExtendedWithFailtimesBeatmapsetextended extends BeatmapE
 }
 
 /**
- * Expected from BeatmapWithBeatmapset, Score
+ * Expected from BeatmapWithBeatmapset, Score, BeatmapPlaycount
  */
 export interface Beatmapset {
 	artist: string
@@ -170,6 +170,13 @@ export interface BeatmapsetExtended extends Beatmapset {
 }
 
 /**
+ * Expected from api.getUserBeatmaps()
+ */
+export interface BeatmapsetExtendedWithBeatmapExtended extends BeatmapsetExtended {
+	beatmaps: BeatmapExtended[]
+}
+
+/**
  * Expected from api.getBeatmapset()
  */
 export interface BeatmapsetExtendedPlus extends BeatmapsetExtended {
@@ -210,6 +217,19 @@ export interface BeatmapsetExtendedPlus extends BeatmapsetExtended {
 	 * Only exists if authorized user
 	 */
 	has_favourited?: boolean
+}
+
+/**
+ * Expected from api.getUserMostPlayed()
+ */
+export interface BeatmapPlaycount {
+	beatmap_id: number
+	/**
+	 * Playcount
+	 */
+	count: number
+	beatmap: Beatmap
+	beatmapset: Beatmapset
 }
 
 /**
