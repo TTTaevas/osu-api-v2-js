@@ -21,8 +21,10 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 	let code = prompt(`What code do you get from: ${url}\n\n`)
 
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri}, "all")
-	let d2 = await api.getRoom({id: 464285})
-	let a = await api.getPlaylistItemScores({id: d2.playlist[0].id, room_id: d2.id})
+	api.access_token = "a"
+	api.expires = new Date(1980)
+	let r = await api.getResourceOwner()
+	console.log(r.username)
 }
 
 test(process.env.ID, process.env.SECRET, process.env.REDIRECT_URI)

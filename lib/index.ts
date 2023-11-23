@@ -94,14 +94,14 @@ export class APIError {
 	message: string
 	server: string
 	endpoint: string
-	parameters: string
+	parameters?: object
 	/**
 	 * @param message The reason why things didn't go as expected
 	 * @param server The server to which the request was sent
 	 * @param endpoint The type of resource that was requested from the server
 	 * @param parameters The filters that were used to specify what resource was wanted
 	 */
-	constructor(message: string, server: string, endpoint: string, parameters: string) {
+	constructor(message: string, server: string, endpoint: string, parameters?: object) {
 		this.message = message
 		this.server = server
 		this.endpoint = endpoint
@@ -149,7 +149,7 @@ export class API {
 	 */
 	constructor(client?: {id: number, secret: string}, token_type?: string, expires?: Date,
 	access_token?: string, scopes?: Scope[], refresh_token?: string, user?: number,
-	verbose: "none" | "errors" | "all" = "none", server: string = "https://osu.ppy.sh") {
+	verbose: "none" | "errors" | "all" = "all", server: string = "https://osu.ppy.sh") {
 		this.client = client ?? {id: 0, secret: ""}
 		this.token_type = token_type ?? ""
 		this.expires = expires ?? new Date()
@@ -172,7 +172,13 @@ export class API {
 		}
 	}
 
-	private async obtainToken(body: any, api: API): Promise<API> {
+	/**
+	 * Set most of an `api`'s properties, like tokens, token_type, scopes, expiration_date  
+	 * @param body An Object with the client id & secret, grant_type, and stuff that depends of the grant_type
+	 * @param api The `api` which will see its properties change
+	 * @returns `api`, just in case, because in theory it should modify the original object
+	 */
+	private async obtainToken(body: object, api: API): Promise<API> {
 		const response = await fetch(`${this.server}/oauth/token`, {
 			method: "post",
 			headers: {
@@ -239,8 +245,16 @@ export class API {
 		return api
 	}
 
-	public async refreshToken() {
-		if (!this.refresh_token) {return false}
+	/**
+	 * @returns Whether or not the token has been refreshed
+	 */
+	public async refreshToken(): Promise<boolean> {
+		if (!this.refresh_token) {
+			this.log(true, "Attempted to get a new access token despite not having a refresh token!")
+			return false
+		}
+
+		const old_token = this.access_token
 		const body = {
 			client_id: this.client.id,
 			client_secret: this.client.secret,
@@ -248,17 +262,24 @@ export class API {
 			refresh_token: this.refresh_token	
 		}
 
-		const response = await this.obtainToken(body, this)
-		return response ? true : false
+		try {
+			await this.obtainToken(body, this)
+			if (old_token !== this.access_token) this.log(false, "The token has been refreshed!")
+			return old_token !== this.access_token
+		} catch {
+			this.log(true, "Failed to refresh the token :(")
+			return false
+		}
 	}
 
 	/**
+	 * @param method The type of request, each endpoint uses a specific one (if it uses multiple, the intent and parameters become different)
 	 * @param endpoint What comes in the URL after `api/`
 	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
-	 * @param number_try How many attempts there's been to get the data
-	 * @returns A Promise with either the API's response or `false` upon failing
+	 * @param number_try Attempt number for doing this specific request
+	 * @returns A Promise with the API's response
 	 */
-	private async request(method: "get" | "post", endpoint: string,
+	private async request(method: "get" | "post" | "put" | "delete", endpoint: string,
 	parameters?: {[k: string]: any}, number_try: number = 1): Promise<any> {
 		const max_tries = 5
 		let err = "none"
@@ -302,8 +323,18 @@ export class API {
 		if (!response || !response.ok) {
 			if (response) {
 				err = response.statusText
+
 				if (response.status === 401) {
-					this.log(true, "Server responded with status code 401, maybe you need to do this action as an user?")
+					if (this.refresh_token && new Date() > this.expires) {
+						this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
+						let refreshed = await this.refreshToken()
+
+						if (refreshed) {
+							to_retry = true
+						}
+					} else {
+						this.log(true, "Server responded with status code 401, maybe you need to do this action as a user?")
+					}
 				} else if (response.status === 403) {
 					this.log(true, "Server responded with status code 403, you may lack the necessary scope for this action!")
 				} else if (response.status === 422) {
@@ -328,7 +359,7 @@ export class API {
 				return correctType(await this.request(method, endpoint, parameters, number_try + 1))
 			}
 
-			throw new APIError(err, `${this.server}/api/v2`, endpoint, JSON.stringify(parameters))
+			throw new APIError(err, `${this.server}/api/v2`, endpoint, parameters)
 		}
 
 		this.log(false, response.statusText, response.status, {endpoint, parameters})
