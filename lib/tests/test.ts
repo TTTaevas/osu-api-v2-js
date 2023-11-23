@@ -232,7 +232,7 @@ const testRankingStuff = async (rank_gen: tsj.SchemaGenerator): Promise<boolean>
 /**
  * Check if searchUser() and similar work fine
  */
-const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.SchemaGenerator): Promise<boolean> => {
+const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.SchemaGenerator, forum_gen: tsj.SchemaGenerator): Promise<boolean> => {
 	let okay = true
 
 	let f1 = await <Promise<ReturnType<typeof api.searchUser> | false>>attempt("\nsearchUser: ", api.searchUser("Tae", 2))
@@ -245,12 +245,14 @@ const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.Schema
 	if (!isOk(f4, !f4 || (f4.length >= 1 && validate(f4, "NewsPost", news_gen)))) okay = false
 	let f5 = await <Promise<ReturnType<typeof api.getNewsPost> | false>>attempt("getNewsPost: ", api.getNewsPost({id: 26}))
 	if (!isOk(f5, !f5 || (f5.title === "Official osu! Fanart Contest 5 Begins!" && validate(f5, "NewsPostWithContentNavigation", news_gen)))) okay = false
+	let f6 = await <Promise<ReturnType<typeof api.getForumTopicAndPosts> | false>>attempt("getForumTopicAndPosts: ", api.getForumTopicAndPosts({id: 1848236}, 2))
+	if (!isOk(f6, !f6 || (f6.topic.title === "survey" && validate(f6.topic, "ForumTopic", forum_gen) && validate(f6.posts, "ForumPost", forum_gen)))) okay = false
 
 	return okay
 }
 
 const test = async (id: string, secret: string): Promise<void> => {
-	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all")
+	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all") //"http://127.0.0.1:8080")
 
 	const score_gen = tsj.createGenerator({path: "lib/score.ts", additionalProperties: true})
 	const user_gen = tsj.createGenerator({path: "lib/user.ts", additionalProperties: true})
@@ -264,7 +266,8 @@ const test = async (id: string, secret: string): Promise<void> => {
 	const e = await testRankingStuff(tsj.createGenerator({path: "lib/ranking.ts", additionalProperties: true}))
 	const f = await testHomeStuff(
 		tsj.createGenerator({path: "lib/home.ts", additionalProperties: true}),
-		tsj.createGenerator({path: "lib/news.ts", additionalProperties: true})
+		tsj.createGenerator({path: "lib/news.ts", additionalProperties: true}),
+		tsj.createGenerator({path: "lib/forum.ts", additionalProperties: true})
 	)
 
 	const arr = [a,b,c,d,e,f]

@@ -22,6 +22,7 @@ import { WikiPage } from "./wiki.js"
 import { NewsPost, NewsPostWithContentNavigation } from "./news.js"
 import { SearchResultUser, SearchResultWiki } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
+import { ForumPost, ForumTopic } from "./forum.js"
 
 export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
 	UserExtended, UserExtendedWithStatisticsrulesets,
@@ -51,7 +52,8 @@ export { Rulesets, Mod, Scope } from "./misc.js"
  * @returns x, but with it (or what it contains) now having the correct type
  */
 function correctType(x: any): any {
-	const bannedProperties = ["name", "version", "author"]
+	// raw and bbcode because forum, author and version because changelog
+	const bannedProperties = ["name", "version", "author", "raw", "bbcode"]
 
 	if (typeof x === "boolean") {
 		return x
@@ -80,11 +82,12 @@ function correctType(x: any): any {
  * @param client_id The Client ID, find it at https://osu.ppy.sh/home/account/edit#new-oauth-application
  * @param redirect_uri The specified Application Callback URL, aka where the user will be redirected upon clicking the button to authorize
  * @param scopes What you want to do with/as the user
+ * @param server (defaults to https://osu.ppy.sh) The API server
  * @returns The link people should click on
  */
-export function generateAuthorizationURL(client_id: number, redirect_uri: string, scopes: Scope[]): string {
+export function generateAuthorizationURL(client_id: number, redirect_uri: string, scopes: Scope[], server: string = "https://osu.ppy.sh"): string {
 	const s = String(scopes).replace(/,/g, "%20")
-	return `https://osu.ppy.sh/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${s}&response_type=code`
+	return `${server}/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${s}&response_type=code`
 }
 
 /**
@@ -183,7 +186,8 @@ export class API {
 			method: "post",
 			headers: {
 				"Accept": "application/json",
-				"Content-Type": "application/json"
+				"Content-Type": "application/json",
+				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)"
 			},
 			body: JSON.stringify(body)
 		})
@@ -810,5 +814,68 @@ export class API {
 		const key = post.id !== undefined ? "id" : undefined
 		const lookup = post.id !== undefined ? post.id : post.slug
 		return await this.request("get", `news/${lookup}`, {key})
+	}
+
+
+	// FORUM STUFF
+
+	/**
+	 * 
+	 * @param topic_id
+	 * @param text 
+	 * @scope forum.write
+	 */
+	private async replyForumTopic(topic: {id: number} | ForumTopic, text: string) {
+		return await this.request("post", `forums/topics/${topic.id}/reply`, {body: text})
+	}
+
+	/**
+	 * 
+	 * @param forum_id 
+	 * @param title 
+	 * @param text 
+	 * @param poll 
+	 * @scope forum.write
+	 */
+	private async createForumTopic(forum_id: number, title: string, text: string, poll?: {title: string, options: string[], max_options?: number,
+	vote_change?: boolean, length_days: number, hide_results?: boolean}) {
+		const with_poll = poll !== undefined
+		return await this.request("post", "forums/topics", {forum_id, title, body: text, with_poll})
+	}
+
+	/**
+	 * 
+	 * @remarks The oldest post of a topic is the text of a topic
+	 * @param topic The topic in question
+	 * @param limit (defaults to 20, max 50) How many `posts` maximum?
+	 * @param sort (defaults to "id_asc") "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead
+	 * @param first_post (ignored if `cursor_string`) An Object with the id of the first post to be returned in `posts`
+	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
+	 */
+	async getForumTopicAndPosts(topic: {id: number} | ForumTopic, limit: number = 20, sort: "id_asc" | "id_desc" = "id_asc", first_post?: {id: number} | ForumPost,
+	cursor_string?: string): Promise<{posts: ForumPost[], topic: ForumTopic, cursor_string: string}> {
+		const start = sort === "id_asc" && first_post ? first_post.id : undefined
+		const end = sort === "id_desc" && first_post ? first_post.id : undefined
+		return await this.request("get", `forums/topics/${topic.id}`, {sort, limit, start, end, cursor_string})
+	}
+
+	/**
+	 * 
+	 * @param topic_id 
+	 * @param new_title 
+	 * @scope forum.write
+	 */
+	private async editForumTopicTitle(topic: {id: number} | ForumTopic, new_title: string) {
+		return await this.request("put", `forums/topics/${topic.id}`, {"forum_topic[topic_title]": new_title})
+	}
+
+	/**
+	 * 
+	 * @param post_id 
+	 * @param new_text 
+	 * @scope forum.write
+	 */
+	private async editForumPost(post: {id: number} | ForumPost, new_text: string) {
+		return await this.request("put", `forums/topics/${post.id}`, {body: new_text})
 	}
 }

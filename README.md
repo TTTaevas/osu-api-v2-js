@@ -128,7 +128,7 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 ### Forum
 - [ ] Reply Topic
 - [ ] Create Topic
-- [ ] Get Topic and Posts
+- [x] Get Topic and Posts // removing `search` for simplicity
 - [ ] Edit Topic
 - [ ] Edit Post
 
