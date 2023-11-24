@@ -1,3 +1,6 @@
+/**
+ * Expected from api.replyForumTopic(), api.createForumTopic(), api.getForumTopicAndPosts(), api.editForumPost()
+ */
 export interface ForumPost {
 	created_at: Date
 	deleted_at: Date | null
@@ -19,6 +22,9 @@ export interface ForumPost {
 	}
 }
 
+/**
+ * Expected from api.createForumTopic(), api.getForumTopicAndPosts(), api.editForumTopicTitle()
+ */
 export interface ForumTopic {
 	created_at: Date
 	deleted_at: Date | null
@@ -59,4 +65,31 @@ export interface ForumTopic {
 		}
 		total_vote_count: number
 	} | null
+}
+
+/**
+ * Feel free to use this interface to help you create polls with `api.createForumTopic()`!
+ */
+export interface PollConfig {
+	title: string
+	/**
+	 * The things the users can vote for
+	 */
+	options: string[]
+	/**
+	 * Length of voting period in days, 0 means forever
+	 */
+	length_days: number
+	/**
+	 * (defaults to 1) The maximum amount of votes per user!
+	 */
+	max_options?: number
+	/**
+	 * (defaults to false) Do you allow users to change their vote?
+	 */
+	vote_change?: boolean
+	/**
+	 * (defaults to false) Should the results of the poll be hidden while the voting period is still active?
+	 */
+	hide_results?: boolean
 }

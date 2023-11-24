@@ -18,11 +18,12 @@ import { Event, EventUser, EventBeatmap, EventBeatmapset, EventBeatmapPlaycount,
 
 import { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
 	UpdateStream } from "./changelog.js"
+import { ForumPost, ForumTopic, PollConfig } from "./forum.js"
 import { WikiPage } from "./wiki.js"
 import { NewsPost, NewsPostWithContentNavigation } from "./news.js"
 import { SearchResultUser, SearchResultWiki } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
-import { ForumPost, ForumTopic } from "./forum.js"
+
 
 export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
 	UserExtended, UserExtendedWithStatisticsrulesets,
@@ -41,6 +42,7 @@ export { Event, EventUser, EventBeatmap, EventBeatmapset, EventBeatmapPlaycount,
 
 export { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
 	UpdateStream } from "./changelog.js"
+export { ForumPost, ForumTopic, PollConfig } from "./forum.js"
 export { WikiPage } from "./wiki.js"
 export { NewsPost, NewsPostWithContentNavigation } from "./news.js"
 export { SearchResultUser, SearchResultWiki } from "./home.js"
@@ -316,7 +318,7 @@ export class API {
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`
 			},
-			body: method === "post" ? JSON.stringify(parameters) : null,
+			body: method !== "get" ? JSON.stringify(parameters) : null,
 			
 		})
 		.catch((error: FetchError) => {
@@ -820,33 +822,44 @@ export class API {
 	// FORUM STUFF
 
 	/**
-	 * 
-	 * @param topic_id
-	 * @param text 
+	 * Make and send a ForumPost in a ForumTopic!
+	 * @param topic An object with the id of the topic you're making your reply in
+	 * @param text Your reply! Your message!
+	 * @returns The reply you've made!
 	 * @scope forum.write
 	 */
-	private async replyForumTopic(topic: {id: number} | ForumTopic, text: string) {
+	async replyForumTopic(topic: {id: number} | ForumTopic, text: string): Promise<ForumPost> {
 		return await this.request("post", `forums/topics/${topic.id}/reply`, {body: text})
 	}
 
 	/**
-	 * 
-	 * @param forum_id 
-	 * @param title 
-	 * @param text 
-	 * @param poll 
+	 * Create a new ForumTopic in the forum of your choice!
+	 * @remarks Some users may not be allowed to do that, such as newly registered users, so this can 403 even with the right scopes
+	 * @param forum_id The id of the forum you're creating your topic in
+	 * @param title The topic's title
+	 * @param text The first post's content/message
+	 * @param poll If you want to make a poll, specify the parameters of that poll!
+	 * @returns An object with the topic you've made, and its first initial post (which uses your `text`)
 	 * @scope forum.write
 	 */
-	private async createForumTopic(forum_id: number, title: string, text: string, poll?: {title: string, options: string[], max_options?: number,
-	vote_change?: boolean, length_days: number, hide_results?: boolean}) {
+	async createForumTopic(forum_id: number, title: string, text: string, poll?: PollConfig): Promise<{topic: ForumTopic, post: ForumPost}> {
 		const with_poll = poll !== undefined
-		return await this.request("post", "forums/topics", {forum_id, title, body: text, with_poll})
+		const options = poll?.options !== undefined ? poll.options.toString().replace(/,/g, "\n") : undefined
+
+		return await this.request("post", "forums/topics", {forum_id, title, body: text, with_poll, forum_topic_poll: poll ? {
+			title: poll.title,
+			options: options,
+			length_days: poll.length_days,
+			max_options: poll.max_options || 1,
+			vote_change: poll.vote_change || false,
+			hide_results: poll.hide_results || false,
+		} : undefined})
 	}
 
 	/**
-	 * 
+	 * Get a forum topic, as well as its main post (content) and the posts that were sent in it!
 	 * @remarks The oldest post of a topic is the text of a topic
-	 * @param topic The topic in question
+	 * @param topic An object with the id of the topic in question
 	 * @param limit (defaults to 20, max 50) How many `posts` maximum?
 	 * @param sort (defaults to "id_asc") "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead
 	 * @param first_post (ignored if `cursor_string`) An Object with the id of the first post to be returned in `posts`
@@ -860,22 +873,25 @@ export class API {
 	}
 
 	/**
-	 * 
-	 * @param topic_id 
-	 * @param new_title 
+	 * Edit the title of a ForumTopic!
+	 * @remarks Use `editForumPost` if you wanna edit the post at the top of the topic
+	 * @param topic An object with the id of the topic in question
+	 * @param new_title The new title of the topic
+	 * @returns The edited ForumTopic
 	 * @scope forum.write
 	 */
-	private async editForumTopicTitle(topic: {id: number} | ForumTopic, new_title: string) {
-		return await this.request("put", `forums/topics/${topic.id}`, {"forum_topic[topic_title]": new_title})
+	async editForumTopicTitle(topic: {id: number} | ForumTopic, new_title: string): Promise<ForumTopic> {
+		return await this.request("put", `forums/topics/${topic.id}`, {forum_topic: {topic_title:  new_title}})
 	}
 
 	/**
-	 * 
-	 * @param post_id 
-	 * @param new_text 
+	 * Edit a ForumPost! Note that it can be the initial one of a ForumTopic!
+	 * @param post An object with the id of the post in question
+	 * @param new_text The new content of the post (replaces the old content)
+	 * @returns The edited ForumPost
 	 * @scope forum.write
 	 */
-	private async editForumPost(post: {id: number} | ForumPost, new_text: string) {
-		return await this.request("put", `forums/topics/${post.id}`, {body: new_text})
+	async editForumPost(post: {id: number} | ForumPost, new_text: string): Promise<ForumPost> {
+		return await this.request("put", `forums/posts/${post.id}`, {body: new_text})
 	}
 }

@@ -76,10 +76,10 @@ interface UserWithCountryCoverGroups extends UserWithCountryCover {
  */
 export interface UserWithCountryCoverGroupsStatisticsrulesets extends UserWithCountryCoverGroups {
 	statistics_rulesets: {
-		osu: UserStatistics
-		taiko: UserStatistics
-		fruits: UserStatistics
-		mania: UserStatistics
+		osu?: UserStatistics
+		taiko?: UserStatistics
+		fruits?: UserStatistics
+		mania?: UserStatistics
 	}
 }
 
@@ -188,7 +188,7 @@ export interface UserExtended extends UserWithCountryCoverGroupsStatisticsSuppor
 	rank_history: {
 		mode: string
 		data: number[]
-	}
+	} | null
 }
 
 /**

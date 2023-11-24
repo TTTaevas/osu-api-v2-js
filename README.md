@@ -126,11 +126,11 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 - [ ] Get Events
 
 ### Forum
-- [ ] Reply Topic
-- [ ] Create Topic
+- [x] Reply Topic
+- [x] Create Topic
 - [x] Get Topic and Posts // removing `search` for simplicity
-- [ ] Edit Topic
-- [ ] Edit Post
+- [x] Edit Topic
+- [x] Edit Post
 
 ### Home
 - [x] Search // split between searchUser() and searchWiki()
