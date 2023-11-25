@@ -23,6 +23,7 @@ import { WikiPage } from "./wiki.js"
 import { NewsPost, NewsPostWithContentNavigation } from "./news.js"
 import { SearchResultUser, SearchResultWiki } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
+import { ChatChannel, ChatMessage, UserSilence } from "./chat.js"
 
 
 export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
@@ -893,5 +894,117 @@ export class API {
 	 */
 	async editForumPost(post: {id: number} | ForumPost, new_text: string): Promise<ForumPost> {
 		return await this.request("put", `forums/posts/${post.id}`, {body: new_text})
+	}
+
+
+	// CHAT STUFF
+
+	/**
+	 * Needs to be requested periodically to reset chat activity timeout
+	 * @remarks Every 30 seconds is a good idea
+	 * @param since UserSilences that are not after that will not be returned!
+	 * @returns A list of recent silences
+	 */
+	async keepChatAlive(since?: {user_silence?: {id: number} | UserSilence, message?: {message_id: number} | ChatMessage}): Promise<UserSilence[]> {
+		return await this.request("post", "chat/ack", {history_since: since?.user_silence?.id, since: since?.message?.message_id})
+	}
+
+	/**
+	 * 
+	 * @param user_target 
+	 * @param message 
+	 * @param is_action 
+	 * @param uuid 
+	 */
+	async sendChatPrivateMessage(user_target: {id: number} | User, message: string, is_action: boolean, uuid?: string):
+	Promise<{channel: ChatChannel, message: ChatMessage}> {
+		return await this.request("post", "chat/new", {target_id: user_target.id, message, is_action, uuid})
+	}
+
+	/**
+	 * 
+	 * @param channel 
+	 * @param limit 
+	 * @param since 
+	 * @param until 
+	 */
+	async getChatMessages(channel: {channel_id: number} | ChatChannel, limit: number = 20,
+	since?: {message_id: number} | ChatMessage, until?: {message_id: number} | ChatMessage): Promise<ChatMessage[]> {
+		return await this.request("get", `chat/channels/${channel.channel_id}/messages`, {limit, since: since?.message_id, until: until?.message_id})
+	}
+
+	/**
+	 * 
+	 * @param channel 
+	 * @param message 
+	 * @param is_action 
+	 */
+	async sendChatMessage(channel: {channel_id: number} | ChatChannel, message: string, is_action: boolean): Promise<ChatMessage> {
+		return await this.request("post", `chat/channels/${channel.channel_id}/messages`, {message, is_action})
+	}
+
+	/**
+	 * 
+	 * @param channel 
+	 * @param user 
+	 */
+	async joinChatChannel(channel: {channel_id: number} | ChatChannel, user: {id: number} | User): Promise<ChatChannel> {
+		return await this.request("put", `chat/channels/${channel.channel_id}/users/${user.id}`)
+	}
+
+	/**
+	 * 
+	 * @param channel 
+	 * @param user 
+	 */
+	async leaveChatChannel(channel: {channel_id: number} | ChatChannel, user: {id: number} | User): Promise<void> {
+		return await this.request("delete", `chat/channels/${channel.channel_id}/users/${user.id}`)
+	}
+
+	/**
+	 * Mark a certain channel as read up to a given message!
+	 * @param channel 
+	 * @param message 
+	 */
+	async markChatChannelAsRead(channel: {channel_id: number} | ChatChannel, message: {message_id: number} | ChatMessage): Promise<void> {
+		return await this.request("put",
+		`chat/channels/${channel.channel_id}/mark-as-read/${message.message_id}`, {channel_id: channel.channel_id, message: message.message_id})
+	}
+
+	/**
+	 * Get a list of all publicly joinable channels!
+	 */
+	async getChatChannels(): Promise<ChatChannel[]> {
+		return await this.request("get", "chat/channels")
+	}
+
+	/**
+	 * 
+	 * @param user_target 
+	 * @returns The newly created channel!
+	 */
+	async createChatPrivateChannel(user_target: {id: number} | User): Promise<ChatChannel> {
+		return await this.request("post", "chat/channels", {type: "PM", target_id: user_target.id})
+	}
+
+	/**
+	 * 
+	 * @param channel Details of the channel you're creating
+	 * @param user_targets 
+	 * @param message The message to send with the announcement
+	 * @returns The newly created channel!
+	 */
+	async createChatAnnouncementChannel(channel: {name: string, description: string}, user_targets: Array<{id: number} | User>, message: string):
+	Promise<ChatChannel> {
+		const target_ids = user_targets.map((u) => u.id)
+		return await this.request("post", "chat/channels", {type: "ANNOUNCE", channel, target_ids, message})
+	}
+
+	/**
+	 * Get a ChatChannel, and the users in it if it is a private channel!
+	 * @param channel The channel in question
+	 */
+	async getChatChannel(channel: {channel_id: number} | ChatChannel): Promise<{channel: ChatChannel, users: User[]}> {
+		return await this.request("get", `chat/channels/${channel.channel_id}`)
 	}
 }

@@ -195,7 +195,7 @@ export interface UserExtended extends UserWithCountryCoverGroupsStatisticsSuppor
  * Expected from api.getResourceOwner()
  */
 export interface UserExtendedWithStatisticsrulesets extends UserExtended, UserWithCountryCoverGroupsStatisticsrulesets {
-	
+	is_restricted: boolean
 }
 
 /**
