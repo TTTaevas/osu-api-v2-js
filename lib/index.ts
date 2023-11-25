@@ -59,7 +59,7 @@ function correctType(x: any): any {
 
 	if (typeof x === "boolean") {
 		return x
-	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}($|[ T])/.test(x)) {
+	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}($|[ T].*)/.test(x)) {
 		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(x)) x += "Z"
 		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}$/.test(x)) x = x.substring(0, x.indexOf("+")) + "Z"
 		return new Date(x)
