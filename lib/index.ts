@@ -23,7 +23,7 @@ import { WikiPage } from "./wiki.js"
 import { NewsPost, NewsPostWithContentNavigation } from "./news.js"
 import { SearchResultUser, SearchResultWiki } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
-import { ChatChannel, ChatMessage, UserSilence } from "./chat.js"
+import { ChatChannel, ChatChannelWithDetails, ChatMessage, UserSilence } from "./chat.js"
 
 
 export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
@@ -370,7 +370,8 @@ export class API {
 		}
 
 		this.log(false, response.statusText, response.status, {endpoint, parameters})
-		return correctType(await response.json())
+		// 204 means the request worked as intended and did not give us anything, so we can't `.json()` the response
+		return response.status !== 204 ? await response.json() : undefined
 	}
 
 
@@ -900,9 +901,9 @@ export class API {
 	// CHAT STUFF
 
 	/**
-	 * Needs to be requested periodically to reset chat activity timeout
+	 * Needs to be done periodically to reset chat activity timeout
 	 * @remarks Every 30 seconds is a good idea
-	 * @param since UserSilences that are not after that will not be returned!
+	 * @param since UserSilences that are before that will not be returned!
 	 * @returns A list of recent silences
 	 */
 	async keepChatAlive(since?: {user_silence?: {id: number} | UserSilence, message?: {message_id: number} | ChatMessage}): Promise<UserSilence[]> {
@@ -910,10 +911,10 @@ export class API {
 	}
 
 	/**
-	 * 
-	 * @param user_target 
-	 * @param message 
-	 * @param is_action 
+	 * Send a private message to someone!
+	 * @param user_target The User you wanna send your message to!
+	 * @param message The message you wanna send
+	 * @param is_action Is it a command? Like `/me dances`
 	 * @param uuid 
 	 */
 	async sendChatPrivateMessage(user_target: {id: number} | User, message: string, is_action: boolean, uuid?: string):
@@ -923,8 +924,8 @@ export class API {
 
 	/**
 	 * 
-	 * @param channel 
-	 * @param limit 
+	 * @param channel The Channel you wanna get the messages from
+	 * @param limit (defaults to 20, max 50) The maximum amount of messages you want to get!
 	 * @param since 
 	 * @param until 
 	 */
@@ -934,28 +935,29 @@ export class API {
 	}
 
 	/**
-	 * 
-	 * @param channel 
-	 * @param message 
-	 * @param is_action 
+	 * Send a message in a ChatChannel!
+	 * @param channel The channel in which you want to send your message
+	 * @param message The message you wanna send
+	 * @param is_action Is it a command? Like `/me dances`
+	 * @returns The newly sent ChatMessage!
 	 */
 	async sendChatMessage(channel: {channel_id: number} | ChatChannel, message: string, is_action: boolean): Promise<ChatMessage> {
 		return await this.request("post", `chat/channels/${channel.channel_id}/messages`, {message, is_action})
 	}
 
 	/**
-	 * 
-	 * @param channel 
-	 * @param user 
+	 * Join a ChatChannel, allowing you to interact with it!
+	 * @param channel The channel you wanna join
+	 * @param user The user joining the channel
 	 */
-	async joinChatChannel(channel: {channel_id: number} | ChatChannel, user: {id: number} | User): Promise<ChatChannel> {
+	async joinChatChannel(channel: {channel_id: number} | ChatChannel, user: {id: number} | User): Promise<ChatChannelWithDetails> {
 		return await this.request("put", `chat/channels/${channel.channel_id}/users/${user.id}`)
 	}
 
 	/**
-	 * 
-	 * @param channel 
-	 * @param user 
+	 * Leave/Close a ChatChannel!
+	 * @param channel The channel you wanna join
+	 * @param user The user joining the channel
 	 */
 	async leaveChatChannel(channel: {channel_id: number} | ChatChannel, user: {id: number} | User): Promise<void> {
 		return await this.request("delete", `chat/channels/${channel.channel_id}/users/${user.id}`)
@@ -1002,9 +1004,10 @@ export class API {
 
 	/**
 	 * Get a ChatChannel, and the users in it if it is a private channel!
+	 * @remarks Will 404 if the user has not joined the channel (use `joinChatChannel` for that)
 	 * @param channel The channel in question
 	 */
-	async getChatChannel(channel: {channel_id: number} | ChatChannel): Promise<{channel: ChatChannel, users: User[]}> {
+	async getChatChannel(channel: {channel_id: number} | ChatChannel): Promise<{channel: ChatChannelWithDetails, users: User[]}> {
 		return await this.request("get", `chat/channels/${channel.channel_id}`)
 	}
 }

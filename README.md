@@ -109,14 +109,14 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 ### Chat
 - [ ] Chat Keepalive
 - [ ] Create New PM
-- [ ] Get Channel Messages
-- [ ] Send Message to Channel
-- [ ] Join Channel
-- [ ] Leave Channel
+- [x] Get Channel Messages
+- [x] Send Message to Channel
+- [x] Join Channel
+- [x] Leave Channel
 - [ ] Mark Channel as Read
-- [ ] Get Channel List
+- [x] Get Channel List
 - [ ] Create Channel
-- [ ] Get Channel
+- [x] Get Channel
 
 ### Comments
 - [ ] Get Comments

@@ -26,8 +26,8 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 	let code = prompt(`What code do you get from: ${url}\n\n`)
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri}, "all", server)
 
-	console.log(await api.getResourceOwner())
-
+	let me = await api.getResourceOwner()
+	let leave = await api.leaveChatChannel({channel_id: 5}, me)
 }
 
 test(process.env.DEV_ID, process.env.DEV_SECRET, process.env.REDIRECT_URI)
