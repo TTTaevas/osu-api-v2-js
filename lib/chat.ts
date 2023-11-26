@@ -1,31 +1,29 @@
-import { CurrentUserAttributes, User } from "./user.js";
+import { User } from "./user.js";
 
-export type ChannelType =
-"PUBLIC" |
-"PRIVATE" |
-"MULTIPLAYER" |
-"SPECTATOR" |
-"TEMPORARY" |
-"PRIVATE" |
-"PM" |
-"GROUP" |
-"ANNOUNCE";
-
+/**
+ * Expected from api.keepChatAlive()
+ */
 export interface UserSilence {
 	id: number
 	user_id: number
 }
 
+/**
+ * Expected from api.sendChatPrivateMessage(), api.createChatPrivateChannel()
+ */
 export interface ChatChannel {
 	channel_id: number
 	name: string
 	description: string | null
 	icon: string | null
-	type: ChannelType
+	type: "PUBLIC" | "PRIVATE" | "MULTIPLAYER" | "SPECTATOR" | "TEMPORARY" | "PRIVATE" | "PM" | "GROUP" | "ANNOUNCE"
 	moderated: boolean
 	uuid: string | null
 }
 
+/**
+ * Expected from api.joinChatChannel(), api.getChatChannel()
+ */
 export interface ChatChannelWithDetails extends ChatChannel {
 	current_user_attributes: {
 		can_message: boolean
@@ -47,6 +45,9 @@ export interface ChatChannelWithDetails extends ChatChannel {
 	users: number[]
 }
 
+/**
+ * Expected from api.sendChatPrivateMessage(), api.getChatMessages(), api.sendChatMessage()
+ */
 export interface ChatMessage {
 	channel_id: number
 	content: string
