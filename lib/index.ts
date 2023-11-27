@@ -23,6 +23,7 @@ import { WikiPage } from "./wiki.js"
 import { NewsPost, NewsPostWithContentNavigation } from "./news.js"
 import { SearchResultUser, SearchResultWiki } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
+import { ChatChannel, ChatChannelWithDetails, ChatMessage, UserSilence } from "./chat.js"
 
 
 export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
@@ -47,6 +48,7 @@ export { WikiPage } from "./wiki.js"
 export { NewsPost, NewsPostWithContentNavigation } from "./news.js"
 export { SearchResultUser, SearchResultWiki } from "./home.js"
 export { Rulesets, Mod, Scope } from "./misc.js"
+export { ChatChannel, ChatChannelWithDetails, ChatMessage, UserSilence } from "./chat.js"
 
 /**
  * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
@@ -362,14 +364,15 @@ export class API {
 				this.log(true, "Will request again in a few instants...", `(Try #${number_try})`)
 				const to_wait = (Math.floor(Math.random() * (500 - 100 + 1)) + 100) * 10
 				await new Promise(res => setTimeout(res, to_wait))
-				return correctType(await this.request(method, endpoint, parameters, number_try + 1))
+				return await this.request(method, endpoint, parameters, number_try + 1)
 			}
 
 			throw new APIError(err, `${this.server}/api/v2`, endpoint, parameters)
 		}
 
 		this.log(false, response.statusText, response.status, {endpoint, parameters})
-		return correctType(await response.json())
+		// 204 means the request worked as intended and did not give us anything, so we can't `.json()` the response
+		return response.status !== 204 ? correctType(await response.json()) : undefined
 	}
 
 
@@ -893,5 +896,134 @@ export class API {
 	 */
 	async editForumPost(post: {id: number} | ForumPost, new_text: string): Promise<ForumPost> {
 		return await this.request("put", `forums/posts/${post.id}`, {body: new_text})
+	}
+
+
+	// CHAT STUFF
+
+	/**
+	 * Needs to be done periodically to reset chat activity timeout
+	 * @remarks Every 30 seconds is a good idea
+	 * @param since UserSilences that are before that will not be returned!
+	 * @returns A list of recent silences
+	 * @scope chat.read
+	 */
+	async keepChatAlive(since?: {user_silence?: {id: number} | UserSilence, message?: {message_id: number} | ChatMessage}): Promise<UserSilence[]> {
+		return await this.request("post", "chat/ack", {history_since: since?.user_silence?.id, since: since?.message?.message_id})
+	}
+
+	/**
+	 * Send a private message to someone!
+	 * @remarks You don't need to use `createChatPrivateChannel` before sending a message
+	 * @param user_target The User you wanna send your message to!
+	 * @param message The message you wanna send
+	 * @param is_action (defaults to false) Is it a command? Like `/me dances`
+	 * @param uuid A client-side message identifier
+	 * @returns The message you sent
+	 * @scope chat.write
+	 */
+	async sendChatPrivateMessage(user_target: {id: number} | User, message: string, is_action: boolean = false, uuid?: string):
+	Promise<{channel: ChatChannel, message: ChatMessage}> {
+		return await this.request("post", "chat/new", {target_id: user_target.id, message, is_action, uuid})
+	}
+
+	/**
+	 * Get the recent messages of a specific ChatChannel!
+	 * @param channel The Channel you wanna get the messages from
+	 * @param limit (defaults to 20, max 50) The maximum amount of messages you want to get!
+	 * @param since Get the messages sent after this message
+	 * @param until Get the messages sent up to but not including this message
+	 * @scope chat.read
+	 */
+	async getChatMessages(channel: {channel_id: number} | ChatChannel, limit: number = 20,
+	since?: {message_id: number} | ChatMessage, until?: {message_id: number} | ChatMessage): Promise<ChatMessage[]> {
+		return await this.request("get", `chat/channels/${channel.channel_id}/messages`, {limit, since: since?.message_id, until: until?.message_id})
+	}
+
+	/**
+	 * Send a message in a ChatChannel!
+	 * @param channel The channel in which you want to send your message
+	 * @param message The message you wanna send
+	 * @param is_action (defaults to false) Is it a command? Like `/me dances`
+	 * @returns The newly sent ChatMessage!
+	 * @scope chat.write
+	 */
+	async sendChatMessage(channel: {channel_id: number} | ChatChannel, message: string, is_action: boolean = false): Promise<ChatMessage> {
+		return await this.request("post", `chat/channels/${channel.channel_id}/messages`, {message, is_action})
+	}
+
+	/**
+	 * Join a public or multiplayer ChatChannel, allowing you to interact with it!
+	 * @param channel The channel you wanna join
+	 * @param user (defaults to the presumed authorized user) The user joining the channel
+	 * @scope chat.write_manage
+	 */
+	async joinChatChannel(channel: {channel_id: number} | ChatChannel, user?: {id: number} | User): Promise<ChatChannelWithDetails> {
+		return await this.request("put", `chat/channels/${channel.channel_id}/users/${user?.id || this.user}`)
+	}
+
+	/**
+	 * Leave/Close a public ChatChannel!
+	 * @param channel The channel you wanna join
+	 * @param user (defaults to the presumed authorized user) The user joining the channel
+	 * @scope chat.write_manage
+	 */
+	async leaveChatChannel(channel: {channel_id: number} | ChatChannel, user?: {id: number} | User): Promise<void> {
+		return await this.request("delete", `chat/channels/${channel.channel_id}/users/${user?.id || this.user}`)
+	}
+
+	/**
+	 * Mark a certain channel as read up to a given message!
+	 * @param channel The channel in question
+	 * @param message You're marking this and all the messages before it as read!
+	 * @scope chat.read
+	 */
+	async markChatChannelAsRead(channel: {channel_id: number} | ChatChannel, message: {message_id: number} | ChatMessage): Promise<void> {
+		return await this.request("put",
+		`chat/channels/${channel.channel_id}/mark-as-read/${message.message_id}`, {channel_id: channel.channel_id, message: message.message_id})
+	}
+
+	/**
+	 * Get a list of all publicly joinable channels!
+	 * @scope chat.read
+	 */
+	async getChatChannels(): Promise<ChatChannel[]> {
+		return await this.request("get", "chat/channels")
+	}
+
+	/**
+	 * Create/Open/Join a private messages chat channel!
+	 * @param user_target The other user able to read and send messages in this channel
+	 * @returns The newly created channel!
+	 * @scope chat.write_manage
+	 */
+	async createChatPrivateChannel(user_target: {id: number} | User): Promise<ChatChannel> {
+		return await this.request("post", "chat/channels", {type: "PM", target_id: user_target.id})
+	}
+
+	/**
+	 * Create a new announcement!
+	 * @remarks From my understanding, this WILL 403 unless the user is kinda special
+	 * @param channel Details of the channel you're creating
+	 * @param user_targets The people that will receive your message
+	 * @param message The message to send with the announcement
+	 * @returns The newly created channel!
+	 * @scope chat.write_manage
+	 */
+	async createChatAnnouncementChannel(channel: {name: string, description: string}, user_targets: Array<{id: number} | User>, message: string):
+	Promise<ChatChannel> {
+		const target_ids = user_targets.map((u) => u.id)
+		return await this.request("post", "chat/channels", {type: "ANNOUNCE", channel, target_ids, message})
+	}
+
+	/**
+	 * Get a ChatChannel, and the users in it if it is a private channel!
+	 * @remarks Will 404 if the user has not joined the channel (use `joinChatChannel` for that)
+	 * @param channel The channel in question
+	 * @scope chat.read
+	 */
+	async getChatChannel(channel: {channel_id: number} | ChatChannel): Promise<ChatChannelWithDetails> {
+		const response = await this.request("get", `chat/channels/${channel.channel_id}`)
+		return response.channel
 	}
 }

@@ -107,16 +107,16 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 - [ ] Lookup Changelog Build // likely won't implement unless I get convinced it's worth the confusion with Get Changelog Build
 
 ### Chat
-- [ ] Chat Keepalive
-- [ ] Create New PM
-- [ ] Get Channel Messages
-- [ ] Send Message to Channel
-- [ ] Join Channel
-- [ ] Leave Channel
-- [ ] Mark Channel as Read
-- [ ] Get Channel List
-- [ ] Create Channel
-- [ ] Get Channel
+- [x] Chat Keepalive
+- [x] Create New PM
+- [x] Get Channel Messages
+- [x] Send Message to Channel
+- [x] Join Channel
+- [x] Leave Channel
+- [x] Mark Channel as Read
+- [x] Get Channel List
+- [x] Create Channel // split between createChatPrivateChannel() and createChatAnnouncementChannel()
+- [x] Get Channel // removing `users` because `channel` would already have this property
 
 ### Comments
 - [ ] Get Comments
