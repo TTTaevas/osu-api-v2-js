@@ -78,9 +78,16 @@ export interface BeatmapExtendedWithFailtimes extends BeatmapExtended {
 }
 
 /**
+ * Expected from api.getBeatmaps()
+ */
+export interface BeatmapExtendedWithFailtimesMaxcombo extends BeatmapExtendedWithFailtimes {
+	max_combo: number
+}
+
+/**
  * Expected from api.getBeatmap()
  */
-export interface BeatmapExtendedWithFailtimesBeatmapsetextended extends BeatmapExtendedWithFailtimes {
+export interface BeatmapExtendedWithFailtimesBeatmapsetextended extends BeatmapExtendedWithFailtimesMaxcombo {
 	beatmapset: BeatmapsetExtended
 }
 

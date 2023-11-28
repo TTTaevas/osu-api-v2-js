@@ -6,8 +6,8 @@ import { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCo
 	UserStatistics, UserStatisticsWithUser, UserStatisticsWithCountryrank, KudosuHistory, ProfileBanner } from "./user.js"
 import { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, BeatmapPlaycount,
 	BeatmapDifficultyAttributes, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesTaiko, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania,
-	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedWithBeatmapExtended, BeatmapsetExtendedPlus, BeatmapPack, RankStatus }
-	from "./beatmap.js"
+	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapExtendedWithFailtimesMaxcombo, BeatmapsetExtendedWithBeatmapExtended, BeatmapsetExtendedPlus,
+	BeatmapPack, RankStatus } from "./beatmap.js"
 
 import { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
 import { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
@@ -31,8 +31,8 @@ export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCo
 	UserStatistics, UserStatisticsWithUser, UserStatisticsWithCountryrank, KudosuHistory, ProfileBanner } from "./user.js"
 export { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, BeatmapPlaycount,
 	BeatmapDifficultyAttributes, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesTaiko, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania,
-	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapsetExtendedWithBeatmapExtended, BeatmapsetExtendedPlus, BeatmapPack, RankStatus }
-	from "./beatmap.js"
+	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapExtendedWithFailtimesMaxcombo, BeatmapsetExtendedWithBeatmapExtended, BeatmapsetExtendedPlus,
+	BeatmapPack, RankStatus } from "./beatmap.js"
 
 export { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
 export { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
@@ -402,9 +402,10 @@ export class API {
 
 	/**
 	 * Get user data for up to 50 users at once!
-	 * @param ids An array composed of the ids of the users you want
+	 * @param users An array of users or of objects that have the id of the users you're trying to get
 	 */
-	async getUsers(ids: number[]): Promise<UserWithCountryCoverGroupsStatisticsrulesets[]> {
+	async getUsers(users: Array<{id: number} | User>): Promise<UserWithCountryCoverGroupsStatisticsrulesets[]> {
+		const ids = users.map((user) => user.id)
 		const response = await this.request("get", "users", {ids})
 		return response.users
 	}
@@ -489,9 +490,10 @@ export class API {
 
 	/**
 	 * Get extensive beatmap data for up to 50 beatmaps at once!
-	 * @param ids An array composed of the ids of the beatmaps you want
+	 * @param beatmaps An array of beatmaps or of objects that have the id of the beatmaps you're trying to get
 	 */
-	async getBeatmaps(ids?: number[]): Promise<BeatmapExtended[]> {
+	async getBeatmaps(beatmaps: Array<{id: number} | Beatmap>): Promise<BeatmapExtendedWithFailtimesMaxcombo[]> {
+		const ids = beatmaps.map((beatmap) => beatmap.id)
 		const response = await this.request("get", "beatmaps", {ids})
 		return response.beatmaps
 	}

@@ -92,7 +92,7 @@ const testUserStuff = async (user_gen: tsj.SchemaGenerator, score_gen: tsj.Schem
 	
 	let a1 = await <Promise<ReturnType<typeof api.getUser> | false>>attempt("\ngetUser: ", api.getUser({id: user_id}))
 	if (!isOk(a1, !a1 || (a1.id === user_id && validate(a1, "UserExtended", user_gen)))) okay = false
-	let a2 = await <Promise<ReturnType<typeof api.getUsers> | false>>attempt("getUsers: ", api.getUsers([user_id, 2]))
+	let a2 = await <Promise<ReturnType<typeof api.getUsers> | false>>attempt("getUsers: ", api.getUsers([user_id, 2].map((i) => {return {id: i}})))
 	if (!isOk(a2, !a2 || (a2.length === 2 && validate(a2, "UserWithCountryCoverGroupsStatisticsrulesets", user_gen)))) okay = false
 
 	let a3 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores (best): ", api.getUserScores({id: user_id}, "best", 5))
@@ -127,7 +127,9 @@ const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.Sc
 
 	let b1 = await <Promise<ReturnType<typeof api.getBeatmap> | false>>attempt("\ngetBeatmap: ", api.getBeatmap({id: beatmap_id}))
 	if (!isOk(b1, !b1 || (b1.id === beatmap_id && validate(b1, "BeatmapExtendedWithFailtimesBeatmapsetextended", beat_gen)))) okay = false
-	let b2 = await <Promise<ReturnType<typeof api.getBeatmaps> | false>>attempt("getBeatmaps: ", api.getBeatmaps([beatmap_id, 4089655]))
+	let b2 = await <Promise<ReturnType<typeof api.getBeatmaps> | false>>attempt(
+		"getBeatmaps: ", api.getBeatmaps([beatmap_id, 4089655].map((i) => {return {id: i}}))
+	)
 	if (!isOk(b2, !b2 || (b2.length === 2 && validate(b2, "BeatmapExtended", beat_gen)))) okay = false
 
 	let b3 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesOsu> | false>>attempt(
