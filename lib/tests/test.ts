@@ -100,7 +100,7 @@ const testUserStuff = async (user_gen: tsj.SchemaGenerator, score_gen: tsj.Schem
 	let a4 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores (firsts): ", api.getUserScores({id: 6503700}, "firsts", 3))
 	if (!isOk(a4, !a4 || (a4.length === 3 && validate(a4, "ScoreWithUserBeatmapBeatmapset", score_gen)))) okay = false
 	let a5 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt(
-		"getUserScores (recent): ", api.getUserScores({id: 12337864}, "recent", 1, undefined, true))
+		"getUserScores (recent): ", api.getUserScores({id: 9269034}, "recent", 1, undefined, true))
 	// Due to the nature of the test, it might fail, you may adapt the user id
 	if (!isOk(a5, !a5 || (a5.length === 1 && validate(a5, "ScoreWithUserBeatmapBeatmapset", score_gen)))) okay = false
 
@@ -111,7 +111,7 @@ const testUserStuff = async (user_gen: tsj.SchemaGenerator, score_gen: tsj.Schem
 	if (!isOk(a7, !a7 || (a7[0].beatmapset.title === "furioso melodia" && validate(a7, "BeatmapPlaycount", beat_gen)))) okay = false
 
 	let a8 = await <Promise<ReturnType<typeof api.getUserRecentActivity> | false>>attempt("getUserRecentActivity: ", api.getUserRecentActivity({id: 7562902}, 25))
-	if (!isOk(a8, !a8 || (a8.length <= 25 && validate(a8, "EventUser", event_gen)))) okay = false
+	if (!isOk(a8, !a8 || (a8.length <= 25 && validate(a8, "Event.User", event_gen)))) okay = false
 	let a9 = await <Promise<ReturnType<typeof api.getUserKudosu> | false>>attempt("getUserKudosu: ", api.getUserKudosu({id: user_id}, 5))
 	if (!isOk(a9, !a9 || (a9.length === 5 && validate(a9, "KudosuHistory", user_gen)))) okay = false
 
@@ -244,9 +244,9 @@ const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.Schema
 	let f3 = await <Promise<ReturnType<typeof api.getWikiPage> | false>>attempt("getWikiPage: ", api.getWikiPage("Rules"))
 	if (!isOk(f3, !f3 || (f3.title === "Rules" && validate(f3, "WikiPage", home_gen)))) okay = false
 	let f4 = await <Promise<ReturnType<typeof api.getNewsPosts> | false>>attempt("getNews: ", api.getNewsPosts())
-	if (!isOk(f4, !f4 || (f4.length >= 1 && validate(f4, "NewsPost", news_gen)))) okay = false
+	if (!isOk(f4, !f4 || (f4.length >= 1 && validate(f4, "News.Post", news_gen)))) okay = false
 	let f5 = await <Promise<ReturnType<typeof api.getNewsPost> | false>>attempt("getNewsPost: ", api.getNewsPost({id: 26}))
-	if (!isOk(f5, !f5 || (f5.title === "Official osu! Fanart Contest 5 Begins!" && validate(f5, "NewsPostWithContentNavigation", news_gen)))) okay = false
+	if (!isOk(f5, !f5 || (f5.title === "Official osu! Fanart Contest 5 Begins!" && validate(f5, "News.PostWithContentNavigation", news_gen)))) okay = false
 	let f6 = await <Promise<ReturnType<typeof api.getForumTopicAndPosts> | false>>attempt("getForumTopicAndPosts: ", api.getForumTopicAndPosts({id: 1848236}, 2))
 	if (!isOk(f6, !f6 || (f6.topic.title === "survey" && validate(f6.topic, "ForumTopic", forum_gen) && validate(f6.posts, "ForumPost", forum_gen)))) okay = false
 

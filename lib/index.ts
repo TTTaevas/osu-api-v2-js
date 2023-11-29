@@ -13,18 +13,17 @@ import { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBea
 import { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
 import { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
 import { Rankings, RankingsCountry, Spotlight, SpotlightWithParticipantcount, RankingsSpotlight } from "./ranking.js"
-import { Event, EventUser, EventBeatmap, EventBeatmapset, EventBeatmapPlaycount, EventBeatmapsetDelete, EventAchievement, EventBeatmapsetApprove,
-	EventBeatmapsetRevive, EventBeatmapsetUpdate, EventBeatmapsetUpload, EventRank, EventRankLost, EventUserSupportAgain, EventUserSupportFirst,
-	EventUserSupportGift, EventUsernameChange } from "./event.js"
+import { Event } from "./event.js"
 
 import { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
 	UpdateStream } from "./changelog.js"
 import { ForumPost, ForumTopic, PollConfig } from "./forum.js"
 import { WikiPage } from "./wiki.js"
-import { NewsPost, NewsPostWithContentNavigation } from "./news.js"
+import { News } from "./news.js"
 import { SearchResultUser, SearchResultWiki } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
-import { ChatChannel, ChatChannelWithDetails, ChatMessage, UserSilence } from "./chat.js"
+import { Chat } from "./chat.js"
+import { WebSocketEvent } from "./websocket.js"
 
 
 export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
@@ -38,18 +37,17 @@ export { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBea
 export { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
 export { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
 export { Rankings, RankingsCountry, Spotlight, SpotlightWithParticipantcount, RankingsSpotlight } from "./ranking.js"
-export { Event, EventUser, EventBeatmap, EventBeatmapset, EventBeatmapPlaycount, EventBeatmapsetDelete, EventAchievement, EventBeatmapsetApprove,
-	EventBeatmapsetRevive, EventBeatmapsetUpdate, EventBeatmapsetUpload, EventRank, EventRankLost, EventUserSupportAgain, EventUserSupportFirst,
-	EventUserSupportGift, EventUsernameChange } from "./event.js"
+export { Event } from "./event.js"
 
 export { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
 	UpdateStream } from "./changelog.js"
 export { ForumPost, ForumTopic, PollConfig } from "./forum.js"
 export { WikiPage } from "./wiki.js"
-export { NewsPost, NewsPostWithContentNavigation } from "./news.js"
+export { News } from "./news.js"
 export { SearchResultUser, SearchResultWiki } from "./home.js"
 export { Rulesets, Mod, Scope } from "./misc.js"
-export { ChatChannel, ChatChannelWithDetails, ChatMessage, UserSilence } from "./chat.js"
+export { Chat } from "./chat.js"
+export { WebSocketEvent } from "./websocket.js"
 
 /**
  * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
@@ -463,9 +461,7 @@ export class API {
 	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
-	async getUserRecentActivity(user: {id: number} | User, limit: number = 5, offset?: number): Promise<Array<EventAchievement | EventBeatmapsetApprove |
-	EventBeatmapsetRevive | EventBeatmapsetUpdate | EventBeatmapsetUpload | EventRank | EventRankLost |
-	EventUserSupportAgain | EventUserSupportFirst | EventUserSupportGift | EventUsernameChange>> {
+	async getUserRecentActivity(user: {id: number} | User, limit: number = 5, offset?: number): Promise<Array<Event.AnyRecentActivity>> {
 		return await this.request("get", `users/${user.id}/recent_activity`, {limit, offset})
 	}
 
@@ -818,7 +814,7 @@ export class API {
 	 * @remarks If the specified year is invalid/has no news, it fallbacks to the default year
 	 * @param year (defaults to current year) The year the posts were made
 	 */
-	async getNewsPosts(year?: number): Promise<NewsPost[]> {
+	async getNewsPosts(year?: number): Promise<News.Post[]> {
 		const response = await this.request("get", "news", {year, limit: 1})
 		return response.news_sidebar.news_posts
 	}
@@ -827,7 +823,7 @@ export class API {
 	 * Get a NewsPost, its content, and the NewsPosts right before and right after it!
 	 * @param post An object with the id or the slug of a NewsPost (the slug being the filename minus the extension, used in its URL)
 	 */
-	async getNewsPost(post: {id?: number, slug?: string} | NewsPost): Promise<NewsPostWithContentNavigation> {
+	async getNewsPost(post: {id?: number, slug?: string} | News.Post): Promise<News.PostWithContentNavigation> {
 		const key = post.id !== undefined ? "id" : undefined
 		const lookup = post.id !== undefined ? post.id : post.slug
 		return await this.request("get", `news/${lookup}`, {key})
@@ -920,7 +916,7 @@ export class API {
 	 * @returns A list of recent silences
 	 * @scope chat.read
 	 */
-	async keepChatAlive(since?: {user_silence?: {id: number} | UserSilence, message?: {message_id: number} | ChatMessage}): Promise<UserSilence[]> {
+	async keepChatAlive(since?: {user_silence?: {id: number} | Chat.UserSilence, message?: {message_id: number} | Chat.Message}): Promise<Chat.UserSilence[]> {
 		return await this.request("post", "chat/ack", {history_since: since?.user_silence?.id, since: since?.message?.message_id})
 	}
 
@@ -935,7 +931,7 @@ export class API {
 	 * @scope chat.write
 	 */
 	async sendChatPrivateMessage(user_target: {id: number} | User, message: string, is_action: boolean = false, uuid?: string):
-	Promise<{channel: ChatChannel, message: ChatMessage}> {
+	Promise<{channel: Chat.Channel, message: Chat.Message}> {
 		return await this.request("post", "chat/new", {target_id: user_target.id, message, is_action, uuid})
 	}
 
@@ -947,8 +943,8 @@ export class API {
 	 * @param until Get the messages sent up to but not including this message
 	 * @scope chat.read
 	 */
-	async getChatMessages(channel: {channel_id: number} | ChatChannel, limit: number = 20,
-	since?: {message_id: number} | ChatMessage, until?: {message_id: number} | ChatMessage): Promise<ChatMessage[]> {
+	async getChatMessages(channel: {channel_id: number} | Chat.Channel, limit: number = 20,
+	since?: {message_id: number} | Chat.Message, until?: {message_id: number} | Chat.Message): Promise<Chat.Message[]> {
 		return await this.request("get", `chat/channels/${channel.channel_id}/messages`, {limit, since: since?.message_id, until: until?.message_id})
 	}
 
@@ -960,7 +956,7 @@ export class API {
 	 * @returns The newly sent ChatMessage!
 	 * @scope chat.write
 	 */
-	async sendChatMessage(channel: {channel_id: number} | ChatChannel, message: string, is_action: boolean = false): Promise<ChatMessage> {
+	async sendChatMessage(channel: {channel_id: number} | Chat.Channel, message: string, is_action: boolean = false): Promise<Chat.Message> {
 		return await this.request("post", `chat/channels/${channel.channel_id}/messages`, {message, is_action})
 	}
 
@@ -970,7 +966,7 @@ export class API {
 	 * @param user (defaults to the presumed authorized user) The user joining the channel
 	 * @scope chat.write_manage
 	 */
-	async joinChatChannel(channel: {channel_id: number} | ChatChannel, user?: {id: number} | User): Promise<ChatChannelWithDetails> {
+	async joinChatChannel(channel: {channel_id: number} | Chat.Channel, user?: {id: number} | User): Promise<Chat.ChannelWithDetails> {
 		return await this.request("put", `chat/channels/${channel.channel_id}/users/${user?.id || this.user}`)
 	}
 
@@ -980,7 +976,7 @@ export class API {
 	 * @param user (defaults to the presumed authorized user) The user joining the channel
 	 * @scope chat.write_manage
 	 */
-	async leaveChatChannel(channel: {channel_id: number} | ChatChannel, user?: {id: number} | User): Promise<void> {
+	async leaveChatChannel(channel: {channel_id: number} | Chat.Channel, user?: {id: number} | User): Promise<void> {
 		return await this.request("delete", `chat/channels/${channel.channel_id}/users/${user?.id || this.user}`)
 	}
 
@@ -990,7 +986,7 @@ export class API {
 	 * @param message You're marking this and all the messages before it as read!
 	 * @scope chat.read
 	 */
-	async markChatChannelAsRead(channel: {channel_id: number} | ChatChannel, message: {message_id: number} | ChatMessage): Promise<void> {
+	async markChatChannelAsRead(channel: {channel_id: number} | Chat.Channel, message: {message_id: number} | Chat.Message): Promise<void> {
 		return await this.request("put",
 		`chat/channels/${channel.channel_id}/mark-as-read/${message.message_id}`, {channel_id: channel.channel_id, message: message.message_id})
 	}
@@ -999,7 +995,7 @@ export class API {
 	 * Get a list of all publicly joinable channels!
 	 * @scope chat.read
 	 */
-	async getChatChannels(): Promise<ChatChannel[]> {
+	async getChatChannels(): Promise<Chat.Channel[]> {
 		return await this.request("get", "chat/channels")
 	}
 
@@ -1009,7 +1005,7 @@ export class API {
 	 * @returns The newly created channel!
 	 * @scope chat.write_manage
 	 */
-	async createChatPrivateChannel(user_target: {id: number} | User): Promise<ChatChannel> {
+	async createChatPrivateChannel(user_target: {id: number} | User): Promise<Chat.Channel> {
 		return await this.request("post", "chat/channels", {type: "PM", target_id: user_target.id})
 	}
 
@@ -1023,7 +1019,7 @@ export class API {
 	 * @scope chat.write_manage
 	 */
 	async createChatAnnouncementChannel(channel: {name: string, description: string}, user_targets: Array<{id: number} | User>, message: string):
-	Promise<ChatChannel> {
+	Promise<Chat.Channel> {
 		const target_ids = user_targets.map((u) => u.id)
 		return await this.request("post", "chat/channels", {type: "ANNOUNCE", channel, target_ids, message})
 	}
@@ -1034,7 +1030,7 @@ export class API {
 	 * @param channel The channel in question
 	 * @scope chat.read
 	 */
-	async getChatChannel(channel: {channel_id: number} | ChatChannel): Promise<ChatChannelWithDetails> {
+	async getChatChannel(channel: {channel_id: number} | Chat.Channel): Promise<Chat.ChannelWithDetails> {
 		const response = await this.request("get", `chat/channels/${channel.channel_id}`)
 		return response.channel
 	}
