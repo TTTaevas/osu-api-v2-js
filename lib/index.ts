@@ -1,4 +1,5 @@
 import fetch, { FetchError } from "node-fetch"
+import WebSocket from "ws"
 import querystring from "querystring"
 
 import { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
@@ -278,6 +279,15 @@ export class API {
 			this.log(true, "Failed to refresh the token :(")
 			return false
 		}
+	}
+
+	public generateWebSocket(): WebSocket {
+		return new WebSocket(`${this.server.replace(/https{0,1}:\/\/\w*/g, "wss://notify")}`, [], {
+			headers: {
+				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
+				"Authorization": `${this.token_type} ${this.access_token}`
+			}
+		})
 	}
 
 	/**
