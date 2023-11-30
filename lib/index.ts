@@ -2,13 +2,8 @@ import fetch, { FetchError } from "node-fetch"
 import WebSocket from "ws"
 import querystring from "querystring"
 
-import { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
-	UserExtended, UserExtendedWithStatisticsrulesets,
-	UserStatistics, UserStatisticsWithUser, UserStatisticsWithCountryrank, KudosuHistory, ProfileBanner } from "./user.js"
-import { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, BeatmapPlaycount,
-	BeatmapDifficultyAttributes, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesTaiko, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania,
-	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapExtendedWithFailtimesMaxcombo, BeatmapsetExtendedWithBeatmapExtended, BeatmapsetExtendedPlus,
-	BeatmapPack, RankStatus } from "./beatmap.js"
+import { User } from "./user.js"
+import { Beatmap, Beatmapset, RankStatus } from "./beatmap.js"
 
 import { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
 import { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
@@ -26,13 +21,8 @@ import { Chat } from "./chat.js"
 import { WebSocketEvent } from "./websocket.js"
 
 
-export { User, UserWithKudosu, UserWithCountry, UserWithCountryCover, UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport,
-	UserExtended, UserExtendedWithStatisticsrulesets,
-	UserStatistics, UserStatisticsWithUser, UserStatisticsWithCountryrank, KudosuHistory, ProfileBanner } from "./user.js"
-export { Beatmap, BeatmapExtendedWithFailtimesBeatmapsetextended, BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo, BeatmapExtended, BeatmapPlaycount,
-	BeatmapDifficultyAttributes, BeatmapDifficultyAttributesOsu, BeatmapDifficultyAttributesTaiko, BeatmapDifficultyAttributesFruits, BeatmapDifficultyAttributesMania,
-	Beatmapset, BeatmapsetExtended, BeatmapExtendedWithFailtimes, BeatmapExtendedWithFailtimesMaxcombo, BeatmapsetExtendedWithBeatmapExtended, BeatmapsetExtendedPlus,
-	BeatmapPack, RankStatus } from "./beatmap.js"
+export { User } from "./user.js"
+export { Beatmap, Beatmapset, RankStatus } from "./beatmap.js"
 
 export { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
 export { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
@@ -391,7 +381,7 @@ export class API {
 	 * @param ruleset Defaults to the user's default/favourite Ruleset
 	 * @scope identify
 	 */
-	async getResourceOwner(ruleset?: Rulesets): Promise<UserExtendedWithStatisticsrulesets> {
+	async getResourceOwner(ruleset?: Rulesets): Promise<User.Extended.WithStatisticsrulesets> {
 		return await this.request("get", "me", {mode: ruleset})
 	}
 	
@@ -400,7 +390,7 @@ export class API {
 	 * @param user An object with either the id or the username of the user you're trying to get
 	 * @param ruleset Defaults to the user's default/favourite Ruleset
 	 */
-	async getUser(user: {id?: number, username?: string} | User, ruleset?: Rulesets): Promise<UserExtended> {
+	async getUser(user: {id?: number, username?: string} | User, ruleset?: Rulesets): Promise<User.Extended> {
 		const key = user.id !== undefined ? "id" : "username"
 		const lookup = user.id !== undefined ? user.id : user.username
 		const mode = ruleset !== undefined ? `/${Rulesets[ruleset]}` : ""
@@ -412,7 +402,7 @@ export class API {
 	 * Get user data for up to 50 users at once!
 	 * @param users An array of users or of objects that have the id of the users you're trying to get
 	 */
-	async getUsers(users: Array<{id: number} | User>): Promise<UserWithCountryCoverGroupsStatisticsrulesets[]> {
+	async getUsers(users: Array<{id: number} | User>): Promise<User.WithCountryCoverGroupsStatisticsrulesets[]> {
 		const ids = users.map((user) => user.id)
 		const response = await this.request("get", "users", {ids})
 		return response.users
@@ -441,7 +431,7 @@ export class API {
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
 	async getUserBeatmaps(user: {id: number} | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
-	limit: number = 5, offset?: number): Promise<BeatmapsetExtendedWithBeatmapExtended[]> {
+	limit: number = 5, offset?: number): Promise<Beatmapset.Extended.WithBeatmapExtended[]> {
 		return await this.request("get", `users/${user.id}/beatmapsets/${type}`, {limit, offset})
 	}
 
@@ -451,7 +441,7 @@ export class API {
 	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
-	async getUserMostPlayed(user: {id: number} | User, limit: number = 5, offset?: number): Promise<BeatmapPlaycount[]> {
+	async getUserMostPlayed(user: {id: number} | User, limit: number = 5, offset?: number): Promise<Beatmap.Playcount[]> {
 		return await this.request("get", `users/${user.id}/beatmapsets/most_played`, {limit, offset})
 	}
 
@@ -471,7 +461,7 @@ export class API {
 	 * @param limit (defaults to 5) The maximum amount of activities in the returned array
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
-	async getUserKudosu(user: {id: number} | User, limit?: number, offset?: number): Promise<KudosuHistory[]> {
+	async getUserKudosu(user: {id: number} | User, limit?: number, offset?: number): Promise<User.KudosuHistory[]> {
 		return await this.request("get", `users/${user.id}/kudosu`, {limit, offset})
 	}
 
@@ -479,7 +469,7 @@ export class API {
 	 * Get user data of each friend of the authorized user
 	 * @scope friends.read
 	 */
-	async getFriends(): Promise<UserWithCountryCoverGroupsStatisticsSupport[]> {
+	async getFriends(): Promise<User.WithCountryCoverGroupsStatisticsSupport[]> {
 		return await this.request("get", "friends")
 	}
 
@@ -490,7 +480,7 @@ export class API {
 	 * Get extensive beatmap data about whichever beatmap you want!
 	 * @param beatmap An object with the id of the beatmap you're trying to get
 	 */
-	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<BeatmapExtendedWithFailtimesBeatmapsetextended> {
+	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<Beatmap.Extended.WithFailtimesBeatmapsetextended> {
 		return await this.request("get", `beatmaps/${beatmap.id}`)
 	}
 
@@ -498,7 +488,7 @@ export class API {
 	 * Get extensive beatmap data for up to 50 beatmaps at once!
 	 * @param beatmaps An array of beatmaps or of objects that have the id of the beatmaps you're trying to get
 	 */
-	async getBeatmaps(beatmaps: Array<{id: number} | Beatmap>): Promise<BeatmapExtendedWithFailtimesMaxcombo[]> {
+	async getBeatmaps(beatmaps: Array<{id: number} | Beatmap>): Promise<Beatmap.Extended.WithFailtimesMaxcombo[]> {
 		const ids = beatmaps.map((beatmap) => beatmap.id)
 		const response = await this.request("get", "beatmaps", {ids})
 		return response.beatmaps
@@ -512,8 +502,7 @@ export class API {
 	 * @param ruleset (defaults to the ruleset the beatmap was intended for) Useful to specify if the beatmap is a convert
 	 */
 	async getBeatmapDifficultyAttributes(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number, ruleset?: Rulesets):
-	Promise<BeatmapDifficultyAttributes | BeatmapDifficultyAttributesOsu |BeatmapDifficultyAttributesTaiko |
-	BeatmapDifficultyAttributesFruits | BeatmapDifficultyAttributesMania> {
+	Promise<Beatmap.DifficultyAttributes | Beatmap.DifficultyAttributes.Any> {
 		const response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
 		return response.attributes
 	}
@@ -522,32 +511,32 @@ export class API {
 	 * @param beatmap The Beatmap in question
 	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
 	 */
-	async getBeatmapDifficultyAttributesOsu(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesOsu> {
-		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.osu) as BeatmapDifficultyAttributesOsu
+	async getBeatmapDifficultyAttributesOsu(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Osu> {
+		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.osu) as Beatmap.DifficultyAttributes.Osu
 	}
 	/**
 	 * Get various data about the difficulty of a taiko beatmap!
 	 * @param beatmap The Beatmap in question
 	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
 	 */
-	async getBeatmapDifficultyAttributesTaiko(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesTaiko> {
-		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.taiko) as BeatmapDifficultyAttributesTaiko
+	async getBeatmapDifficultyAttributesTaiko(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Taiko> {
+		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.taiko) as Beatmap.DifficultyAttributes.Taiko
 	}
 	/**
 	 * Get various data about the difficulty of a ctb beatmap!
 	 * @param beatmap The Beatmap in question
 	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
 	 */
-	async getBeatmapDifficultyAttributesFruits(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesFruits> {
-		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.fruits) as BeatmapDifficultyAttributesFruits
+	async getBeatmapDifficultyAttributesFruits(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Fruits> {
+		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.fruits) as Beatmap.DifficultyAttributes.Fruits
 	}
 	/**
 	 * Get various data about the difficulty of a mania beatmap!
 	 * @param beatmap The Beatmap in question
 	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
 	 */
-	async getBeatmapDifficultyAttributesMania(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<BeatmapDifficultyAttributesMania> {
-		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.mania) as BeatmapDifficultyAttributesMania
+	async getBeatmapDifficultyAttributesMania(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Mania> {
+		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.mania) as Beatmap.DifficultyAttributes.Mania
 	}
 
 	/**
@@ -593,7 +582,7 @@ export class API {
 	 * Get extensive beatmapset data about whichever beatmapset you want!
 	 * @param beatmapset An object with the id of the beatmapset you're trying to get
 	 */
-	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<BeatmapsetExtendedPlus> {
+	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<Beatmapset.Extended.Plus> {
 		return await this.request("get", `beatmapsets/${beatmapset.id}`)
 	}
 
@@ -602,7 +591,7 @@ export class API {
 	 * @param pack An object with the tag of the beatmappack you're trying to get
 	 * @remarks Currently in https://osu.ppy.sh/beatmaps/packs, when hovering a pack, its link with its tag should show up on your browser's bottom left
 	 */
-	async getBeatmapPack(pack: {tag: string} | BeatmapPack): Promise<BeatmapPack> {
+	async getBeatmapPack(pack: {tag: string} | Beatmap.Pack): Promise<Beatmap.Pack> {
 		return await this.request("get", `beatmaps/packs/${pack.tag}`)
 	}
 
@@ -610,7 +599,7 @@ export class API {
 	 * Get an Array of up to 100 BeatmapPacks of a specific type!
 	 * @param type The type of the BeatmapPacks, defaults to "standard"
 	 */
-	async getBeatmapPacks(type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<BeatmapPack[]> {
+	async getBeatmapPacks(type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<Beatmap.Pack[]> {
 		const response = await this.request("get", "beatmaps/packs", {type})
 		return response.beatmap_packs
 	}
@@ -725,7 +714,7 @@ export class API {
 	/**
 	 * Get the top 50 players who have the most total kudosu!
 	 */
-	async getKudosuRanking(): Promise<UserWithKudosu[]> {
+	async getKudosuRanking(): Promise<User.WithKudosu[]> {
 		const response = await this.request("get", "rankings/kudosu")
 		return response.ranking
 	}
@@ -966,7 +955,7 @@ export class API {
 	 * @param user (defaults to the presumed authorized user) The user joining the channel
 	 * @scope chat.write_manage
 	 */
-	async joinChatChannel(channel: {channel_id: number} | Chat.Channel, user?: {id: number} | User): Promise<Chat.ChannelWithDetails> {
+	async joinChatChannel(channel: {channel_id: number} | Chat.Channel, user?: {id: number} | User): Promise<Chat.Channel.WithDetails> {
 		return await this.request("put", `chat/channels/${channel.channel_id}/users/${user?.id || this.user}`)
 	}
 
@@ -1030,7 +1019,7 @@ export class API {
 	 * @param channel The channel in question
 	 * @scope chat.read
 	 */
-	async getChatChannel(channel: {channel_id: number} | Chat.Channel): Promise<Chat.ChannelWithDetails> {
+	async getChatChannel(channel: {channel_id: number} | Chat.Channel): Promise<Chat.Channel.WithDetails> {
 		const response = await this.request("get", `chat/channels/${channel.channel_id}`)
 		return response.channel
 	}

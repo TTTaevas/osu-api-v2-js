@@ -25,70 +25,168 @@ export interface Beatmap {
 	version: string
 }
 
-/**
- * Expected from Match
- */
-export interface BeatmapWithBeatmapset extends Beatmap {
-	beatmapset: Beatmapset
-}
-
-interface BeatmapWithChecksum extends Beatmap {
-	checksum: string
-}
-
-/**
- * Expected from PlaylistItem
- */
-export interface BeatmapWithBeatmapsetChecksumMaxcombo extends BeatmapWithBeatmapset, BeatmapWithChecksum {
-	max_combo: number
-}
-
-/**
- * Expected from ScoreWithUserBeatmapBeatmapset
- */
-export interface BeatmapExtended extends BeatmapWithChecksum {
-	accuracy: number
-	ar: number
-	bpm: number
-	convert: boolean
-	count_circles: number
-	count_sliders: number
-	count_spinners: number
-	cs: number
-	deleted_at: Date | null
-	drain: number
-	hit_length: number
-	is_scoreable: boolean
-	last_updated: Date
-	mode_int: number
-	passcount: number
-	playcount: number
-	ranked: RankStatus
-	url: string
-}
-
-/**
- * Expected from BeatmapsetExtendedPlus
- */
-export interface BeatmapExtendedWithFailtimes extends BeatmapExtended {
-	failtimes: {
-		exit: number[]
-		fail: number[]
+export namespace Beatmap {
+	/**
+	 * Expected from Match
+	 */
+	export interface WithBeatmapset extends Beatmap {
+		beatmapset: Beatmapset
 	}
-}
 
-/**
- * Expected from api.getBeatmaps()
- */
-export interface BeatmapExtendedWithFailtimesMaxcombo extends BeatmapExtendedWithFailtimes {
-	max_combo: number
-}
+	interface WithChecksum extends Beatmap {
+		checksum: string
+	}
 
-/**
- * Expected from api.getBeatmap()
- */
-export interface BeatmapExtendedWithFailtimesBeatmapsetextended extends BeatmapExtendedWithFailtimesMaxcombo {
-	beatmapset: BeatmapsetExtended
+	/**
+	 * Expected from PlaylistItem
+	 */
+	export interface WithBeatmapsetChecksumMaxcombo extends WithBeatmapset, WithChecksum {
+		max_combo: number
+	}
+
+	/**
+	 * Expected from ScoreWithUserBeatmapBeatmapset
+	 */
+	export interface Extended extends WithChecksum {
+		accuracy: number
+		ar: number
+		bpm: number
+		convert: boolean
+		count_circles: number
+		count_sliders: number
+		count_spinners: number
+		cs: number
+		deleted_at: Date | null
+		drain: number
+		hit_length: number
+		is_scoreable: boolean
+		last_updated: Date
+		mode_int: number
+		passcount: number
+		playcount: number
+		ranked: RankStatus
+		url: string
+	}
+
+	export namespace Extended {
+		/**
+		 * Expected from BeatmapsetExtendedPlus
+		 */
+		export interface WithFailtimes extends Extended {
+			failtimes: {
+				exit: number[]
+				fail: number[]
+			}
+		}
+
+		/**
+		 * Expected from api.getBeatmaps()
+		 */
+		export interface WithFailtimesMaxcombo extends WithFailtimes {
+			max_combo: number
+		}
+
+		/**
+		 * Expected from api.getBeatmap()
+		 */
+		export interface WithFailtimesBeatmapsetextended extends WithFailtimesMaxcombo {
+			beatmapset: Beatmapset.Extended
+		}
+	}
+
+	/**
+	 * Expected from api.getUserMostPlayed()
+	 */
+	export interface Playcount {
+		beatmap_id: number
+		/**
+		 * Playcount
+		 */
+		count: number
+		beatmap: Beatmap
+		beatmapset: Beatmapset
+	}
+
+	/**
+	 * Expected from api.getBeatmapPack(), api.getBeatmapPacks()
+	 */
+	export interface Pack {
+		author: string
+		date: Date
+		name: string
+		/**
+		 * Are difficulty reduction mods unable to be used to clear this pack? (is `false` if you can use such mods)
+		 */
+		no_diff_reduction: boolean
+		ruleset_id: number | null,
+		tag: string,
+		url: string,
+		beatmapsets?: Beatmapset.Extended[],
+		user_completion_data?:{
+			/**
+			 * IDs of beatmapsets completed by the user (according to the requirements of the pack)
+			 */
+			beatmapset_ids: number[],
+			/**
+			 * Whether all beatmapsets are completed by the user or not
+			 */
+			completed: boolean
+		}
+	}
+
+	/**
+	 * Expected from api.getBeatmapDifficultyAttributes()
+	 */
+	export interface DifficultyAttributes {
+		star_rating: number
+		max_combo: number
+	}
+
+	export namespace DifficultyAttributes {
+		/**
+		 * Expected from api.getBeatmapDifficultyAttributesOsu()
+		 */
+		export interface Osu extends DifficultyAttributes {
+			aim_difficulty: number
+			speed_difficulty: number
+			speed_note_count: number
+			flashlight_difficulty: number
+			slider_factor: number
+			approach_rate: number
+			overall_difficulty: number
+		}
+
+		/**
+		 * Expected from api.getBeatmapDifficultyAttributesTaiko()
+		 */
+		export interface Taiko extends DifficultyAttributes {
+			stamina_difficulty: number
+			rhythm_difficulty: number
+			colour_difficulty: number
+			peak_difficulty: number
+			great_hit_window: number
+		}
+
+		/**
+		 * Expected from api.getBeatmapDifficultyAttributesFruits()
+		 */
+		export interface Fruits extends DifficultyAttributes {
+			approach_rate: number
+		}
+
+		/**
+		 * Expected from api.getBeatmapDifficultyAttributesMania()
+		 */
+		export interface Mania extends DifficultyAttributes {
+			great_hit_window: number
+			/**
+			 * @remarks (2023-11-20) Doesn't exist anymore?
+			 */
+			score_multiplier?: number
+		}
+
+		export type Any = Osu | Taiko | Fruits | Mania
+	}
 }
 
 /**
@@ -138,180 +236,94 @@ export interface Beatmapset {
 	video: boolean
 }
 
-/**
- * Expected from RankingsSpotlight, BeatmapExtendedWithFailtimesBeatmapsetextended
- */
-export interface BeatmapsetExtended extends Beatmapset {
-	availability: {
+export namespace Beatmapset {
+	/**
+	 * Expected from RankingsSpotlight, BeatmapExtendedWithFailtimesBeatmapsetextended
+	 */
+	export interface Extended extends Beatmapset {
+		availability: {
+			/**
+			 * So it's `false` if you can download it
+			 */
+			download_disabled: boolean
+			more_information: string | null
+		}
+		bpm: number
+		can_be_hyped: boolean
+		creator: string
+		deleted_at: string | null
+		discussion_locked: boolean
+		hype: {
+			current: number
+			required: number
+		} | null
+		is_scoreable: boolean
+		last_updated: Date
+		legacy_thread_url: string
+		nominations_summary: {
+			current: number
+			required: number
+		}
+		ranked: RankStatus
+		ranked_date: Date | null
+		source: string
+		storyboard: boolean
+		submitted_date: Date | null
 		/**
-		 * So it's `false` if you can download it
+		 * 0 if no tags at all, a string with tags separated from each other by a whitespace
 		 */
-		download_disabled: boolean
-		more_information: string | null
+		tags: string | 0
 	}
-	bpm: number
-	can_be_hyped: boolean
-	creator: string
-	deleted_at: string | null
-	discussion_locked: boolean
-	hype: {
-		current: number
-		required: number
-	} | null
-	is_scoreable: boolean
-	last_updated: Date
-	legacy_thread_url: string
-	nominations_summary: {
-		current: number
-		required: number
-	}
-	ranked: RankStatus
-	ranked_date: Date | null
-	source: string
-	storyboard: boolean
-	submitted_date: Date | null
-	/**
-	 * 0 if no tags at all, a string with tags separated from each other by a whitespace
-	 */
-	tags: string | 0
-}
 
-/**
- * Expected from api.getUserBeatmaps()
- */
-export interface BeatmapsetExtendedWithBeatmapExtended extends BeatmapsetExtended {
-	beatmaps: BeatmapExtended[]
-}
-
-/**
- * Expected from api.getBeatmapset()
- */
-export interface BeatmapsetExtendedPlus extends BeatmapsetExtended {
-	/**
-	 * The different beatmaps/difficulties this beatmapset has
-	 */
-	beatmaps: BeatmapExtendedWithFailtimes[]
-	/**
-	 * The different beatmaps made for osu!, but converted to the other Rulesets
-	 */
-	converts: BeatmapExtendedWithFailtimes[]
-	current_nominations: {
-		beatmapset_id: number
-		rulesets: Rulesets[]
-		reset: boolean
-		user_id: number
-	}[]
-	description: {
+	export namespace Extended {
 		/**
-		 * In HTML
+		 * Expected from api.getUserBeatmaps()
 		 */
-		description: string
-	}
-	genre: {
-		id: number
-		name: string
-	}
-	language: {
-		id: number
-		name: string
-	}
-	pack_tags: string[]
-	ratings: number[]
-	recent_favourites: User[]
-	related_users: User[]
-	user: User
-	/**
-	 * Only exists if authorized user
-	 */
-	has_favourited?: boolean
-}
+		export interface WithBeatmapExtended extends Extended {
+			beatmaps: Beatmap.Extended[]
+		}
 
-/**
- * Expected from api.getUserMostPlayed()
- */
-export interface BeatmapPlaycount {
-	beatmap_id: number
-	/**
-	 * Playcount
-	 */
-	count: number
-	beatmap: Beatmap
-	beatmapset: Beatmapset
-}
-
-/**
- * Expected from api.getBeatmapDifficultyAttributes()
- */
-export interface BeatmapDifficultyAttributes {
-	star_rating: number
-	max_combo: number
-}
-
-/**
- * Expected from api.getBeatmapDifficultyAttributesOsu()
- */
-export interface BeatmapDifficultyAttributesOsu extends BeatmapDifficultyAttributes {
-	aim_difficulty: number
-	speed_difficulty: number
-	speed_note_count: number
-	flashlight_difficulty: number
-	slider_factor: number
-	approach_rate: number
-	overall_difficulty: number
-}
-
-/**
- * Expected from api.getBeatmapDifficultyAttributesTaiko()
- */
-export interface BeatmapDifficultyAttributesTaiko extends BeatmapDifficultyAttributes {
-	stamina_difficulty: number
-	rhythm_difficulty: number
-	colour_difficulty: number
-	peak_difficulty: number
-	great_hit_window: number
-}
-
-/**
- * Expected from api.getBeatmapDifficultyAttributesFruits()
- */
-export interface BeatmapDifficultyAttributesFruits extends BeatmapDifficultyAttributes {
-	approach_rate: number
-}
-
-/**
- * Expected from api.getBeatmapDifficultyAttributesMania()
- */
-export interface BeatmapDifficultyAttributesMania extends BeatmapDifficultyAttributes {
-	great_hit_window: number
-	/**
-	 * @remarks (2023-11-20) Doesn't exist anymore?
-	 */
-	score_multiplier?: number
-}
-
-/**
- * Expected from api.getBeatmapPack(), api.getBeatmapPacks()
- */
-export interface BeatmapPack {
-	author: string
-	date: Date
-	name: string
-	/**
-	 * Are difficulty reduction mods unable to be used to clear this pack? (is `false` if you can use such mods)
-	 */
-	no_diff_reduction: boolean
-	ruleset_id: number | null,
-	tag: string,
-	url: string,
-	beatmapsets?: BeatmapsetExtended[],
-	user_completion_data?:{
 		/**
-		 * IDs of beatmapsets completed by the user (according to the requirements of the pack)
+		 * Expected from api.getBeatmapset()
 		 */
-		beatmapset_ids: number[],
-		/**
-		 * Whether all beatmapsets are completed by the user or not
-		 */
-		completed: boolean
+		export interface Plus extends Extended {
+			/**
+			 * The different beatmaps/difficulties this beatmapset has
+			 */
+			beatmaps: Beatmap.Extended.WithFailtimes[]
+			/**
+			 * The different beatmaps made for osu!, but converted to the other Rulesets
+			 */
+			converts: Beatmap.Extended.WithFailtimes[]
+			current_nominations: {
+				beatmapset_id: number
+				rulesets: Rulesets[]
+				reset: boolean
+				user_id: number
+			}[]
+			description: {
+				/**
+				 * In HTML
+				 */
+				description: string
+			}
+			genre: {
+				id: number
+				name: string
+			}
+			language: {
+				id: number
+				name: string
+			}
+			pack_tags: string[]
+			ratings: number[]
+			recent_favourites: User[]
+			related_users: User[]
+			user: User
+			/**
+			 * Only exists if authorized user
+			 */
+			has_favourited?: boolean
+		}
 	}
 }

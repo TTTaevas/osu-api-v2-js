@@ -1,5 +1,5 @@
-import { BeatmapsetExtended } from "./beatmap.js"
-import { UserStatisticsWithUser } from "./user.js"
+import { Beatmapset } from "./beatmap.js"
+import { User } from "./user.js"
 
 /**
  * Expected from api.getSpotlights()
@@ -40,7 +40,7 @@ interface RankingsBare {
  * Expected from api.getRanking()
  */
 export interface Rankings extends RankingsBare {
-	ranking: UserStatisticsWithUser[]
+	ranking: User.Statistics.WithUser[]
 }
 
 /**
@@ -72,7 +72,7 @@ export interface RankingsCountry extends RankingsBare {
  * @privateRemarks As this doesn't have `cursor` or `total`, this does NOT extend `Rankings` (which have those properties through `RankingsBare`)
  */
 export interface RankingsSpotlight {
-	beatmapsets: BeatmapsetExtended[]
-	ranking: UserStatisticsWithUser[]
+	beatmapsets: Beatmapset.Extended[]
+	ranking: User.Statistics.WithUser[]
 	spotlight: SpotlightWithParticipantcount
 }

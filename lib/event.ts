@@ -1,11 +1,11 @@
 import { Rulesets } from "./misc.js"
 
+export interface Event {
+	created_at: Date
+	id: number
+}
+
 export namespace Event {
-	export interface Event {
-		created_at: Date
-		id: number
-	}
-	
 	export interface User extends Event {
 		user: {
 			username: string

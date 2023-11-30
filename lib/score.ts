@@ -1,6 +1,6 @@
-import { BeatmapExtended, Beatmapset } from "./beatmap.js"
+import { Beatmap, Beatmapset } from "./beatmap.js"
 import { Rulesets } from "./misc.js"
-import { User, UserWithCountryCover } from "./user.js"
+import { User } from "./user.js"
 
 /**
  * Expected from api.getBeatmapUserScores()
@@ -69,7 +69,7 @@ export interface ScoreWithMatch extends Score {
  * Expected from api.getBeatmapScores()
  */
 export interface ScoreWithUser extends Score {
-	user: UserWithCountryCover
+	user: User.WithCountryCover
 }
 
 /**
@@ -78,7 +78,7 @@ export interface ScoreWithUser extends Score {
  */
 export interface ScoreWithUserBeatmap extends Score {
 	user: User
-	beatmap: BeatmapExtended
+	beatmap: Beatmap.Extended
 }
 
 /**

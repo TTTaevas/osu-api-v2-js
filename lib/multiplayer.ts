@@ -1,7 +1,7 @@
-import { BeatmapWithBeatmapset, BeatmapWithBeatmapsetChecksumMaxcombo } from "./beatmap.js"
+import { Beatmap } from "./beatmap.js"
 import { Rulesets, Mod } from "./misc.js"
 import { ScoreWithMatch } from "./score.js"
-import { User, UserWithCountry, UserWithCountryCover } from "./user.js"
+import { User } from "./user.js"
 
 /**
  * Expected from api.getRoom()
@@ -13,7 +13,7 @@ export interface Room {
 	channel_id: number
 	ends_at: Date | null
 	has_password: boolean
-	host: UserWithCountry
+	host: User.WithCountry
 	id: number
 	max_attempts: number | null
 	name: string
@@ -68,7 +68,7 @@ export interface PlaylistItem {
 	 * Should be null if the room isn't the realtime multiplayer kind
 	 */
 	played_at: Date | null
-	beatmap: BeatmapWithBeatmapsetChecksumMaxcombo
+	beatmap: Beatmap.WithBeatmapsetChecksumMaxcombo
 }
 
 /**
@@ -118,7 +118,7 @@ export interface MultiplayerScore {
 	pp: number | null
 	replay: boolean
 	type: string
-	user: UserWithCountryCover
+	user: User.WithCountryCover
 }
 
 /**
@@ -155,7 +155,7 @@ export interface Leader {
 	room_id: number
 	total_score: number
 	user_id: number
-	user: UserWithCountry
+	user: User.WithCountry
 }
 
 /**
@@ -197,11 +197,11 @@ export interface Match {
 			scoring_type: string
 			team_type: string
 			mods: string[]
-			beatmap: BeatmapWithBeatmapset
+			beatmap: Beatmap.WithBeatmapset
 			scores: ScoreWithMatch[]
 		}
 	}[]
-	users: UserWithCountry[]
+	users: User.WithCountry[]
 	first_event_id: number
 	latest_event_id: number
 	current_game_id: number | null
