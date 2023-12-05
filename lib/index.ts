@@ -6,16 +6,15 @@ import { User } from "./user.js"
 import { Beatmap, Beatmapset, RankStatus } from "./beatmap.js"
 
 import { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
-import { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
-import { Rankings, RankingsCountry, Spotlight, SpotlightWithParticipantcount, RankingsSpotlight } from "./ranking.js"
+import { Score, BeatmapUserScore } from "./score.js"
+import { Rankings, Spotlight } from "./ranking.js"
 import { Event } from "./event.js"
 
-import { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
-	UpdateStream } from "./changelog.js"
-import { ForumPost, ForumTopic, PollConfig } from "./forum.js"
+import { Changelog } from "./changelog.js"
+import { Forum, PollConfig } from "./forum.js"
 import { WikiPage } from "./wiki.js"
 import { News } from "./news.js"
-import { SearchResultUser, SearchResultWiki } from "./home.js"
+import { SearchResult } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
 import { Chat } from "./chat.js"
 import { WebSocketEvent } from "./websocket.js"
@@ -25,16 +24,15 @@ export { User } from "./user.js"
 export { Beatmap, Beatmapset, RankStatus } from "./beatmap.js"
 
 export { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
-export { Score, ScoreWithMatch, ScoreWithUser, ScoreWithUserBeatmap, ScoreWithUserBeatmapBeatmapset, BeatmapUserScore } from "./score.js"
-export { Rankings, RankingsCountry, Spotlight, SpotlightWithParticipantcount, RankingsSpotlight } from "./ranking.js"
+export { Score, BeatmapUserScore } from "./score.js"
+export { Rankings, Spotlight } from "./ranking.js"
 export { Event } from "./event.js"
 
-export { ChangelogBuildWithUpdatestreams, ChangelogBuildWithUpdatestreamsChangelogentries, ChangelogBuildWithChangelogentriesVersions,
-	UpdateStream } from "./changelog.js"
-export { ForumPost, ForumTopic, PollConfig } from "./forum.js"
+export { Changelog } from "./changelog.js"
+export { Forum, PollConfig } from "./forum.js"
 export { WikiPage } from "./wiki.js"
 export { News } from "./news.js"
-export { SearchResultUser, SearchResultWiki } from "./home.js"
+export { SearchResult } from "./home.js"
 export { Rulesets, Mod, Scope } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocketEvent } from "./websocket.js"
@@ -418,7 +416,7 @@ export class API {
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
 	async getUserScores(user: {id: number} | User, type: "best" | "firsts" | "recent", limit?: number,
-	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<ScoreWithUserBeatmapBeatmapset[]> {
+	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<Score.WithUserBeatmapBeatmapset[]> {
 		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
 		return await this.request("get", `users/${user.id}/scores/${type}`, {mode, limit, offset, include_fails: String(Number(include_fails))})
 	}
@@ -546,7 +544,7 @@ export class API {
 	 * @param mods (2023-11-16) Currently doesn't do anything
 	 * @param type (2023-11-16) Currently doesn't do anything
 	 */
-	async getBeatmapScores(beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<ScoreWithUser[]> {
+	async getBeatmapScores(beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<Score.WithUser[]> {
 		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
 		const response = await this.request("get", `beatmaps/${beatmap.id}/scores`, {mode, mods, type})
 		return response.scores
@@ -612,7 +610,7 @@ export class API {
 	 * @param stream The name of the thing related to osu!, like `lazer`, `web`, `cuttingedge`, `beta40`, `stable40`
 	 * @param build The name of the version! Usually something like `2023.1026.0` for lazer, or `20230326` for stable
 	 */
-	async getChangelogBuild(stream: string, build: string): Promise<ChangelogBuildWithChangelogentriesVersions> {
+	async getChangelogBuild(stream: string, build: string): Promise<Changelog.Build.WithChangelogentriesVersions> {
 		return await this.request("get", `changelog/${stream}/${build}`)
 	}
 
@@ -624,7 +622,7 @@ export class API {
 	 * @param message_formats Each element of `changelog_entries` will have a `message` property if `markdown`, `message_html` if `html`, defaults to both
 	 */
 	async getChangelogBuilds(versions?: {from?: string, to?: string}, max_id?: number,
-	stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<ChangelogBuildWithUpdatestreamsChangelogentries[]> {
+	stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<Changelog.Build.WithUpdatestreamsChangelogentries[]> {
 		const [from, to] = [versions?.from, versions?.to]
 		const response = await this.request("get", "changelog", {from, to, max_id, stream, message_formats})
 		return response.builds
@@ -636,7 +634,7 @@ export class API {
 	 * const names_of_streams = (await api.getChangelogStreams()).map(s => s.name)
 	 * ```
 	 */
-	async getChangelogStreams(): Promise<UpdateStream[]> {
+	async getChangelogStreams(): Promise<Changelog.UpdateStream[]> {
 		const response = await this.request("get", "changelog", {max_id: 0})
 		return response.streams
 	}
@@ -728,8 +726,8 @@ export class API {
 	 * @param country Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`)
 	 * @param variant If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k!
 	 */
-	async getRanking(ruleset: Rulesets, type: "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
-	country?: string, variant?: "4k" | "7k"): Promise<Rankings> {
+	async getUserRanking(ruleset: Rulesets, type: "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
+	country?: string, variant?: "4k" | "7k"): Promise<Rankings.User> {
 		return await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, variant})
 	}
 
@@ -738,7 +736,7 @@ export class API {
 	 * @param ruleset On which Ruleset should the countries be compared?
 	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one
 	 */
-	async getCountryRanking(ruleset: Rulesets, page: number = 1): Promise<RankingsCountry> {
+	async getCountryRanking(ruleset: Rulesets, page: number = 1): Promise<Rankings.Country> {
 		return await this.request("get", `rankings/${Rulesets[ruleset]}/country`, {page})
 	}
 
@@ -748,7 +746,7 @@ export class API {
 	 * @param spotlight The spotlight in question
 	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
 	 */
-	async getSpotlightRanking(ruleset: Rulesets, spotlight: {id: number} | Spotlight, filter: "all" | "friends" = "all"): Promise<RankingsSpotlight> {
+	async getSpotlightRanking(ruleset: Rulesets, spotlight: {id: number} | Spotlight, filter: "all" | "friends" = "all"): Promise<Rankings.Spotlight> {
 		return await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: spotlight.id, filter})
 	}
 
@@ -770,7 +768,7 @@ export class API {
 	 * @param query What you would put in the searchbar
 	 * @param page (defaults to 1) You normally get the first 20 results, but if page is 2, you'd get results 21 to 40 instead for example!
 	 */
-	async searchUser(query: string, page: number = 1): Promise<SearchResultUser> {
+	async searchUser(query: string, page: number = 1): Promise<SearchResult.User> {
 		const response = await this.request("get", "search", {mode: "user", query, page})
 		return response.user
 	}
@@ -780,7 +778,7 @@ export class API {
 	 * @param query What you would put in the searchbar
 	 * @param page (defaults to 1) You normally get the first 50 results, but if page is 2, you'd get results 51 to 100 instead for example!
 	 */
-	async searchWiki(query: string, page: number = 1): Promise<SearchResultWiki> {
+	async searchWiki(query: string, page: number = 1): Promise<SearchResult.Wiki> {
 		const response = await this.request("get", "search", {mode: "wiki_page", query, page})
 		return response.wiki_page
 	}
@@ -828,7 +826,7 @@ export class API {
 	 * @returns The reply you've made!
 	 * @scope forum.write
 	 */
-	async replyForumTopic(topic: {id: number} | ForumTopic, text: string): Promise<ForumPost> {
+	async replyForumTopic(topic: {id: number} | Forum.Topic, text: string): Promise<Forum.Post> {
 		return await this.request("post", `forums/topics/${topic.id}/reply`, {body: text})
 	}
 
@@ -842,7 +840,7 @@ export class API {
 	 * @returns An object with the topic you've made, and its first initial post (which uses your `text`)
 	 * @scope forum.write
 	 */
-	async createForumTopic(forum_id: number, title: string, text: string, poll?: PollConfig): Promise<{topic: ForumTopic, post: ForumPost}> {
+	async createForumTopic(forum_id: number, title: string, text: string, poll?: PollConfig): Promise<{topic: Forum.Topic, post: Forum.Post}> {
 		const with_poll = poll !== undefined
 		const options = poll?.options !== undefined ? poll.options.toString().replace(/,/g, "\n") : undefined
 
@@ -865,8 +863,8 @@ export class API {
 	 * @param first_post (ignored if `cursor_string`) An Object with the id of the first post to be returned in `posts`
 	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
 	 */
-	async getForumTopicAndPosts(topic: {id: number} | ForumTopic, limit: number = 20, sort: "id_asc" | "id_desc" = "id_asc", first_post?: {id: number} | ForumPost,
-	cursor_string?: string): Promise<{posts: ForumPost[], topic: ForumTopic, cursor_string: string}> {
+	async getForumTopicAndPosts(topic: {id: number} | Forum.Topic, limit: number = 20, sort: "id_asc" | "id_desc" = "id_asc",
+	first_post?: {id: number} | Forum.Post, cursor_string?: string): Promise<{posts: Forum.Post[], topic: Forum.Topic, cursor_string: string}> {
 		const start = sort === "id_asc" && first_post ? first_post.id : undefined
 		const end = sort === "id_desc" && first_post ? first_post.id : undefined
 		return await this.request("get", `forums/topics/${topic.id}`, {sort, limit, start, end, cursor_string})
@@ -880,7 +878,7 @@ export class API {
 	 * @returns The edited ForumTopic
 	 * @scope forum.write
 	 */
-	async editForumTopicTitle(topic: {id: number} | ForumTopic, new_title: string): Promise<ForumTopic> {
+	async editForumTopicTitle(topic: {id: number} | Forum.Topic, new_title: string): Promise<Forum.Topic> {
 		return await this.request("put", `forums/topics/${topic.id}`, {forum_topic: {topic_title:  new_title}})
 	}
 
@@ -891,7 +889,7 @@ export class API {
 	 * @returns The edited ForumPost
 	 * @scope forum.write
 	 */
-	async editForumPost(post: {id: number} | ForumPost, new_text: string): Promise<ForumPost> {
+	async editForumPost(post: {id: number} | Forum.Post, new_text: string): Promise<Forum.Post> {
 		return await this.request("put", `forums/posts/${post.id}`, {body: new_text})
 	}
 

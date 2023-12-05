@@ -54,38 +54,40 @@ export interface Score {
 	}
 }
 
-/**
- * Expected from Match
- */
-export interface ScoreWithMatch extends Score {
-	match: {
-		slot: number
-		team: string
-		pass: boolean
+export namespace Score {
+	/**
+	 * Expected from Match
+	 */
+	export interface WithMatch extends Score {
+		match: {
+			slot: number
+			team: string
+			pass: boolean
+		}
 	}
-}
 
-/**
- * Expected from api.getBeatmapScores()
- */
-export interface ScoreWithUser extends Score {
-	user: User.WithCountryCover
-}
+	/**
+	 * Expected from api.getBeatmapScores()
+	 */
+	export interface WithUser extends Score {
+		user: User.WithCountryCover
+	}
 
-/**
- * Expected from BeatmapUserScore
- * @privateRemarks Doesn't extend ScoreWithUser as the User here lacks Country and Cover
- */
-export interface ScoreWithUserBeatmap extends Score {
-	user: User
-	beatmap: Beatmap.Extended
-}
+	/**
+	 * Expected from BeatmapUserScore
+	 * @privateRemarks Doesn't extend ScoreWithUser as the User here lacks Country and Cover
+	 */
+	export interface WithUserBeatmap extends Score {
+		user: User
+		beatmap: Beatmap.Extended
+	}
 
-/**
- * Expected from api.getUserScores()
- */
-export interface ScoreWithUserBeatmapBeatmapset extends ScoreWithUserBeatmap {
-	beatmapset: Beatmapset
+	/**
+	 * Expected from api.getUserScores()
+	 */
+	export interface WithUserBeatmapBeatmapset extends WithUserBeatmap {
+		beatmapset: Beatmapset
+	}
 }
 
 /**
@@ -96,5 +98,5 @@ export interface BeatmapUserScore {
 	 * Value depends on the requested mode and mods!
 	 */
 	position: number
-	score: ScoreWithUserBeatmap
+	score: Score.WithUserBeatmap
 }

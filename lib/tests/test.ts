@@ -96,13 +96,13 @@ const testUserStuff = async (user_gen: tsj.SchemaGenerator, score_gen: tsj.Schem
 	if (!isOk(a2, !a2 || (a2.length === 2 && validate(a2, "User.WithCountryCoverGroupsStatisticsrulesets", user_gen)))) okay = false
 
 	let a3 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores (best): ", api.getUserScores({id: user_id}, "best", 5))
-	if (!isOk(a3, !a3 || (a3.length === 5 && validate(a3, "ScoreWithUserBeatmapBeatmapset", score_gen)))) okay = false
+	if (!isOk(a3, !a3 || (a3.length === 5 && validate(a3, "Score.WithUserBeatmapBeatmapset", score_gen)))) okay = false
 	let a4 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt("getUserScores (firsts): ", api.getUserScores({id: 6503700}, "firsts", 3))
-	if (!isOk(a4, !a4 || (a4.length === 3 && validate(a4, "ScoreWithUserBeatmapBeatmapset", score_gen)))) okay = false
+	if (!isOk(a4, !a4 || (a4.length === 3 && validate(a4, "Score.WithUserBeatmapBeatmapset", score_gen)))) okay = false
 	let a5 = await <Promise<ReturnType<typeof api.getUserScores> | false>>attempt(
 		"getUserScores (recent): ", api.getUserScores({id: 9269034}, "recent", 1, undefined, true))
 	// Due to the nature of the test, it might fail, you may adapt the user id
-	if (!isOk(a5, !a5 || (a5.length === 1 && validate(a5, "ScoreWithUserBeatmapBeatmapset", score_gen)))) okay = false
+	if (!isOk(a5, !a5 || (a5.length === 1 && validate(a5, "Score.WithUserBeatmapBeatmapset", score_gen)))) okay = false
 
 	// Those are tested here to be consistent with index.ts and the API server's documentation
 	let a6 = await <Promise<ReturnType<typeof api.getUserBeatmaps> | false>>attempt("getUserBeatmaps: ", api.getUserBeatmaps({id: user_id}, "guest"))
@@ -158,7 +158,7 @@ const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.Sc
 	let b11 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks: ", api.getBeatmapPacks("tournament"))
 	if (!isOk(b11, !b11 || (b11.length >= 100 && validate(b11, "Beatmap.Pack", beat_gen)))) okay = false
 	let b12 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}))
-	if (!isOk(b12, !b12 || (b12[0].score >= 132408001 && validate(b12, "ScoreWithUser", score_gen)))) okay = false
+	if (!isOk(b12, !b12 || (b12[0].score >= 132408001 && validate(b12, "Score.WithUser", score_gen)))) okay = false
 
 	return okay
 }
@@ -170,12 +170,12 @@ const testChangelogStuff = async (changelog_gen: tsj.SchemaGenerator): Promise<b
 	let okay = true
 
 	let c1 = await <Promise<ReturnType<typeof api.getChangelogBuild> | false>>attempt("\ngetChangelogBuild: ", api.getChangelogBuild("lazer", "2023.1008.1"))
-	if (!isOk(c1, !c1 || (c1.id === 7156 && validate(c1, "ChangelogBuildWithChangelogentriesVersions", changelog_gen)))) okay = false
+	if (!isOk(c1, !c1 || (c1.id === 7156 && validate(c1, "Changelog.Build.WithChangelogentriesVersions", changelog_gen)))) okay = false
 	let c2 = await <Promise<ReturnType<typeof api.getChangelogBuilds> | false>>attempt(
 		"getChangelogBuilds: ", api.getChangelogBuilds({from: "2023.1031.0", to: "20231102.3"}, 7184, undefined, ["markdown"]))
-	if (!isOk(c2, !c2 || (c2.length === 4 && validate(c2, "ChangelogBuildWithUpdatestreamsChangelogentries", changelog_gen)))) okay = false
+	if (!isOk(c2, !c2 || (c2.length === 4 && validate(c2, "Changelog.Build.WithUpdatestreamsChangelogentries", changelog_gen)))) okay = false
 	let c3 = await <Promise<ReturnType<typeof api.getChangelogStreams> | false>>attempt("getChangelogStreams: ", api.getChangelogStreams())
-	if (!isOk(c3, !c3 || (c3.length > 2 && validate(c3, "UpdateStreamWithLatestbuildUsercount", changelog_gen)))) okay = false
+	if (!isOk(c3, !c3 || (c3.length > 2 && validate(c3, "Changelog.UpdateStream.WithLatestbuildUsercount", changelog_gen)))) okay = false
 
 	return okay
 }
@@ -217,14 +217,14 @@ const testRankingStuff = async (rank_gen: tsj.SchemaGenerator): Promise<boolean>
 
 	let e1 = await <Promise<ReturnType<typeof api.getKudosuRanking> | false>>attempt("\ngetKudosuRanking: ", api.getKudosuRanking())
 	if (!isOk(e1, !e1 || (e1[0].kudosu.total > 10000 && validate(e1, "User.WithKudosu", rank_gen)))) okay = false
-	let e2 = await <Promise<ReturnType<typeof api.getRanking> | false>>attempt(
-		"getRanking: ", api.getRanking(osu.Rulesets.osu, "score", 1, "all", "FR"))
-	if (!isOk(e2, !e2 || (e2.ranking[0].level.current > 106 && validate(e2, "Rankings", rank_gen)), 2)) okay = false
+	let e2 = await <Promise<ReturnType<typeof api.getUserRanking> | false>>attempt(
+		"getUserRanking: ", api.getUserRanking(osu.Rulesets.osu, "score", 1, "all", "FR"))
+	if (!isOk(e2, !e2 || (e2.ranking[0].level.current > 106 && validate(e2, "Rankings.User", rank_gen)), 2)) okay = false
 	let e3 = await <Promise<ReturnType<typeof api.getCountryRanking> | false>>attempt("getCountryRanking: ", api.getCountryRanking(osu.Rulesets.osu))
-	if (!isOk(e3, !e3 || (e3.ranking[0].code === "US" && validate(e3, "RankingsCountry", rank_gen)))) okay = false
+	if (!isOk(e3, !e3 || (e3.ranking[0].code === "US" && validate(e3, "Rankings.Country", rank_gen)))) okay = false
 	let e4 = await <Promise<ReturnType<typeof api.getSpotlightRanking> | false>>attempt(
 		"getSpotlightRanking: ", api.getSpotlightRanking(osu.Rulesets.taiko, {id: 48}))
-	if (!isOk(e4, !e4 || (e4.ranking[0].hit_accuracy === 97.85 && validate(e4, "RankingsSpotlight", rank_gen)), 2)) okay = false
+	if (!isOk(e4, !e4 || (e4.ranking[0].hit_accuracy === 97.85 && validate(e4, "Rankings.Spotlight", rank_gen)), 2)) okay = false
 	let e5 = await <Promise<ReturnType<typeof api.getSpotlights> | false>>attempt("getSpotlights: ", api.getSpotlights())
 	if (!isOk(e5, !e5 || (e5.length >= 132 && validate(e5, "Spotlight", rank_gen)))) okay = false
 
@@ -238,9 +238,9 @@ const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.Schema
 	let okay = true
 
 	let f1 = await <Promise<ReturnType<typeof api.searchUser> | false>>attempt("\nsearchUser: ", api.searchUser("Tae", 2))
-	if (!isOk(f1, !f1 || (f1.data.length === 20 && validate(f1, "SearchResultUser", home_gen)))) okay = false
+	if (!isOk(f1, !f1 || (f1.data.length === 20 && validate(f1, "SearchResult.User", home_gen)))) okay = false
 	let f2 = await <Promise<ReturnType<typeof api.searchWiki> | false>>attempt("searchWiki: ", api.searchWiki("Beat", 2))
-	if (!isOk(f2, !f2 || (f2.data.length === 50 && validate(f2, "SearchResultWiki", home_gen)))) okay = false
+	if (!isOk(f2, !f2 || (f2.data.length === 50 && validate(f2, "SearchResult.Wiki", home_gen)))) okay = false
 	let f3 = await <Promise<ReturnType<typeof api.getWikiPage> | false>>attempt("getWikiPage: ", api.getWikiPage("Rules"))
 	if (!isOk(f3, !f3 || (f3.title === "Rules" && validate(f3, "WikiPage", home_gen)))) okay = false
 	let f4 = await <Promise<ReturnType<typeof api.getNewsPosts> | false>>attempt("getNews: ", api.getNewsPosts())
@@ -248,7 +248,7 @@ const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.Schema
 	let f5 = await <Promise<ReturnType<typeof api.getNewsPost> | false>>attempt("getNewsPost: ", api.getNewsPost({id: 26}))
 	if (!isOk(f5, !f5 || (f5.title === "Official osu! Fanart Contest 5 Begins!" && validate(f5, "News.PostWithContentNavigation", news_gen)))) okay = false
 	let f6 = await <Promise<ReturnType<typeof api.getForumTopicAndPosts> | false>>attempt("getForumTopicAndPosts: ", api.getForumTopicAndPosts({id: 1848236}, 2))
-	if (!isOk(f6, !f6 || (f6.topic.title === "survey" && validate(f6.topic, "ForumTopic", forum_gen) && validate(f6.posts, "ForumPost", forum_gen)))) okay = false
+	if (!isOk(f6, !f6 || (f6.topic.title === "survey" && validate(f6.topic, "Forum.Topic", forum_gen) && validate(f6.posts, "Forum.Post", forum_gen)))) okay = false
 
 	return okay
 }

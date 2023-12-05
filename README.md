@@ -149,7 +149,7 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 
 ### Ranking
 - [x] Get Kudosu Ranking
-- [x] Get Ranking
+- [x] Get Ranking // split between getUserRanking(), getCountryRanking(), and getSpotlightRanking()
 - [x] Get Spotlights
 
 ### Users

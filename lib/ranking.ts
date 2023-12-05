@@ -16,11 +16,13 @@ export interface Spotlight {
 	mode_specific: boolean
 }
 
-/**
- * Expected from RankingsSpotlight
- */
-export interface SpotlightWithParticipantcount extends Spotlight {
-	participant_count: number
+export namespace Spotlight {
+	/**
+	 * Expected from RankingsSpotlight
+	 */
+	export interface WithParticipantcount extends Spotlight {
+		participant_count: number
+	}
 }
 
 interface RankingsBare {
@@ -36,43 +38,43 @@ interface RankingsBare {
 	total: number
 }
 
-/**
- * Expected from api.getRanking()
- */
-export interface Rankings extends RankingsBare {
-	ranking: User.Statistics.WithUser[]
-}
+export namespace Rankings {
+	/**
+	 * Expected from api.getRanking()
+	 */
+	export interface User extends RankingsBare {
+		ranking: User.Statistics.WithUser[]
+	}
 
-/**
- * Expected from api.getCountryRanking()
- * @remarks Not in the API's documentation
- */
-export interface RankingsCountry extends RankingsBare {
-	ranking: {
-		/**
-		 * Same as `country.code`
-		 */
-		code: string
-		active_users: number
-		play_count: number
-		ranked_score: number
-		performance: number
-		country: {
+	/**
+	 * Expected from api.getCountryRanking()
+	 */
+	export interface Country extends RankingsBare {
+		ranking: {
 			/**
-			 * The country's ISO 3166-1 alpha-2 code! (France would be `FR`, United States `US`)
+			 * Same as `country.code`
 			 */
 			code: string
-			name: string
-		}
-	}[]
-}
+			active_users: number
+			play_count: number
+			ranked_score: number
+			performance: number
+			country: {
+				/**
+				 * The country's ISO 3166-1 alpha-2 code! (France would be `FR`, United States `US`)
+				 */
+				code: string
+				name: string
+			}
+		}[]
+	}
 
-/**
- * Expected from api.getSpotlightRanking()
- * @privateRemarks As this doesn't have `cursor` or `total`, this does NOT extend `Rankings` (which have those properties through `RankingsBare`)
- */
-export interface RankingsSpotlight {
-	beatmapsets: Beatmapset.Extended[]
-	ranking: User.Statistics.WithUser[]
-	spotlight: SpotlightWithParticipantcount
+	/**
+	 * Expected from api.getSpotlightRanking()
+	 */
+	export interface Spotlight {
+		beatmapsets: Beatmapset.Extended[]
+		ranking: User.Statistics.WithUser[]
+		spotlight: Spotlight.WithParticipantcount
+	}
 }

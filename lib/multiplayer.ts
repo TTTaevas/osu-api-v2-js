@@ -1,6 +1,6 @@
 import { Beatmap } from "./beatmap.js"
 import { Rulesets, Mod } from "./misc.js"
-import { ScoreWithMatch } from "./score.js"
+import { Score } from "./score.js"
 import { User } from "./user.js"
 
 /**
@@ -198,7 +198,7 @@ export interface Match {
 			team_type: string
 			mods: string[]
 			beatmap: Beatmap.WithBeatmapset
-			scores: ScoreWithMatch[]
+			scores: Score.WithMatch[]
 		}
 	}[]
 	users: User.WithCountry[]
