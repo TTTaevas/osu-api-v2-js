@@ -7,17 +7,13 @@ interface SearchResult {
 }
 
 export namespace SearchResult {
-	/**
-	 * Expected from api.searchUser()
-	 */
+	/** @obtainableFrom {@link API.searchUser} */
 	export interface User extends SearchResult {
 		/** The Users that have been found */
 		data: UserInterface[]
 	}
 
-	/**
-	 * Expected from api.searchWiki()
-	 */
+	/** @obtainableFrom {@link API.searchWiki} */
 	export interface Wiki extends SearchResult {
 		/** The WikiPages that have been found */
 		data: WikiPage[]

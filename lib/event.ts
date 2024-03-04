@@ -9,32 +9,22 @@ export namespace Event {
 	export interface User extends Event {
 		user: {
 			username: string
-			/**
-			 * What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`)
-			 */
+			/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`) */
 			url: string
 		}
 	}
 	
 	export interface Beatmap extends Event {
-		/**
-		 * {artist} - {title} [{difficulty_name}]
-		 */
+		/** {artist} - {title} [{difficulty_name}] */
 		title: string
-		/**
-		 * What goes after the website's URL, like it could be the `/b/2980857?m=0` of `https://osu.ppy.sh/b/2980857?m=0` (/{beatmap_id}?m={ruleset_id})
-		 */
+		/** What goes after the website's URL, like it could be the `/b/2980857?m=0` of `https://osu.ppy.sh/b/2980857?m=0` (/{beatmap_id}?m={ruleset_id}) */
 		url: string
 	}
 	
 	export interface Beatmapset extends Event {
-		/**
-		 * {artist} - {title}
-		 */
+		/** {artist} - {title} */
 		title: string
-		/**
-		 * What goes after the website's URL, like it could be the `/s/689155` of `https://osu.ppy.sh/s/689155` (/{beatmapset_id})
-		 */
+		/** What goes after the website's URL, like it could be the `/s/689155` of `https://osu.ppy.sh/s/689155` (/{beatmapset_id}) */
 		url: string
 	}
 	
@@ -49,13 +39,9 @@ export namespace Event {
 			ordering: number
 			slug: string
 			description: string
-			/**
-			 * If the achievement is for a specific mode only (such as pass a 2* beatmap in taiko)
-			 */
+			/** If the achievement is for a specific mode only (such as pass a 2* beatmap in taiko) */
 			mode: string | null
-			/**
-			 * May contain HTML (like have the text between <i></i>)
-			 */
+			/** @remarks May contain HTML (like have the text between <i></i>) */
 			instructions: string
 		}
 	}
@@ -88,13 +74,9 @@ export namespace Event {
 	
 	export interface Rank extends User, Beatmap {
 		type: "rank"
-		/**
-		 * The grade, like "S"
-		 */
+		/** The grade, like "S" */
 		scoreRank: string
-		/**
-		 * The position achieved, like 14
-		 */
+		/** The position achieved, like 14 */
 		rank: number
 		mode: Rulesets
 	}
@@ -120,9 +102,7 @@ export namespace Event {
 		type: "usernameChange"
 		user: {
 			username: string
-			/**
-			 * What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846`
-			 */
+			/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` */
 			url: string
 			previousUsername: string
 		}

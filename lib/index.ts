@@ -5,7 +5,7 @@ import querystring from "querystring"
 import { User } from "./user.js"
 import { Beatmap, Beatmapset, RankStatus } from "./beatmap.js"
 
-import { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
+import { Multiplayer } from "./multiplayer.js"
 import { Score, BeatmapUserScore } from "./score.js"
 import { Rankings, Spotlight } from "./ranking.js"
 import { Event } from "./event.js"
@@ -23,7 +23,7 @@ import { WebSocketEvent } from "./websocket.js"
 export { User } from "./user.js"
 export { Beatmap, Beatmapset, RankStatus } from "./beatmap.js"
 
-export { Room, Leader, PlaylistItem, MultiplayerScore, MultiplayerScores, Match, MatchInfo } from "./multiplayer.js"
+export { Multiplayer } from "./multiplayer.js"
 export { Score, BeatmapUserScore } from "./score.js"
 export { Rankings, Spotlight } from "./ranking.js"
 export { Event } from "./event.js"
@@ -376,8 +376,8 @@ export class API {
 
 	/**
 	 * Get extensive user data about the authorized user
+	 * @scope {@link Scope"identify"}
 	 * @param ruleset Defaults to the user's default/favourite Ruleset
-	 * @scope identify
 	 */
 	async getResourceOwner(ruleset?: Rulesets): Promise<User.Extended.WithStatisticsrulesets> {
 		return await this.request("get", "me", {mode: ruleset})
@@ -465,7 +465,7 @@ export class API {
 
 	/**
 	 * Get user data of each friend of the authorized user
-	 * @scope friends.read
+	 * @scope {@link Scope"friends.read"}
 	 */
 	async getFriends(): Promise<User.WithCountryCoverGroupsStatisticsSupport[]> {
 		return await this.request("get", "friends")
@@ -630,11 +630,12 @@ export class API {
 
 	/**
 	 * An effective way to get all available streams, as well as their latest version!
-	 * @example ```ts
+	 * @example
+	 * ```ts
 	 * const names_of_streams = (await api.getChangelogStreams()).map(s => s.name)
 	 * ```
 	 */
-	async getChangelogStreams(): Promise<Changelog.UpdateStream[]> {
+	async getChangelogStreams(): Promise<Changelog.UpdateStream.WithLatestbuildUsercount[]> {
 		const response = await this.request("get", "changelog", {max_id: 0})
 		return response.streams
 	}
@@ -646,25 +647,25 @@ export class API {
 	 * Get data about a lazer multiplayer room (realtime or playlists)!
 	 * @param room An object with the id of the room, is at the end of its URL (after `/multiplayer/rooms/`)
 	 */
-	async getRoom(room: {id: number} | Room): Promise<Room> {
+	async getRoom(room: {id: number} | Multiplayer.Room): Promise<Multiplayer.Room> {
 		return await this.request("get", `rooms/${room.id}`)
 	}
 
 	/**
 	 * Get rooms that are active, that have ended, that the user participated in, that the user made, or just simply any room!
+	 * @scope {@link Scope"public"}
 	 * @param mode Self-explanatory enough, defaults to `active`
-	 * @scope public
 	 */
-	async getRooms(mode: "active" | "all" | "ended" | "participated" | "owned" = "active"): Promise<Room[]> {
+	async getRooms(mode: "active" | "all" | "ended" | "participated" | "owned" = "active"): Promise<Multiplayer.Room[]> {
 		return await this.request("get", "rooms", {mode})
 	}
 
 	/**
 	 * Get the room stats of all the users of that room!
+	 * @scope {@link Scope"public"}
 	 * @param room An object with the id of the room in question
-	 * @scope public
 	 */
-	async getRoomLeaderboard(room: {id: number} | Room): Promise<Leader[]> {
+	async getRoomLeaderboard(room: {id: number} | Multiplayer.Room): Promise<Multiplayer.Leader[]> {
 		const response = await this.request("get", `rooms/${room.id}/leaderboard`)
 		return response.leaderboard
 	}
@@ -677,9 +678,11 @@ export class API {
 	 * @param cursor_string Use a MultiplayerScores' `params` and `cursor_string` to get the next page (scores 51 to 100 for example)
 	 * @remarks (2023-11-10) Items are broken for multiplayer (real-time) rooms, not for playlists (like spotlights), that's an osu! bug
 	 * https://github.com/ppy/osu-web/issues/10725
+	 * @remarks (2024-03-04) Straight up doesn't work anymore, that's an osu! bug
+	 * https://github.com/ppy/osu-web/issues/11064
 	 */
-	async getPlaylistItemScores(item: {id: number, room_id: number} | PlaylistItem, limit: number = 50,
-	sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<MultiplayerScores> {
+	async getPlaylistItemScores(item: {id: number, room_id: number} | Multiplayer.PlaylistItem, limit: number = 50,
+	sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<Multiplayer.Scores> {
 		return await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
 	}
 
@@ -687,8 +690,8 @@ export class API {
 	 * Get data of a multiplayer lobby from the stable (non-lazer) client that have URLs with `community/matches` or `mp`
 	 * @param id Can be found at the end of the URL of said match
 	 */
-	async getMatch(id: number): Promise<Match> {
-		const response = await this.request("get", `matches/${id}`) as Match
+	async getMatch(id: number): Promise<Multiplayer.Match> {
+		const response = await this.request("get", `matches/${id}`) as Multiplayer.Match
 		// I know `events[i].game.scores[e].perfect` can at least be 0 instead of being false; fix that
 		for (let i = 0; i < response.events.length; i++) {
 			for (let e = 0; e < Number(response.events[i].game?.scores.length); e++) {
@@ -701,7 +704,7 @@ export class API {
 	/**
 	 * Gets the info of the 50 most recently created stable (non-lazer) matches, descending order (most recent is at index 0)
 	 */
-	async getMatches(): Promise<MatchInfo[]> {
+	async getMatches(): Promise<Multiplayer.MatchInfo[]> {
 		const response = await this.request("get", "matches")
 		return response.matches
 	}
@@ -821,10 +824,10 @@ export class API {
 
 	/**
 	 * Make and send a ForumPost in a ForumTopic!
+	 * @scope {@link Scope"forum.write"}
 	 * @param topic An object with the id of the topic you're making your reply in
 	 * @param text Your reply! Your message!
 	 * @returns The reply you've made!
-	 * @scope forum.write
 	 */
 	async replyForumTopic(topic: {id: number} | Forum.Topic, text: string): Promise<Forum.Post> {
 		return await this.request("post", `forums/topics/${topic.id}/reply`, {body: text})
@@ -832,13 +835,13 @@ export class API {
 
 	/**
 	 * Create a new ForumTopic in the forum of your choice!
+	 * @scope {@link Scope"forum.write"}
 	 * @remarks Some users may not be allowed to do that, such as newly registered users, so this can 403 even with the right scopes
 	 * @param forum_id The id of the forum you're creating your topic in
 	 * @param title The topic's title
 	 * @param text The first post's content/message
 	 * @param poll If you want to make a poll, specify the parameters of that poll!
 	 * @returns An object with the topic you've made, and its first initial post (which uses your `text`)
-	 * @scope forum.write
 	 */
 	async createForumTopic(forum_id: number, title: string, text: string, poll?: PollConfig): Promise<{topic: Forum.Topic, post: Forum.Post}> {
 		const with_poll = poll !== undefined
@@ -872,11 +875,11 @@ export class API {
 
 	/**
 	 * Edit the title of a ForumTopic!
+	 * @scope {@link Scope"forum.write"}
 	 * @remarks Use `editForumPost` if you wanna edit the post at the top of the topic
 	 * @param topic An object with the id of the topic in question
 	 * @param new_title The new title of the topic
 	 * @returns The edited ForumTopic
-	 * @scope forum.write
 	 */
 	async editForumTopicTitle(topic: {id: number} | Forum.Topic, new_title: string): Promise<Forum.Topic> {
 		return await this.request("put", `forums/topics/${topic.id}`, {forum_topic: {topic_title:  new_title}})
@@ -884,10 +887,10 @@ export class API {
 
 	/**
 	 * Edit a ForumPost! Note that it can be the initial one of a ForumTopic!
+	 * @scope {@link Scope"forum.write"}
 	 * @param post An object with the id of the post in question
 	 * @param new_text The new content of the post (replaces the old content)
 	 * @returns The edited ForumPost
-	 * @scope forum.write
 	 */
 	async editForumPost(post: {id: number} | Forum.Post, new_text: string): Promise<Forum.Post> {
 		return await this.request("put", `forums/posts/${post.id}`, {body: new_text})
@@ -898,10 +901,10 @@ export class API {
 
 	/**
 	 * Needs to be done periodically to reset chat activity timeout
+	 * @scope {@link Scope"chat.read"}
 	 * @remarks Every 30 seconds is a good idea
 	 * @param since UserSilences that are before that will not be returned!
 	 * @returns A list of recent silences
-	 * @scope chat.read
 	 */
 	async keepChatAlive(since?: {user_silence?: {id: number} | Chat.UserSilence, message?: {message_id: number} | Chat.Message}): Promise<Chat.UserSilence[]> {
 		return await this.request("post", "chat/ack", {history_since: since?.user_silence?.id, since: since?.message?.message_id})
@@ -909,13 +912,13 @@ export class API {
 
 	/**
 	 * Send a private message to someone!
+	 * @scope {@link Scope"chat.write"}
 	 * @remarks You don't need to use `createChatPrivateChannel` before sending a message
 	 * @param user_target The User you wanna send your message to!
 	 * @param message The message you wanna send
 	 * @param is_action (defaults to false) Is it a command? Like `/me dances`
 	 * @param uuid A client-side message identifier
 	 * @returns The message you sent
-	 * @scope chat.write
 	 */
 	async sendChatPrivateMessage(user_target: {id: number} | User, message: string, is_action: boolean = false, uuid?: string):
 	Promise<{channel: Chat.Channel, message: Chat.Message}> {
@@ -924,11 +927,11 @@ export class API {
 
 	/**
 	 * Get the recent messages of a specific ChatChannel!
+	 * @scope {@link Scope"chat.read"}
 	 * @param channel The Channel you wanna get the messages from
 	 * @param limit (defaults to 20, max 50) The maximum amount of messages you want to get!
 	 * @param since Get the messages sent after this message
 	 * @param until Get the messages sent up to but not including this message
-	 * @scope chat.read
 	 */
 	async getChatMessages(channel: {channel_id: number} | Chat.Channel, limit: number = 20,
 	since?: {message_id: number} | Chat.Message, until?: {message_id: number} | Chat.Message): Promise<Chat.Message[]> {
@@ -937,11 +940,11 @@ export class API {
 
 	/**
 	 * Send a message in a ChatChannel!
+	 * @scope {@link Scope"chat.write"}
 	 * @param channel The channel in which you want to send your message
 	 * @param message The message you wanna send
 	 * @param is_action (defaults to false) Is it a command? Like `/me dances`
 	 * @returns The newly sent ChatMessage!
-	 * @scope chat.write
 	 */
 	async sendChatMessage(channel: {channel_id: number} | Chat.Channel, message: string, is_action: boolean = false): Promise<Chat.Message> {
 		return await this.request("post", `chat/channels/${channel.channel_id}/messages`, {message, is_action})
@@ -949,9 +952,9 @@ export class API {
 
 	/**
 	 * Join a public or multiplayer ChatChannel, allowing you to interact with it!
+	 * @scope {@link Scope"chat.write_manage"}
 	 * @param channel The channel you wanna join
 	 * @param user (defaults to the presumed authorized user) The user joining the channel
-	 * @scope chat.write_manage
 	 */
 	async joinChatChannel(channel: {channel_id: number} | Chat.Channel, user?: {id: number} | User): Promise<Chat.Channel.WithDetails> {
 		return await this.request("put", `chat/channels/${channel.channel_id}/users/${user?.id || this.user}`)
@@ -959,9 +962,9 @@ export class API {
 
 	/**
 	 * Leave/Close a public ChatChannel!
+	 * @scope {@link Scope"chat.write_manage"}
 	 * @param channel The channel you wanna join
 	 * @param user (defaults to the presumed authorized user) The user joining the channel
-	 * @scope chat.write_manage
 	 */
 	async leaveChatChannel(channel: {channel_id: number} | Chat.Channel, user?: {id: number} | User): Promise<void> {
 		return await this.request("delete", `chat/channels/${channel.channel_id}/users/${user?.id || this.user}`)
@@ -969,9 +972,9 @@ export class API {
 
 	/**
 	 * Mark a certain channel as read up to a given message!
+	 * @scope {@link Scope"chat.read"}
 	 * @param channel The channel in question
 	 * @param message You're marking this and all the messages before it as read!
-	 * @scope chat.read
 	 */
 	async markChatChannelAsRead(channel: {channel_id: number} | Chat.Channel, message: {message_id: number} | Chat.Message): Promise<void> {
 		return await this.request("put",
@@ -980,7 +983,7 @@ export class API {
 
 	/**
 	 * Get a list of all publicly joinable channels!
-	 * @scope chat.read
+	 * @scope {@link Scope"chat.read"}
 	 */
 	async getChatChannels(): Promise<Chat.Channel[]> {
 		return await this.request("get", "chat/channels")
@@ -988,9 +991,9 @@ export class API {
 
 	/**
 	 * Create/Open/Join a private messages chat channel!
+	 * @scope {@link Scope"chat.read"}
 	 * @param user_target The other user able to read and send messages in this channel
 	 * @returns The newly created channel!
-	 * @scope chat.write_manage
 	 */
 	async createChatPrivateChannel(user_target: {id: number} | User): Promise<Chat.Channel> {
 		return await this.request("post", "chat/channels", {type: "PM", target_id: user_target.id})
@@ -998,12 +1001,12 @@ export class API {
 
 	/**
 	 * Create a new announcement!
+	 * @scope {@link Scope"chat.write_manage"}
 	 * @remarks From my understanding, this WILL 403 unless the user is kinda special
 	 * @param channel Details of the channel you're creating
 	 * @param user_targets The people that will receive your message
 	 * @param message The message to send with the announcement
 	 * @returns The newly created channel!
-	 * @scope chat.write_manage
 	 */
 	async createChatAnnouncementChannel(channel: {name: string, description: string}, user_targets: Array<{id: number} | User>, message: string):
 	Promise<Chat.Channel> {
@@ -1013,9 +1016,9 @@ export class API {
 
 	/**
 	 * Get a ChatChannel, and the users in it if it is a private channel!
+	 * @scope {@link Scope"chat.read"}
 	 * @remarks Will 404 if the user has not joined the channel (use `joinChatChannel` for that)
 	 * @param channel The channel in question
-	 * @scope chat.read
 	 */
 	async getChatChannel(channel: {channel_id: number} | Chat.Channel): Promise<Chat.Channel.WithDetails> {
 		const response = await this.request("get", `chat/channels/${channel.channel_id}`)

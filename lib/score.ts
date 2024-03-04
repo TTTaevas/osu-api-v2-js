@@ -20,7 +20,7 @@ export interface Score {
 	passed: boolean
 	perfect: boolean
 	/**
-	 * null when Beatmap is Loved (for example)
+	 * @remarks Is null when Beatmap is Loved (for example)
 	 */
 	pp: number | null
 	/**
@@ -33,11 +33,14 @@ export interface Score {
 	replay: boolean
 	score: number
 	statistics: {
-		count_50: number
+		/**
+		 * @remarks Is null if the score's gamemode is Taiko
+		 */
+		count_50: number | null
 		count_100: number
 		count_300: number
-		count_geki: number
-		count_katu: number
+		count_geki: number | null
+		count_katu: number | null
 		count_miss: number
 	}
 	type: string

@@ -1,6 +1,10 @@
 export namespace Forum {
 	/**
-	 * Expected from api.replyForumTopic(), api.createForumTopic(), api.getForumTopicAndPosts(), api.editForumPost()
+	 * @obtainableFrom
+	 * {@link API.replyForumTopic} /
+	 * {@link API.createForumTopic} /
+	 * {@link API.getForumTopicAndPosts} /
+	 * {@link API.editForumPost}
 	 */
 	export interface Post {
 		created_at: Date
@@ -14,13 +18,16 @@ export namespace Forum {
 		body: {
 			/** Post content in HTML format */
 			html: string
-			/**  Post content in BBCode format */
+			/** Post content in BBCode format */
 			raw: string
 		}
 	}
 
 	/**
-	 * Expected from api.createForumTopic(), api.getForumTopicAndPosts(), api.editForumTopicTitle()
+	 * @obtainableFrom
+	 * {@link API.createForumTopic} /
+	 * {@link API.getForumTopicAndPosts} /
+	 * {@link API.editForumTopicTitle}
 	 */
 	export interface Topic {
 		created_at: Date
@@ -37,7 +44,7 @@ export namespace Forum {
 		user_id: number
 		poll: {
 			allow_vote_change: boolean
-			/** Can be in the future */
+			/** @remarks Can be in the future */
 			ended_at: Date | null
 			hide_incomplete_results: boolean
 			last_vote_at: Date | null
@@ -48,7 +55,7 @@ export namespace Forum {
 					bbcode: string
 					html: string
 				}
-				/** Not present if the poll is incomplete and results are hidden */
+				/** @remarks Not present if the poll is incomplete and results are hidden */
 				vote_count?: number
 			}[]
 			started_at: Date
@@ -61,7 +68,7 @@ export namespace Forum {
 	}
 }
 
-/** Feel free to use this interface to help you create polls with `api.createForumTopic()`! */
+/** Feel free to use this interface to help you create polls with {@link API.createForumTopic}! */
 export interface PollConfig {
 	title: string
 	/** The things the users can vote for */

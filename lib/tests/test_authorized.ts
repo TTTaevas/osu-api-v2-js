@@ -21,7 +21,7 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 	if (secret === undefined) {throw new Error("no SECRET env var")}
 	if (redirect_uri === undefined) {throw new Error("no REDIRECT_URI env var")}
 
-	let url = osu.generateAuthorizationURL(Number(id), redirect_uri, ["public", "chat.read", "chat.write_manage"], server)
+	let url = osu.generateAuthorizationURL(Number(id), redirect_uri, ["public", "chat.read", "chat.write_manage", "forum.write"], server)
 	exec(`xdg-open "${url}"`)
 	let code = prompt(`What code do you get from: ${url}\n\n`)
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri}, "errors", server)
