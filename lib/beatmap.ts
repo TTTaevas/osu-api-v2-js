@@ -79,73 +79,57 @@ export namespace Beatmap {
 			}
 		}
 
-		/**
-		 * Expected from api.getBeatmaps()
-		 */
+		/** @obtainableFrom {@link API.getBeatmaps} */
 		export interface WithFailtimesMaxcombo extends WithFailtimes {
 			max_combo: number
 		}
 
-		/**
-		 * Expected from api.getBeatmap()
-		 */
+		/** @obtainableFrom {@link API.getBeatmap} */
 		export interface WithFailtimesBeatmapsetextended extends WithFailtimesMaxcombo {
 			beatmapset: Beatmapset.Extended
 		}
 	}
 
-	/**
-	 * Expected from api.getUserMostPlayed()
-	 */
+	/** @obtainableFrom {@link API.getUserMostPlayed} */
 	export interface Playcount {
 		beatmap_id: number
-		/**
-		 * Playcount
-		 */
+		/** Playcount */
 		count: number
 		beatmap: Beatmap
 		beatmapset: Beatmapset
 	}
 
 	/**
-	 * Expected from api.getBeatmapPack(), api.getBeatmapPacks()
+	 * @obtainableFrom
+	 * {@link API.getBeatmapPack} /
+	 * {@link API.getBeatmapPacks}
 	 */
 	export interface Pack {
 		author: string
 		date: Date
 		name: string
-		/**
-		 * Are difficulty reduction mods unable to be used to clear this pack? (is `false` if you can use such mods)
-		 */
+		/** Are difficulty reduction mods unable to be used to clear this pack? (is `false` if you can use such mods) */
 		no_diff_reduction: boolean
 		ruleset_id: number | null,
 		tag: string,
 		url: string,
 		beatmapsets?: Beatmapset.Extended[],
 		user_completion_data?:{
-			/**
-			 * IDs of beatmapsets completed by the user (according to the requirements of the pack)
-			 */
+			/** IDs of beatmapsets completed by the user (according to the requirements of the pack) */
 			beatmapset_ids: number[],
-			/**
-			 * Whether all beatmapsets are completed by the user or not
-			 */
+			/** Whether all beatmapsets are completed by the user or not */
 			completed: boolean
 		}
 	}
 
-	/**
-	 * Expected from api.getBeatmapDifficultyAttributes()
-	 */
+	/** @obtainableFrom {@link API.getBeatmapDifficultyAttributes} */
 	export interface DifficultyAttributes {
 		star_rating: number
 		max_combo: number
 	}
 
 	export namespace DifficultyAttributes {
-		/**
-		 * Expected from api.getBeatmapDifficultyAttributesOsu()
-		 */
+		/** @obtainableFrom {@link API.getBeatmapDifficultyAttributesOsu} */
 		export interface Osu extends DifficultyAttributes {
 			aim_difficulty: number
 			speed_difficulty: number
@@ -156,9 +140,7 @@ export namespace Beatmap {
 			overall_difficulty: number
 		}
 
-		/**
-		 * Expected from api.getBeatmapDifficultyAttributesTaiko()
-		 */
+		/** @obtainableFrom {@link API.getBeatmapDifficultyAttributesTaiko} */
 		export interface Taiko extends DifficultyAttributes {
 			stamina_difficulty: number
 			rhythm_difficulty: number
@@ -167,16 +149,12 @@ export namespace Beatmap {
 			great_hit_window: number
 		}
 
-		/**
-		 * Expected from api.getBeatmapDifficultyAttributesFruits()
-		 */
+		/** @obtainableFrom {@link API.getBeatmapDifficultyAttributesFruits} */
 		export interface Fruits extends DifficultyAttributes {
 			approach_rate: number
 		}
 
-		/**
-		 * Expected from api.getBeatmapDifficultyAttributesMania()
-		 */
+		/** @obtainableFrom {@link API.getBeatmapDifficultyAttributesMania} */
 		export interface Mania extends DifficultyAttributes {
 			great_hit_window: number
 			/**
@@ -211,26 +189,15 @@ export interface Beatmapset {
 	nsfw: boolean
 	offset: number
 	play_count: number
-	/**
-	 * A string like that, where id is the `id` of the beatmapset: `//b.ppy.sh/preview/58951.mp3`
-	 */
+	/** A string like that, where id is the `id` of the beatmapset: `//b.ppy.sh/preview/58951.mp3` */
 	preview_url: string
-	/**
-	 * Can be/Is 0 if there is no source
-	 */
-	source: string | 0
+	source: string
 	spotlight: boolean
-	/**
-	 * Is it ranked, is it graveyarded, etc
-	 */
+	/** Is it ranked, is it graveyarded, etc */
 	status: string
-	/**
-	 * A title readable by any english-speaking person, so it'd be romaji if the song's title is in Japanese
-	 */
+	/** A title readable by any english-speaking person, so it'd be in romaji if the song's title is in Japanese */
 	title: string
-	/**
-	 * Basically the title is the original language, so with hiraganas and kanji if Japanese
-	 */
+	/** Basically the title is the original language, so with hiragana, katakana and kanji if Japanese */
 	title_unicode: string
 	user_id: number
 	video: boolean
@@ -242,9 +209,7 @@ export namespace Beatmapset {
 	 */
 	export interface Extended extends Beatmapset {
 		availability: {
-			/**
-			 * So it's `false` if you can download it
-			 */
+			/** So it's `false` if you can download it */
 			download_disabled: boolean
 			more_information: string | null
 		}
@@ -269,31 +234,20 @@ export namespace Beatmapset {
 		source: string
 		storyboard: boolean
 		submitted_date: Date | null
-		/**
-		 * 0 if no tags at all, a string with tags separated from each other by a whitespace
-		 */
-		tags: string | 0
+		tags: string
 	}
 
 	export namespace Extended {
-		/**
-		 * Expected from api.getUserBeatmaps()
-		 */
+		/** @obtainableFrom {@link API.getUserBeatmaps} */
 		export interface WithBeatmapExtended extends Extended {
 			beatmaps: Beatmap.Extended[]
 		}
 
-		/**
-		 * Expected from api.getBeatmapset()
-		 */
+		/** @obtainableFrom {@link API.getBeatmapset} */
 		export interface Plus extends Extended {
-			/**
-			 * The different beatmaps/difficulties this beatmapset has
-			 */
+			/** The different beatmaps/difficulties this beatmapset has */
 			beatmaps: Beatmap.Extended.WithFailtimes[]
-			/**
-			 * The different beatmaps made for osu!, but converted to the other Rulesets
-			 */
+			/** The different beatmaps made for osu!, but converted to the other Rulesets */
 			converts: Beatmap.Extended.WithFailtimes[]
 			current_nominations: {
 				beatmapset_id: number
@@ -302,9 +256,7 @@ export namespace Beatmapset {
 				user_id: number
 			}[]
 			description: {
-				/**
-				 * In HTML
-				 */
+				/** In HTML */
 				description: string
 			}
 			genre: {
@@ -320,9 +272,7 @@ export namespace Beatmapset {
 			recent_favourites: User[]
 			related_users: User[]
 			user: User
-			/**
-			 * Only exists if authorized user
-			 */
+			/** Only exists if authorized user */
 			has_favourited?: boolean
 		}
 	}

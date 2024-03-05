@@ -652,12 +652,16 @@ export class API {
 	}
 
 	/**
-	 * Get rooms that are active, that have ended, that the user participated in, that the user made, or just simply any room!
+	 * Get playlists/realtime rooms that are active, that have ended, that the user participated in, that the user made, or just simply any room!
 	 * @scope {@link Scope"public"}
-	 * @param mode Self-explanatory enough, defaults to `active`
+	 * @param type Whether the multiplayer rooms are in playlist format (like current spotlights) or realtime
+	 * @param mode The state of the room, or the relation of the authorized user with the room
+	 * @param limit The maximum amount of rooms to return, defaults to 10
+	 * @param sort Sort (where most recent is first) by creation date or end date, defaults to the creation date
 	 */
-	async getRooms(mode: "active" | "all" | "ended" | "participated" | "owned" = "active"): Promise<Multiplayer.Room[]> {
-		return await this.request("get", "rooms", {mode})
+	async getRooms(type: "playlists" | "realtime", mode: "active" | "all" | "ended" | "participated" | "owned",
+	limit: number = 10, sort: "ended" | "created" = "created"): Promise<Multiplayer.Room[]> {
+		return await this.request("get", "rooms", {type_group: type, mode, limit, sort})
 	}
 
 	/**
@@ -676,10 +680,8 @@ export class API {
 	 * @param limit How many scores maximum? Defaults to 50, the maximum the API will return
 	 * @param sort Sort by scores, ascending or descending? Defaults to descending
 	 * @param cursor_string Use a MultiplayerScores' `params` and `cursor_string` to get the next page (scores 51 to 100 for example)
-	 * @remarks (2023-11-10) Items are broken for multiplayer (real-time) rooms, not for playlists (like spotlights), that's an osu! bug
+	 * @remarks (2024-03-04) This may not work for rooms from before March 5th, use at your own risk
 	 * https://github.com/ppy/osu-web/issues/10725
-	 * @remarks (2024-03-04) Straight up doesn't work anymore, that's an osu! bug
-	 * https://github.com/ppy/osu-web/issues/11064
 	 */
 	async getPlaylistItemScores(item: {id: number, room_id: number} | Multiplayer.PlaylistItem, limit: number = 50,
 	sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<Multiplayer.Scores> {

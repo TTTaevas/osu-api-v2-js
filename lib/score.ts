@@ -2,13 +2,9 @@ import { Beatmap, Beatmapset } from "./beatmap.js"
 import { Rulesets } from "./misc.js"
 import { User } from "./user.js"
 
-/**
- * Expected from api.getBeatmapUserScores()
- */
+/** @obtainableFrom {@link API.getBeatmapUserScores} */
 export interface Score {
-	/**
-	 * In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero)
-	 */
+	/** In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero) */
 	accuracy: number
 	best_id: number | null
 	created_at: Date
@@ -19,23 +15,15 @@ export interface Score {
 	mods: string[]
 	passed: boolean
 	perfect: boolean
-	/**
-	 * @remarks Is null when Beatmap is Loved (for example)
-	 */
+	/** @remarks Is null when Beatmap is Loved (for example) */
 	pp: number | null
-	/**
-	 * Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%)
-	 */
+	/** Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%) */
 	rank: string
-	/**
-	 * Can this score's replay be downloaded from the website?
-	 */
+	/** Can this score's replay be downloaded from the website? */
 	replay: boolean
 	score: number
 	statistics: {
-		/**
-		 * @remarks Is null if the score's gamemode is Taiko
-		 */
+		/** @remarks Is null if the score's gamemode is Taiko */
 		count_50: number | null
 		count_100: number
 		count_300: number
@@ -44,13 +32,9 @@ export interface Score {
 		count_miss: number
 	}
 	type: string
-	/**
-	 * The ID of the user who made the score
-	 */
+	/** The ID of the user who made the score */
 	user_id: number
-	/**
-	 * @remarks Only if `type` is set to `best` on `getUserScores`
-	 */
+	/** @remarks Only if `type` is set to `best` on {@link API.getUserScores} */
 	weight?: {
 		percentage: number
 		pp: number
@@ -69,9 +53,7 @@ export namespace Score {
 		}
 	}
 
-	/**
-	 * Expected from api.getBeatmapScores()
-	 */
+	/** @obtainableFrom {@link API.getBeatmapScores} */
 	export interface WithUser extends Score {
 		user: User.WithCountryCover
 	}
@@ -85,21 +67,15 @@ export namespace Score {
 		beatmap: Beatmap.Extended
 	}
 
-	/**
-	 * Expected from api.getUserScores()
-	 */
+	/** @obtainableFrom {@link API.getUserScores} */
 	export interface WithUserBeatmapBeatmapset extends WithUserBeatmap {
 		beatmapset: Beatmapset
 	}
 }
 
-/**
- * Expected from api.getBeatmapUserScore()
- */
+/** @obtainableFrom {@link API.getBeatmapUserScore} */
 export interface BeatmapUserScore {
-	/**
-	 * Value depends on the requested mode and mods!
-	 */
+	/** Value depends on the requested mode and mods! */
 	position: number
 	score: Score.WithUserBeatmap
 }

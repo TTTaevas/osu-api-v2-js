@@ -4,9 +4,7 @@ import { Score as ScoreInterface } from "./score.js"
 import { User } from "./user.js"
 
 export namespace Multiplayer {
-	/**
-	 * Expected from api.getRoom()
-	 */
+	/** @obtainableFrom {@link API.getRoom} */
 	export interface Room {
 		active: boolean
 		auto_skip: boolean
@@ -68,7 +66,6 @@ export namespace Multiplayer {
 
 	/**
 	 * Expected from MultiplayerScores
-	 * @remarks This particular interface seems really unstable, beware
 	 */
 	export interface Score {
 		/** In a format where `96.40%` would be `0.9640` (and no number afterwards) */
@@ -76,11 +73,16 @@ export namespace Multiplayer {
 		beatmap_id: number
 		ended_at: Date
 		max_combo: number
+		/**
+		 * All of its properties are optional because instead of being 0, the property actually disappears instead!
+		 * (so if the score has no small_tick_hit, the small_tick_hit property is simply not there)
+		 * @privateRemarks lmao wtf nanaya
+		 */
 		maximum_statistics: {
-			great: number
-			ignore_hit: number
-			large_tick_hit: number
-			small_tick_hit: number
+			great?: number
+			ignore_hit?: number
+			large_tick_hit?: number
+			small_tick_hit?: number
 		}
 		mods: Mod[]
 		passed: boolean
@@ -114,9 +116,7 @@ export namespace Multiplayer {
 		user: User.WithCountryCover
 	}
 
-	/**
-	 * Expected from api.getPlaylistItemScores()
-	 */
+	/** @obtainableFrom {@link API.getPlaylistItemScores} */
 	export interface Scores {
 		params: {
 			limit: number
@@ -155,9 +155,7 @@ export namespace Multiplayer {
 		name: string
 	}
 
-	/**
-	 * Expected from api.getMatch()
-	 */
+	/** @obtainableFrom {@link API.getMatch} */
 	export interface Match {
 		match: MatchInfo
 		events: {

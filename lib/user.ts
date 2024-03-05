@@ -60,9 +60,7 @@ export namespace User {
 		}[]
 	}
 
-	/**
-	 * Expected from api.getUsers()
-	 */
+	/** @obtainableFrom {@link API.getUsers} */
 	export interface WithCountryCoverGroupsStatisticsrulesets extends WithCountryCoverGroups {
 		statistics_rulesets: {
 			osu?: Statistics
@@ -72,17 +70,13 @@ export namespace User {
 		}
 	}
 
-	/**
-	 * Expected from api.getFriends()
-	 */
+	/** @obtainableFrom {@link API.getFriends} */
 	export interface WithCountryCoverGroupsStatisticsSupport extends WithCountryCoverGroups {
 		statistics: Statistics
 		support_level: number
 	}
 
-	/**
-	 * Expected from api.getUser()
-	 */
+	/** @obtainableFrom {@link API.getUser} */
 	export interface Extended extends User.WithCountryCoverGroupsStatisticsSupport, User.WithKudosu {
 		cover_url: string
 		discord: string | null
@@ -109,14 +103,6 @@ export namespace User {
 			timestamp: Date
 			type: "note" | "restriction" | "silence"
 		}[]
-		active_tournament_banner: {
-			id: number
-			tournament_id: number
-			image: string
-		} | null
-		/**
-		 * This is not documented by osu!, likely because support for multiple banners has been recently added (OWC2023)
-		 */
 		active_tournament_banners: {
 			id: number
 			tournament_id: number
@@ -189,9 +175,7 @@ export namespace User {
 	}
 
 	export namespace Extended {
-		/**
-		 * Expected from api.getResourceOwner()
-		 */
+		/** @obtainableFrom {@link API.getResourceOwner} */
 		export interface WithStatisticsrulesets extends Extended, User.WithCountryCoverGroupsStatisticsrulesets {
 			is_restricted: boolean
 		}
@@ -253,9 +237,7 @@ export namespace User {
 		}
 	}
 
-	/**
-	 * Expected from api.getUserKudosu()
-	 */
+	/** @obtainableFrom {@link API.getUserKudosu} */
 	export interface KudosuHistory {
 		id: number
 		action: "give" | "vote.give" | "reset" | "vote.reset" | "revoke" | "vote.revoke"

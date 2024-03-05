@@ -4,14 +4,10 @@
 export interface WikiPage {
 	available_locales: string[]
 	layout: string
-	/**
-	 * BCP 47 language (sub)tag, lowercase (for example, `en` for english)
-	 */
+	/** BCP 47 language (sub)tag, lowercase (for example, `en` for english) */
 	locale: string
 	markdown: string
-	/**
-	 * It's what should be after `https://osu.ppy.sh/wiki/{locale}/`
-	 */
+	/** It's what should be after `https://osu.ppy.sh/wiki/{locale}/` */
 	path: string
 	/**
 	 * Think of it as the title of the parent wiki page

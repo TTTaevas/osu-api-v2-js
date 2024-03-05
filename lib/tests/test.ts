@@ -186,21 +186,19 @@ const testChangelogStuff = async (changelog_gen: tsj.SchemaGenerator): Promise<b
 const testMultiplayerStuff = async (multi_gen: tsj.SchemaGenerator): Promise<boolean> => {
 	let okay = true
 
-	let d1 = await <Promise<ReturnType<typeof api.getRoom> | false>>attempt("\ngetRoom (realtime): ", api.getRoom({id: 231069}))
-	if (!isOk(d1, !d1 || (d1.recent_participants.length === 4 && validate(d1, "Multiplayer.Room", multi_gen)))) okay = false
-	let d2 = await <Promise<ReturnType<typeof api.getRoom> | false>>attempt("getRoom (playlist): ", api.getRoom({id: 499640}))
-	if (!isOk(d2, !d2 || (d2.participant_count === 70 && validate(d2, "Multiplayer.Room", multi_gen)))) okay = false
+	let d1 = await <Promise<ReturnType<typeof api.getRoom> | false>>attempt("\ngetRoom (realtime): ", api.getRoom({id: 591993}))
+	if (!isOk(d1, !d1 || (d1.recent_participants.length === 5 && validate(d1, "Multiplayer.Room", multi_gen)))) okay = false
+	let d2 = await <Promise<ReturnType<typeof api.getRoom> | false>>attempt("getRoom (playlist): ", api.getRoom({id: 588230}))
+	if (!isOk(d2, !d2 || (d2.participant_count === 27 && validate(d2, "Multiplayer.Room", multi_gen)))) okay = false
 	if (d1) {
 		let d3 = await <Promise<ReturnType<typeof api.getPlaylistItemScores> | false>>attempt(
 			"getPlaylistItemScores (realtime): ", api.getPlaylistItemScores({id: d1.playlist[0].id, room_id: d1.id}))
-		!isOk(d3, !d3 || (d3.scores.length > 0 && validate(d3, "Multiplayer.Scores", multi_gen)), 1) ?
-			console.log("Bug not fixed yet...") : console.log("Bug fixed!!! :partying_face:")
+		if (!isOk(d3, !d3 || (d3.scores.length > 0 && validate(d3, "Multiplayer.Scores", multi_gen)), 1)) okay = false
 	}
 	if (d2) {
 		let d4 = await <Promise<ReturnType<typeof api.getPlaylistItemScores> | false>>attempt(
 			"getPlaylistItemScores (playlist): ", api.getPlaylistItemScores({id: d2.playlist[0].id, room_id: d2.id}))
-		!isOk(d4, !d4 || (d4.scores.length >= 50 && validate(d4, "Multiplayer.Scores", multi_gen)), 1) ?
-			console.log("Bug not fixed yet...") : console.log("Bug fixed!!! :partying_face:")
+		if (!isOk(d4, !d4 || (d4.scores.length >= 9 && validate(d4, "Multiplayer.Scores", multi_gen)), 1)) okay = false
 	}
 	let d5 = await <Promise<ReturnType<typeof api.getMatch> | false>>attempt("getMatch: ", api.getMatch(62006076))
 	if (!isOk(d5, !d5 || (d5.match.name === "CWC2020: (Italy) vs (Indonesia)" && validate(d5, "Multiplayer.Match", multi_gen)), 3)) okay = false

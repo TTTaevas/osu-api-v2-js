@@ -12,6 +12,7 @@ export type Mod = {
 
 /**
  * Scopes determine what the API instance can do as a user!
+ * https://osu.ppy.sh/docs/index.html#scopes
  * @remarks "identify" is always implicity provided, "public" is implicitly needed for almost everything
  */
 export type Scope = "chat.read" | "chat.write" | "chat.write_manage" | "delegate" | "forum.write" | "friends.read" | "identify" | "public"

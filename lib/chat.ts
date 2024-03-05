@@ -1,16 +1,16 @@
 import { User } from "./user.js";
 
 export namespace Chat {
-	/**
-	 * Expected from api.keepChatAlive()
-	 */
+	/** @obtainableFrom {@link API.keepChatAlive} */
 	export interface UserSilence {
 		id: number
 		user_id: number
 	}
 
 	/**
-	 * Expected from api.sendChatPrivateMessage(), api.createChatPrivateChannel()
+	 * @obtainableFrom
+	 * {@link API.sendChatPrivateMessage} /
+	 * {@link API.createChatPrivateChannel}
 	 */
 	export interface Channel {
 		channel_id: number
@@ -24,7 +24,9 @@ export namespace Chat {
 
 	export namespace Channel {
 		/**
-		 * Expected from api.joinChatChannel(), api.getChatChannel()
+		 * @obtainableFrom
+		 * {@link API.sendChatPrivateMessage} /
+		 * {@link API.createChatPrivateChannel}
 		 */
 		export interface WithDetails extends Channel {
 			current_user_attributes: {
@@ -49,7 +51,10 @@ export namespace Chat {
 	}
 
 	/**
-	 * Expected from api.sendChatPrivateMessage(), api.getChatMessages(), api.sendChatMessage()
+	 * @obtainableFrom
+	 * {@link API.sendChatPrivateMessage} /
+	 * {@link API.sendChatMessage} /
+	 * {@link API.getChatMessages}
 	 */
 	export interface Message {
 		channel_id: number
@@ -58,9 +63,7 @@ export namespace Chat {
 		message_id: number
 		sender_id: number
 		timestamp: Date
-		/**
-		 * Like "action", "markdown", "plain"
-		 */
+		/** Like "action", "markdown", "plain" */
 		type: string
 		uuid?: string | null
 		sender: User
