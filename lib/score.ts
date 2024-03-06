@@ -1,39 +1,32 @@
 import { Beatmap, Beatmapset } from "./beatmap.js"
-import { Rulesets } from "./misc.js"
+import { Mod, Rulesets } from "./misc.js"
 import { User } from "./user.js"
 
-/** @obtainableFrom {@link API.getBeatmapUserScores} */
-export interface Score {
+interface Bare {
 	/** In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero) */
 	accuracy: number
-	best_id: number | null
-	created_at: Date
 	id: number | null
 	max_combo: number
+	mods: Mod[] | string[]
+	passed: boolean
+	/** Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%) */
+	rank: string
+	/** The ID of the user who made the score */
+	user_id: number
+	pp: number | null
+	/** Can this score's replay be downloaded from the website? */
+	replay: boolean
+	type: string
+}
+
+export interface Score extends Bare {
+	best_id: number | null
 	mode: string
 	mode_int: Rulesets
-	mods: string[]
-	passed: boolean
 	perfect: boolean
 	/** @remarks Is null when Beatmap is Loved (for example) */
 	pp: number | null
-	/** Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%) */
-	rank: string
-	/** Can this score's replay be downloaded from the website? */
-	replay: boolean
 	score: number
-	statistics: {
-		/** @remarks Is null if the score's gamemode is Taiko */
-		count_50: number | null
-		count_100: number
-		count_300: number
-		count_geki: number | null
-		count_katu: number | null
-		count_miss: number
-	}
-	type: string
-	/** The ID of the user who made the score */
-	user_id: number
 	/** @remarks Only if `type` is set to `best` on {@link API.getUserScores} */
 	weight?: {
 		percentage: number
@@ -42,10 +35,84 @@ export interface Score {
 }
 
 export namespace Score {
+	/** All of its properties are optional because instead of being 0, the property actually disappears instead */
+	export interface Statistics {
+		great?: number
+		ok?: number
+		meh?: number
+		miss?: number
+		large_tick_hit?: number
+		small_tick_hit?: number
+		small_tick_miss?: number
+		large_bonus?: number
+		small_bonus?: number
+		legacy_combo_increase?: number
+	}
+
+	/**
+	 * Expected from MultiplayerScores
+	 */
+	export interface Multiplayer extends Bare {
+		/** In a format where `96.40%` would be `0.9640` **(and no number afterwards)** */
+		accuracy: number
+		beatmap_id: number
+		ended_at: Date
+		maximum_statistics: Statistics
+		mods: Mod[]
+		ruleset_id: number
+		started_at: Date
+		statistics: Statistics
+		total_score: number
+		playlist_item_id: number
+		room_id: number
+		id: number
+		user: User.WithCountryCover
+	}
+
+	/** 
+	 * Scores called "solo-scores" are more relevant to lazer stuff, it's the opposite of legacy
+	 * @obtainableFrom {@link API.getBeatmapSoloScores}
+	 */
+	export interface Solo extends Score {
+		ranked: boolean
+		preserve: boolean
+		mods: Mod[]
+		statistics: Statistics
+		beatmap_id: number
+		/** @remarks Is null if the score has not been set on lazer */
+		build_id: number | null
+		ended_at: Date
+		has_replay: boolean
+		is_perfect_combo: boolean
+		legacy_perfect: boolean
+		legacy_score_id: number | null
+		legacy_total_score: number
+		user: User.WithCountryCover
+		maximum_statistics?: Statistics
+	}
+	
+	/**
+	 * The version of Score without lazer-related stuff, used almost everywhere!
+	 * @obtainableFrom {@link API.getBeatmapUserScores}
+	 */
+	export interface Legacy extends Score {
+		mods: string[]
+		created_at: Date
+		statistics: {
+			/** @remarks Is null if the score's gamemode is Taiko */
+			count_50: number | null
+			count_100: number
+			count_300: number
+			count_geki: number | null
+			count_katu: number | null
+			count_miss: number
+		}
+	}
+
 	/**
 	 * Expected from Match
 	 */
-	export interface WithMatch extends Score {
+	export interface WithMatch extends Legacy {
 		match: {
 			slot: number
 			team: string
@@ -54,7 +121,7 @@ export namespace Score {
 	}
 
 	/** @obtainableFrom {@link API.getBeatmapScores} */
-	export interface WithUser extends Score {
+	export interface WithUser extends Legacy {
 		user: User.WithCountryCover
 	}
 
@@ -62,7 +129,7 @@ export namespace Score {
 	 * Expected from BeatmapUserScore
 	 * @privateRemarks Doesn't extend ScoreWithUser as the User here lacks Country and Cover
 	 */
-	export interface WithUserBeatmap extends Score {
+	export interface WithUserBeatmap extends Legacy {
 		user: User
 		beatmap: Beatmap.Extended
 	}

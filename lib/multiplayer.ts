@@ -1,6 +1,6 @@
 import { Beatmap } from "./beatmap.js"
 import { Rulesets, Mod } from "./misc.js"
-import { Score as ScoreInterface } from "./score.js"
+import { Score } from "./score.js"
 import { User } from "./user.js"
 
 export namespace Multiplayer {
@@ -64,69 +64,17 @@ export namespace Multiplayer {
 		beatmap: Beatmap.WithBeatmapsetChecksumMaxcombo
 	}
 
-	/**
-	 * Expected from MultiplayerScores
-	 */
-	export interface Score {
-		/** In a format where `96.40%` would be `0.9640` (and no number afterwards) */
-		accuracy: number
-		beatmap_id: number
-		ended_at: Date
-		max_combo: number
-		/**
-		 * All of its properties are optional because instead of being 0, the property actually disappears instead!
-		 * (so if the score has no small_tick_hit, the small_tick_hit property is simply not there)
-		 * @privateRemarks lmao wtf nanaya
-		 */
-		maximum_statistics: {
-			great?: number
-			ignore_hit?: number
-			large_tick_hit?: number
-			small_tick_hit?: number
-		}
-		mods: Mod[]
-		passed: boolean
-		rank: string
-		ruleset_id: number
-		started_at: Date
-		/**
-		 * All of its properties are optional because instead of being 0, the property actually disappears instead!
-		 * (so if the score has no miss, the miss property is simply not there)
-		 * @privateRemarks lmao wtf nanaya
-		 */
-		statistics: {
-			great?: number
-			large_bonus?: number
-			large_tick_hit?: number
-			meh?: number
-			miss?: number
-			ok?: number
-			small_bonus?: number
-			small_tick_hit?: number
-			small_tick_miss?: number
-		}
-		total_score: number
-		user_id: number
-		playlist_item_id: number
-		room_id: number
-		id: number
-		pp: number | null
-		replay: boolean
-		type: string
-		user: User.WithCountryCover
-	}
-
 	/** @obtainableFrom {@link API.getPlaylistItemScores} */
 	export interface Scores {
 		params: {
 			limit: number
 			sort: string
 		}
-		scores: Score[]
+		scores: Score.Multiplayer[]
 		/** How many scores there are across all pages, not necessarily `scores.length` */
 		total: number
 		/** Will be null if not an authorized user or if the authorized user has no score */
-		user_score: Score | null
+		user_score: Score.Multiplayer | null
 		/** Will be null if there is no next page */
 		cursor_string: string | null
 	}
@@ -183,7 +131,7 @@ export namespace Multiplayer {
 				team_type: string
 				mods: string[]
 				beatmap: Beatmap.WithBeatmapset
-				scores: ScoreInterface.WithMatch[]
+				scores: Score.WithMatch[]
 			}
 		}[]
 		users: User.WithCountry[]

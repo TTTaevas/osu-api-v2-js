@@ -85,7 +85,7 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 - [x] Get a User Beatmap score
 - [x] Get a User Beatmap scores
 - [x] Get Beamtap scores
-- [ ] Get Beamtap scores (temp) // won't implement because this endpoint will disappear
+- [x] Get Beamtap scores (non-legacy)
 - [x] Get Beatmaps
 - [x] Get Beatmap
 - [x] Get Beatmap Attributes

@@ -157,8 +157,10 @@ const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.Sc
 	if (!isOk(b10, !b10 || (b10.tag === "P217" && validate(b10, "Beatmap.Pack", beat_gen)))) okay = false
 	let b11 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks: ", api.getBeatmapPacks("tournament"))
 	if (!isOk(b11, !b11 || (b11.length >= 100 && validate(b11, "Beatmap.Pack", beat_gen)))) okay = false
-	let b12 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}))
+	let b12 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}, false))
 	if (!isOk(b12, !b12 || (b12[0].score >= 132408001 && validate(b12, "Score.WithUser", score_gen)))) okay = false
+	let b13 = await <Promise<ReturnType<typeof api.getBeatmapSoloScores> | false>>attempt("getBeatmapSoloScores: ", api.getBeatmapSoloScores({id: 129891}))
+	if (!isOk(b13, !b13 || (b13[0].score >= 1073232 && validate(b13, "Score.Solo", score_gen)))) okay = false
 
 	return okay
 }
@@ -254,7 +256,7 @@ const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.Schema
 
 const test = async (id: string, secret: string): Promise<void> => {
 	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all") //"http://127.0.0.1:8080")
-
+	
 	const score_gen = tsj.createGenerator({path: "lib/score.ts", additionalProperties: true})
 	const user_gen = tsj.createGenerator({path: "lib/user.ts", additionalProperties: true})
 	const beat_gen = tsj.createGenerator({path: "lib/beatmap.ts", additionalProperties: true})

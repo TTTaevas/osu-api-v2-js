@@ -540,13 +540,29 @@ export class API {
 	/**
 	 * Get the top scores of a beatmap!
 	 * @param beatmap The Beatmap in question
+	 * @param include_lazer_scores Whether or not lazer scores should be included, defaults to true
 	 * @param ruleset The Ruleset used to make the scores, useful if they were made on a convert
 	 * @param mods (2023-11-16) Currently doesn't do anything
 	 * @param type (2023-11-16) Currently doesn't do anything
 	 */
-	async getBeatmapScores(beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<Score.WithUser[]> {
+	async getBeatmapScores(beatmap: {id: number} | Beatmap, include_lazer_scores: boolean = true,
+		ruleset?: Rulesets, mods?: string[], type?: string): Promise<Score.WithUser[]> {
 		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-		const response = await this.request("get", `beatmaps/${beatmap.id}/scores`, {mode, mods, type})
+		const response = await this.request("get", `beatmaps/${beatmap.id}/scores`, {mode, mods, legacy_only: Number(!include_lazer_scores), type})
+		return response.scores
+	}
+
+	/**
+	 * Get the top scores of a beatmap, in the "solo score" format lazer brought with it!
+	 * More info on GitHub if needed https://github.com/ppy/osu-infrastructure/blob/master/score-submission.md
+	 * @param beatmap The Beatmap in question
+	 * @param ruleset The Ruleset used to make the scores, useful if they were made on a convert
+	 * @param mods (2023-11-16) Currently doesn't do anything
+	 * @param type (2023-11-16) Currently doesn't do anything
+	 */
+	async getBeatmapSoloScores(beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<Score.Solo[]> {
+		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
+		const response = await this.request("get", `beatmaps/${beatmap.id}/solo-scores`, {mode, mods, type})
 		return response.scores
 	}
 
@@ -570,7 +586,7 @@ export class API {
 	 * @param user The User who made the scores
 	 * @param ruleset The Ruleset used to make the scores, defaults to the Ruleset the Beatmap was made for
 	 */
-	async getBeatmapUserScores(beatmap: {id: number} | Beatmap, user: {id: number} | User, ruleset?: Rulesets): Promise<Score[]> {
+	async getBeatmapUserScores(beatmap: {id: number} | Beatmap, user: {id: number} | User, ruleset?: Rulesets): Promise<Score.Legacy[]> {
 		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
 		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}/all`, {mode})
 		return response.scores
