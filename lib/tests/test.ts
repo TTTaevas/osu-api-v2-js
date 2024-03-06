@@ -125,42 +125,44 @@ const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.Sc
 	let okay = true
 	const beatmap_id = 388463
 
-	let b1 = await <Promise<ReturnType<typeof api.getBeatmap> | false>>attempt("\ngetBeatmap: ", api.getBeatmap({id: beatmap_id}))
+	let b1 = await <Promise<ReturnType<typeof api.lookupBeatmap> | false>>attempt("\nlookupBeatmap: ", api.lookupBeatmap({id: beatmap_id}))
 	if (!isOk(b1, !b1 || (b1.id === beatmap_id && validate(b1, "Beatmap.Extended.WithFailtimesBeatmapsetextended", beat_gen)))) okay = false
-	let b2 = await <Promise<ReturnType<typeof api.getBeatmaps> | false>>attempt(
+	let b2 = await <Promise<ReturnType<typeof api.getBeatmap> | false>>attempt("getBeatmap: ", api.getBeatmap({id: beatmap_id}))
+	if (!isOk(b2, !b2 || (b2.id === beatmap_id && validate(b2, "Beatmap.Extended.WithFailtimesBeatmapsetextended", beat_gen)))) okay = false
+	let b3 = await <Promise<ReturnType<typeof api.getBeatmaps> | false>>attempt(
 		"getBeatmaps: ", api.getBeatmaps([beatmap_id, 4089655].map((i) => {return {id: i}}))
 	)
-	if (!isOk(b2, !b2 || (b2.length === 2 && validate(b2, "Beatmap.Extended", beat_gen)))) okay = false
+	if (!isOk(b3, !b3 || (b3.length === 2 && validate(b3, "Beatmap.Extended", beat_gen)))) okay = false
 
-	let b3 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesOsu> | false>>attempt(
+	let b4 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesOsu> | false>>attempt(
 		"getBeatmapAttributesOsu: ", api.getBeatmapDifficultyAttributesOsu({id: 125660}, ["DT"]))
-	if (!isOk(b3, !b3 || (b3.approach_rate.toFixed(2) === "9.67" && validate(b3, "Beatmap.DifficultyAttributes.Osu", beat_gen)))) okay = false
-	let b4 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesTaiko> | false>>attempt(
+	if (!isOk(b4, !b4 || (b4.approach_rate.toFixed(2) === "9.67" && validate(b4, "Beatmap.DifficultyAttributes.Osu", beat_gen)))) okay = false
+	let b5 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesTaiko> | false>>attempt(
 		"getBeatmapAttributesTaiko: ", api.getBeatmapDifficultyAttributesTaiko({id: beatmap_id}, ["DT"]))
-	if (!isOk(b4, !b4 || (b4.great_hit_window < 35 && validate(b4, "Beatmap.DifficultyAttributes.Taiko", beat_gen)))) okay = false
-	let b5 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesFruits> | false>>attempt(
+	if (!isOk(b5, !b5 || (b5.great_hit_window < 35 && validate(b5, "Beatmap.DifficultyAttributes.Taiko", beat_gen)))) okay = false
+	let b6 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesFruits> | false>>attempt(
 		"getBeatmapAttributesFruits: ", api.getBeatmapDifficultyAttributesFruits({id: 705339}, ["DT"]))
-	if (!isOk(b5, !b5 || (b5.approach_rate.toFixed(2) === "10.33" && validate(b5, "Beatmap.DifficultyAttributes.Fruits", beat_gen)))) okay = false
-	let b6 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesMania> | false>>attempt(
+	if (!isOk(b6, !b6 || (b6.approach_rate.toFixed(2) === "10.33" && validate(b6, "Beatmap.DifficultyAttributes.Fruits", beat_gen)))) okay = false
+	let b7 = await <Promise<ReturnType<typeof api.getBeatmapDifficultyAttributesMania> | false>>attempt(
 		"getBeatmapAttributesMania: ", api.getBeatmapDifficultyAttributesMania({id: 3980252}, ["DT"]))
-	if (!isOk(b6, !b6 || (b6.great_hit_window === 40 && validate(b6, "Beatmap.DifficultyAttributes.Mania", beat_gen)))) okay = false
+	if (!isOk(b7, !b7 || (b7.great_hit_window === 40 && validate(b7, "Beatmap.DifficultyAttributes.Mania", beat_gen)))) okay = false
 	
-	let b7 = await <Promise<ReturnType<typeof api.getBeatmapUserScore> | false>>attempt(
+	let b8 = await <Promise<ReturnType<typeof api.getBeatmapUserScore> | false>>attempt(
 		"getBeatmapUserScore: ", api.getBeatmapUserScore({id: 176960}, {id: 7276846}, ["NM"]))
-	if (!isOk(b7, !b7 || (b7.score.accuracy < 0.99 && validate(b7, "BeatmapUserScore", score_gen)))) okay = false
-	let b8 = await <Promise<ReturnType<typeof api.getBeatmapUserScores> | false>>attempt(
+	if (!isOk(b8, !b8 || (b8.score.accuracy < 0.99 && validate(b8, "BeatmapUserScore", score_gen)))) okay = false
+	let b9 = await <Promise<ReturnType<typeof api.getBeatmapUserScores> | false>>attempt(
 		"getBeatmapUserScores: ", api.getBeatmapUserScores({id: 203993}, {id: 7276846}, osu.Rulesets.fruits))
-	if (!isOk(b8, !b8 || (b8.length === 1 && validate(b8, "Score", score_gen)))) okay = false
-	let b9 = await <Promise<ReturnType<typeof api.getBeatmapset> | false>>attempt("getBeatmapset: ", api.getBeatmapset({id: 1971037}))
-	if (!isOk(b9, !b9 || (b9.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(b9, "Beatmapset.Extended.Plus", beat_gen)))) okay = false
-	let b10 = await <Promise<ReturnType<typeof api.getBeatmapPack> | false>>attempt("getBeatmapPack: ", api.getBeatmapPack({tag: "P217"}))
-	if (!isOk(b10, !b10 || (b10.tag === "P217" && validate(b10, "Beatmap.Pack", beat_gen)))) okay = false
-	let b11 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks: ", api.getBeatmapPacks("tournament"))
-	if (!isOk(b11, !b11 || (b11.length >= 100 && validate(b11, "Beatmap.Pack", beat_gen)))) okay = false
-	let b12 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}, false))
-	if (!isOk(b12, !b12 || (b12[0].score >= 132408001 && validate(b12, "Score.WithUser", score_gen)))) okay = false
-	let b13 = await <Promise<ReturnType<typeof api.getBeatmapSoloScores> | false>>attempt("getBeatmapSoloScores: ", api.getBeatmapSoloScores({id: 129891}))
-	if (!isOk(b13, !b13 || (b13[0].total_score >= 1073232 && validate(b13, "Score.Solo", score_gen)))) okay = false
+	if (!isOk(b9, !b9 || (b9.length === 1 && validate(b9, "Score", score_gen)))) okay = false
+	let b10 = await <Promise<ReturnType<typeof api.getBeatmapset> | false>>attempt("getBeatmapset: ", api.getBeatmapset({id: 1971037}))
+	if (!isOk(b10, !b10 || (b10.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(b10, "Beatmapset.Extended.Plus", beat_gen)))) okay = false
+	let b11 = await <Promise<ReturnType<typeof api.getBeatmapPack> | false>>attempt("getBeatmapPack: ", api.getBeatmapPack({tag: "P217"}))
+	if (!isOk(b11, !b11 || (b11.tag === "P217" && validate(b11, "Beatmap.Pack", beat_gen)))) okay = false
+	let b12 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks: ", api.getBeatmapPacks("tournament"))
+	if (!isOk(b12, !b12 || (b12.length >= 100 && validate(b12, "Beatmap.Pack", beat_gen)))) okay = false
+	let b13 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}, false))
+	if (!isOk(b13, !b13 || (b13[0].score >= 132408001 && validate(b13, "Score.WithUser", score_gen)))) okay = false
+	let b14 = await <Promise<ReturnType<typeof api.getBeatmapSoloScores> | false>>attempt("getBeatmapSoloScores: ", api.getBeatmapSoloScores({id: 129891}))
+	if (!isOk(b14, !b14 || (b14[0].total_score >= 1073232 && validate(b14, "Score.Solo", score_gen)))) okay = false
 
 	return okay
 }
@@ -171,13 +173,15 @@ const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.Sc
 const testChangelogStuff = async (changelog_gen: tsj.SchemaGenerator): Promise<boolean> => {
 	let okay = true
 
-	let c1 = await <Promise<ReturnType<typeof api.getChangelogBuild> | false>>attempt("\ngetChangelogBuild: ", api.getChangelogBuild("lazer", "2023.1008.1"))
-	if (!isOk(c1, !c1 || (c1.id === 7156 && validate(c1, "Changelog.Build.WithChangelogentriesVersions", changelog_gen)))) okay = false
-	let c2 = await <Promise<ReturnType<typeof api.getChangelogBuilds> | false>>attempt(
+	let c1 = await <Promise<ReturnType<typeof api.lookupChangelogBuild> | false>>attempt("\nlookupChangelogBuild: ", api.lookupChangelogBuild("7156", true))
+	if (!isOk(c1, !c1 || (c1.display_version == "2023.1008.1" && validate(c1, "Changelog.Build.WithChangelogentriesVersions", changelog_gen)))) okay = false
+	let c2 = await <Promise<ReturnType<typeof api.getChangelogBuild> | false>>attempt("getChangelogBuild: ", api.getChangelogBuild("lazer", "2023.1008.1"))
+	if (!isOk(c2, !c2 || (c2.id === 7156 && validate(c2, "Changelog.Build.WithChangelogentriesVersions", changelog_gen)))) okay = false
+	let c3 = await <Promise<ReturnType<typeof api.getChangelogBuilds> | false>>attempt(
 		"getChangelogBuilds: ", api.getChangelogBuilds({from: "2023.1031.0", to: "20231102.3"}, 7184, undefined, ["markdown"]))
-	if (!isOk(c2, !c2 || (c2.length === 4 && validate(c2, "Changelog.Build.WithUpdatestreamsChangelogentries", changelog_gen)))) okay = false
-	let c3 = await <Promise<ReturnType<typeof api.getChangelogStreams> | false>>attempt("getChangelogStreams: ", api.getChangelogStreams())
-	if (!isOk(c3, !c3 || (c3.length > 2 && validate(c3, "Changelog.UpdateStream.WithLatestbuildUsercount", changelog_gen)))) okay = false
+	if (!isOk(c3, !c3 || (c3.length === 4 && validate(c3, "Changelog.Build.WithUpdatestreamsChangelogentries", changelog_gen)))) okay = false
+	let c4 = await <Promise<ReturnType<typeof api.getChangelogStreams> | false>>attempt("getChangelogStreams: ", api.getChangelogStreams())
+	if (!isOk(c4, !c4 || (c4.length > 2 && validate(c4, "Changelog.UpdateStream.WithLatestbuildUsercount", changelog_gen)))) okay = false
 
 	return okay
 }

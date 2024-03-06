@@ -468,6 +468,12 @@ export class API {
 	
 	// BEATMAP STUFF
 
+	/** Get extensive beatmap data about whichever beatmap you want! */
+	async lookupBeatmap(query: {checksum?: string, filename?: string, id?: number | string}): Promise<Beatmap.Extended.WithFailtimesBeatmapsetextended> {
+		if (query.id !== undefined) query.id = String(query.id)
+		return await this.request("get", `beatmaps/lookup`, {...query})
+	}
+
 	/**
 	 * Get extensive beatmap data about whichever beatmap you want!
 	 * @param beatmap An object with the id of the beatmap you're trying to get
@@ -617,6 +623,17 @@ export class API {
 
 	/**
 	 * Get details about the version/update/build of something related to osu!
+	 * @param changelog A build version like `2023.1026.0`, a stream name like `lazer` or the id of a build
+	 * @param is_id Whether or not `changelog` is the id of a build, defaults to false
+	 * @param message_formats Elements of `changelog_entries` will have a `message` property if `markdown`, `message_html` property if `html`, defaults to both
+	 */
+	async lookupChangelogBuild(changelog: string, is_id: boolean = false, message_formats: ("html" | "markdown")[] = ["html", "markdown"]):
+	Promise<Changelog.Build.WithChangelogentriesVersions> {
+		return await this.request("get", `changelog/${changelog}`, {key: is_id ? "id" : undefined, message_formats})
+	}
+
+	/**
+	 * Get details about the version/update/build of something related to osu!
 	 * @param stream The name of the thing related to osu!, like `lazer`, `web`, `cuttingedge`, `beta40`, `stable40`
 	 * @param build The name of the version! Usually something like `2023.1026.0` for lazer, or `20230326` for stable
 	 */
@@ -629,7 +646,7 @@ export class API {
 	 * @param versions Get builds that were released before/after (and including) those versions (use the name of the versions, e.g. `2023.1109.0`)
 	 * @param max_id Filter out builds that have an id higher than this (this takes priority over `versions.to`)
 	 * @param stream Only get builds from a specific stream
-	 * @param message_formats Each element of `changelog_entries` will have a `message` property if `markdown`, `message_html` if `html`, defaults to both
+	 * @param message_formats Elements of `changelog_entries` will have a `message` property if `markdown`, `message_html` property if `html`, defaults to both
 	 */
 	async getChangelogBuilds(versions?: {from?: string, to?: string}, max_id?: number,
 	stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<Changelog.Build.WithUpdatestreamsChangelogentries[]> {

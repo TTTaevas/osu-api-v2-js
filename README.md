@@ -81,7 +81,7 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 - [x] Get Beatmap Pack
 
 ### Beatmaps
-- [ ] Lookup Beatmap // won't implement because Get Beatmap exists
+- [x] Lookup Beatmap
 - [x] Get a User Beatmap score
 - [x] Get a User Beatmap scores
 - [x] Get Beamtap scores
@@ -104,7 +104,7 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 ### Changelog
 - [x] Get Changelog Build
 - [x] Get Changelog Listing // removing `search`, putting `builds` behind getChangelogBuilds(), and `streams` behind getChangelogStreams()
-- [ ] Lookup Changelog Build // likely won't implement unless I get convinced it's worth the confusion with Get Changelog Build
+- [x] Lookup Changelog Build
 
 ### Chat
 - [x] Chat Keepalive
