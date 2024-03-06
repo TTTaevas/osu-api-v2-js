@@ -1,7 +1,5 @@
 export namespace News {
-	/**
-	 * Expected from api.getNews(), NewsPostWithContentNavigation
-	 */
+	/** @obtainableFrom {@link API.getNewsPosts} */
 	export interface Post {
 		id: number
 		author: string

@@ -81,9 +81,7 @@ export function generateAuthorizationURL(client_id: number, redirect_uri: string
 	return `${server}/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${s}&response_type=code`
 }
 
-/**
- * If the `API` throws an error, it should always be an `APIError`!
- */
+/** If the `API` throws an error, it should always be an `APIError`! */
 export class APIError {
 	message: string
 	server: string
@@ -103,9 +101,7 @@ export class APIError {
 	}
 }
 
-/**
- * You can create an API instance using its `createAsync` function!
- */
+/** You can create an API instance using its `createAsync` function! {@link API.createAsync} */
 export class API {
 	client: {
 		id: number
@@ -240,9 +236,7 @@ export class API {
 		return api
 	}
 
-	/**
-	 * @returns Whether or not the token has been refreshed
-	 */
+	/** @returns Whether or not the token has been refreshed */
 	public async refreshToken(): Promise<boolean> {
 		if (!this.refresh_token) {
 			this.log(true, "Attempted to get a new access token despite not having a refresh token!")

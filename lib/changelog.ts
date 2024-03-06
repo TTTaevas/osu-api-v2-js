@@ -3,7 +3,7 @@ export namespace Changelog {
 		created_at: Date
 		display_version: string
 		id: number
-		/** How many users are playing on this version of the game? (if lazer/web, should be 0, lazer doesn't show such stats) */
+		/** How many users are playing on this version of the game? (if web, should be 0) */
 		users: number
 		/** The name of the version */
 		version: string | null

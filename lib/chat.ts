@@ -36,9 +36,7 @@ export namespace Chat {
 				 * @remarks Is null if messages can be sent
 				 */
 				can_message_error: string | null
-				/**
-				 * @remarks Is null if no message has been read (I think)
-				 */
+				/** @remarks Is null if no message has been read (I think) */
 				last_read_id: number | null
 			}
 			last_message_id: number

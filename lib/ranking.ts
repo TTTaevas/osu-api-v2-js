@@ -13,9 +13,6 @@ export interface Spotlight {
 }
 
 export namespace Spotlight {
-	/**
-	 * Expected from RankingsSpotlight
-	 */
 	export interface WithParticipantcount extends Spotlight {
 		participant_count: number
 	}
@@ -31,7 +28,7 @@ interface RankingsBare {
 }
 
 export namespace Rankings {
-	/** @obtainableFrom {@link API.getRanking} */
+	/** @obtainableFrom {@link API.getUserRanking} */
 	export interface User extends RankingsBare {
 		ranking: User.Statistics.WithUser[]
 	}

@@ -41,9 +41,6 @@ export namespace Multiplayer {
 		}
 	}
 
-	/**
-	 * Expected from Room
-	 */
 	export interface PlaylistItem {
 		id: number
 		room_id: number
@@ -53,13 +50,9 @@ export namespace Multiplayer {
 		required_mods: Mod[]
 		expired: boolean
 		owner_id: number
-		/**
-		 * Should be null if the room isn't the realtime multiplayer kind
-		 */
+		/** @remarks Should be null if the room isn't the realtime multiplayer kind */
 		playlist_order: number | null
-		/**
-		 * Should be null if the room isn't the realtime multiplayer kind
-		 */
+		/** @remarks Should be null if the room isn't the realtime multiplayer kind */
 		played_at: Date | null
 		beatmap: Beatmap.WithBeatmapsetChecksumMaxcombo
 	}
@@ -73,16 +66,14 @@ export namespace Multiplayer {
 		scores: Score.Multiplayer[]
 		/** How many scores there are across all pages, not necessarily `scores.length` */
 		total: number
-		/** Will be null if not an authorized user or if the authorized user has no score */
+		/** @remarks Will be null if not an authorized user or if the authorized user has no score */
 		user_score: Score.Multiplayer | null
-		/** Will be null if there is no next page */
+		/** @remarks Will be null if there is no next page */
 		cursor_string: string | null
 	}
 
 	export interface Leader {
-		/**
-		 * In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero)
-		 */
+		/** In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero) */
 		accuracy: number
 		attempts: number
 		completed: number
@@ -93,9 +84,7 @@ export namespace Multiplayer {
 		user: User.WithCountry
 	}
 
-	/**
-	 * Expected from api.getMatches(), Match
-	 */
+	/** @obtainableFrom {@link API.getMatches} */
 	export interface MatchInfo {
 		id: number
 		start_time: Date

@@ -1,6 +1,3 @@
-/**
- * Expected from BeatmapsetExtendedPlus, Room, SearchResultUser
- */
 export interface User {
 	avatar_url: string
 	country_code: string
@@ -25,9 +22,7 @@ export namespace User {
 		}
 	}
 
-	/**
-	 * Expected from api.getMatch(), Leader
-	 */
+	/** @obtainableFrom {@link API.getMatch} */
 	export interface WithCountry extends User {
 		country: {
 			code: string
@@ -35,9 +30,6 @@ export namespace User {
 		}
 	}
 
-	/**
-	 * Expected from UserStatisticsWithUser, MultiplayerScore, ScoreWithUser
-	 */
 	export interface WithCountryCover extends WithCountry {
 		cover: {
 			custom_url: string | null
@@ -140,9 +132,7 @@ export namespace User {
 		nominated_beatmapset_count: number
 		page: {
 			html: string
-			/**
-			 * Basically the text with the BBCode
-			 */
+			/** Basically the text with the BBCode */
 			raw: string
 		}
 		pending_beatmapset_count: number
@@ -157,9 +147,7 @@ export namespace User {
 		}[]
 		scores_best_count: number
 		scores_first_count: number
-		/**
-		 * Specific to the Ruleset (`playmode`)
-		 */
+		/** Specific to the Ruleset (`playmode`) */
 		scores_pinned_count: number
 		scores_recent_count: number
 		statistics: Statistics.WithCountryrank
@@ -181,12 +169,9 @@ export namespace User {
 		}
 	}
 
-	/**
-	 * Expected from UserWithCountryCoverGroupsStatisticsrulesets, UserWithCountryCoverGroupsStatisticsSupport
-	 */
 	export interface Statistics {
-		count_100: number
 		count_300: number
+		count_100: number
 		count_50: number
 		count_miss: number
 		global_rank: number | null
@@ -198,13 +183,9 @@ export namespace User {
 			ss: number
 			ssh: number
 		}
-		/**
-		 * Accuracy in the normal format, where 96.56% would be `96.56`
-		 */
+		/** Accuracy in the normal format, where 96.56% would be `96.56` */
 		hit_accuracy: number
-		/**
-		 * Hasn't went inactive in the rankings
-		 */
+		/** Hasn't become inactive in the rankings */
 		is_ranked: boolean
 		level: {
 			current: number
@@ -222,16 +203,10 @@ export namespace User {
 	}
 
 	export namespace Statistics {
-		/**
-		 * Expected from UserExtended
-		 */
 		export interface WithCountryrank extends Statistics {
 			country_rank: number
 		}
 
-		/**
-		 * Expected from Rankings
-		 */
 		export interface WithUser extends Statistics {
 			user: User.WithCountryCover
 		}

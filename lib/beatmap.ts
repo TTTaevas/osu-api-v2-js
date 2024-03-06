@@ -11,9 +11,6 @@ export enum RankStatus {
 	Loved 		= 4
 }
 
-/**
- * Expected from BeatmapPlaycount
- */
 export interface Beatmap {
 	beatmapset_id: number
 	difficulty_rating: number
@@ -26,9 +23,6 @@ export interface Beatmap {
 }
 
 export namespace Beatmap {
-	/**
-	 * Expected from Match
-	 */
 	export interface WithBeatmapset extends Beatmap {
 		beatmapset: Beatmapset
 	}
@@ -37,16 +31,10 @@ export namespace Beatmap {
 		checksum: string
 	}
 
-	/**
-	 * Expected from PlaylistItem
-	 */
 	export interface WithBeatmapsetChecksumMaxcombo extends WithBeatmapset, WithChecksum {
 		max_combo: number
 	}
 
-	/**
-	 * Expected from ScoreWithUserBeatmapBeatmapset
-	 */
 	export interface Extended extends WithChecksum {
 		accuracy: number
 		ar: number
@@ -69,9 +57,6 @@ export namespace Beatmap {
 	}
 
 	export namespace Extended {
-		/**
-		 * Expected from BeatmapsetExtendedPlus
-		 */
 		export interface WithFailtimes extends Extended {
 			failtimes: {
 				exit: number[]
@@ -167,9 +152,6 @@ export namespace Beatmap {
 	}
 }
 
-/**
- * Expected from BeatmapWithBeatmapset, Score, BeatmapPlaycount
- */
 export interface Beatmapset {
 	artist: string
 	artist_unicode: string
@@ -204,9 +186,6 @@ export interface Beatmapset {
 }
 
 export namespace Beatmapset {
-	/**
-	 * Expected from RankingsSpotlight, BeatmapExtendedWithFailtimesBeatmapsetextended
-	 */
 	export interface Extended extends Beatmapset {
 		availability: {
 			/** So it's `false` if you can download it */

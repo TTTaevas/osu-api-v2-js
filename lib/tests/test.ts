@@ -160,7 +160,7 @@ const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.Sc
 	let b12 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}, false))
 	if (!isOk(b12, !b12 || (b12[0].score >= 132408001 && validate(b12, "Score.WithUser", score_gen)))) okay = false
 	let b13 = await <Promise<ReturnType<typeof api.getBeatmapSoloScores> | false>>attempt("getBeatmapSoloScores: ", api.getBeatmapSoloScores({id: 129891}))
-	if (!isOk(b13, !b13 || (b13[0].score >= 1073232 && validate(b13, "Score.Solo", score_gen)))) okay = false
+	if (!isOk(b13, !b13 || (b13[0].total_score >= 1073232 && validate(b13, "Score.Solo", score_gen)))) okay = false
 
 	return okay
 }
