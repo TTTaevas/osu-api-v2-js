@@ -362,7 +362,16 @@ export class API {
 
 		this.log(false, response.statusText, response.status, {endpoint, parameters})
 		// 204 means the request worked as intended and did not give us anything, so we can't `.json()` the response
-		return response.status !== 204 ? correctType(await response.json()) : undefined
+		if (response.status === 204) return undefined
+
+		const arrBuff = await response.arrayBuffer()
+		const buff = Buffer.from(arrBuff)
+		try { // Assume the response is in JSON format as it often is, it'll fail into the catch block if it isn't anyway
+			// My thorough testing leads me to believe nothing would change if the encoding was also "binary" here btw
+			return correctType(JSON.parse(buff.toString("utf-8")))
+		} catch { // Assume the response is supposed to not be in JSON format so return it as simple text
+			return buff.toString("binary")
+		}
 	}
 
 
@@ -1052,5 +1061,18 @@ export class API {
 	async getChatChannel(channel: {channel_id: number} | Chat.Channel): Promise<Chat.Channel.WithDetails> {
 		const response = await this.request("get", `chat/channels/${channel.channel_id}`)
 		return response.channel
+	}
+
+	
+	// REPLAY STUFF
+
+	/**
+	 * Get the replay for a score!
+	 * @scope {@link Scope"public"}
+	 * @param score The score that has created the replay
+	 * @returns The correctly encoded content of what would be a replay file (you can just fs.writeFileSync with it!)
+	 */
+	async getReplay(score: {id: number} | Score): Promise<string> {
+		return await this.request("get", `scores/${score.id}/download`)
 	}
 }

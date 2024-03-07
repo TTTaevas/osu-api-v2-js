@@ -124,11 +124,12 @@ const testUserStuff = async (user_gen: tsj.SchemaGenerator, score_gen: tsj.Schem
 const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.SchemaGenerator): Promise<boolean> => {
 	let okay = true
 	const beatmap_id = 388463
+	const long_str = "Beatmap.Extended.WithFailtimesBeatmapsetextended"
 
 	let b1 = await <Promise<ReturnType<typeof api.lookupBeatmap> | false>>attempt("\nlookupBeatmap: ", api.lookupBeatmap({id: beatmap_id}))
-	if (!isOk(b1, !b1 || (b1.id === beatmap_id && validate(b1, "Beatmap.Extended.WithFailtimesBeatmapsetextended", beat_gen)))) okay = false
+	if (!isOk(b1, !b1 || (b1.id === beatmap_id && validate(b1, long_str, beat_gen)))) okay = false
 	let b2 = await <Promise<ReturnType<typeof api.getBeatmap> | false>>attempt("getBeatmap: ", api.getBeatmap({id: beatmap_id}))
-	if (!isOk(b2, !b2 || (b2.id === beatmap_id && validate(b2, "Beatmap.Extended.WithFailtimesBeatmapsetextended", beat_gen)))) okay = false
+	if (!isOk(b2, !b2 || (b2.beatmapset.title_unicode == "夜啼く兎は夢を見る" && validate(b2, long_str, beat_gen)))) okay = false
 	let b3 = await <Promise<ReturnType<typeof api.getBeatmaps> | false>>attempt(
 		"getBeatmaps: ", api.getBeatmaps([beatmap_id, 4089655].map((i) => {return {id: i}}))
 	)

@@ -167,6 +167,6 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 
 ### Misc Undocumented Stuff
 - [ ] /seasonal-backgrounds
-- [ ] /scores/{score}/download
+- [x] /scores/{score}/download
 - [ ] /scores/{rulesetOrScore}/{score}/download
 - [ ] /scores/{rulesetOrScore}/{score?}
