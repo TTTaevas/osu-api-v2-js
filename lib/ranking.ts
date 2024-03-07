@@ -36,18 +36,14 @@ export namespace Rankings {
 	/** @obtainableFrom {@link API.getCountryRanking} */
 	export interface Country extends RankingsBare {
 		ranking: {
-			/**
-			 * Same as `country.code`
-			 */
+			/** Same as `country.code` */
 			code: string
 			active_users: number
 			play_count: number
 			ranked_score: number
 			performance: number
 			country: {
-				/**
-				 * The country's ISO 3166-1 alpha-2 code! (France would be `FR`, United States `US`)
-				 */
+				/** The country's ISO 3166-1 alpha-2 code! (France would be `FR`, United States `US`) */
 				code: string
 				name: string
 			}

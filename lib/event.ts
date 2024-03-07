@@ -1,27 +1,23 @@
-import { Rulesets } from "./misc.js"
-
 export interface Event {
 	created_at: Date
 	id: number
 }
 
 export namespace Event {
-	export interface User extends Event {
-		user: {
-			username: string
-			/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`) */
-			url: string
-		}
+	interface User {
+		username: string
+		/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`) */
+		url: string
 	}
 	
-	export interface Beatmap extends Event {
+	interface Beatmap {
 		/** {artist} - {title} [{difficulty_name}] */
 		title: string
 		/** What goes after the website's URL, like it could be the `/b/2980857?m=0` of `https://osu.ppy.sh/b/2980857?m=0` (/{beatmap_id}?m={ruleset_id}) */
 		url: string
 	}
 	
-	export interface Beatmapset extends Event {
+	interface Beatmapset {
 		/** {artist} - {title} */
 		title: string
 		/** What goes after the website's URL, like it could be the `/s/689155` of `https://osu.ppy.sh/s/689155` (/{beatmapset_id}) */
@@ -29,7 +25,7 @@ export namespace Event {
 	}
 	
 	
-	export interface Achievement extends User {
+	export interface Achievement extends Event {
 		type: "achievement"
 		achievement: {
 			icon_url: string
@@ -42,76 +38,92 @@ export namespace Event {
 			/** If the achievement is for a specific mode only (such as pass a 2* beatmap in taiko) */
 			mode: string | null
 			/** @remarks May contain HTML (like have the text between <i></i>) */
-			instructions: string
+			instructions: string | null
 		}
+		user: User
 	}
 	
-	export interface BeatmapPlaycount extends Beatmap {
+	export interface BeatmapPlaycount extends Event {
 		type: "beatmapPlaycount"
 		count: number
+		beatmap: Beatmap
 	}
 	
-	export interface BeatmapsetApprove extends User, Beatmapset {
+	export interface BeatmapsetApprove extends Event {
 		type: "beatmapsetApprove"
 		approval: "ranked" | "approved" | "qualified" | "loved"
+		user: User
+		beatmapset: Beatmapset
 	}
 	
-	export interface BeatmapsetDelete extends Beatmapset {
+	export interface BeatmapsetDelete extends Event {
 		type: "beatmapsetDelete"
+		beatmapset: Beatmapset
 	}
 	
-	export interface BeatmapsetRevive extends User, Beatmapset {
+	export interface BeatmapsetRevive extends Event {
 		type: "beatmapsetRevive"
+		user: User
+		beatmapset: Beatmapset
 	}
 	
-	export interface BeatmapsetUpdate extends User, Beatmapset {
+	export interface BeatmapsetUpdate extends Event {
 		type: "beatmapsetUpdate"
+		user: User
+		beatmapset: Beatmapset
 	}
 	
-	export interface BeatmapsetUpload extends User, Beatmapset {
+	export interface BeatmapsetUpload extends Event {
 		type: "beatmapsetUpload"
+		user: User
+		beatmapset: Beatmapset
 	}
 	
-	export interface Rank extends User, Beatmap {
+	export interface Rank extends Event {
 		type: "rank"
 		/** The grade, like "S" */
 		scoreRank: string
 		/** The position achieved, like 14 */
 		rank: number
-		mode: Rulesets
+		mode: string
+		user: User
+		beatmap: Beatmap
 	}
 	
-	export interface RankLost extends User, Beatmap {
+	export interface RankLost extends Event {
 		type: "rankLost"
-		mode: Rulesets
+		mode: string
+		user: User
+		beatmap: Beatmap
 	}
 	
-	export interface UserSupportAgain extends User {
+	export interface UserSupportAgain extends Event {
 		type: "userSupportAgain"
+		user: User
 	}
 	
-	export interface UserSupportFirst extends User {
+	export interface UserSupportFirst extends Event {
 		type: "userSupportFirst"
+		user: User
 	}
 	
-	export interface UserSupportGift extends User {
+	export interface UserSupportGift extends Event {
 		type: "userSupportGift"
+		user: User
 	}
 	
-	export interface UsernameChange extends User {
+	export interface UsernameChange extends Event {
 		type: "usernameChange"
 		user: {
 			username: string
-			/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` */
+			/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`) */
 			url: string
 			previousUsername: string
 		}
 	}
 
-	/** This includes everything in this namespace, except `BeatmapPlaycount` and `BeatmapsetDelete` */
-	export type AnyRecentActivity = Achievement | BeatmapsetApprove | BeatmapsetRevive | BeatmapsetUpdate | BeatmapsetUpload | Rank | RankLost |
+	/** This includes everything in this namespace, except `BeatmapPlaycount` */
+	export type AnyRecentActivity = Achievement | BeatmapsetApprove | BeatmapsetDelete | BeatmapsetRevive | BeatmapsetUpdate | BeatmapsetUpload | Rank | RankLost |
 	UserSupportAgain | UserSupportFirst | UserSupportGift | UsernameChange
-	/** This includes everything in this namespace that should be related to what BanchoBot sends in the #announce chat */
-	export type AnyBeatmapAnnouncement = BeatmapPlaycount | BeatmapsetDelete
-	export type Any = AnyRecentActivity | AnyBeatmapAnnouncement
+	export type Any = AnyRecentActivity | BeatmapPlaycount
 }

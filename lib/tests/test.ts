@@ -111,7 +111,7 @@ const testUserStuff = async (user_gen: tsj.SchemaGenerator, score_gen: tsj.Schem
 	if (!isOk(a7, !a7 || (a7[0].beatmapset.title === "furioso melodia" && validate(a7, "Beatmap.Playcount", beat_gen)))) okay = false
 
 	let a8 = await <Promise<ReturnType<typeof api.getUserRecentActivity> | false>>attempt("getUserRecentActivity: ", api.getUserRecentActivity({id: 7562902}, 25))
-	if (!isOk(a8, !a8 || (a8.length <= 25 && validate(a8, "Event.User", event_gen)))) okay = false
+	if (!isOk(a8, !a8 || (a8.length <= 25 && validate(a8, "Event.AnyRecentActivity", event_gen)))) okay = false
 	let a9 = await <Promise<ReturnType<typeof api.getUserKudosu> | false>>attempt("getUserKudosu: ", api.getUserKudosu({id: user_id}, 5))
 	if (!isOk(a9, !a9 || (a9.length === 5 && validate(a9, "User.KudosuHistory", user_gen)))) okay = false
 
@@ -240,7 +240,7 @@ const testRankingStuff = async (rank_gen: tsj.SchemaGenerator): Promise<boolean>
 /**
  * Check if searchUser() and similar work fine
  */
-const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.SchemaGenerator, forum_gen: tsj.SchemaGenerator): Promise<boolean> => {
+const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.SchemaGenerator): Promise<boolean> => {
 	let okay = true
 
 	let f1 = await <Promise<ReturnType<typeof api.searchUser> | false>>attempt("\nsearchUser: ", api.searchUser("Tae", 2))
@@ -253,8 +253,17 @@ const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.Schema
 	if (!isOk(f4, !f4 || (f4.length >= 1 && validate(f4, "News.Post", news_gen)))) okay = false
 	let f5 = await <Promise<ReturnType<typeof api.getNewsPost> | false>>attempt("getNewsPost: ", api.getNewsPost({id: 26}))
 	if (!isOk(f5, !f5 || (f5.title === "Official osu! Fanart Contest 5 Begins!" && validate(f5, "News.PostWithContentNavigation", news_gen)))) okay = false
-	let f6 = await <Promise<ReturnType<typeof api.getForumTopicAndPosts> | false>>attempt("getForumTopicAndPosts: ", api.getForumTopicAndPosts({id: 1848236}, 2))
-	if (!isOk(f6, !f6 || (f6.topic.title === "survey" && validate(f6.topic, "Forum.Topic", forum_gen) && validate(f6.posts, "Forum.Post", forum_gen)))) okay = false
+
+	return okay
+}
+
+const testMiscStuff = async (forum_gen: tsj.SchemaGenerator, event_gen: tsj.SchemaGenerator): Promise<boolean> => {
+	let okay = true
+
+	let g1 = await <Promise<ReturnType<typeof api.getForumTopicAndPosts> | false>>attempt("\ngetForumTopicAndPosts: ", api.getForumTopicAndPosts({id: 1848236}, 2))
+	if (!isOk(g1, !g1 || (g1.topic.title === "survey" && validate(g1.topic, "Forum.Topic", forum_gen) && validate(g1.posts, "Forum.Post", forum_gen)))) okay = false
+	let g2 = await <Promise<ReturnType<typeof api.getEvents> | false>>attempt("getEvents: ", api.getEvents())
+	if (!isOk(g2, !g2 || (g2.events.length === 50 && validate(g2.events, "Event.Any", event_gen)))) okay = false
 
 	return okay
 }
@@ -274,11 +283,11 @@ const test = async (id: string, secret: string): Promise<void> => {
 	const e = await testRankingStuff(tsj.createGenerator({path: "lib/ranking.ts", additionalProperties: true}))
 	const f = await testHomeStuff(
 		tsj.createGenerator({path: "lib/home.ts", additionalProperties: true}),
-		tsj.createGenerator({path: "lib/news.ts", additionalProperties: true}),
-		tsj.createGenerator({path: "lib/forum.ts", additionalProperties: true})
+		tsj.createGenerator({path: "lib/news.ts", additionalProperties: true})
 	)
+	const g = await testMiscStuff(tsj.createGenerator({path: "lib/forum.ts", additionalProperties: true}), event_gen)
 
-	const arr = [a,b,c,d,e,f]
+	const arr = [a,b,c,d,e,f,g]
 
 	const test_results = arr.map((bool: boolean, index: number) => bool ? `${index + 1}: ✔️\n` : `${index + 1}: ❌\n`)
 	console.log("\n", ...test_results)

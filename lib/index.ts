@@ -1062,7 +1062,7 @@ export class API {
 	}
 
 	
-	// REPLAY STUFF
+	// OTHER STUFF
 
 	/**
 	 * Get the replay for a score!
@@ -1072,5 +1072,9 @@ export class API {
 	 */
 	async getReplay(score: {id: number} | Score): Promise<string> {
 		return await this.request("get", `scores/${score.id}/download`)
+	}
+
+	async getEvents(sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string): Promise<{events: Event.Any[], cursor_string: string}> {
+		return await this.request("get", "events", {sort, cursor_string})
 	}
 }

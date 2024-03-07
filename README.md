@@ -170,7 +170,7 @@ Using the WebSocket namespace this package provides, it's relatively easy to sen
 - [ ] `GET /comments/{comment}`
 
 ### Events
-- [ ] `GET /events`
+- [x] `GET /events` -> getEvents()
 
 ### Forum
 - [x] `POST /forums/topics/{topic}/reply` -> replyForumTopic()
