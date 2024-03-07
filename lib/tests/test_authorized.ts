@@ -21,23 +21,25 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 	if (secret === undefined) {throw new Error("no SECRET env var")}
 	if (redirect_uri === undefined) {throw new Error("no REDIRECT_URI env var")}
 
-	let url = osu.generateAuthorizationURL(Number(id), redirect_uri, ["public", "chat.read", "chat.write_manage", "forum.write"], server)
+	let url = osu.generateAuthorizationURL(Number(id), redirect_uri, ["public", "chat.read"], server)
 	exec(`xdg-open "${url}"`)
 	let code = prompt(`What code do you get from: ${url}\n\n`)
 	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri}, "errors", server)
 
-	// Proof web socket stuff work well
-	let socket = api.generateWebSocket()
+	// Proof web socket stuff is working well
+	const socket = api.generateWebSocket()
+
 	socket.on("open", () => {
-		socket.send(JSON.stringify({event: "chat.start"}))
+		socket.send(osu.WebSocket.Command.chatStart)
 		api.keepChatAlive()
 		setInterval(() => api.keepChatAlive(), 30 * 1000)
 	})
-	socket.on("message", (m: any) => {
-		let event = JSON.parse(m.toString())
+
+	socket.on("message", (m: MessageEvent) => {
+		let event: osu.WebSocket.Event.Any = JSON.parse(m.toString())
 		if (event.event === "chat.message.new") {
-			let message = event.data.messages.map((message: any) => message.content).join(" | ")
-			let user = event.data.users.map((user: any) => user.username).join(" | ")
+			let message = event.data.messages.map((message) => message.content).join(" | ")
+			let user = event.data.users.map((user) => user.username).join(" | ")
 			console.log(`${user}: ${message}`)
 		}
 	})

@@ -32,8 +32,8 @@ async function logUserTopPlayBeatmap(username: string) {
     const score = (await api.getUserScores(user, "best", 1, osu.Rulesets.osu))[0] // Specifying the Ruleset is optional
     const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(score.beatmap, score.mods) // Specifying the mods so the SR is adapted to them
 
-    let x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`
-    let y = `+${score.mods.toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
+    const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`
+    const y = `+${score.mods.toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
     console.log(`${username}'s top play is on: ${x} ${y}`)
     // Doomsday fanboy's top play is on: xi - FREEDOM DiVE [FOUR DIMENSIONS] +HR (8.07*)
 }
@@ -73,6 +73,53 @@ Do note that your `api` object has lots of practical properties: `user` allows y
 Although, you should not need to access them often, because your `api` object has a function to use that refresh token which you can call at any given time, and it **will** call it itself if, upon requesting something, it notices the date the `access_token` `expires` is in the past!
 
 Your `refresh_token` can actually also expire at a (purposefully) unknown time, so depending of how your application works, you could use it at some point around the date of expiration, or you could throw away your `api` object while waiting for a user to start the authorization flow again
+
+### Reading all incoming messages
+
+```typescript
+// TypeScript
+import * as osu from "osu-api-v2-js"
+import promptSync from "prompt-sync"
+
+const prompt = promptSync({sigint: true})
+
+const id = "<client_id>"
+const secret = "<client_secret>"
+const redirect_uri = "<application_callback_url>"
+
+async function readChat() {
+    // Somehow get the code so the application can read the messages as your osu! user
+	const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "chat.read"]) // "chat.read" is 100% needed in our case
+	const code = prompt(`Paste the "code" in the URL you're redicted to by accessing: ${url}\n\n`)
+	const api = await osu.API.createAsync({id, secret}, {code, redirect_uri}, "errors")
+
+    // Get a WebSocket object to interact with and get messages from
+	const socket = api.generateWebSocket()
+
+    // Tell the server you want to know whenever there's are chat messages
+	socket.on("open", () => {
+		socket.send(osu.WebSocket.Command.chatStart) // osu.WebSocket.Command.chatStart is simply JSON.stringify({event: "chat.start"}) but easier to remember
+		api.keepChatAlive()
+		setInterval(() => api.keepChatAlive(), 30 * 1000) // Tell the server every 30 seconds that you're still listening to the incoming messages
+	})
+
+    // Listen for chat messages (and other stuff)
+	socket.on("message", (m: MessageEvent) => { // Mind you, "message" doesn't mean "chat message" here, it's more like a raw event
+		const event: osu.WebSocket.Event.Any = JSON.parse(m.toString())
+		if (event.event === "chat.message.new") { // Filter out things that aren't new chat messages and get type safety
+			const message = event.data.messages.map((message) => message.content).join(" | ")
+			const user = event.data.users.map((user) => user.username).join(" | ")
+			console.log(`${user}: ${message}`)
+		}
+	})
+}
+
+readChat()
+```
+
+Above is the code I've written to listen to incoming chat messages by using the API's WebSocket!
+
+Using the WebSocket namespace this package provides, it's relatively easy to send commands (anything under `osu.WebSocket.Command`) and you can have 100% type safety with events (anything under `osu.Websocket.Event`) simply by checking what the `event` property is! With that, anything in the `data` property is yours to play with!
 
 ## Implemented endpoints
 

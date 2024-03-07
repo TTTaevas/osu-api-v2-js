@@ -3,7 +3,7 @@ import WebSocket from "ws"
 import querystring from "querystring"
 
 import { User } from "./user.js"
-import { Beatmap, Beatmapset, RankStatus } from "./beatmap.js"
+import { Beatmap, Beatmapset } from "./beatmap.js"
 
 import { Multiplayer } from "./multiplayer.js"
 import { Score, BeatmapUserScore } from "./score.js"
@@ -17,7 +17,6 @@ import { News } from "./news.js"
 import { SearchResult } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
 import { Chat } from "./chat.js"
-import { WebSocketEvent } from "./websocket.js"
 
 
 export { User } from "./user.js"
@@ -35,7 +34,7 @@ export { News } from "./news.js"
 export { SearchResult } from "./home.js"
 export { Rulesets, Mod, Scope } from "./misc.js"
 export { Chat } from "./chat.js"
-export { WebSocketEvent } from "./websocket.js"
+export { WebSocket } from "./websocket.js"
 
 /**
  * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
@@ -43,8 +42,7 @@ export { WebSocketEvent } from "./websocket.js"
  * @returns x, but with it (or what it contains) now having the correct type
  */
 function correctType(x: any): any {
-	// raw and bbcode because forum, author and version because changelog
-	const bannedProperties = ["name", "version", "author", "raw", "bbcode"]
+	const bannedProperties = ["name", "location", "interests", "occupation", "twitter", "discord", "version", "author", "raw", "bbcode"]
 
 	if (typeof x === "boolean") {
 		return x
