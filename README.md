@@ -77,96 +77,96 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 ## Implemented endpoints
 
 ### Beatmap Packs
-- [x] Get Beatmap Packs
-- [x] Get Beatmap Pack
+- [x] `GET /beatmaps/packs` -> getBeatmapPacks()
+- [x] `GET /beatmaps/packs/{pack}` -> getBeatmapPack()
 
 ### Beatmaps
-- [x] Lookup Beatmap
-- [x] Get a User Beatmap score
-- [x] Get a User Beatmap scores
-- [x] Get Beamtap scores
-- [x] Get Beamtap scores (non-legacy)
-- [x] Get Beatmaps
-- [x] Get Beatmap
-- [x] Get Beatmap Attributes
+- [x] `GET /beatmaps/lookup` -> lookupBeatmap()
+- [x] `GET /beatmaps/{beatmap}/scores/users/{user}` -> getBeatmapUserScore()
+- [x] `GET /beatmaps/{beatmap}/scores/users/{user}/all` -> getBeatmapUserScores()
+- [x] `GET /beatmaps/{beatmap}/scores` -> getBeatmapScores()
+- [x] `GET /beatmaps/{beatmap}/solo-scores` -> getBeatmapSoloScores()
+- [x] `GET /beatmaps` -> getBeatmaps()
+- [x] `GET /beatmaps/{beatmap}` -> getBeatmap()
+- [x] `POST /beatmaps/{beatmap}/attributes` -> getBeatmapDifficultyAttributes()
 
 ### Beatmapset Discussions
-- [ ] Get Beatmapset Discussion Posts // low priority because "The response of this endpoint is likely to change soon!"
-- [ ] Get Beatmapset Discussion Votes // low priority because "The response of this endpoint is likely to change soon!"
-- [ ] Get Beatmapset Discussions // low priority because "The response of this endpoint is likely to change soon!"
+- [ ] `GET /beatmapsets/discussions/posts`
+- [ ] `GET /beatmapsets/discussions/votes`
+- [ ] `GET /beatmapsets/discussions`
 
 ### Beatmapsets
-- [ ] /beatmapsets/search // low priority because no documentation
-- [ ] /beatmapsets/lookup // low priority because no documentation (and won't implement if it's like Lookup Beatmap)
-- [x] /beatmapsets/{beatmapset}
-- [ ] /beatmapsets/events // low priority because no documentation (it's literally in Undocumented)
+- [ ] `GET /beatmapsets/search`
+- [ ] `GET /beatmapsets/lookup`
+- [x] `GET /beatmapsets/{beatmapset}` -> getBeatmapset()
+- [ ] `GET /beatmapsets/events`
 
 ### Changelog
-- [x] Get Changelog Build
-- [x] Get Changelog Listing // removing `search`, putting `builds` behind getChangelogBuilds(), and `streams` behind getChangelogStreams()
-- [x] Lookup Changelog Build
+- [x] `GET /changelog/{stream}/{build}` -> getChangelogBuild()
+- [x] `GET /changelog` -> getChangelogBuilds() / getChangelogStreams() (removing `search`, putting `builds` behind getChangelogBuilds(), and `streams` behind getChangelogStreams())
+- [x] `GET /changelog/{changelog}` -> lookupChangelogBuild()
 
 ### Chat
-- [x] Chat Keepalive
-- [x] Create New PM
-- [x] Get Channel Messages
-- [x] Send Message to Channel
-- [x] Join Channel
-- [x] Leave Channel
-- [x] Mark Channel as Read
-- [x] Get Channel List
-- [x] Create Channel // split between createChatPrivateChannel() and createChatAnnouncementChannel()
-- [x] Get Channel // removing `users` because `channel` would already have this property
+- [x] `POST /chat/ack` -> keepChatAlive()
+- [x] `POST /chat/new` -> sendChatPrivateMessage()
+- [x] `GET /chat/channels/{channel}/messages` -> getChatMessages()
+- [x] `POST /chat/channels/{channel}/messages` -> sendChatMessage()
+- [x] `PUT /chat/channels/{channel}/users/{user}` -> joinChatChannel()
+- [x] `DELETE /chat/channels/{channel}/users/{user}` -> leaveChatChannel()
+- [x] `PUT /chat/channels/{channel}/mark-as-read/{message}` -> markChatChannelAsRead()
+- [x] `GET /chat/channels` -> getChatChannels()
+- [x] `POST /chat/channels` -> createChatPrivateChannel() / createChatAnnouncementChannel()
+- [x] `GET /chat/channels/{channel}` -> getChatChannel() (without `users` because `channel` would already have this property)
 
 ### Comments
-- [ ] Get Comments
-- [ ] Get a Comment
+- [ ] `GET /comments`
+- [ ] `GET /comments/{comment}`
 
 ### Events
-- [ ] Get Events
+- [ ] `GET /events`
 
 ### Forum
-- [x] Reply Topic
-- [x] Create Topic
-- [x] Get Topic and Posts // removing `search` for simplicity
-- [x] Edit Topic
-- [x] Edit Post
+- [x] `POST /forums/topics/{topic}/reply` -> replyForumTopic()
+- [x] `POST /forums/topics` -> createForumTopic()
+- [x] `GET /forums/topics/{topic}` -> getForumTopicAndPosts() (removing `search` for simplicity)
+- [x] `PUT /forums/topics/{topic}` -> editForumTopicTitle()
+- [x] `PUT /forums/posts/{post}` -> editForumPost()
 
 ### Home
-- [x] Search // split between searchUser() and searchWiki()
+- [x] `GET /search` -> searchUser() / searchWiki()
 
 ### Multiplayer
-- [x] Get Scores
-- [x] Get Multiplayer Rooms
-- [x] /matches
-- [x] /matches/{match}
-- [x] /rooms/{room}
-- [x] /rooms/{room}/leaderboard
+- [x] `GET /rooms/{room}/playlist/{playlist}/scores` -> getPlaylistItemScores()
+- [x] `GET /rooms` -> getRooms()
+- [x] `GET /matches` -> getMatches()
+- [x] `GET /matches/{match}` -> getMatch()
+- [x] `GET /rooms/{room}` -> getRoom()
+- [x] `GET /rooms/{room}/leaderboard` -> getRoomLeaderboard()
 
 ### News
-- [x] Get News Listing // removing everything except `news_sidebar.news_posts`
-- [x] Get News Post
+- [x] `GET /news` -> getNewsPosts() (removing everything except `news_sidebar.news_posts`)
+- [x] `GET /news/{news}` -> getNewsPost()
 
 ### Ranking
-- [x] Get Kudosu Ranking
-- [x] Get Ranking // split between getUserRanking(), getCountryRanking(), and getSpotlightRanking()
-- [x] Get Spotlights
+- [x] `GET /rankings/kudosu` -> getKudosuRanking()
+- [x] `GET /rankings/{mode}/{type}` -> getUserRanking() / getCountryRanking() / getSpotlightRanking()
+- [x] `GET /spotlights` -> getSpotlights()
 
 ### Users
-- [x] Get Own Data
-- [x] Get User Kudosu
-- [x] Get User Scores
-- [x] Get User Beatmaps // split between getUserBeatmaps() and getUserMostPlayed()
-- [x] Get User Recent Activity
-- [x] Get User
-- [x] Get Users
-- [x] /friends
+- [x] `GET /me/{mode?}` -> getResourceOwner()
+- [x] `GET /users/{user}/kudosu` -> getUserKudosu()
+- [x] `GET /users/{user}/scores/{type}` -> getUserScores()
+- [x] `GET /users/{user}/beatmapsets/{type}` -> getUserBeatmaps() / getUserMostPlayed()
+- [x] `GET /users/{user}/recent_activity` -> getUserRecentActivity()
+- [x] `GET /users/{user}/{mode?}` -> getUser()
+- [x] `GET /users` -> getUsers()
+- [x] `GET /friends` -> getFriends()
 
 ### Wiki
-- [x] Get Wiki Page
+- [x] `GET /wiki/{locale}/{path}` -> getWikiPage()
 
 ### Misc Undocumented Stuff
-- [ ] /seasonal-backgrounds
-- [x] /scores/{score}/download
-- [ ] /scores/{rulesetOrScore}/{score}/download
-- [ ] /scores/{rulesetOrScore}/{score?}
+- [ ] `GET /seasonal-backgrounds`
+- [x] `GET /scores/{score}/download` -> getReplay()
+- [ ] `GET /scores/{rulesetOrScore}/{score}/download`
+- [ ] `GET /scores/{rulesetOrScore}/{score?}`

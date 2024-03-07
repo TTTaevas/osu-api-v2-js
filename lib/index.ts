@@ -431,7 +431,7 @@ export class API {
 	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
 	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
 	 */
-	async getUserBeatmaps(user: {id: number} | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
+	async getUserBeatmaps(user: {id: number} | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
 	limit: number = 5, offset?: number): Promise<Beatmapset.Extended.WithBeatmapExtended[]> {
 		return await this.request("get", `users/${user.id}/beatmapsets/${type}`, {limit, offset})
 	}
