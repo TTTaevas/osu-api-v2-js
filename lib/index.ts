@@ -713,7 +713,7 @@ export class API {
 	 * @param item An object with the id of the item in question, as well as the id of the room
 	 * @param limit How many scores maximum? Defaults to 50, the maximum the API will return
 	 * @param sort Sort by scores, ascending or descending? Defaults to descending
-	 * @param cursor_string Use a MultiplayerScores' `params` and `cursor_string` to get the next page (scores 51 to 100 for example)
+	 * @param cursor_string Use a Multiplayer.Scores' `params` and `cursor_string` to get the next page (scores 51 to 100 for example)
 	 * @remarks (2024-03-04) This may not work for rooms from before March 5th, use at your own risk
 	 * https://github.com/ppy/osu-web/issues/10725
 	 */
@@ -1065,6 +1065,14 @@ export class API {
 	// OTHER STUFF
 
 	/**
+	 * Get the backgrounds made and selected for this season or for last season!
+	 * @returns When the season ended, and for each background, its URL and its artist
+	 */
+	async getSeasonalBackgrounds(): Promise<{ends_at: Date, backgrounds: {url: string, user: User}[]}> {
+		return await this.request("get", "seasonal-backgrounds")
+	}
+
+	/**
 	 * Get the replay for a score!
 	 * @scope {@link Scope"public"}
 	 * @param score The score that has created the replay
@@ -1074,6 +1082,11 @@ export class API {
 		return await this.request("get", `scores/${score.id}/download`)
 	}
 
+	/**
+	 * Get everything note-worthy that happened on osu! recently!
+	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead
+	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
+	 */
 	async getEvents(sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string): Promise<{events: Event.Any[], cursor_string: string}> {
 		return await this.request("get", "events", {sort, cursor_string})
 	}

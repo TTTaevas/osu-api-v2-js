@@ -213,7 +213,7 @@ Using the WebSocket namespace this package provides, it's relatively easy to sen
 - [x] `GET /wiki/{locale}/{path}` -> getWikiPage()
 
 ### Misc Undocumented Stuff
-- [ ] `GET /seasonal-backgrounds`
+- [x] `GET /seasonal-backgrounds` -> getSeasonalBackgrounds()
 - [x] `GET /scores/{score}/download` -> getReplay()
 - [ ] `GET /scores/{rulesetOrScore}/{score}/download`
 - [ ] `GET /scores/{rulesetOrScore}/{score?}`

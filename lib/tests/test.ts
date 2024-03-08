@@ -264,6 +264,8 @@ const testMiscStuff = async (forum_gen: tsj.SchemaGenerator, event_gen: tsj.Sche
 	if (!isOk(g1, !g1 || (g1.topic.title === "survey" && validate(g1.topic, "Forum.Topic", forum_gen) && validate(g1.posts, "Forum.Post", forum_gen)))) okay = false
 	let g2 = await <Promise<ReturnType<typeof api.getEvents> | false>>attempt("getEvents: ", api.getEvents())
 	if (!isOk(g2, !g2 || (g2.events.length === 50 && validate(g2.events, "Event.Any", event_gen)))) okay = false
+	let g3 = await <Promise<ReturnType<typeof api.getSeasonalBackgrounds> | false>>attempt("getSeasonalBackgrounds: ", api.getSeasonalBackgrounds())
+	if (!isOk(g3, !g3 || (g3.ends_at > new Date("2024-01-01") && g3.backgrounds.length > 0))) okay = false
 
 	return okay
 }
