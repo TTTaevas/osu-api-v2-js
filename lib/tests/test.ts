@@ -121,7 +121,7 @@ const testUserStuff = async (user_gen: tsj.SchemaGenerator, score_gen: tsj.Schem
 /**
  * Check if getBeatmap() and similar work fine 
  */
-const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.SchemaGenerator): Promise<boolean> => {
+const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.SchemaGenerator, user_gen: tsj.SchemaGenerator): Promise<boolean> => {
 	let okay = true
 	const beatmap_id = 388463
 	const long_str = "Beatmap.Extended.WithFailtimesBeatmapsetextended"
@@ -164,6 +164,12 @@ const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.Sc
 	if (!isOk(b13, !b13 || (b13[0].score >= 132408001 && validate(b13, "Score.WithUser", score_gen)))) okay = false
 	let b14 = await <Promise<ReturnType<typeof api.getBeatmapSoloScores> | false>>attempt("getBeatmapSoloScores: ", api.getBeatmapSoloScores({id: 129891}))
 	if (!isOk(b14, !b14 || (b14[0].total_score >= 1073232 && validate(b14, "Score.Solo", score_gen)))) okay = false
+
+	let b15 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussions> | false>>attempt(
+		"getBeatmapsetDiscussions: ", api.getBeatmapsetDiscussions({beatmapset: {id: 2119925}}))
+	if (!isOk(b15, !b15 || (validate(b15.beatmaps, "Beatmap.Extended", beat_gen) && validate(b15.beatmapsets, "Beatmapset.Extended", beat_gen) &&
+	validate(b15.users, "User.WithGroups", user_gen) && validate(b15.discussions, "Beatmapset.Discussion", beat_gen) &&
+	validate(b15.included_discussions, "Beatmapset.Discussion", beat_gen)))) okay = false
 
 	return okay
 }
@@ -279,7 +285,7 @@ const test = async (id: string, secret: string): Promise<void> => {
 	const event_gen = tsj.createGenerator({path: "lib/event.ts", additionalProperties: true})
 
 	const a = await testUserStuff(user_gen, score_gen, beat_gen, event_gen)
-	const b = await testBeatmapStuff(beat_gen, score_gen)
+	const b = await testBeatmapStuff(beat_gen, score_gen, user_gen)
 	const c = await testChangelogStuff(tsj.createGenerator({path: "lib/changelog.ts", additionalProperties: true}))
 	const d = await testMultiplayerStuff(tsj.createGenerator({path: "lib/multiplayer.ts", additionalProperties: true}))
 	const e = await testRankingStuff(tsj.createGenerator({path: "lib/ranking.ts", additionalProperties: true}))

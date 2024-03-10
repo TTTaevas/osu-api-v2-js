@@ -171,7 +171,7 @@ export interface Beatmapset {
 	nsfw: boolean
 	offset: number
 	play_count: number
-	/** A string like that, where id is the `id` of the beatmapset: `//b.ppy.sh/preview/58951.mp3` */
+	/** A string like that where id is the `id` of the beatmapset: `//b.ppy.sh/preview/58951.mp3` */
 	preview_url: string
 	source: string
 	spotlight: boolean
@@ -253,6 +253,50 @@ export namespace Beatmapset {
 			user: User
 			/** Only exists if authorized user */
 			has_favourited?: boolean
+		}
+	}
+
+	export interface Discussion {
+		id: number
+		beatmapset_id: number
+		beatmap_id: number | null
+		user_id: number
+		deleted_by_id: number | null
+		message_type: "mapper_note" | "hype" | "praise" | "suggestion" | "problem" | "review"
+		parent_id: number | null
+		timestamp: number | null
+		resolved: boolean
+		can_be_resolved: boolean
+		can_grant_kudosu: boolean
+		created_at: Date
+		updated_at: Date
+		deleted_at: Date | null
+		last_post_at: Date
+		kudosu_denied: boolean
+		starting_post: Discussion.Post
+	}
+
+	export namespace Discussion {
+		export interface Post {
+			beatmapset_discussion_id: number
+			created_at: Date
+			deleted_at: Date | null
+			deleted_by_id: number | null
+			id: number
+			last_editor_id: number | null
+			message: string
+			system: boolean
+			updated_at: Date
+			user_id: number
+		}
+
+		export interface Vote {
+			beatmapset_discussion_id: number
+			created_at: Date
+			id: number
+			score: number
+			updated_at: Date
+			user_id: number
 		}
 	}
 }

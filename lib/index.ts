@@ -625,6 +625,34 @@ export class API {
 		return response.beatmap_packs
 	}
 
+	/**
+	 * Get complex data about the discussion page of any beatmap that you want!
+	 * @param from From where/who are the discussions coming from? Maybe only qualified sets?
+	 * @param filter Should those discussions only be unresolved problems, for example?
+	 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
+	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent discussion first, "id_desc" to have the newest instead
+	 * @returns Relevant discussions and info about them
+	 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
+	 * @privateRemarks I don't allow setting `beatmap_id` because my testing has led me to believe it does nothing (and is therefore misleading)
+	 */
+	async getBeatmapsetDiscussions(from?: {beatmapset?: Beatmapset | {id: number}, user?: User | {id: number},
+	status?: "all" | "ranked" | "qualified" | "disqualified" | "never_qualified"}, filter?:{types?: Beatmapset.Discussion["message_type"][],
+	only_unresolved?: boolean}, cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
+	Promise<{beatmaps: Beatmap.Extended[], beatmapsets: Beatmapset.Extended[], discussions: Beatmapset.Discussion[]
+	included_discussions: Beatmapset.Discussion[], reviews_config: {max_blocks: number}, users: User.WithGroups[], cursor_string: string}> {
+		return await this.request("get", "beatmapsets/discussions", {beatmapset_id: from?.beatmapset?.id, beatmapset_status: from?.status,
+		limit: cursor_stuff?.limit, message_types: filter?.types, only_unresolved: filter?.only_unresolved, page: cursor_stuff?.page, sort,
+		user: from?.user?.id, cursor_string: cursor_stuff?.cursor_string})
+	}
+
+	private async getBeatmapsetDiscussionPosts() {
+		return await this.request("get", "beatmapsets/discussions/posts")
+	}
+
+	private async getBeatmapsetDiscussionVotes() {
+		return await this.request("get", "beatmapsets/discussions/votes")
+	}
+
 
 	// CHANGELOG STUFF
 
