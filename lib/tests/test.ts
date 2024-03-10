@@ -257,7 +257,7 @@ const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.Schema
 	return okay
 }
 
-const testMiscStuff = async (forum_gen: tsj.SchemaGenerator, event_gen: tsj.SchemaGenerator): Promise<boolean> => {
+const testMiscStuff = async (forum_gen: tsj.SchemaGenerator, event_gen: tsj.SchemaGenerator, comment_gen: tsj.SchemaGenerator): Promise<boolean> => {
 	let okay = true
 
 	let g1 = await <Promise<ReturnType<typeof api.getForumTopicAndPosts> | false>>attempt("\ngetForumTopicAndPosts: ", api.getForumTopicAndPosts({id: 1848236}, 2))
@@ -266,6 +266,14 @@ const testMiscStuff = async (forum_gen: tsj.SchemaGenerator, event_gen: tsj.Sche
 	if (!isOk(g2, !g2 || (g2.events.length === 50 && validate(g2.events, "Event.Any", event_gen)))) okay = false
 	let g3 = await <Promise<ReturnType<typeof api.getSeasonalBackgrounds> | false>>attempt("getSeasonalBackgrounds: ", api.getSeasonalBackgrounds())
 	if (!isOk(g3, !g3 || (g3.ends_at > new Date("2024-01-01") && g3.backgrounds.length > 0))) okay = false
+	let g4 = await <Promise<ReturnType<typeof api.getComments> | false>>attempt("getComments: ", api.getComments())
+	if (!isOk(g4, !g4 || validate(g4, "CommentBundle", comment_gen))) okay = false
+	let g5 = await <Promise<ReturnType<typeof api.getComments> | false>>attempt("getComments (beatmapset): ", api.getComments({type: "beatmapset", id: 1971037}))
+	if (!isOk(g5, !g5 || validate(g5, "CommentBundle", comment_gen))) okay = false
+	let g6 = await <Promise<ReturnType<typeof api.getComments> | false>>attempt("getComments (build): ", api.getComments({type: "build", id: 7463}))
+	if (!isOk(g6, !g6 || validate(g6, "CommentBundle", comment_gen))) okay = false
+	let g7 = await <Promise<ReturnType<typeof api.getComments> | false>>attempt("getComments (news_post): ", api.getComments({type: "news_post", id: 1451}))
+	if (!isOk(g7, !g7 || validate(g7, "CommentBundle", comment_gen))) okay = false
 
 	return okay
 }
@@ -287,7 +295,11 @@ const test = async (id: string, secret: string): Promise<void> => {
 		tsj.createGenerator({path: "lib/home.ts", additionalProperties: true}),
 		tsj.createGenerator({path: "lib/news.ts", additionalProperties: true})
 	)
-	const g = await testMiscStuff(tsj.createGenerator({path: "lib/forum.ts", additionalProperties: true}), event_gen)
+	const g = await testMiscStuff(
+		tsj.createGenerator({path: "lib/forum.ts", additionalProperties: true}),
+		event_gen,
+		tsj.createGenerator({path: "lib/comment.ts", additionalProperties: true})
+	)
 
 	const arr = [a,b,c,d,e,f,g]
 

@@ -166,8 +166,8 @@ Using the WebSocket namespace this package provides, it's relatively easy to sen
 - [x] `GET /chat/channels/{channel}` -> getChatChannel() (without `users` because `channel` would already have this property)
 
 ### Comments
-- [ ] `GET /comments`
-- [ ] `GET /comments/{comment}`
+- [x] `GET /comments` -> getComments()
+- [x] `GET /comments/{comment}` -> getComment()
 
 ### Events
 - [x] `GET /events` -> getEvents()

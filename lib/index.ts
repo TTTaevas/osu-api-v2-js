@@ -17,6 +17,7 @@ import { News } from "./news.js"
 import { SearchResult } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
 import { Chat } from "./chat.js"
+import { Comment, CommentBundle, CommentableMeta } from "./comment.js"
 
 
 export { User } from "./user.js"
@@ -35,6 +36,7 @@ export { SearchResult } from "./home.js"
 export { Rulesets, Mod, Scope } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocket } from "./websocket.js"
+export { Comment, CommentBundle, CommentableMeta } from "./comment.js"
 
 /**
  * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
@@ -42,7 +44,7 @@ export { WebSocket } from "./websocket.js"
  * @returns x, but with it (or what it contains) now having the correct type
  */
 function correctType(x: any): any {
-	const bannedProperties = ["name", "location", "interests", "occupation", "twitter", "discord", "version", "author", "raw", "bbcode"]
+	const bannedProperties = ["name", "location", "interests", "occupation", "twitter", "discord", "version", "author", "raw", "bbcode", "title", "message"]
 
 	if (typeof x === "boolean") {
 		return x
@@ -1089,5 +1091,35 @@ export class API {
 	 */
 	async getEvents(sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string): Promise<{events: Event.Any[], cursor_string: string}> {
 		return await this.request("get", "events", {sort, cursor_string})
+	}
+
+	/**
+	 * Get comments that meet any of your requirements!
+	 * @param from From where are the comments coming from? Maybe a beatmapset, but then, which beatmapset?
+	 * @param parent The comments are replying to which comment? Make the id 0 to filter out replies (and only get top level comments)
+	 * @param sort Should the comments be sorted by votes? Should they be from after a certain date? Maybe you can give a cursor?
+	 */
+	async getComments(from?: {type: Comment["commentable_type"], id: number}, parent?: Comment | {id: number | 0},
+	sort?: {type?: CommentBundle["sort"], after?: {id: number}, cursor?: any}): Promise<CommentBundle> {
+		const after = sort?.after?.id ? String(sort.after.id) : undefined
+		const parent_id = parent?.id ? String(parent.id) : undefined
+
+		const bundle = await this.request("get", "comments", {
+			after, commentable_type: from?.type, commentable_id: from?.id,
+			cursor: sort?.cursor, parent_id, sort: sort?.type
+		})
+		// `deleted` is actually an original property that is added to allow package users to filter out deleted items
+		for (let i = 0; i < bundle.commentable_meta.length; i++) {
+			bundle.commentable_meta[i].deleted = bundle.commentable_meta[i].id === undefined
+		}
+		return bundle
+	}
+
+	/**
+	 * Get a specific comment by using its id!
+	 * @param comment The comment in question
+	 */
+	async getComment(comment: Comment | {id: number}): Promise<CommentBundle> {
+		return await this.request("get", `comments/${comment.id}`)
 	}
 }
