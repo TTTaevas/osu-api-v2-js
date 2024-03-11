@@ -15,7 +15,7 @@ import { Forum, PollConfig } from "./forum.js"
 import { WikiPage } from "./wiki.js"
 import { News } from "./news.js"
 import { SearchResult } from "./home.js"
-import { Rulesets, Mod, Scope } from "./misc.js"
+import { Rulesets, Mod, Scope, Genres, Languages } from "./misc.js"
 import { Chat } from "./chat.js"
 
 
@@ -32,7 +32,7 @@ export { Forum, PollConfig } from "./forum.js"
 export { WikiPage } from "./wiki.js"
 export { News } from "./news.js"
 export { SearchResult } from "./home.js"
-export { Rulesets, Mod, Scope } from "./misc.js"
+export { Rulesets, Mod, Scope, Genres, Languages } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocket } from "./websocket.js"
 
@@ -42,7 +42,7 @@ export { WebSocket } from "./websocket.js"
  * @returns x, but with it (or what it contains) now having the correct type
  */
 function correctType(x: any): any {
-	const bannedProperties = ["name", "location", "interests", "occupation", "twitter", "discord", "version", "author", "raw", "bbcode"]
+	const bannedProperties = ["name", "artist", "title", "location", "interests", "occupation", "twitter", "discord", "version", "author", "raw", "bbcode"]
 
 	if (typeof x === "boolean") {
 		return x
@@ -599,14 +599,63 @@ export class API {
 		return response.scores
 	}
 
-	async searchBeatmapset(query?: {sort?: {by: "title" | "artist" | "difficulty" | "ranked" | "rating" | "plays" | "favourite" | "updated", in: "asc" | "desc"},
-	extra?: {must_have_video?: true, must_have_storyboard?: true}, cursor_string?: string}): Promise<{
-	beatmapsets: Beatmapset.Extended.WithBeatmapExtendedPacktags[], recommended_difficulty: number | null, total: number, error: any | null,
-	cursor_string: string}> {
+	/**
+	 * Search for beatmapsets as if you were on the website or on lazer!
+	 * @param query All the filters and sorting options that you'd normally find on the website or on lazer 
+	 * @returns Relevant Beatmapsets that contain Beatmaps, and a cursor_string to allow you to look for more of the same!
+	 * @remarks This does not bypass the current osu!supporter requirement for certain filters
+	 */
+	async searchBeatmapsets(query?: {
+	/** What you'd put in the searchbar, like the name of a beatmapset or a mapper! */
+	keywords?: string
+	/** Sort by what, in ascending/descending order */
+	sort?: {by: "title" | "artist" | "difficulty" | "ranked" | "rating" | "plays" | "favourites" | "updated", in: "asc" | "desc"},
+	/** Various filters to activate */
+	general?: ("Recommended difficulty" | "Include converted beatmaps" | "Subscribed mappers" | "Spotlighted beatmaps" | "Featured Artists")[],
+	/** Only get sets that have maps that you can play in the ruleset of your choice */
+	mode?: Rulesets,
+	/** (defaults to all that have leaderboard) Filter in sets depending on their status or on their relation with the authorized user */
+	categories?: "Any" | "Ranked" | "Qualified" | "Loved" | "Favourites" | "Pending" | "WIP" | "Graveyard" | "My Maps",
+	/** Use this to hide all sets that are marked as explicit */
+	hide_explicit_content?: true,
+	/** Specify the musical genre of the music of the beatmapsets you're searching for */
+	genre?: Exclude<Exclude<Genres, 0>, 8>,
+	/** Specify the spoken language of the music of the beatmapsets you're searching for */
+	language?: Exclude<Languages, 0>,
+	/** Should all sets have a video, a storyboard, maybe both at once? */
+	extra?: ("must_have_video" | "must_have_storyboard")[],
+	/** Does the authorized user with osu!supporter have already achieved certain ranks on those sets? */
+	rank_achieved?: ("Silver SS" | "SS" | "Silver S" | "S" | "A" | "B" | "C" | "D")[],
+	/** Does the authorized user with osu!supporter have already played those sets, or have they not played them yet? */
+	played?: "Played" | "Unplayed",
+	/** The thing you've got from a previous request to get another page of results! */
+	cursor_string?: string}):
+	Promise<{beatmapsets: Beatmapset.Extended.WithBeatmapExtendedPacktags[], recommended_difficulty: number | null, total: number, error: any | null,
+	cursor_string: string | null}> {
 		const sort = query?.sort ? (query.sort.by + "_" + query.sort.in) : undefined
-		const e = query?.extra ? query.extra.must_have_video ? query.extra.must_have_storyboard ?
-		"video.storyboard" : "video" : query.extra.must_have_storyboard ? "storyboard" : undefined : undefined
-		return await this.request("get", `beatmapsets/search`, {sort, e, cursor_string: query?.cursor_string})
+		const c = query?.general ? query.general.map((general_value) => {
+			if (general_value === "Recommended difficulty") return "recommended"
+			if (general_value === "Include converted beatmaps") return "converts"
+			if (general_value === "Subscribed mappers") return "follows"
+			if (general_value === "Spotlighted beatmaps") return "spotlights"
+			if (general_value === "Featured Artists") return "featured_artists"
+		}).join(".") : undefined
+		const s = query?.categories ? query.categories === "My Maps" ? "mine" : query.categories.toLowerCase() : undefined
+		const nsfw = query?.hide_explicit_content ? false : undefined
+		const e = query?.extra ? query.extra.map((extra_value) => {
+			if (extra_value === "must_have_video") return "video"
+			if (extra_value === "must_have_storyboard") return "storyboard"
+		}).join(".") : undefined
+		const r = query?.rank_achieved ? query.rank_achieved.map((rank_achieved_value) => {
+			if (rank_achieved_value === "Silver SS") return "XH"
+			if (rank_achieved_value === "SS") return "X"
+			if (rank_achieved_value === "Silver S") return "SH"
+			return rank_achieved_value
+		}).join("x") : undefined
+		const played = query?.played ? query.played.toLowerCase() : undefined
+
+		return await this.request("get", `beatmapsets/search`,
+		{q: query?.keywords, sort, c, m: query?.mode, s, nsfw, g: query?.genre, l: query?.language, e, r, played, cursor_string: query?.cursor_string})
 	}
 
 	/**
