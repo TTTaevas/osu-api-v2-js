@@ -64,10 +64,12 @@ export namespace Beatmap {
 			}
 		}
 
-		/** @obtainableFrom {@link API.getBeatmaps} */
-		export interface WithFailtimesMaxcombo extends WithFailtimes {
+		export interface WithMaxcombo extends Extended {
 			max_combo: number
 		}
+
+		/** @obtainableFrom {@link API.getBeatmaps} */
+		export interface WithFailtimesMaxcombo extends WithFailtimes, WithMaxcombo {}
 
 		/** @obtainableFrom {@link API.getBeatmap} */
 		export interface WithFailtimesBeatmapsetextended extends WithFailtimesMaxcombo {
@@ -220,6 +222,11 @@ export namespace Beatmapset {
 		/** @obtainableFrom {@link API.getUserBeatmaps} */
 		export interface WithBeatmapExtended extends Extended {
 			beatmaps: Beatmap.Extended[]
+		}
+
+		export interface WithBeatmapExtendedPacktags extends Extended {
+			beatmaps: Beatmap.Extended.WithMaxcombo[]
+			pack_tags: string[]
 		}
 
 		/** @obtainableFrom {@link API.getBeatmapset} */

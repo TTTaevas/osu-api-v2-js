@@ -599,6 +599,24 @@ export class API {
 		return response.scores
 	}
 
+	async searchBeatmapset(query?: {sort?: {by: "title" | "artist" | "difficulty" | "ranked" | "rating" | "plays" | "favourite" | "updated", in: "asc" | "desc"},
+	extra?: {must_have_video?: true, must_have_storyboard?: true}, cursor_string?: string}): Promise<{
+	beatmapsets: Beatmapset.Extended.WithBeatmapExtendedPacktags[], recommended_difficulty: number | null, total: number, error: any | null,
+	cursor_string: string}> {
+		const sort = query?.sort ? (query.sort.by + "_" + query.sort.in) : undefined
+		const e = query?.extra ? query.extra.must_have_video ? query.extra.must_have_storyboard ?
+		"video.storyboard" : "video" : query.extra.must_have_storyboard ? "storyboard" : undefined : undefined
+		return await this.request("get", `beatmapsets/search`, {sort, e, cursor_string: query?.cursor_string})
+	}
+
+	/**
+	 * Get extensive data about a beatmapset by using a beatmap!
+	 * @param beatmap A beatmap from the beatmapset you're looking for
+	 */
+	async lookupBeatmapset(beatmap: {id: number} | Beatmap): Promise<Beatmapset.Extended.Plus> {
+		return await this.request("get", `beatmapsets/lookup`, {beatmap_id: beatmap.id})
+	}
+
 	/**
 	 * Get extensive beatmapset data about whichever beatmapset you want!
 	 * @param beatmapset An object with the id of the beatmapset you're trying to get
