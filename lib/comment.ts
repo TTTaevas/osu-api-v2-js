@@ -26,11 +26,7 @@ export interface Comment {
 	message_html?: string
 }
 
-/**
- * @obtainableFrom
- * {@link API.getComments} /
- * {@link API.getComment}
-*/
+/** @obtainableFrom {@link API.getComment} */
 export interface CommentBundle {
 	comments: Comment[]
 	has_more: boolean
@@ -44,9 +40,7 @@ export interface CommentBundle {
 	cursor: {
 		created_at: Date
 		id: number
-	}
-	top_level_count: number
-	total: number
+	} | null
 	commentable_meta: {
 		id: number
 		title: string
@@ -67,4 +61,13 @@ export interface CommentBundle {
 	 * @remarks This DOES COUNT the one that is always there, see https://github.com/ppy/osu-web/issues/11077
 	 */
 	deleted_commentable_meta: number
+	
+}
+
+export namespace CommentBundle {
+	/** @obtainableFrom {@link API.getComments} */
+	export interface WithTotalToplevelcount extends CommentBundle {
+		total: number
+		top_level_count: number
+	}
 }

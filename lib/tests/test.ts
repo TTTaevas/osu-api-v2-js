@@ -274,6 +274,8 @@ const testMiscStuff = async (forum_gen: tsj.SchemaGenerator, event_gen: tsj.Sche
 	if (!isOk(g6, !g6 || validate(g6, "CommentBundle", comment_gen))) okay = false
 	let g7 = await <Promise<ReturnType<typeof api.getComments> | false>>attempt("getComments (news_post): ", api.getComments({type: "news_post", id: 1451}))
 	if (!isOk(g7, !g7 || validate(g7, "CommentBundle", comment_gen))) okay = false
+	let g8 = await <Promise<ReturnType<typeof api.getComment> | false>>attempt("getComment: ", api.getComment({id: 2418884}))
+	if (!isOk(g8, !g8 || (g8.users.find((u) => u.id === 8) && validate(g8, "CommentBundle", comment_gen)))) okay = false
 
 	return okay
 }

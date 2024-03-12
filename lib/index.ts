@@ -1126,7 +1126,7 @@ export class API {
 	 * @param sort Should the comments be sorted by votes? Should they be from after a certain date? Maybe you can give a cursor?
 	 */
 	async getComments(from?: {type: Comment["commentable_type"], id: number}, parent?: Comment | {id: number | 0},
-	sort?: {type?: CommentBundle["sort"], after?: Comment | {id: number}, cursor?: CommentBundle["cursor"]}): Promise<CommentBundle> {
+	sort?: {type?: CommentBundle["sort"], after?: Comment | {id: number}, cursor?: CommentBundle["cursor"]}): Promise<CommentBundle.WithTotalToplevelcount> {
 		const after = sort?.after?.id ? String(sort.after.id) : undefined
 		const parent_id = parent?.id ? String(parent.id) : undefined
 
@@ -1146,6 +1146,11 @@ export class API {
 	 * @param comment The comment in question
 	 */
 	async getComment(comment: Comment | {id: number}): Promise<CommentBundle> {
-		return await this.request("get", `comments/${comment.id}`)
+		let bundle = await this.request("get", `comments/${comment.id}`)
+		const commentable_meta = bundle.commentable_meta.filter((c: any) => c.id)
+		bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
+		bundle.commentable_meta = commentable_meta
+		
+		return bundle
 	}
 }
