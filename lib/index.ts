@@ -17,6 +17,7 @@ import { News } from "./news.js"
 import { SearchResult } from "./home.js"
 import { Rulesets, Mod, Scope } from "./misc.js"
 import { Chat } from "./chat.js"
+import { Comment, CommentBundle } from "./comment.js"
 
 
 export { User } from "./user.js"
@@ -35,6 +36,7 @@ export { SearchResult } from "./home.js"
 export { Rulesets, Mod, Scope } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocket } from "./websocket.js"
+export { Comment, CommentBundle } from "./comment.js"
 
 /**
  * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
@@ -42,7 +44,7 @@ export { WebSocket } from "./websocket.js"
  * @returns x, but with it (or what it contains) now having the correct type
  */
 function correctType(x: any): any {
-	const bannedProperties = ["name", "location", "interests", "occupation", "twitter", "discord", "version", "author", "raw", "bbcode"]
+	const bannedProperties = ["name", "location", "interests", "occupation", "twitter", "discord", "version", "author", "raw", "bbcode", "title", "message"]
 
 	if (typeof x === "boolean") {
 		return x
@@ -281,20 +283,46 @@ export class API {
 		let err = "none"
 		let to_retry = false
 
+		// For GET requests specifically, requests need to be shaped in very particular ways
 		if (parameters !== undefined && method === "get") {
 			// If a parameter is an empty string or is undefined, remove it
 			for (let i = 0; i < Object.entries(parameters).length; i++) {
 				if (!String(Object.values(parameters)[i]).length || Object.values(parameters)[i] === undefined) {
+					delete parameters[Object.keys(parameters)[i]]
 					i--
-					delete parameters[Object.keys(parameters)[i + 1]]
 				}
 			}
+			
 			// If a parameter is an Array, add "[]" to its name, so the server understands the request properly
-			for (let i = 0; i < Object.entries(parameters).length; i++) {
+			for (let i = 0; i < Object.entries(parameters).length; i++) {	
 				if (Array.isArray(Object.values(parameters)[i]) && !Object.keys(parameters)[i].includes("[]")) {
+					parameters[`${Object.keys(parameters)[i]}[]`] = Object.values(parameters)[i]
+					delete parameters[Object.keys(parameters)[i]]
 					i--
-					parameters[`${Object.keys(parameters)[i + 1]}[]`] = Object.values(parameters)[i + 1]
-					delete parameters[Object.keys(parameters)[i + 1]]
+				}
+			}
+
+			// If a parameter is an object, add its properties in "[]" such as "cursor[id]=5&cursor[score]=36.234"
+			let parameters_to_add: {[k: string]: any} = {}
+			for (let i = 0; i < Object.entries(parameters).length; i++) {
+				const value = Object.values(parameters)[i]
+				if (typeof value === "object" && !Array.isArray(value) && value !== null) { 
+					const main_name = Object.keys(parameters)[i]
+					for (let e = 0; e < Object.entries(value).length; e++) {
+						parameters_to_add[`${main_name}[${Object.keys(value)[e]}]`] = Object.values(value)[e]
+					}
+					delete parameters[Object.keys(parameters)[i]]
+					i--
+				}
+			}
+			for (let i = 0; i < Object.entries(parameters_to_add).length; i++) {
+				parameters[Object.keys(parameters_to_add)[i]] = Object.values(parameters_to_add)[i]
+			}
+
+			// If a parameter is a date, make it a string
+			for (let i = 0; i < Object.entries(parameters).length; i++) {
+				if (Object.values(parameters)[i] instanceof Date) {
+					parameters[Object.keys(parameters)[i]] = (Object.values(parameters)[i] as Date).toISOString()
 				}
 			}
 		}
@@ -1089,5 +1117,40 @@ export class API {
 	 */
 	async getEvents(sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string): Promise<{events: Event.Any[], cursor_string: string}> {
 		return await this.request("get", "events", {sort, cursor_string})
+	}
+
+	/**
+	 * Get comments that meet any of your requirements!
+	 * @param from From where are the comments coming from? Maybe a beatmapset, but then, which beatmapset?
+	 * @param parent The comments are replying to which comment? Make the id 0 to filter out replies (and only get top level comments)
+	 * @param sort Should the comments be sorted by votes? Should they be from after a certain date? Maybe you can give a cursor?
+	 */
+	async getComments(from?: {type: Comment["commentable_type"], id: number}, parent?: Comment | {id: number | 0},
+	sort?: {type?: CommentBundle["sort"], after?: Comment | {id: number}, cursor?: CommentBundle["cursor"]}): Promise<CommentBundle.WithTotalToplevelcount> {
+		const after = sort?.after?.id ? String(sort.after.id) : undefined
+		const parent_id = parent?.id ? String(parent.id) : undefined
+
+		let bundle = await this.request("get", "comments", {
+			after, commentable_type: from?.type, commentable_id: from?.id,
+			cursor: sort?.cursor, parent_id, sort: sort?.type
+		})
+		const commentable_meta = bundle.commentable_meta.filter((c: any) => c.id)
+		bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
+		bundle.commentable_meta = commentable_meta
+		
+		return bundle
+	}
+
+	/**
+	 * Get a specific comment by using its id!
+	 * @param comment The comment in question
+	 */
+	async getComment(comment: Comment | {id: number}): Promise<CommentBundle> {
+		let bundle = await this.request("get", `comments/${comment.id}`)
+		const commentable_meta = bundle.commentable_meta.filter((c: any) => c.id)
+		bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
+		bundle.commentable_meta = commentable_meta
+		
+		return bundle
 	}
 }
