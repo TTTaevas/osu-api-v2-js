@@ -168,8 +168,16 @@ const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.Sc
 	let b15 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussions> | false>>attempt(
 		"getBeatmapsetDiscussions: ", api.getBeatmapsetDiscussions({beatmapset: {id: 2119925}}))
 	if (!isOk(b15, !b15 || (validate(b15.beatmaps, "Beatmap.Extended", beat_gen) && validate(b15.beatmapsets, "Beatmapset.Extended", beat_gen) &&
-	validate(b15.users, "User.WithGroups", user_gen) && validate(b15.discussions, "Beatmapset.Discussion", beat_gen) &&
-	validate(b15.included_discussions, "Beatmapset.Discussion", beat_gen)))) okay = false
+	validate(b15.users, "User.WithGroups", user_gen) && validate(b15.discussions, "Beatmapset.Discussion.WithStartingpost", beat_gen) &&
+	validate(b15.included_discussions, "Beatmapset.Discussion.WithStartingpost", beat_gen)))) okay = false
+	let b16 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussionPosts> | false>>attempt(
+		"getBeatmapsetDiscussions: ", api.getBeatmapsetDiscussionPosts({discussion: {id: 4143461}}))
+	if (!isOk(b16, !b16 || (validate(b16.beatmapsets, "Beatmapset.WithHype", beat_gen) && validate(b16.users, "User", user_gen) &&
+	validate(b16.posts, "Beatmapset.Discussion.Post", beat_gen)))) okay = false
+	let b17 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussionVotes> | false>>attempt(
+		"getBeatmapsetDiscussionVotes: ", api.getBeatmapsetDiscussionVotes({vote_receiver: {id: 7276846}}))
+	if (!isOk(b17, !b17 || (validate(b17.votes, "Beatmapset.Discussion.Vote", beat_gen) && validate(b17.discussions, "Beatmapset.Discussion", beat_gen) &&
+	validate(b17.users, "User.WithGroups", user_gen)))) okay = false
 
 	return okay
 }

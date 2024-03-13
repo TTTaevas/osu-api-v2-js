@@ -138,8 +138,8 @@ Using the WebSocket namespace this package provides, it's relatively easy to sen
 - [x] `POST /beatmaps/{beatmap}/attributes` -> getBeatmapDifficultyAttributes()
 
 ### Beatmapset Discussions
-- [ ] `GET /beatmapsets/discussions/posts`
-- [ ] `GET /beatmapsets/discussions/votes`
+- [x] `GET /beatmapsets/discussions/posts` -> getBeatmapsetDiscussionPosts()
+- [x] `GET /beatmapsets/discussions/votes` -> getBeatmapsetDiscussionVotes()
 - [x] `GET /beatmapsets/discussions` -> getBeatmapsetDiscussions()
 
 ### Beatmapsets

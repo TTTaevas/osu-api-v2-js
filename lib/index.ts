@@ -626,7 +626,7 @@ export class API {
 	}
 
 	/**
-	 * Get complex data about the discussion page of any beatmap that you want!
+	 * Get complex data about the discussion page of any beatmapet that you want!
 	 * @param from From where/who are the discussions coming from? Maybe only qualified sets?
 	 * @param filter Should those discussions only be unresolved problems, for example?
 	 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
@@ -636,21 +636,46 @@ export class API {
 	 * @privateRemarks I don't allow setting `beatmap_id` because my testing has led me to believe it does nothing (and is therefore misleading)
 	 */
 	async getBeatmapsetDiscussions(from?: {beatmapset?: Beatmapset | {id: number}, user?: User | {id: number},
-	status?: "all" | "ranked" | "qualified" | "disqualified" | "never_qualified"}, filter?:{types?: Beatmapset.Discussion["message_type"][],
+	status?: "all" | "ranked" | "qualified" | "disqualified" | "never_qualified"}, filter?: {types?: Beatmapset.Discussion["message_type"][],
 	only_unresolved?: boolean}, cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
-	Promise<{beatmaps: Beatmap.Extended[], beatmapsets: Beatmapset.Extended[], discussions: Beatmapset.Discussion[]
-	included_discussions: Beatmapset.Discussion[], reviews_config: {max_blocks: number}, users: User.WithGroups[], cursor_string: string}> {
+	Promise<{beatmaps: Beatmap.Extended[], beatmapsets: Beatmapset.Extended[], discussions: Beatmapset.Discussion.WithStartingpost[]
+	included_discussions: Beatmapset.Discussion.WithStartingpost[], reviews_config: {max_blocks: number}, users: User.WithGroups[], cursor_string: string}> {
 		return await this.request("get", "beatmapsets/discussions", {beatmapset_id: from?.beatmapset?.id, beatmapset_status: from?.status,
 		limit: cursor_stuff?.limit, message_types: filter?.types, only_unresolved: filter?.only_unresolved, page: cursor_stuff?.page, sort,
 		user: from?.user?.id, cursor_string: cursor_stuff?.cursor_string})
 	}
 
-	private async getBeatmapsetDiscussionPosts() {
-		return await this.request("get", "beatmapsets/discussions/posts")
+	/**
+	 * Get complex data about the posts of a beatmapset's discussion or of a user!
+	 * @param from From where/who are the posts coming from? A specific discussion, a specific user?
+	 * @param types What kind of posts?
+	 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
+	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent post first, "id_desc" to have the newest instead
+	 * @returns Relevant posts and info about them
+	 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
+	 */
+	async getBeatmapsetDiscussionPosts(from?: {discussion?: Beatmapset.Discussion | {id: number}, user?: User | {id: number}},
+	types?: ("first" | "reply" | "system")[], cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
+	Promise<{beatmapsets: Beatmapset.WithHype[], posts: Beatmapset.Discussion.Post[], users: User[], cursor_string: string}> {
+		return await this.request("get", "beatmapsets/discussions/posts", {beatmapset_discussion_id: from?.discussion?.id, limit: cursor_stuff?.limit,
+		page: cursor_stuff?.page, sort, types, user: from?.user?.id, cursor_string: cursor_stuff?.cursor_string})
 	}
 
-	private async getBeatmapsetDiscussionVotes() {
-		return await this.request("get", "beatmapsets/discussions/votes")
+	/**
+	 * Get complex data about the votes of a beatmapset's discussions or/and received/given by a specific user!
+	 * @param from The discussion with the votes, the user who voted, the user who's gotten the votes...
+	 * @param score An upvote (1) or a downvote (-1)
+	 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
+	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent vote first, "id_desc" to have the newest instead
+	 * @returns Relevant votes and info about them
+	 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
+	 */
+	async getBeatmapsetDiscussionVotes(from?: {discussion?: Beatmapset.Discussion | {id: number}, vote_giver?: User | {id: number},
+	vote_receiver?: User | {id: number}}, score?: 1 | -1, cursor_stuff?: {page?: number, limit?: number, cursor_string?: string},
+	sort: "id_desc" | "id_asc" = "id_desc"): Promise<{votes: Beatmapset.Discussion.Vote[], discussions: Beatmapset.Discussion[], users: User.WithGroups[],
+	cursor_string: string}> {
+		return await this.request("get", "beatmapsets/discussions/votes", {beatmapset_discussion_id: from?.discussion?.id, limit: cursor_stuff?.limit,
+		page: cursor_stuff?.page, receiver: from?.vote_receiver?.id, score, sort, user: from?.vote_giver?.id, cursor_string: cursor_stuff?.cursor_string})
 	}
 
 
