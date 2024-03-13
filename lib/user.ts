@@ -22,6 +22,20 @@ export namespace User {
 		}
 	}
 
+	export interface WithGroups extends User {
+		groups: {
+			colour: string | null
+			has_listing: boolean
+			has_playmodes: boolean
+			id: number
+			identifier: string
+			is_probationary: boolean
+			name: string
+			playmodes: string[] | null
+			short_name: string
+		}[]
+	}
+
 	/** @obtainableFrom {@link API.getMatch} */
 	export interface WithCountry extends User {
 		country: {
@@ -36,20 +50,6 @@ export namespace User {
 			url: string
 			id: number | null
 		}
-	}
-
-	export interface WithGroups {
-		groups: {
-			colour: string | null
-			has_listing: boolean
-			has_playmodes: boolean
-			id: number
-			identifier: string
-			is_probationary: boolean
-			name: string
-			playmodes: string[] | null
-			short_name: string
-		}[]
 	}
 
 	/** @obtainableFrom {@link API.getUsers} */
