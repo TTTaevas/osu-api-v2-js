@@ -114,7 +114,7 @@ export namespace Multiplayer {
 				id: number
 				start_time: Date
 				end_time: Date | null
-				mode: string
+				mode: keyof typeof Rulesets
 				mode_int: Rulesets
 				scoring_type: string
 				team_type: string

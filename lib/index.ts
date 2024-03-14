@@ -42,7 +42,10 @@ export { WebSocket } from "./websocket.js"
  * @returns x, but with it (or what it contains) now having the correct type
  */
 function correctType(x: any): any {
-	const bannedProperties = ["name", "artist", "title", "location", "interests", "occupation", "twitter", "discord", "version", "author", "raw", "bbcode"]
+	const bannedProperties = [
+		"name", "artist", "title", "location", "interests", "occupation", "twitter",
+		"discord", "version", "author", "raw", "bbcode", "title", "message"
+	]
 
 	if (typeof x === "boolean") {
 		return x
@@ -619,7 +622,7 @@ export class API {
 	/** Use this to hide all sets that are marked as explicit */
 	hide_explicit_content?: true,
 	/** Specify the musical genre of the music of the beatmapsets you're searching for */
-	genre?: Exclude<Exclude<Genres, 0>, 8>,
+	genre?: Exclude<Genres, 0>,
 	/** Specify the spoken language of the music of the beatmapsets you're searching for */
 	language?: Exclude<Languages, 0>,
 	/** Should all sets have a video, a storyboard, maybe both at once? */

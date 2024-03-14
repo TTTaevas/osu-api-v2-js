@@ -1,3 +1,5 @@
+import { Rulesets } from "./misc.js"
+
 export interface User {
 	avatar_url: string
 	country_code: string
@@ -47,7 +49,7 @@ export namespace User {
 			identifier: string
 			is_probationary: boolean
 			name: string
-			playmodes: string[] | null
+			playmodes: (keyof typeof Rulesets)[] | null
 			short_name: string
 		}[]
 	}
@@ -79,7 +81,7 @@ export namespace User {
 		max_blocks: number
 		max_friends: number
 		occupation: string | null
-		playmode: string
+		playmode: keyof typeof Rulesets
 		playstyle: string[]
 		post_count: number
 		profile_order: ("me" | "recent_activity" | "beatmaps" | "historical" | "kudosu" | "top_ranks" | "medals")[]
@@ -111,17 +113,6 @@ export namespace User {
 		favourite_beatmapset_count: number
 		follower_count: number
 		graveyard_beatmapset_count: number
-		groups: {
-			colour: string | null
-			has_listing: boolean
-			has_playmodes: boolean
-			id: number
-			identifier: string
-			is_probationary: boolean
-			name: string
-			playmodes: string[] | null
-			short_name: string
-		}[]
 		guest_beatmapset_count: number
 		loved_beatmapset_count: number
 		mapping_follower_count: number
@@ -157,7 +148,7 @@ export namespace User {
 			achievement_id: number
 		}[]
 		rank_history: {
-			mode: string
+			mode: keyof typeof Rulesets
 			data: number[]
 		} | null
 	}

@@ -1,3 +1,5 @@
+import { Rulesets } from "./misc.js"
+
 export interface Event {
 	created_at: Date
 	id: number
@@ -36,7 +38,7 @@ export namespace Event {
 			slug: string
 			description: string
 			/** If the achievement is for a specific mode only (such as pass a 2* beatmap in taiko) */
-			mode: string | null
+			mode: keyof typeof Rulesets | null
 			/** @remarks May contain HTML (like have the text between <i></i>) */
 			instructions: string | null
 		}
@@ -85,14 +87,14 @@ export namespace Event {
 		scoreRank: string
 		/** The position achieved, like 14 */
 		rank: number
-		mode: string
+		mode: keyof typeof Rulesets
 		user: User
 		beatmap: Beatmap
 	}
 	
 	export interface RankLost extends Event {
 		type: "rankLost"
-		mode: string
+		mode: keyof typeof Rulesets
 		user: User
 		beatmap: Beatmap
 	}

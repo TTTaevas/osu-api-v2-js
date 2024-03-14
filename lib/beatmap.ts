@@ -1,4 +1,4 @@
-import { Rulesets } from "./misc.js"
+import { Genres, Languages, Rulesets } from "./misc.js"
 import { User } from "./user.js"
 
 export enum RankStatus {
@@ -15,7 +15,7 @@ export interface Beatmap {
 	beatmapset_id: number
 	difficulty_rating: number
 	id: number
-	mode: string
+	mode: keyof typeof Rulesets
 	status: string
 	total_length: number
 	user_id: number
@@ -49,7 +49,7 @@ export namespace Beatmap {
 		hit_length: number
 		is_scoreable: boolean
 		last_updated: Date
-		mode_int: number
+		mode_int: Rulesets
 		passcount: number
 		playcount: number
 		ranked: RankStatus
@@ -246,12 +246,12 @@ export namespace Beatmapset {
 				description: string
 			}
 			genre: {
-				id: number
-				name: string
+				id: Genres
+				name: keyof typeof Genres
 			}
 			language: {
-				id: number
-				name: string
+				id: Languages
+				name: keyof typeof Languages
 			}
 			pack_tags: string[]
 			ratings: number[]
