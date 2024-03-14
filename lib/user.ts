@@ -22,6 +22,20 @@ export namespace User {
 		}
 	}
 
+	export interface WithGroups extends User {
+		groups: {
+			colour: string | null
+			has_listing: boolean
+			has_playmodes: boolean
+			id: number
+			identifier: string
+			is_probationary: boolean
+			name: string
+			playmodes: string[] | null
+			short_name: string
+		}[]
+	}
+
 	/** @obtainableFrom {@link API.getMatch} */
 	export interface WithCountry extends User {
 		country: {
@@ -38,22 +52,8 @@ export namespace User {
 		}
 	}
 
-	interface WithCountryCoverGroups extends WithCountryCover {
-		groups: {
-			colour: string | null
-			has_listing: boolean
-			has_playmodes: boolean
-			id: number
-			identifier: string
-			is_probationary: boolean
-			name: string
-			playmodes: string[] | null
-			short_name: string
-		}[]
-	}
-
 	/** @obtainableFrom {@link API.getUsers} */
-	export interface WithCountryCoverGroupsStatisticsrulesets extends WithCountryCoverGroups {
+	export interface WithCountryCoverGroupsStatisticsrulesets extends WithCountryCover, WithGroups {
 		statistics_rulesets: {
 			osu?: Statistics
 			taiko?: Statistics
@@ -63,13 +63,13 @@ export namespace User {
 	}
 
 	/** @obtainableFrom {@link API.getFriends} */
-	export interface WithCountryCoverGroupsStatisticsSupport extends WithCountryCoverGroups {
+	export interface WithCountryCoverGroupsStatisticsSupport extends WithCountryCover, WithGroups {
 		statistics: Statistics
 		support_level: number
 	}
 
 	/** @obtainableFrom {@link API.getUser} */
-	export interface Extended extends User.WithCountryCoverGroupsStatisticsSupport, User.WithKudosu {
+	export interface Extended extends WithCountryCoverGroupsStatisticsSupport, WithKudosu {
 		cover_url: string
 		discord: string | null
 		has_supported: boolean
@@ -111,17 +111,6 @@ export namespace User {
 		favourite_beatmapset_count: number
 		follower_count: number
 		graveyard_beatmapset_count: number
-		groups: {
-			colour: string | null
-			has_listing: boolean
-			has_playmodes: boolean
-			id: number
-			identifier: string
-			is_probationary: boolean
-			name: string
-			playmodes: string[] | null
-			short_name: string
-		}[]
 		guest_beatmapset_count: number
 		loved_beatmapset_count: number
 		mapping_follower_count: number
