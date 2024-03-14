@@ -188,11 +188,37 @@ export interface Beatmapset {
 }
 
 export namespace Beatmapset {
+	/** Whether properties are there or not and null or not depend of the `type` */
+	export interface Event {
+		id: number
+		/** Port of https://github.com/ppy/osu-web/blob/master/app/Models/BeatmapsetEvent.php */
+		type: "nominate" | "love" | "remove_from_loved" | "qualify" | "disqualify" | "approve" | "rank" |
+			"kudosu_allow" | "kudosu_denied" | "kudosu_gain" | "kudosu_lost" | "kudosu_recalculate" |
+			"issue_resolve" | "issue_reopen" | "discussion_lock" | "disccusion_unlock" | "discussion_delete" | "discussion_restore" |
+			"discussion_post_delete" | "discussion_post_restore" | "nomination_reset" | "nomination_reset_received" |
+			"genre_edit" | "language_edit" | "nsfw_toggle" | "offset_edit" | "tags_edit" | "beatmap_owner_change"
+		comment: {
+			beatmap_discussion_id: number | null
+			beatmap_discussion_post_id: number | null
+			reason?: string
+			old?: keyof typeof Genres | keyof typeof Languages
+			new?: keyof typeof Genres | keyof typeof Languages
+		} | null
+		created_at: Date
+		user_id: number | null
+		beatmapset: Beatmapset.WithUserHype
+		discussion?: Beatmapset.Discussion.WithStartingpost | null
+	}
+
 	export interface WithHype extends Beatmapset {
 		hype: {
 			current: number
 			required: number
 		} | null
+	}
+
+	export interface WithUserHype extends WithHype {
+		user: User
 	}
 
 	export interface Extended extends WithHype {
@@ -233,7 +259,7 @@ export namespace Beatmapset {
 		}
 
 		/** @obtainableFrom {@link API.getBeatmapset} */
-		export interface Plus extends Extended {
+		export interface Plus extends Extended, WithUserHype {
 			/** The different beatmaps/difficulties this beatmapset has */
 			beatmaps: Beatmap.Extended.WithFailtimes[]
 			/** The different beatmaps made for osu!, but converted to the other Rulesets */
@@ -260,7 +286,6 @@ export namespace Beatmapset {
 			ratings: number[]
 			recent_favourites: User[]
 			related_users: User[]
-			user: User
 			/** Only exists if authorized user */
 			has_favourited?: boolean
 		}

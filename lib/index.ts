@@ -776,6 +776,23 @@ export class API {
 		page: cursor_stuff?.page, receiver: from?.vote_receiver?.id, score, sort, user: from?.vote_giver?.id, cursor_string: cursor_stuff?.cursor_string})
 	}
 
+	/**
+	 * Get complex data about the events of a beatmapset and the users involved with them!
+	 * @param from Which beatmapset, or caused by which user? When?
+	 * @param types What kinds of events?
+	 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
+	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead
+	 * @returns Relevant events and users
+	 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware,
+	 * and also there's no documentation for this route in the API, so this is only the result of my interpretation of the website's code lol
+	 */
+	async getBeatmapsetEvents(from?: {beatmapset?: Beatmapset | {id: number}, user?: User | {id: number}, min_date?: Date, max_date?: Date},
+	types?: Beatmapset.Event["type"][], cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
+	Promise<{events: Beatmapset.Event[], users: User.WithGroups[]}> {
+		return await this.request("get", "beatmapsets/events", {beatmapset_id: from?.beatmapset?.id, user: from?.user?.id, min_date: from?.min_date?.toISOString(),
+		max_date: from?.max_date?.toISOString(), types, sort, page: cursor_stuff?.page, limit: cursor_stuff?.page, cursor_string: cursor_stuff?.cursor_string})
+	}
+
 
 	// CHANGELOG STUFF
 
