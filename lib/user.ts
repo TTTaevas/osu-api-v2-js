@@ -24,6 +24,20 @@ export namespace User {
 		}
 	}
 
+	export interface WithGroups extends User {
+		groups: {
+			colour: string | null
+			has_listing: boolean
+			has_playmodes: boolean
+			id: number
+			identifier: string
+			is_probationary: boolean
+			name: string
+			playmodes: (keyof typeof Rulesets)[] | null
+			short_name: string
+		}[]
+	}
+
 	/** @obtainableFrom {@link API.getMatch} */
 	export interface WithCountry extends User {
 		country: {
@@ -40,22 +54,8 @@ export namespace User {
 		}
 	}
 
-	interface WithCountryCoverGroups extends WithCountryCover {
-		groups: {
-			colour: string | null
-			has_listing: boolean
-			has_playmodes: boolean
-			id: number
-			identifier: string
-			is_probationary: boolean
-			name: string
-			playmodes: (keyof typeof Rulesets)[] | null
-			short_name: string
-		}[]
-	}
-
 	/** @obtainableFrom {@link API.getUsers} */
-	export interface WithCountryCoverGroupsStatisticsrulesets extends WithCountryCoverGroups {
+	export interface WithCountryCoverGroupsStatisticsrulesets extends WithCountryCover, WithGroups {
 		statistics_rulesets: {
 			osu?: Statistics
 			taiko?: Statistics
@@ -65,13 +65,13 @@ export namespace User {
 	}
 
 	/** @obtainableFrom {@link API.getFriends} */
-	export interface WithCountryCoverGroupsStatisticsSupport extends WithCountryCoverGroups {
+	export interface WithCountryCoverGroupsStatisticsSupport extends WithCountryCover, WithGroups {
 		statistics: Statistics
 		support_level: number
 	}
 
 	/** @obtainableFrom {@link API.getUser} */
-	export interface Extended extends User.WithCountryCoverGroupsStatisticsSupport, User.WithKudosu {
+	export interface Extended extends WithCountryCoverGroupsStatisticsSupport, WithKudosu {
 		cover_url: string
 		discord: string | null
 		has_supported: boolean

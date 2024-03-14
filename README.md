@@ -138,9 +138,9 @@ Using the WebSocket namespace this package provides, it's relatively easy to sen
 - [x] `POST /beatmaps/{beatmap}/attributes` -> getBeatmapDifficultyAttributes()
 
 ### Beatmapset Discussions
-- [ ] `GET /beatmapsets/discussions/posts`
-- [ ] `GET /beatmapsets/discussions/votes`
-- [ ] `GET /beatmapsets/discussions`
+- [x] `GET /beatmapsets/discussions/posts` -> getBeatmapsetDiscussionPosts()
+- [x] `GET /beatmapsets/discussions/votes` -> getBeatmapsetDiscussionVotes()
+- [x] `GET /beatmapsets/discussions` -> getBeatmapsetDiscussions()
 
 ### Beatmapsets
 - [x] `GET /beatmapsets/search` -> searchBeatmapset()
@@ -166,8 +166,8 @@ Using the WebSocket namespace this package provides, it's relatively easy to sen
 - [x] `GET /chat/channels/{channel}` -> getChatChannel() (without `users` because `channel` would already have this property)
 
 ### Comments
-- [ ] `GET /comments`
-- [ ] `GET /comments/{comment}`
+- [x] `GET /comments` -> getComments()
+- [x] `GET /comments/{comment}` -> getComment()
 
 ### Events
 - [x] `GET /events` -> getEvents()

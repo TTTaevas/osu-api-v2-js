@@ -173,7 +173,7 @@ export interface Beatmapset {
 	nsfw: boolean
 	offset: number
 	play_count: number
-	/** A string like that, where id is the `id` of the beatmapset: `//b.ppy.sh/preview/58951.mp3` */
+	/** A string like that where id is the `id` of the beatmapset: `//b.ppy.sh/preview/58951.mp3` */
 	preview_url: string
 	source: string
 	spotlight: boolean
@@ -188,7 +188,14 @@ export interface Beatmapset {
 }
 
 export namespace Beatmapset {
-	export interface Extended extends Beatmapset {
+	export interface WithHype extends Beatmapset {
+		hype: {
+			current: number
+			required: number
+		} | null
+	}
+
+	export interface Extended extends WithHype {
 		availability: {
 			/** So it's `false` if you can download it */
 			download_disabled: boolean
@@ -199,10 +206,6 @@ export namespace Beatmapset {
 		creator: string
 		deleted_at: string | null
 		discussion_locked: boolean
-		hype: {
-			current: number
-			required: number
-		} | null
 		is_scoreable: boolean
 		last_updated: Date
 		legacy_thread_url: string
@@ -260,6 +263,53 @@ export namespace Beatmapset {
 			user: User
 			/** Only exists if authorized user */
 			has_favourited?: boolean
+		}
+	}
+
+	export interface Discussion {
+		id: number
+		beatmapset_id: number
+		beatmap_id: number | null
+		user_id: number
+		deleted_by_id: number | null
+		message_type: "suggestion" | "problem" | "mapper_note" | "praise" | "hype" | "review"
+		parent_id: number | null
+		timestamp: number | null
+		resolved: boolean
+		can_be_resolved: boolean
+		can_grant_kudosu: boolean
+		created_at: Date
+		updated_at: Date
+		deleted_at: Date | null
+		last_post_at: Date
+		kudosu_denied: boolean
+	}
+
+	export namespace Discussion {
+		export interface WithStartingpost extends Discussion {
+			starting_post: Discussion.Post
+		}
+
+		export interface Post {
+			beatmapset_discussion_id: number
+			created_at: Date
+			deleted_at: Date | null
+			deleted_by_id: number | null
+			id: number
+			last_editor_id: number | null
+			message: string
+			system: boolean
+			updated_at: Date
+			user_id: number
+		}
+
+		export interface Vote {
+			beatmapset_discussion_id: number
+			created_at: Date
+			id: number
+			score: number
+			updated_at: Date
+			user_id: number
 		}
 	}
 }

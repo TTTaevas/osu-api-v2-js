@@ -121,7 +121,7 @@ const testUserStuff = async (user_gen: tsj.SchemaGenerator, score_gen: tsj.Schem
 /**
  * Check if getBeatmap() and similar work fine 
  */
-const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.SchemaGenerator): Promise<boolean> => {
+const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.SchemaGenerator, user_gen: tsj.SchemaGenerator): Promise<boolean> => {
 	let okay = true
 	const beatmap_id = 388463
 	const long_str = "Beatmap.Extended.WithFailtimesBeatmapsetextended"
@@ -168,6 +168,20 @@ const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.Sc
 	if (!isOk(b15, !b15 || (b15[0].score >= 132408001 && validate(b15, "Score.WithUser", score_gen)))) okay = false
 	let b16 = await <Promise<ReturnType<typeof api.getBeatmapSoloScores> | false>>attempt("getBeatmapSoloScores: ", api.getBeatmapSoloScores({id: 129891}))
 	if (!isOk(b16, !b16 || (b16[0].total_score >= 1073232 && validate(b16, "Score.Solo", score_gen)))) okay = false
+
+	let b15 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussions> | false>>attempt(
+		"getBeatmapsetDiscussions: ", api.getBeatmapsetDiscussions({beatmapset: {id: 2119925}}))
+	if (!isOk(b15, !b15 || (validate(b15.beatmaps, "Beatmap.Extended", beat_gen) && validate(b15.beatmapsets, "Beatmapset.Extended", beat_gen) &&
+	validate(b15.users, "User.WithGroups", user_gen) && validate(b15.discussions, "Beatmapset.Discussion.WithStartingpost", beat_gen) &&
+	validate(b15.included_discussions, "Beatmapset.Discussion.WithStartingpost", beat_gen)))) okay = false
+	let b16 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussionPosts> | false>>attempt(
+		"getBeatmapsetDiscussions: ", api.getBeatmapsetDiscussionPosts({discussion: {id: 4143461}}))
+	if (!isOk(b16, !b16 || (validate(b16.beatmapsets, "Beatmapset.WithHype", beat_gen) && validate(b16.users, "User", user_gen) &&
+	validate(b16.posts, "Beatmapset.Discussion.Post", beat_gen)))) okay = false
+	let b17 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussionVotes> | false>>attempt(
+		"getBeatmapsetDiscussionVotes: ", api.getBeatmapsetDiscussionVotes({vote_receiver: {id: 7276846}}))
+	if (!isOk(b17, !b17 || (validate(b17.votes, "Beatmapset.Discussion.Vote", beat_gen) && validate(b17.discussions, "Beatmapset.Discussion", beat_gen) &&
+	validate(b17.users, "User.WithGroups", user_gen)))) okay = false
 
 	return okay
 }
@@ -261,7 +275,7 @@ const testHomeStuff = async (home_gen: tsj.SchemaGenerator, news_gen: tsj.Schema
 	return okay
 }
 
-const testMiscStuff = async (forum_gen: tsj.SchemaGenerator, event_gen: tsj.SchemaGenerator): Promise<boolean> => {
+const testMiscStuff = async (forum_gen: tsj.SchemaGenerator, event_gen: tsj.SchemaGenerator, comment_gen: tsj.SchemaGenerator): Promise<boolean> => {
 	let okay = true
 
 	let g1 = await <Promise<ReturnType<typeof api.getForumTopicAndPosts> | false>>attempt("\ngetForumTopicAndPosts: ", api.getForumTopicAndPosts({id: 1848236}, 2))
@@ -270,6 +284,16 @@ const testMiscStuff = async (forum_gen: tsj.SchemaGenerator, event_gen: tsj.Sche
 	if (!isOk(g2, !g2 || (g2.events.length === 50 && validate(g2.events, "Event.Any", event_gen)))) okay = false
 	let g3 = await <Promise<ReturnType<typeof api.getSeasonalBackgrounds> | false>>attempt("getSeasonalBackgrounds: ", api.getSeasonalBackgrounds())
 	if (!isOk(g3, !g3 || (g3.ends_at > new Date("2024-01-01") && g3.backgrounds.length > 0))) okay = false
+	let g4 = await <Promise<ReturnType<typeof api.getComments> | false>>attempt("getComments: ", api.getComments())
+	if (!isOk(g4, !g4 || validate(g4, "CommentBundle", comment_gen))) okay = false
+	let g5 = await <Promise<ReturnType<typeof api.getComments> | false>>attempt("getComments (beatmapset): ", api.getComments({type: "beatmapset", id: 1971037}))
+	if (!isOk(g5, !g5 || validate(g5, "CommentBundle", comment_gen))) okay = false
+	let g6 = await <Promise<ReturnType<typeof api.getComments> | false>>attempt("getComments (build): ", api.getComments({type: "build", id: 7463}))
+	if (!isOk(g6, !g6 || validate(g6, "CommentBundle", comment_gen))) okay = false
+	let g7 = await <Promise<ReturnType<typeof api.getComments> | false>>attempt("getComments (news_post): ", api.getComments({type: "news_post", id: 1451}))
+	if (!isOk(g7, !g7 || validate(g7, "CommentBundle", comment_gen))) okay = false
+	let g8 = await <Promise<ReturnType<typeof api.getComment> | false>>attempt("getComment: ", api.getComment({id: 2418884}))
+	if (!isOk(g8, !g8 || (g8.users.find((u) => u.id === 8) && validate(g8, "CommentBundle", comment_gen)))) okay = false
 
 	return okay
 }
@@ -283,7 +307,7 @@ const test = async (id: string, secret: string): Promise<void> => {
 	const event_gen = tsj.createGenerator({path: "lib/event.ts", additionalProperties: true})
 
 	const a = await testUserStuff(user_gen, score_gen, beat_gen, event_gen)
-	const b = await testBeatmapStuff(beat_gen, score_gen)
+	const b = await testBeatmapStuff(beat_gen, score_gen, user_gen)
 	const c = await testChangelogStuff(tsj.createGenerator({path: "lib/changelog.ts", additionalProperties: true}))
 	const d = await testMultiplayerStuff(tsj.createGenerator({path: "lib/multiplayer.ts", additionalProperties: true}))
 	const e = await testRankingStuff(tsj.createGenerator({path: "lib/ranking.ts", additionalProperties: true}))
@@ -291,7 +315,11 @@ const test = async (id: string, secret: string): Promise<void> => {
 		tsj.createGenerator({path: "lib/home.ts", additionalProperties: true}),
 		tsj.createGenerator({path: "lib/news.ts", additionalProperties: true})
 	)
-	const g = await testMiscStuff(tsj.createGenerator({path: "lib/forum.ts", additionalProperties: true}), event_gen)
+	const g = await testMiscStuff(
+		tsj.createGenerator({path: "lib/forum.ts", additionalProperties: true}),
+		event_gen,
+		tsj.createGenerator({path: "lib/comment.ts", additionalProperties: true})
+	)
 
 	const arr = [a,b,c,d,e,f,g]
 
