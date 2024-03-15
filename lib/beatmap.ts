@@ -198,11 +198,20 @@ export namespace Beatmapset {
 			"discussion_post_delete" | "discussion_post_restore" | "nomination_reset" | "nomination_reset_received" |
 			"genre_edit" | "language_edit" | "nsfw_toggle" | "offset_edit" | "tags_edit" | "beatmap_owner_change"
 		comment: {
-			beatmap_discussion_id: number | null
-			beatmap_discussion_post_id: number | null
+			beatmap_discussion_id?: number | null
+			beatmap_discussion_post_id?: number | null
 			reason?: string
 			old?: keyof typeof Genres | keyof typeof Languages
 			new?: keyof typeof Genres | keyof typeof Languages
+			modes?: (keyof typeof Rulesets)[]
+			new_vote?: {
+				user_id: number
+				score: 1 | -1
+			}
+			votes?: {
+				user_id: number
+				score: 1 | -1
+			}[]
 		} | null
 		created_at: Date
 		user_id: number | null
