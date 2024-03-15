@@ -1,4 +1,4 @@
-import { Rulesets } from "./misc.js"
+import { Genres, Languages, Rulesets } from "./misc.js"
 import { User } from "./user.js"
 
 export enum RankStatus {
@@ -15,7 +15,7 @@ export interface Beatmap {
 	beatmapset_id: number
 	difficulty_rating: number
 	id: number
-	mode: string
+	mode: keyof typeof Rulesets
 	status: string
 	total_length: number
 	user_id: number
@@ -49,7 +49,7 @@ export namespace Beatmap {
 		hit_length: number
 		is_scoreable: boolean
 		last_updated: Date
-		mode_int: number
+		mode_int: Rulesets
 		passcount: number
 		playcount: number
 		ranked: RankStatus
@@ -64,10 +64,12 @@ export namespace Beatmap {
 			}
 		}
 
-		/** @obtainableFrom {@link API.getBeatmaps} */
-		export interface WithFailtimesMaxcombo extends WithFailtimes {
+		export interface WithMaxcombo extends Extended {
 			max_combo: number
 		}
+
+		/** @obtainableFrom {@link API.getBeatmaps} */
+		export interface WithFailtimesMaxcombo extends WithFailtimes, WithMaxcombo {}
 
 		/** @obtainableFrom {@link API.getBeatmap} */
 		export interface WithFailtimesBeatmapsetextended extends WithFailtimesMaxcombo {
@@ -186,11 +188,46 @@ export interface Beatmapset {
 }
 
 export namespace Beatmapset {
+	/** Whether properties are there or not and null or not depend of the `type` */
+	export interface Event {
+		id: number
+		/** Port of https://github.com/ppy/osu-web/blob/master/app/Models/BeatmapsetEvent.php */
+		type: "nominate" | "love" | "remove_from_loved" | "qualify" | "disqualify" | "approve" | "rank" |
+			"kudosu_allow" | "kudosu_denied" | "kudosu_gain" | "kudosu_lost" | "kudosu_recalculate" |
+			"issue_resolve" | "issue_reopen" | "discussion_lock" | "disccusion_unlock" | "discussion_delete" | "discussion_restore" |
+			"discussion_post_delete" | "discussion_post_restore" | "nomination_reset" | "nomination_reset_received" |
+			"genre_edit" | "language_edit" | "nsfw_toggle" | "offset_edit" | "tags_edit" | "beatmap_owner_change"
+		comment: {
+			beatmap_discussion_id?: number | null
+			beatmap_discussion_post_id?: number | null
+			reason?: string
+			old?: keyof typeof Genres | keyof typeof Languages
+			new?: keyof typeof Genres | keyof typeof Languages
+			modes?: (keyof typeof Rulesets)[]
+			new_vote?: {
+				user_id: number
+				score: 1 | -1
+			}
+			votes?: {
+				user_id: number
+				score: 1 | -1
+			}[]
+		} | null
+		created_at: Date
+		user_id: number | null
+		beatmapset: Beatmapset.WithUserHype
+		discussion?: Beatmapset.Discussion.WithStartingpost | null
+	}
+
 	export interface WithHype extends Beatmapset {
 		hype: {
 			current: number
 			required: number
 		} | null
+	}
+
+	export interface WithUserHype extends WithHype {
+		user: User
 	}
 
 	export interface Extended extends WithHype {
@@ -225,8 +262,13 @@ export namespace Beatmapset {
 			beatmaps: Beatmap.Extended[]
 		}
 
+		export interface WithBeatmapExtendedPacktags extends Extended {
+			beatmaps: Beatmap.Extended.WithMaxcombo[]
+			pack_tags: string[]
+		}
+
 		/** @obtainableFrom {@link API.getBeatmapset} */
-		export interface Plus extends Extended {
+		export interface Plus extends Extended, WithUserHype {
 			/** The different beatmaps/difficulties this beatmapset has */
 			beatmaps: Beatmap.Extended.WithFailtimes[]
 			/** The different beatmaps made for osu!, but converted to the other Rulesets */
@@ -242,18 +284,17 @@ export namespace Beatmapset {
 				description: string
 			}
 			genre: {
-				id: number
-				name: string
+				id: Genres
+				name: keyof typeof Genres
 			}
 			language: {
-				id: number
-				name: string
+				id: Languages
+				name: keyof typeof Languages
 			}
 			pack_tags: string[]
 			ratings: number[]
 			recent_favourites: User[]
 			related_users: User[]
-			user: User
 			/** Only exists if authorized user */
 			has_favourited?: boolean
 		}

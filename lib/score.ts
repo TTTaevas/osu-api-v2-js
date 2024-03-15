@@ -89,7 +89,7 @@ export namespace Score {
 	 * @obtainableFrom {@link API.getBeatmapUserScores}
 	 */
 	export interface Legacy extends Score {
-		mode: string
+		mode: keyof typeof Rulesets
 		mode_int: Rulesets
 		mods: string[]
 		score: number

@@ -143,10 +143,10 @@ Using the WebSocket namespace this package provides, it's relatively easy to sen
 - [x] `GET /beatmapsets/discussions` -> getBeatmapsetDiscussions()
 
 ### Beatmapsets
-- [ ] `GET /beatmapsets/search`
-- [ ] `GET /beatmapsets/lookup`
+- [x] `GET /beatmapsets/search` -> searchBeatmapset()
+- [x] `GET /beatmapsets/lookup` -> lookupBeatmapset()
 - [x] `GET /beatmapsets/{beatmapset}` -> getBeatmapset()
-- [ ] `GET /beatmapsets/events`
+- [x] `GET /beatmapsets/events` -> getBeatmapsetEvents()
 
 ### Changelog
 - [x] `GET /changelog/{stream}/{build}` -> getChangelogBuild()

@@ -148,36 +148,42 @@ const testBeatmapStuff = async (beat_gen: tsj.SchemaGenerator, score_gen: tsj.Sc
 		"getBeatmapAttributesMania: ", api.getBeatmapDifficultyAttributesMania({id: 3980252}, ["DT"]))
 	if (!isOk(b7, !b7 || (b7.great_hit_window === 40 && validate(b7, "Beatmap.DifficultyAttributes.Mania", beat_gen)))) okay = false
 	
-	let b8 = await <Promise<ReturnType<typeof api.getBeatmapUserScore> | false>>attempt(
+	let b8 = await <Promise<ReturnType<typeof api.searchBeatmapsets> | false>>attempt("searchBeatmapsets: ", api.searchBeatmapsets({categories: "Any"}))
+	if (!isOk(b8, !b8 || (b8.total >= 10000 && validate(b8.beatmapsets, "Beatmapset.Extended.WithBeatmapExtendedPacktags", beat_gen)))) okay = false
+	let b9 = await <Promise<ReturnType<typeof api.lookupBeatmapset> | false>>attempt("lookupBeatmapset: ", api.lookupBeatmapset({id: beatmap_id}))
+	if (!isOk(b9, !b9 || (b9.id === 58951 && validate(b9, "Beatmapset.Extended.Plus", beat_gen)))) okay = false
+	let b10 = await <Promise<ReturnType<typeof api.getBeatmapUserScore> | false>>attempt(
 		"getBeatmapUserScore: ", api.getBeatmapUserScore({id: 176960}, {id: 7276846}, ["NM"]))
-	if (!isOk(b8, !b8 || (b8.score.accuracy < 0.99 && validate(b8, "BeatmapUserScore", score_gen)))) okay = false
-	let b9 = await <Promise<ReturnType<typeof api.getBeatmapUserScores> | false>>attempt(
+	if (!isOk(b10, !b10 || (b10.score.accuracy < 0.99 && validate(b10, "BeatmapUserScore", score_gen)))) okay = false
+	let b11 = await <Promise<ReturnType<typeof api.getBeatmapUserScores> | false>>attempt(
 		"getBeatmapUserScores: ", api.getBeatmapUserScores({id: 203993}, {id: 7276846}, osu.Rulesets.fruits))
-	if (!isOk(b9, !b9 || (b9.length === 1 && validate(b9, "Score", score_gen)))) okay = false
-	let b10 = await <Promise<ReturnType<typeof api.getBeatmapset> | false>>attempt("getBeatmapset: ", api.getBeatmapset({id: 1971037}))
-	if (!isOk(b10, !b10 || (b10.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(b10, "Beatmapset.Extended.Plus", beat_gen)))) okay = false
-	let b11 = await <Promise<ReturnType<typeof api.getBeatmapPack> | false>>attempt("getBeatmapPack: ", api.getBeatmapPack({tag: "P217"}))
-	if (!isOk(b11, !b11 || (b11.tag === "P217" && validate(b11, "Beatmap.Pack", beat_gen)))) okay = false
-	let b12 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks: ", api.getBeatmapPacks("tournament"))
-	if (!isOk(b12, !b12 || (b12.length >= 100 && validate(b12, "Beatmap.Pack", beat_gen)))) okay = false
-	let b13 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}, false))
-	if (!isOk(b13, !b13 || (b13[0].score >= 132408001 && validate(b13, "Score.WithUser", score_gen)))) okay = false
-	let b14 = await <Promise<ReturnType<typeof api.getBeatmapSoloScores> | false>>attempt("getBeatmapSoloScores: ", api.getBeatmapSoloScores({id: 129891}))
-	if (!isOk(b14, !b14 || (b14[0].total_score >= 1073232 && validate(b14, "Score.Solo", score_gen)))) okay = false
+	if (!isOk(b11, !b11 || (b11.length === 1 && validate(b11, "Score", score_gen)))) okay = false
+	let b12 = await <Promise<ReturnType<typeof api.getBeatmapset> | false>>attempt("getBeatmapset: ", api.getBeatmapset({id: 1971037}))
+	if (!isOk(b12, !b12 || (b12.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(b12, "Beatmapset.Extended.Plus", beat_gen)))) okay = false
+	let b13 = await <Promise<ReturnType<typeof api.getBeatmapPack> | false>>attempt("getBeatmapPack: ", api.getBeatmapPack({tag: "P217"}))
+	if (!isOk(b13, !b13 || (b13.tag === "P217" && validate(b13, "Beatmap.Pack", beat_gen)))) okay = false
+	let b14 = await <Promise<ReturnType<typeof api.getBeatmapPacks> | false>>attempt("getBeatmapPacks: ", api.getBeatmapPacks("tournament"))
+	if (!isOk(b14, !b14 || (b14.length >= 100 && validate(b14, "Beatmap.Pack", beat_gen)))) okay = false
+	let b15 = await <Promise<ReturnType<typeof api.getBeatmapScores> | false>>attempt("getBeatmapScores: ", api.getBeatmapScores({id: 129891}, false))
+	if (!isOk(b15, !b15 || (b15[0].score >= 132408001 && validate(b15, "Score.WithUser", score_gen)))) okay = false
+	let b16 = await <Promise<ReturnType<typeof api.getBeatmapSoloScores> | false>>attempt("getBeatmapSoloScores: ", api.getBeatmapSoloScores({id: 129891}))
+	if (!isOk(b16, !b16 || (b16[0].total_score >= 1073232 && validate(b16, "Score.Solo", score_gen)))) okay = false
 
-	let b15 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussions> | false>>attempt(
+	let b17 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussions> | false>>attempt(
 		"getBeatmapsetDiscussions: ", api.getBeatmapsetDiscussions({beatmapset: {id: 2119925}}))
-	if (!isOk(b15, !b15 || (validate(b15.beatmaps, "Beatmap.Extended", beat_gen) && validate(b15.beatmapsets, "Beatmapset.Extended", beat_gen) &&
-	validate(b15.users, "User.WithGroups", user_gen) && validate(b15.discussions, "Beatmapset.Discussion.WithStartingpost", beat_gen) &&
-	validate(b15.included_discussions, "Beatmapset.Discussion.WithStartingpost", beat_gen)))) okay = false
-	let b16 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussionPosts> | false>>attempt(
+	if (!isOk(b17, !b17 || (validate(b17.beatmaps, "Beatmap.Extended", beat_gen) && validate(b17.beatmapsets, "Beatmapset.Extended", beat_gen) &&
+	validate(b17.users, "User.WithGroups", user_gen) && validate(b17.discussions, "Beatmapset.Discussion.WithStartingpost", beat_gen) &&
+	validate(b17.included_discussions, "Beatmapset.Discussion.WithStartingpost", beat_gen)))) okay = false
+	let b18 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussionPosts> | false>>attempt(
 		"getBeatmapsetDiscussions: ", api.getBeatmapsetDiscussionPosts({discussion: {id: 4143461}}))
-	if (!isOk(b16, !b16 || (validate(b16.beatmapsets, "Beatmapset.WithHype", beat_gen) && validate(b16.users, "User", user_gen) &&
-	validate(b16.posts, "Beatmapset.Discussion.Post", beat_gen)))) okay = false
-	let b17 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussionVotes> | false>>attempt(
+	if (!isOk(b18, !b18 || (validate(b18.beatmapsets, "Beatmapset.WithHype", beat_gen) && validate(b18.users, "User", user_gen) &&
+	validate(b18.posts, "Beatmapset.Discussion.Post", beat_gen)))) okay = false
+	let b19 = await <Promise<ReturnType<typeof api.getBeatmapsetDiscussionVotes> | false>>attempt(
 		"getBeatmapsetDiscussionVotes: ", api.getBeatmapsetDiscussionVotes({vote_receiver: {id: 7276846}}))
-	if (!isOk(b17, !b17 || (validate(b17.votes, "Beatmapset.Discussion.Vote", beat_gen) && validate(b17.discussions, "Beatmapset.Discussion", beat_gen) &&
-	validate(b17.users, "User.WithGroups", user_gen)))) okay = false
+	if (!isOk(b19, !b19 || (validate(b19.votes, "Beatmapset.Discussion.Vote", beat_gen) && validate(b19.discussions, "Beatmapset.Discussion", beat_gen) &&
+	validate(b19.users, "User.WithGroups", user_gen)))) okay = false
+	let b20 = await <Promise<ReturnType<typeof api.getBeatmapsetEvents> | false>>attempt("getBeatmapsetEvents: ", api.getBeatmapsetEvents())
+	if (!isOk(b20, !b20 || (validate(b20.events, "Beatmapset.Event", beat_gen) && validate(b20.users, "User.WithGroups", user_gen)))) okay = false
 
 	return okay
 }
