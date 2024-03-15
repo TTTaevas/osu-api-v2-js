@@ -6,24 +6,27 @@ export interface Event {
 }
 
 export namespace Event {
-	interface User {
-		username: string
-		/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`) */
-		url: string
-	}
-	
-	interface Beatmap {
-		/** {artist} - {title} [{difficulty_name}] */
-		title: string
-		/** What goes after the website's URL, like it could be the `/b/2980857?m=0` of `https://osu.ppy.sh/b/2980857?m=0` (/{beatmap_id}?m={ruleset_id}) */
-		url: string
-	}
-	
-	interface Beatmapset {
-		/** {artist} - {title} */
-		title: string
-		/** What goes after the website's URL, like it could be the `/s/689155` of `https://osu.ppy.sh/s/689155` (/{beatmapset_id}) */
-		url: string
+	/** Those are used as properties by Events, they're not events themselves */
+	export namespace SharedProperties {
+		export interface User {
+			username: string
+			/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`) */
+			url: string
+		}
+		
+		export interface Beatmap {
+			/** {artist} - {title} [{difficulty_name}] */
+			title: string
+			/** What goes after the website's URL, like it could be the `/b/2980857?m=0` of `https://osu.ppy.sh/b/2980857?m=0` (/{beatmap_id}?m={ruleset_id}) */
+			url: string
+		}
+		
+		export interface Beatmapset {
+			/** {artist} - {title} */
+			title: string
+			/** What goes after the website's URL, like it could be the `/s/689155` of `https://osu.ppy.sh/s/689155` (/{beatmapset_id}) */
+			url: string
+		}
 	}
 	
 	
@@ -42,43 +45,43 @@ export namespace Event {
 			/** @remarks May contain HTML (like have the text between <i></i>) */
 			instructions: string | null
 		}
-		user: User
+		user: SharedProperties.User
 	}
 	
 	export interface BeatmapPlaycount extends Event {
 		type: "beatmapPlaycount"
 		count: number
-		beatmap: Beatmap
+		beatmap: SharedProperties.Beatmap
 	}
 	
 	export interface BeatmapsetApprove extends Event {
 		type: "beatmapsetApprove"
 		approval: "ranked" | "approved" | "qualified" | "loved"
-		user: User
-		beatmapset: Beatmapset
+		user: SharedProperties.User
+		beatmapset: SharedProperties.Beatmapset
 	}
 	
 	export interface BeatmapsetDelete extends Event {
 		type: "beatmapsetDelete"
-		beatmapset: Beatmapset
+		beatmapset: SharedProperties.Beatmapset
 	}
 	
 	export interface BeatmapsetRevive extends Event {
 		type: "beatmapsetRevive"
-		user: User
-		beatmapset: Beatmapset
+		user: SharedProperties.User
+		beatmapset: SharedProperties.Beatmapset
 	}
 	
 	export interface BeatmapsetUpdate extends Event {
 		type: "beatmapsetUpdate"
-		user: User
-		beatmapset: Beatmapset
+		user: SharedProperties.User
+		beatmapset: SharedProperties.Beatmapset
 	}
 	
 	export interface BeatmapsetUpload extends Event {
 		type: "beatmapsetUpload"
-		user: User
-		beatmapset: Beatmapset
+		user: SharedProperties.User
+		beatmapset: SharedProperties.Beatmapset
 	}
 	
 	export interface Rank extends Event {
@@ -88,30 +91,30 @@ export namespace Event {
 		/** The position achieved, like 14 */
 		rank: number
 		mode: keyof typeof Rulesets
-		user: User
-		beatmap: Beatmap
+		user: SharedProperties.User
+		beatmap: SharedProperties.Beatmap
 	}
 	
 	export interface RankLost extends Event {
 		type: "rankLost"
 		mode: keyof typeof Rulesets
-		user: User
-		beatmap: Beatmap
+		user: SharedProperties.User
+		beatmap: SharedProperties.Beatmap
 	}
 	
 	export interface UserSupportAgain extends Event {
 		type: "userSupportAgain"
-		user: User
+		user: SharedProperties.User
 	}
 	
 	export interface UserSupportFirst extends Event {
 		type: "userSupportFirst"
-		user: User
+		user: SharedProperties.User
 	}
 	
 	export interface UserSupportGift extends Event {
 		type: "userSupportGift"
-		user: User
+		user: SharedProperties.User
 	}
 	
 	export interface UsernameChange extends Event {
