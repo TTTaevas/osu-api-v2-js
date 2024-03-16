@@ -1,7 +1,5 @@
 import fetch, { FetchError } from "node-fetch"
-import WebSocket from "ws"
-import querystring from "querystring"
-
+import { WebSocket } from "ws"
 import { User } from "./user.js"
 import { Beatmap, Beatmapset } from "./beatmap.js"
 
@@ -37,7 +35,7 @@ export { Rulesets, Mod, Scope, Genres, Languages } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocket } from "./websocket.js"
 export { Comment, CommentBundle } from "./comment.js"
-
+	
 /**
  * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
  * @param x Anything, but should be a string, an array that contains a string, or an object which has a string
@@ -280,8 +278,8 @@ export class API {
 	 * @param number_try Attempt number for doing this specific request
 	 * @returns A Promise with the API's response
 	 */
-	private async request(method: "get" | "post" | "put" | "delete", endpoint: string,
-	parameters?: {[k: string]: any}, number_try: number = 1): Promise<any> {
+	public async request(method: "get" | "post" | "put" | "delete", endpoint: string,
+	parameters: {[k: string]: any} = {}, number_try: number = 1): Promise<any> {
 		const max_tries = 5
 		let err = "none"
 		let to_retry = false
@@ -330,7 +328,13 @@ export class API {
 			}
 		}
 
-		const response = await fetch(`${this.server}/api/v2/${endpoint}?` + (method === "get" && parameters ? querystring.stringify(parameters) : ""), {
+		const params = Object.entries(parameters).map((entry) => {
+			if (!Array.isArray(entry[1])) return `${entry[0]}=${entry[1]}`
+			return entry[1].map((e) => `${entry[0]}=${e}`).join("&")
+		}).join("&")
+		const url = `${this.server}/api/v2/${endpoint}?` + (method === "get" ? params : "")
+		
+		const response = await fetch(url, {
 			method,
 			headers: {
 				"Accept": "application/json",
@@ -339,7 +343,7 @@ export class API {
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`
 			},
-			body: method !== "get" ? JSON.stringify(parameters) : null,
+			body: method !== "get" ? JSON.stringify(parameters) : undefined,
 			
 		})
 		.catch((error: FetchError) => {
@@ -406,102 +410,32 @@ export class API {
 
 	// USER STUFF
 
-	/**
-	 * Get extensive user data about the authorized user
-	 * @scope {@link Scope"identify"}
-	 * @param ruleset Defaults to the user's default/favourite Ruleset
-	 */
-	async getResourceOwner(ruleset?: Rulesets): Promise<User.Extended.WithStatisticsrulesets> {
-		return await this.request("get", "me", {mode: ruleset})
-	}
-	
-	/**
-	 * Get extensive user data about whoever you want!
-	 * @param user An object with either the id or the username of the user you're trying to get
-	 * @param ruleset Defaults to the user's default/favourite Ruleset
-	 */
-	async getUser(user: {id?: number, username?: string} | User, ruleset?: Rulesets): Promise<User.Extended> {
-		const key = user.id !== undefined ? "id" : "username"
-		const lookup = user.id !== undefined ? user.id : user.username
-		const mode = ruleset !== undefined ? `/${Rulesets[ruleset]}` : ""
+	/** {@inheritDoc User.getResourceOwner} @group User Functions */
+	readonly getResourceOwner = User.getResourceOwner
 
-		return await this.request("get", `users/${lookup}${mode}`, {key})
-	}
+	/** {@inheritDoc User.getOne} @group User Functions */
+	readonly getUser = User.getOne
 
-	/**
-	 * Get user data for up to 50 users at once!
-	 * @param users An array of users or of objects that have the id of the users you're trying to get
-	 */
-	async getUsers(users: Array<{id: number} | User>): Promise<User.WithCountryCoverGroupsStatisticsrulesets[]> {
-		const ids = users.map((user) => user.id)
-		const response = await this.request("get", "users", {ids})
-		return response.users
-	}
+	/** {@inheritDoc User.getMultiple} @group User Functions */
+	readonly getUsers = User.getMultiple
 
-	/**
-	 * Get "notable" scores from a user
-	 * @param user The user who set the scores
-	 * @param type Do you want scores: in the user's top 100, that are top 1 on a beatmap, that have been recently set?
-	 * @param limit The maximum amount of scores to be returned
-	 * @param ruleset The Ruleset the scores were made in, defaults to the user's default/favourite Ruleset
-	 * @param include_fails (defaults to false) Do you want scores where the user didn't survive or quit the map?
-	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
-	 */
-	async getUserScores(user: {id: number} | User, type: "best" | "firsts" | "recent", limit?: number,
-	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<Score.WithUserBeatmapBeatmapset[]> {
-		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-		return await this.request("get", `users/${user.id}/scores/${type}`, {mode, limit, offset, include_fails: String(Number(include_fails))})
-	}
+	/** {@inheritDoc User.getScores} @group User Functions */
+	readonly getUserScores = User.getScores
 
-	/**
-	 * Get beatmaps favourited or made by a user!
-	 * @param user The user in question
-	 * @param type The relation between the user and the beatmaps
-	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
-	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
-	 */
-	async getUserBeatmaps(user: {id: number} | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
-	limit: number = 5, offset?: number): Promise<Beatmapset.Extended.WithBeatmapExtended[]> {
-		return await this.request("get", `users/${user.id}/beatmapsets/${type}`, {limit, offset})
-	}
+	/** {@inheritDoc User.getBeatmaps} @group User Functions */
+	readonly getUserBeatmaps = User.getBeatmaps
 
-	/**
-	 * Get the beatmaps most played by a user!
-	 * @param user The user who played the beatmaps
-	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
-	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
-	 */
-	async getUserMostPlayed(user: {id: number} | User, limit: number = 5, offset?: number): Promise<Beatmap.Playcount[]> {
-		return await this.request("get", `users/${user.id}/beatmapsets/most_played`, {limit, offset})
-	}
+	/** {@inheritDoc User.getMostPlayed} @group User Functions */
+	readonly getUserMostPlayed = User.getMostPlayed
 
-	/**
-	 * Get an array of Events of different `type`s that relate to a user's activity during the last 31 days! (or 100 activities, whatever comes first)
-	 * @param user The user in question
-	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
-	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
-	 */
-	async getUserRecentActivity(user: {id: number} | User, limit: number = 5, offset?: number): Promise<Array<Event.AnyRecentActivity>> {
-		return await this.request("get", `users/${user.id}/recent_activity`, {limit, offset})
-	}
+	/** {@inheritDoc User.getRecentActivity} @group User Functions */
+	readonly getUserRecentActivity = User.getRecentActivity
 
-	/**
-	 * Get data about the activity of a user kudosu-wise!
-	 * @param user The user in question
-	 * @param limit (defaults to 5) The maximum amount of activities in the returned array
-	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
-	 */
-	async getUserKudosu(user: {id: number} | User, limit?: number, offset?: number): Promise<User.KudosuHistory[]> {
-		return await this.request("get", `users/${user.id}/kudosu`, {limit, offset})
-	}
+	/** {@inheritDoc User.getKudosu} @group User Functions */
+	readonly getUserKudosu = User.getKudosu
 
-	/**
-	 * Get user data of each friend of the authorized user
-	 * @scope {@link Scope"friends.read"}
-	 */
-	async getFriends(): Promise<User.WithCountryCoverGroupsStatisticsSupport[]> {
-		return await this.request("get", "friends")
-	}
+	/** {@inheritDoc User.getFriends} @group User Functions */
+	readonly getFriends = User.getFriends
 
 	
 	// BEATMAP STUFF
@@ -795,52 +729,18 @@ export class API {
 
 
 	// CHANGELOG STUFF
+	
+	/** {@inheritDoc Changelog.Build.lookup} @group Changelog Functions */
+	readonly lookupChangelogBuild = Changelog.Build.lookup
 
-	/**
-	 * Get details about the version/update/build of something related to osu!
-	 * @param changelog A build version like `2023.1026.0`, a stream name like `lazer` or the id of a build
-	 * @param is_id Whether or not `changelog` is the id of a build, defaults to false
-	 * @param message_formats Elements of `changelog_entries` will have a `message` property if `markdown`, `message_html` property if `html`, defaults to both
-	 */
-	async lookupChangelogBuild(changelog: string, is_id: boolean = false, message_formats: ("html" | "markdown")[] = ["html", "markdown"]):
-	Promise<Changelog.Build.WithChangelogentriesVersions> {
-		return await this.request("get", `changelog/${changelog}`, {key: is_id ? "id" : undefined, message_formats})
-	}
+	/** {@inheritDoc Changelog.Build.getOne} @group Changelog Functions */
+	readonly getChangelogBuild = Changelog.Build.getOne
 
-	/**
-	 * Get details about the version/update/build of something related to osu!
-	 * @param stream The name of the thing related to osu!, like `lazer`, `web`, `cuttingedge`, `beta40`, `stable40`
-	 * @param build The name of the version! Usually something like `2023.1026.0` for lazer, or `20230326` for stable
-	 */
-	async getChangelogBuild(stream: string, build: string): Promise<Changelog.Build.WithChangelogentriesVersions> {
-		return await this.request("get", `changelog/${stream}/${build}`)
-	}
+	/** {@inheritDoc Changelog.Build.getMultiple} @group Changelog Functions */
+	readonly getChangelogBuilds = Changelog.Build.getMultiple
 
-	/**
-	 * Get up to 21 versions/updates/builds!
-	 * @param versions Get builds that were released before/after (and including) those versions (use the name of the versions, e.g. `2023.1109.0`)
-	 * @param max_id Filter out builds that have an id higher than this (this takes priority over `versions.to`)
-	 * @param stream Only get builds from a specific stream
-	 * @param message_formats Elements of `changelog_entries` will have a `message` property if `markdown`, `message_html` property if `html`, defaults to both
-	 */
-	async getChangelogBuilds(versions?: {from?: string, to?: string}, max_id?: number,
-	stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<Changelog.Build.WithUpdatestreamsChangelogentries[]> {
-		const [from, to] = [versions?.from, versions?.to]
-		const response = await this.request("get", "changelog", {from, to, max_id, stream, message_formats})
-		return response.builds
-	}
-
-	/**
-	 * An effective way to get all available streams, as well as their latest version!
-	 * @example
-	 * ```ts
-	 * const names_of_streams = (await api.getChangelogStreams()).map(s => s.name)
-	 * ```
-	 */
-	async getChangelogStreams(): Promise<Changelog.UpdateStream.WithLatestbuildUsercount[]> {
-		const response = await this.request("get", "changelog", {max_id: 0})
-		return response.streams
-	}
+	/** {@inheritDoc Changelog.UpdateStream.getAll} @group Changelog Functions */
+	readonly getChangelogStreams = Changelog.UpdateStream.getAll
 
 
 	// MULTIPLAYER STUFF
@@ -861,7 +761,7 @@ export class API {
 	 * @param limit The maximum amount of rooms to return, defaults to 10
 	 * @param sort Sort (where most recent is first) by creation date or end date, defaults to the creation date
 	 */
-	async getRooms(type: "playlists" | "realtime", mode: "active" | "all" | "ended" | "participated" | "owned",
+	async getRooms(type: "playlists" | "realtime", mode: "active" | "all" | "ended" | "participated" | "owned",
 	limit: number = 10, sort: "ended" | "created" = "created"): Promise<Multiplayer.Room[]> {
 		return await this.request("get", "rooms", {type_group: type, mode, limit, sort})
 	}

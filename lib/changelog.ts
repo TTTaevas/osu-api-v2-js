@@ -1,3 +1,5 @@
+import { API } from "./index.js"
+
 export namespace Changelog {
 	export interface Build {
 		created_at: Date
@@ -69,7 +71,41 @@ export namespace Changelog {
 				previous: WithUpdatestreams | null
 			}
 		}
-	}
+
+		/**
+		 * Get details about the version/update/build of something related to osu!
+		 * @param changelog A build version like `2023.1026.0`, a stream name like `lazer` or the id of a build
+		 * @param is_id Whether or not `changelog` is the id of a build, defaults to false
+		 * @param message_formats Elements of `changelog_entries` will have a `message` property if `markdown`, `message_html` property if `html`, defaults to both
+		 */
+		export async function lookup(this: API, changelog: string, is_id: boolean = false, message_formats: ("html" | "markdown")[] = ["html", "markdown"]):
+		Promise<Changelog.Build.WithChangelogentriesVersions> {
+			return await this.request("get", `changelog/${changelog}`, {key: is_id ? "id" : undefined, message_formats})
+		}
+
+		/**
+		 * Get details about the version/update/build of something related to osu!
+		 * @param stream The name of the thing related to osu!, like `lazer`, `web`, `cuttingedge`, `beta40`, `stable40`
+		 * @param build The name of the version! Usually something like `2023.1026.0` for lazer, or `20230326` for stable
+		 */
+		export async function getOne(this: API, stream: string, build: string): Promise<Changelog.Build.WithChangelogentriesVersions> {
+			return await this.request("get", `changelog/${stream}/${build}`)
+		}
+
+		/**
+		 * Get up to 21 versions/updates/builds!
+		 * @param versions Get builds that were released before/after (and including) those versions (use the name of the versions, e.g. `2023.1109.0`)
+		 * @param max_id Filter out builds that have an id higher than this (this takes priority over `versions.to`)
+		 * @param stream Only get builds from a specific stream
+		 * @param message_formats Elements of `changelog_entries` will have a `message` property if `markdown`, `message_html` property if `html`, defaults to both
+		 */
+		export async function getMultiple(this: API, versions?: {from?: string, to?: string}, max_id?: number,
+			stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<Changelog.Build.WithUpdatestreamsChangelogentries[]> {
+				const [from, to] = [versions?.from, versions?.to]
+				const response = await this.request("get", "changelog", {from, to, max_id, stream, message_formats})
+				return response.builds
+			}
+		}
 
 	/** @obtainableFrom {@link Changelog.Build.WithUpdatestreams} */
 	export interface UpdateStream {
@@ -88,6 +124,18 @@ export namespace Changelog {
 			 * @remarks Should be 0 if web
 			 */
 			user_count: number
+		}
+		
+		/**
+		 * An effective way to get all available streams, as well as their latest version!
+		 * @example
+		 * ```ts
+		 * const names_of_streams = (await api.getChangelogStreams()).map(s => s.name)
+		 * ```
+		 */
+		export async function getAll(this: API): Promise<Changelog.UpdateStream.WithLatestbuildUsercount[]> {
+			const response = await this.request("get", "changelog", {max_id: 0})
+			return response.streams
 		}
 	}
 }
