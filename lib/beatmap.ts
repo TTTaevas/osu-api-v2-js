@@ -201,16 +201,16 @@ export namespace Beatmapset {
 			beatmap_discussion_id?: number | null
 			beatmap_discussion_post_id?: number | null
 			reason?: string
-			old?: keyof typeof Genres | keyof typeof Languages
-			new?: keyof typeof Genres | keyof typeof Languages
+			old?: keyof typeof Genres | keyof typeof Languages | boolean
+			new?: keyof typeof Genres | keyof typeof Languages | boolean
 			modes?: (keyof typeof Rulesets)[]
 			new_vote?: {
 				user_id: number
-				score: 1 | -1
+				score: number
 			}
 			votes?: {
 				user_id: number
-				score: 1 | -1
+				score: number
 			}[]
 		} | null
 		created_at: Date
