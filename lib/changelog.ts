@@ -35,7 +35,7 @@ export namespace Changelog {
 				major: boolean
 				/** @remarks Can be January 1st 1970! */
 				created_at: Date
-				/** @remarks Doesn't exist if no github user is associated with who's credited with the change */
+				/** @remarks Doesn't exist if no github user is associated with the person who's credited with the change */
 				github_user?: {
 					display_name: string
 					github_url: string | null
@@ -47,12 +47,12 @@ export namespace Changelog {
 				}
 				/**
 				 * Entry message in Markdown format, embedded HTML is allowed
-				 * @remarks Exists only if Markdown was requested
+				 * @remarks Exists only if Markdown was requested, may still be null if there is no message
 				 */
 				message?: string | null
 				/**
 				 * Entry message in HTML format
-				 * @remarks Exists only if HTML was requested
+				 * @remarks Exists only if HTML was requested, may still be null if there is no message
 				 */
 				message_html?: string | null
 				
@@ -60,9 +60,7 @@ export namespace Changelog {
 		}
 
 		/** @obtainableFrom {@link API.getChangelogBuilds} */
-		export interface WithUpdatestreamsChangelogentries extends WithUpdatestreams, WithChangelogentries {
-
-		}
+		export interface WithUpdatestreamsChangelogentries extends WithUpdatestreams, WithChangelogentries {}
 
 		/** @obtainableFrom {@link API.getChangelogBuild} */
 		export interface WithChangelogentriesVersions extends WithChangelogentries {
@@ -74,13 +72,12 @@ export namespace Changelog {
 
 		/**
 		 * Get details about the version/update/build of something related to osu!
-		 * @param changelog A build version like `2023.1026.0`, a stream name like `lazer` or the id of a build
-		 * @param is_id Whether or not `changelog` is the id of a build, defaults to false
-		 * @param message_formats Elements of `changelog_entries` will have a `message` property if `markdown`, `message_html` property if `html`, defaults to both
+		 * @param changelog A stream name like `lazer`, a build version like `2023.1026.0`, or the id of a build
+		 * @param message_formats `changelog_entries` will have a `message` property if `markdown`, `message_html` property if `html` (defaults to **both**)
 		 */
-		export async function lookup(this: API, changelog: string, is_id: boolean = false, message_formats: ("html" | "markdown")[] = ["html", "markdown"]):
-		Promise<Changelog.Build.WithChangelogentriesVersions> {
-			return await this.request("get", `changelog/${changelog}`, {key: is_id ? "id" : undefined, message_formats})
+		export async function lookup(this: API, changelog: Changelog.UpdateStream["name"] | Changelog.Build["display_version"] | Changelog.Build["id"],
+		message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<Changelog.Build.WithChangelogentriesVersions> {
+			return await this.request("get", `changelog/${changelog}`, {key: typeof changelog === "number" ? "id" : undefined, message_formats})
 		}
 
 		/**
@@ -88,29 +85,38 @@ export namespace Changelog {
 		 * @param stream The name of the thing related to osu!, like `lazer`, `web`, `cuttingedge`, `beta40`, `stable40`
 		 * @param build The name of the version! Usually something like `2023.1026.0` for lazer, or `20230326` for stable
 		 */
-		export async function getOne(this: API, stream: string, build: string): Promise<Changelog.Build.WithChangelogentriesVersions> {
+		export async function getOne(this: API, stream: Changelog.UpdateStream["name"], build: Changelog.Build["display_version"]):
+		Promise<Changelog.Build.WithChangelogentriesVersions> {
 			return await this.request("get", `changelog/${stream}/${build}`)
 		}
 
 		/**
 		 * Get up to 21 versions/updates/builds!
-		 * @param versions Get builds that were released before/after (and including) those versions (use the name of the versions, e.g. `2023.1109.0`)
-		 * @param max_id Filter out builds that have an id higher than this (this takes priority over `versions.to`)
 		 * @param stream Only get builds from a specific stream
-		 * @param message_formats Elements of `changelog_entries` will have a `message` property if `markdown`, `message_html` property if `html`, defaults to both
+		 * @param range Get builds that were released before/after (and including) those builds
+		 * @param message_formats `changelog_entries` will have a `message` property if `markdown`, `message_html` property if `html` (defaults to **both**)
 		 */
-		export async function getMultiple(this: API, versions?: {from?: string, to?: string}, max_id?: number,
-			stream?: string, message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<Changelog.Build.WithUpdatestreamsChangelogentries[]> {
-				const [from, to] = [versions?.from, versions?.to]
-				const response = await this.request("get", "changelog", {from, to, max_id, stream, message_formats})
-				return response.builds
-			}
+		export async function getMultiple(this: API, stream?: Changelog.UpdateStream["name"], range?: {
+		/** The name of the build */
+		from?: Changelog.Build["display_version"],
+		/** The name or the id of the build */
+		to?: Changelog.Build["display_version"] | Changelog.Build["id"]},
+		message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<Changelog.Build.WithUpdatestreamsChangelogentries[]> {
+			const from = range?.from
+			const to = typeof range?.to === "string" ? range.to : undefined
+			const max_id = typeof range?.to === "number" ? range.to : undefined
+
+			const response = await this.request("get", "changelog", {from, to, max_id, stream, message_formats})
+			return response.builds
 		}
+	}
 
 	/** @obtainableFrom {@link Changelog.Build.WithUpdatestreams} */
 	export interface UpdateStream {
 		id: number
+		/** Stable would be `stable40`, Lazer would be `lazer` */
 		name: string
+		/** Stable would be `Stable`, Lazer would be `Lazer` */
 		display_name: string | null
 		is_featured: boolean
 	}

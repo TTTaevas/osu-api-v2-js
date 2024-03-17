@@ -21,6 +21,20 @@ export interface User {
 }
 
 export namespace User {
+	/** 
+	 * An interface to tell the API how the returned Array should be like
+	 * @group Parameter Object Interfaces
+	 */
+	export interface Config {
+		/** 
+		 * The maximum amount of elements returned in the array 
+		 * @remarks The server could send less than the limit because it deliberately limits itself; Putting this at 1000 doesn't mean you'll even get close to 200
+		 */
+		limit?: number
+		/** How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit) */
+		offset?: number
+	}
+
 	export interface WithKudosu extends User {
 		kudosu: {
 			available: number
@@ -230,7 +244,7 @@ export namespace User {
 	/**
 	 * Get extensive user data about the authorized user
 	 * @scope {@link Scope"identify"}
-	 * @param ruleset Defaults to the user's default Ruleset
+	 * @param ruleset The data should be relevant to which ruleset? (defaults to **user's default Ruleset**)
 	 */
 	export async function getResourceOwner(this: API, ruleset?: Rulesets): Promise<User.Extended.WithStatisticsrulesets> {
 		return await this.request("get", "me", {mode: ruleset})
@@ -239,7 +253,7 @@ export namespace User {
 	/**
 	 * Get extensive user data about whoever you want!
 	 * @param user A user id, a username or a `User` object!
-	 * @param ruleset Defaults to the user's default Ruleset
+	 * @param ruleset The data should be relevant to which ruleset? (defaults to **user's default Ruleset**)
 	 */
 	export async function getOne(this: API, user: User["id"] | User["username"] | User, ruleset?: Rulesets): Promise<User.Extended> {
 		const mode = ruleset !== undefined ? `/${Rulesets[ruleset]}` : ""
@@ -262,62 +276,58 @@ export namespace User {
 	 * Get "notable" scores from a user
 	 * @param user The user who set the scores
 	 * @param type Do you want scores: in the user's top 100, that are top 1 on a beatmap, that have been recently set?
-	 * @param limit The maximum amount of scores to be returned
-	 * @param ruleset The Ruleset the scores were made in, defaults to the user's default/favourite Ruleset
-	 * @param include_fails (defaults to false) Do you want scores where the user didn't survive or quit the map?
-	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
+	 * @param ruleset The Ruleset the scores were made in (defaults to **user's default Ruleset**)
+	 * @param include Do you also want lazer scores and failed scores? (defaults to **true for lazer** & **false for fails**)
+	 * @param config Array limit & offset
 	 */
-	export async function getScores(this: API, user: User["id"] | User, type: "best" | "firsts" | "recent", limit?: number,
-	ruleset?: Rulesets, include_fails: boolean = false, offset?: number): Promise<Score.WithUserBeatmapBeatmapset[]> {
+	export async function getScores(this: API, user: User["id"] | User, type: "best" | "firsts" | "recent", ruleset?: Rulesets,
+	include: {lazer?: boolean, fails?: boolean} = {lazer: true, fails: false}, config?: Config): Promise<Score.WithUserBeatmapBeatmapset[]> {
 		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
 		const id = typeof user === "number" ? user : user.id
-		return await this.request("get", `users/${id}/scores/${type}`, {mode, limit, offset, include_fails: String(Number(include_fails))})
+		return await this.request("get", `users/${id}/scores/${type}`,
+		{mode, limit: config?.limit, offset: config?.offset, legacy_only: Number(!include.lazer), include_fails: String(Number(include.fails))})
 	}
 
 	/**
 	 * Get beatmaps favourited or made by a user!
 	 * @param user The user in question
 	 * @param type The relation between the user and the beatmaps
-	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
-	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
+	 * @param config Array limit & offset
 	 */
 	export async function getBeatmaps(this: API, user: User["id"] | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
-	limit: number = 5, offset?: number): Promise<Beatmapset.Extended.WithBeatmapExtended[]> {
+	config?: Config): Promise<Beatmapset.Extended.WithBeatmapExtended[]> {
 		const id = typeof user === "number" ? user : user.id
-		return await this.request("get", `users/${id}/beatmapsets/${type}`, {limit, offset})
+		return await this.request("get", `users/${id}/beatmapsets/${type}`, {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**
 	 * Get the beatmaps most played by a user!
 	 * @param user The user who played the beatmaps
-	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
-	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
+	 * @param config Array limit & offset
 	 */
-	export async function getMostPlayed(this: API, user: User["id"] | User, limit: number = 5, offset?: number): Promise<Beatmap.Playcount[]> {
+	export async function getMostPlayed(this: API, user: User["id"] | User, config?: Config): Promise<Beatmap.Playcount[]> {
 		const id = typeof user === "number" ? user : user.id
-		return await this.request("get", `users/${id}/beatmapsets/most_played`, {limit, offset})
+		return await this.request("get", `users/${id}/beatmapsets/most_played`, {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**
 	 * Get an array of Events of different `type`s that relate to a user's activity during the last 31 days! (or 100 activities, whatever comes first)
 	 * @param user The user in question
-	 * @param limit (defaults to 5) The maximum amount of elements returned in the array
-	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
+	 * @param config Array limit & offset
 	 */
-	export async function getRecentActivity(this: API, user: User["id"] | User, limit: number = 5, offset?: number): Promise<Array<Event.AnyRecentActivity>> {
+	export async function getRecentActivity(this: API, user: User["id"] | User, config?: Config): Promise<Array<Event.AnyRecentActivity>> {
 		const id = typeof user === "number" ? user : user.id
-		return await this.request("get", `users/${id}/recent_activity`, {limit, offset})
+		return await this.request("get", `users/${id}/recent_activity`, {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**
 	 * Get data about the activity of a user kudosu-wise!
 	 * @param user The user in question
-	 * @param limit (defaults to 5) The maximum amount of activities in the returned array
-	 * @param offset How many elements that would be at the top of the returned array get skipped (while still filling the array up to the limit)
+	 * @param config Array limit & offset
 	 */
-	export async function getKudosu(this: API, user: User["id"] | User, limit?: number, offset?: number): Promise<User.KudosuHistory[]> {
+	export async function getKudosu(this: API, user: User["id"] | User, config?: Config): Promise<User.KudosuHistory[]> {
 		const id = typeof user === "number" ? user : user.id
-		return await this.request("get", `users/${id}/kudosu`, {limit, offset})
+		return await this.request("get", `users/${id}/kudosu`, {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**

@@ -293,7 +293,7 @@ export class API {
 					i--
 				}
 			}
-			
+
 			// If a parameter is an Array, add "[]" to its name, so the server understands the request properly
 			for (let i = 0; i < Object.entries(parameters).length; i++) {	
 				if (Array.isArray(Object.values(parameters)[i]) && !Object.keys(parameters)[i].includes("[]")) {
@@ -328,12 +328,11 @@ export class API {
 			}
 		}
 
-		const params = Object.entries(parameters).map((entry) => {
-			if (!Array.isArray(entry[1])) return `${entry[0]}=${entry[1]}`
-			return entry[1].map((e) => `${entry[0]}=${e}`).join("&")
-		}).join("&")
-		const url = `${this.server}/api/v2/${endpoint}?` + (method === "get" ? params : "")
-		
+		const url = `${this.server}/api/v2/${endpoint}` + (method === "get" ? "?" + (Object.entries(parameters).map((param) => {
+			if (!Array.isArray(param[1])) return `${param[0]}=${param[1]}`
+			return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
+		}).join("&")) : "")
+
 		const response = await fetch(url, {
 			method,
 			headers: {

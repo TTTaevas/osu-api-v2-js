@@ -96,22 +96,21 @@ const testUserStuff = async (): Promise<boolean> => {
 	const a2 = await attempt(api.getUsers, [user_id, 2])
 	if (!isOk(a2, !a2 || (a2.length === 2 && validate(a2, "User.WithCountryCoverGroupsStatisticsrulesets")))) okay = false
 
-	const a3 = await attempt(api.getUserScores, user_id, "best", 5)
+	const a3 = await attempt(api.getUserScores, user_id, "best", undefined, {fails: false, lazer: true}, {limit: 5})
 	if (!isOk(a3, !a3 || (a3.length === 5 && validate(a3, "Score.WithUserBeatmapBeatmapset")))) okay = false
-	const a4 = await attempt(api.getUserScores, 6503700, "firsts", 3)
+	const a4 = await attempt(api.getUserScores, 6503700, "firsts", osu.Rulesets.taiko, undefined, {limit: 3})
 	if (!isOk(a4, !a4 || (a4.length === 3 && validate(a4, "Score.WithUserBeatmapBeatmapset")))) okay = false
-	const a5 = await attempt(api.getUserScores, 9269034, "recent", 1, undefined, true)
+	const a5 = await attempt(api.getUserScores, 9269034, "recent", osu.Rulesets.osu, {fails: true, lazer: true}, {limit: 1})
 	// Due to the nature of the test, it might fail, you may adapt the user id
 	if (!isOk(a5, !a5 || (a5.length === 1 && validate(a5, "Score.WithUserBeatmapBeatmapset")))) okay = false
-
 	const a6 = await attempt(api.getUserBeatmaps, user_id, "guest")
 	if (!isOk(a6, !a6 || (a6.length === 1 && validate(a6, "Beatmapset.Extended.WithBeatmapExtended")))) okay = false
 	const a7 = await attempt(api.getUserMostPlayed, user_id)
 	if (!isOk(a7, !a7 || (a7[0].beatmapset.title === "furioso melodia" && validate(a7, "Beatmap.Playcount")))) okay = false
 
-	const a8 = await attempt(api.getUserRecentActivity, 7562902, 25)
+	const a8 = await attempt(api.getUserRecentActivity, 7562902, {limit: 25})
 	if (!isOk(a8, !a8 || (a8.length <= 25 && validate(a8, "Event.AnyRecentActivity")))) okay = false
-	const a9 = await attempt(api.getUserKudosu, user_id, 5)
+	const a9 = await attempt(api.getUserKudosu, user_id, {limit: 5})
 	if (!isOk(a9, !a9 || (a9.length === 5 && validate(a9, "User.KudosuHistory")))) okay = false
 
 	return okay
@@ -186,11 +185,11 @@ const testChangelogStuff = async (): Promise<boolean> => {
 
 	console.log("\n===> CHANGELOG FUNCTIONS")
 
-	const c1 = await attempt(api.lookupChangelogBuild, "7156", true)
+	const c1 = await attempt(api.lookupChangelogBuild, 7156)
 	if (!isOk(c1, !c1 || (c1.display_version == "2023.1008.1" && validate(c1, "Changelog.Build.WithChangelogentriesVersions")))) okay = false
 	const c2 = await attempt(api.getChangelogBuild, "lazer", "2023.1008.1")
 	if (!isOk(c2, !c2 || (c2.id === 7156 && validate(c2, "Changelog.Build.WithChangelogentriesVersions")))) okay = false
-	const c3 = await attempt(api.getChangelogBuilds, {from: "2023.1031.0", to: "20231102.3"}, 7184, undefined, ["markdown"])
+	const c3 = await attempt(api.getChangelogBuilds, undefined, {from: "2023.1031.0", to: 7184}, ["markdown"])
 	if (!isOk(c3, !c3 || (c3.length === 4 && validate(c3, "Changelog.Build.WithUpdatestreamsChangelogentries")))) okay = false
 	const c4 = await attempt(api.getChangelogStreams)
 	if (!isOk(c4, !c4 || (c4.length > 2 && validate(c4, "Changelog.UpdateStream.WithLatestbuildUsercount")))) okay = false
@@ -298,19 +297,23 @@ const testMiscStuff = async (): Promise<boolean> => {
 const test = async (id: string, secret: string): Promise<void> => {
 	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all") //"http://127.0.0.1:8080")
 
-	const a = await testUserStuff()
-	const b = await testBeatmapStuff()
-	const c = await testChangelogStuff()
-	const d = await testMultiplayerStuff()
-	const e = await testRankingStuff()
-	const f = await testHomeStuff()
-	const g = await testMiscStuff()
+	const tests = [
+		testUserStuff,
+		testBeatmapStuff,
+		testChangelogStuff,
+		testMultiplayerStuff,
+		testRankingStuff,
+		testHomeStuff,
+		testMiscStuff,
+	]
 
-	const arr = [a,b,c,d,e,f,g]
+	const results: {test_name: string, passed: boolean}[] = []
+	for (let i = 0; i < tests.length; i++) {
+		results.push({test_name: tests[i].name, passed: await tests[i]()})
+	}
+	console.log("\n", ...results.map((r) => `${r.test_name}: ${r.passed ? "✔️" : "❌"}\n`))
 
-	const test_results = arr.map((bool: boolean, index: number) => bool ? `${index + 1}: ✔️\n` : `${index + 1}: ❌\n`)
-	console.log("\n", ...test_results)
-	if (arr.indexOf(false) === -1) {
+	if (!results.find((r) => !r.passed)) {
 		console.log("✔️ Looks like the test went well!")
 	} else {
 		throw new Error("❌ Something in the test went wrong...")
