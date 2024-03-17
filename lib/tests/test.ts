@@ -78,7 +78,7 @@ function validate(object: unknown, schemaName: string): boolean {
 		}
 	} catch(err) {
 		console.log(err)
-		return true
+		return false
 	}
 }
 
@@ -262,9 +262,9 @@ const testHomeStuff = async (): Promise<boolean> => {
 	const f3 = await attempt(api.getWikiPage, "Rules")
 	if (!isOk(f3, !f3 || (f3.title === "Rules" && validate(f3, "WikiPage")))) okay = false
 	const f4 = await attempt(api.getNewsPosts)
-	if (!isOk(f4, !f4 || (f4.length >= 1 && validate(f4, "News.Post")))) okay = false
+	if (!isOk(f4, !f4 || (f4.length >= 1 && validate(f4, "NewsPost")))) okay = false
 	const f5 = await attempt(api.getNewsPost, {id: 26})
-	if (!isOk(f5, !f5 || (f5.title === "Official osu! Fanart Contest 5 Begins!" && validate(f5, "News.PostWithContentNavigation")))) okay = false
+	if (!isOk(f5, !f5 || (f5.title === "Official osu! Fanart Contest 5 Begins!" && validate(f5, "NewsPost.WithContentNavigation")))) okay = false
 
 	return okay
 }

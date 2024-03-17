@@ -11,7 +11,7 @@ import { Event } from "./event.js"
 import { Changelog } from "./changelog.js"
 import { Forum, PollConfig } from "./forum.js"
 import { WikiPage } from "./wiki.js"
-import { News } from "./news.js"
+import { NewsPost } from "./news.js"
 import { SearchResult } from "./home.js"
 import { Rulesets, Mod, Scope, Genres, Languages } from "./misc.js"
 import { Chat } from "./chat.js"
@@ -29,7 +29,7 @@ export { Event } from "./event.js"
 export { Changelog } from "./changelog.js"
 export { Forum, PollConfig } from "./forum.js"
 export { WikiPage } from "./wiki.js"
-export { News } from "./news.js"
+export { NewsPost } from "./news.js"
 export { SearchResult } from "./home.js"
 export { Rulesets, Mod, Scope, Genres, Languages } from "./misc.js"
 export { Chat } from "./chat.js"
@@ -742,6 +742,42 @@ export class API {
 	readonly getChangelogStreams = Changelog.UpdateStream.getAll
 
 
+	// CHAT STUFF
+
+	/** {@inheritDoc Chat.keepAlive} @group Chat Functions */
+	readonly keepChatAlive = Chat.keepAlive
+
+	/** {@inheritDoc Chat.Message.getMultiple} @group Chat Functions */
+	readonly getChatMessages = Chat.Message.getMultiple
+
+	/** {@inheritDoc Chat.Message.send} @group Chat Functions */
+	readonly sendChatMessage = Chat.Message.send
+
+	/** {@inheritDoc Chat.Message.sendPrivate} @group Chat Functions */
+	readonly sendChatPrivateMessage = Chat.Message.sendPrivate
+
+	/** {@inheritDoc Chat.Channel.getOne} @group Chat Functions */
+	readonly getChatChannel = Chat.Channel.getOne
+
+	/** {@inheritDoc Chat.Channel.getAll} @group Chat Functions */
+	readonly getChatChannels = Chat.Channel.getAll
+
+	/** {@inheritDoc Chat.Channel.markAsRead} @group Chat Functions */
+	readonly markChatChannelAsRead = Chat.Channel.markAsRead
+
+	/** {@inheritDoc Chat.Channel.createPrivate} @group Chat Functions */
+	readonly createChatPrivateChannel = Chat.Channel.createPrivate
+
+	/** {@inheritDoc Chat.Channel.createAnnouncement} @group Chat Functions */
+	readonly createChatAnnouncementChannel = Chat.Channel.createAnnouncement
+
+	/** {@inheritDoc Chat.Channel.joinOne} @group Chat Functions */
+	readonly joinChatChannel = Chat.Channel.joinOne
+
+	/** {@inheritDoc Chat.Channel.leaveOne} @group Chat Functions */
+	readonly leaveChatChannel = Chat.Channel.leaveOne
+
+
 	// MULTIPLAYER STUFF
 
 	/**
@@ -902,25 +938,11 @@ export class API {
 
 	// NEWS STUFF
 
-	/**
-	 * Get all the NewsPosts of a specific year!
-	 * @remarks If the specified year is invalid/has no news, it fallbacks to the default year
-	 * @param year (defaults to current year) The year the posts were made
-	 */
-	async getNewsPosts(year?: number): Promise<News.Post[]> {
-		const response = await this.request("get", "news", {year, limit: 1})
-		return response.news_sidebar.news_posts
-	}
+	/** {@inheritDoc NewsPost.getOne} @group NewsPost Functions */
+	readonly getNewsPost = NewsPost.getOne
 
-	/**
-	 * Get a NewsPost, its content, and the NewsPosts right before and right after it!
-	 * @param post An object with the id or the slug of a NewsPost (the slug being the filename minus the extension, used in its URL)
-	 */
-	async getNewsPost(post: {id?: number, slug?: string} | News.Post): Promise<News.PostWithContentNavigation> {
-		const key = post.id !== undefined ? "id" : undefined
-		const lookup = post.id !== undefined ? post.id : post.slug
-		return await this.request("get", `news/${lookup}`, {key})
-	}
+	/** {@inheritDoc NewsPost.getMultiple} @group NewsPost Functions */
+	readonly getNewsPosts = NewsPost.getMultiple
 
 
 	// FORUM STUFF
@@ -997,135 +1019,6 @@ export class API {
 	 */
 	async editForumPost(post: {id: number} | Forum.Post, new_text: string): Promise<Forum.Post> {
 		return await this.request("put", `forums/posts/${post.id}`, {body: new_text})
-	}
-
-
-	// CHAT STUFF
-
-	/**
-	 * Needs to be done periodically to reset chat activity timeout
-	 * @scope {@link Scope"chat.read"}
-	 * @remarks Every 30 seconds is a good idea
-	 * @param since UserSilences that are before that will not be returned!
-	 * @returns A list of recent silences
-	 */
-	async keepChatAlive(since?: {user_silence?: {id: number} | Chat.UserSilence, message?: {message_id: number} | Chat.Message}): Promise<Chat.UserSilence[]> {
-		return await this.request("post", "chat/ack", {history_since: since?.user_silence?.id, since: since?.message?.message_id})
-	}
-
-	/**
-	 * Send a private message to someone!
-	 * @scope {@link Scope"chat.write"}
-	 * @remarks You don't need to use `createChatPrivateChannel` before sending a message
-	 * @param user_target The User you wanna send your message to!
-	 * @param message The message you wanna send
-	 * @param is_action (defaults to false) Is it a command? Like `/me dances`
-	 * @param uuid A client-side message identifier
-	 * @returns The message you sent
-	 */
-	async sendChatPrivateMessage(user_target: {id: number} | User, message: string, is_action: boolean = false, uuid?: string):
-	Promise<{channel: Chat.Channel, message: Chat.Message}> {
-		return await this.request("post", "chat/new", {target_id: user_target.id, message, is_action, uuid})
-	}
-
-	/**
-	 * Get the recent messages of a specific ChatChannel!
-	 * @scope {@link Scope"chat.read"}
-	 * @param channel The Channel you wanna get the messages from
-	 * @param limit (defaults to 20, max 50) The maximum amount of messages you want to get!
-	 * @param since Get the messages sent after this message
-	 * @param until Get the messages sent up to but not including this message
-	 */
-	async getChatMessages(channel: {channel_id: number} | Chat.Channel, limit: number = 20,
-	since?: {message_id: number} | Chat.Message, until?: {message_id: number} | Chat.Message): Promise<Chat.Message[]> {
-		return await this.request("get", `chat/channels/${channel.channel_id}/messages`, {limit, since: since?.message_id, until: until?.message_id})
-	}
-
-	/**
-	 * Send a message in a ChatChannel!
-	 * @scope {@link Scope"chat.write"}
-	 * @param channel The channel in which you want to send your message
-	 * @param message The message you wanna send
-	 * @param is_action (defaults to false) Is it a command? Like `/me dances`
-	 * @returns The newly sent ChatMessage!
-	 */
-	async sendChatMessage(channel: {channel_id: number} | Chat.Channel, message: string, is_action: boolean = false): Promise<Chat.Message> {
-		return await this.request("post", `chat/channels/${channel.channel_id}/messages`, {message, is_action})
-	}
-
-	/**
-	 * Join a public or multiplayer ChatChannel, allowing you to interact with it!
-	 * @scope {@link Scope"chat.write_manage"}
-	 * @param channel The channel you wanna join
-	 * @param user (defaults to the presumed authorized user) The user joining the channel
-	 */
-	async joinChatChannel(channel: {channel_id: number} | Chat.Channel, user?: {id: number} | User): Promise<Chat.Channel.WithDetails> {
-		return await this.request("put", `chat/channels/${channel.channel_id}/users/${user?.id || this.user}`)
-	}
-
-	/**
-	 * Leave/Close a public ChatChannel!
-	 * @scope {@link Scope"chat.write_manage"}
-	 * @param channel The channel you wanna join
-	 * @param user (defaults to the presumed authorized user) The user joining the channel
-	 */
-	async leaveChatChannel(channel: {channel_id: number} | Chat.Channel, user?: {id: number} | User): Promise<void> {
-		return await this.request("delete", `chat/channels/${channel.channel_id}/users/${user?.id || this.user}`)
-	}
-
-	/**
-	 * Mark a certain channel as read up to a given message!
-	 * @scope {@link Scope"chat.read"}
-	 * @param channel The channel in question
-	 * @param message You're marking this and all the messages before it as read!
-	 */
-	async markChatChannelAsRead(channel: {channel_id: number} | Chat.Channel, message: {message_id: number} | Chat.Message): Promise<void> {
-		return await this.request("put",
-		`chat/channels/${channel.channel_id}/mark-as-read/${message.message_id}`, {channel_id: channel.channel_id, message: message.message_id})
-	}
-
-	/**
-	 * Get a list of all publicly joinable channels!
-	 * @scope {@link Scope"chat.read"}
-	 */
-	async getChatChannels(): Promise<Chat.Channel[]> {
-		return await this.request("get", "chat/channels")
-	}
-
-	/**
-	 * Create/Open/Join a private messages chat channel!
-	 * @scope {@link Scope"chat.read"}
-	 * @param user_target The other user able to read and send messages in this channel
-	 * @returns The newly created channel!
-	 */
-	async createChatPrivateChannel(user_target: {id: number} | User): Promise<Chat.Channel> {
-		return await this.request("post", "chat/channels", {type: "PM", target_id: user_target.id})
-	}
-
-	/**
-	 * Create a new announcement!
-	 * @scope {@link Scope"chat.write_manage"}
-	 * @remarks From my understanding, this WILL 403 unless the user is kinda special
-	 * @param channel Details of the channel you're creating
-	 * @param user_targets The people that will receive your message
-	 * @param message The message to send with the announcement
-	 * @returns The newly created channel!
-	 */
-	async createChatAnnouncementChannel(channel: {name: string, description: string}, user_targets: Array<{id: number} | User>, message: string):
-	Promise<Chat.Channel> {
-		const target_ids = user_targets.map((u) => u.id)
-		return await this.request("post", "chat/channels", {type: "ANNOUNCE", channel, target_ids, message})
-	}
-
-	/**
-	 * Get a ChatChannel, and the users in it if it is a private channel!
-	 * @scope {@link Scope"chat.read"}
-	 * @remarks Will 404 if the user has not joined the channel (use `joinChatChannel` for that)
-	 * @param channel The channel in question
-	 */
-	async getChatChannel(channel: {channel_id: number} | Chat.Channel): Promise<Chat.Channel.WithDetails> {
-		const response = await this.request("get", `chat/channels/${channel.channel_id}`)
-		return response.channel
 	}
 
 	
