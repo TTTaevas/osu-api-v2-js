@@ -256,9 +256,9 @@ const testHomeStuff = async (): Promise<boolean> => {
 	console.log("\n===> HOME FUNCTIONS")
 
 	const f1 = await attempt(api.searchUser, "Tae", 2)
-	if (!isOk(f1, !f1 || (f1.data.length === 20 && validate(f1, "SearchResult.User")))) okay = false
+	if (!isOk(f1, !f1 || (f1.data.length === 20 && validate(f1, "Home.Search.User")))) okay = false
 	const f2 = await attempt(api.searchWiki, "Beat", 2)
-	if (!isOk(f2, !f2 || (f2.data.length === 50 && validate(f2, "SearchResult.Wiki")))) okay = false
+	if (!isOk(f2, !f2 || (f2.data.length === 50 && validate(f2, "Home.Search.Wiki")))) okay = false
 	const f3 = await attempt(api.getWikiPage, "Rules")
 	if (!isOk(f3, !f3 || (f3.title === "Rules" && validate(f3, "WikiPage")))) okay = false
 	const f4 = await attempt(api.getNewsPosts)
@@ -281,15 +281,15 @@ const testMiscStuff = async (): Promise<boolean> => {
 	const g3 = await attempt(api.getSeasonalBackgrounds)
 	if (!isOk(g3, !g3 || (g3.ends_at > new Date("2024-01-01") && g3.backgrounds.length > 0))) okay = false
 	const g4 = await attempt(api.getComments)
-	if (!isOk(g4, !g4 || validate(g4, "CommentBundle"))) okay = false
+	if (!isOk(g4, !g4 || validate(g4, "Comment.Bundle"))) okay = false
 	const g5 = await attempt(api.getComments, {type: "beatmapset", id: 1971037})
-	if (!isOk(g5, !g5 || validate(g5, "CommentBundle"))) okay = false
+	if (!isOk(g5, !g5 || validate(g5, "Comment.Bundle"))) okay = false
 	const g6 = await attempt(api.getComments, {type: "build", id: 7463})
-	if (!isOk(g6, !g6 || validate(g6, "CommentBundle"))) okay = false
+	if (!isOk(g6, !g6 || validate(g6, "Comment.Bundle"))) okay = false
 	const g7 = await attempt(api.getComments, {type: "news_post", id: 1451})
-	if (!isOk(g7, !g7 || validate(g7, "CommentBundle"))) okay = false
+	if (!isOk(g7, !g7 || validate(g7, "Comment.Bundle"))) okay = false
 	const g8 = await attempt(api.getComment, {id: 2418884})
-	if (!isOk(g8, !g8 || (g8.users.find((u) => u.id === 8) && validate(g8, "CommentBundle")))) okay = false
+	if (!isOk(g8, !g8 || (g8.users.find((u) => u.id === 8) && validate(g8, "Comment.Bundle")))) okay = false
 
 	return okay
 }

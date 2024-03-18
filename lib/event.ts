@@ -1,3 +1,4 @@
+import { API } from "./index.js"
 import { Rulesets } from "./misc.js"
 
 export interface Event {
@@ -131,4 +132,13 @@ export namespace Event {
 	export type AnyRecentActivity = Achievement | BeatmapsetApprove | BeatmapsetDelete | BeatmapsetRevive | BeatmapsetUpdate | BeatmapsetUpload | Rank | RankLost |
 	UserSupportAgain | UserSupportFirst | UserSupportGift | UsernameChange
 	export type Any = AnyRecentActivity | BeatmapPlaycount
+
+	/**
+	 * Get everything note-worthy that happened on osu! recently!
+	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead
+	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
+	 */
+	export async function getMultiple(this: API, sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string): Promise<{events: Event.Any[], cursor_string: string}> {
+		return await this.request("get", "events", {sort, cursor_string})
+	}
 }

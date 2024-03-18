@@ -13,10 +13,10 @@ import { Changelog } from "./changelog.js"
 import { Forum, PollConfig } from "./forum.js"
 import { WikiPage } from "./wiki.js"
 import { NewsPost } from "./news.js"
-import { SearchResult } from "./home.js"
+import { Home } from "./home.js"
 import { Rulesets, Mod, Scope, Genres, Languages } from "./misc.js"
 import { Chat } from "./chat.js"
-import { Comment, CommentBundle } from "./comment.js"
+import { Comment } from "./comment.js"
 
 
 export { User } from "./user.js"
@@ -32,11 +32,11 @@ export { Changelog } from "./changelog.js"
 export { Forum, PollConfig } from "./forum.js"
 export { WikiPage } from "./wiki.js"
 export { NewsPost } from "./news.js"
-export { SearchResult } from "./home.js"
+export { Home } from "./home.js"
 export { Rulesets, Mod, Scope, Genres, Languages, RankStatus } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocket } from "./websocket.js"
-export { Comment, CommentBundle } from "./comment.js"
+export { Comment } from "./comment.js"
 	
 /**
  * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
@@ -408,36 +408,6 @@ export class API {
 		}
 	}
 
-
-	// USER STUFF
-
-	/** {@inheritDoc User.getResourceOwner} @group User Functions */
-	readonly getResourceOwner = User.getResourceOwner
-
-	/** {@inheritDoc User.getOne} @group User Functions */
-	readonly getUser = User.getOne
-
-	/** {@inheritDoc User.getMultiple} @group User Functions */
-	readonly getUsers = User.getMultiple
-
-	/** {@inheritDoc User.getScores} @group User Functions */
-	readonly getUserScores = User.getScores
-
-	/** {@inheritDoc User.getBeatmaps} @group User Functions */
-	readonly getUserBeatmaps = User.getBeatmaps
-
-	/** {@inheritDoc User.getMostPlayed} @group User Functions */
-	readonly getUserMostPlayed = User.getMostPlayed
-
-	/** {@inheritDoc User.getRecentActivity} @group User Functions */
-	readonly getUserRecentActivity = User.getRecentActivity
-
-	/** {@inheritDoc User.getKudosu} @group User Functions */
-	readonly getUserKudosu = User.getKudosu
-
-	/** {@inheritDoc User.getFriends} @group User Functions */
-	readonly getFriends = User.getFriends
-
 	
 	// BEATMAP STUFF
 
@@ -557,6 +527,107 @@ export class API {
 
 	/** {@inheritDoc Chat.Channel.leaveOne} @group Chat Functions */
 	readonly leaveChatChannel = Chat.Channel.leaveOne
+
+
+	// COMMENT STUFF
+
+	/** {@inheritDoc Comment.getOne} @group Comment Functions */
+	readonly getComment = Comment.getOne
+
+	/** {@inheritDoc Comment.getMultiple} @group Comment Functions */
+	readonly getComments = Comment.getMultiple
+
+
+	// EVENT STUFF
+
+	/** {@inheritDoc Event.getMultiple} @group Event Functions */
+	readonly getEvents = Event.getMultiple
+
+
+	// FORUM STUFF
+
+	/**
+	 * Make and send a ForumPost in a ForumTopic!
+	 * @scope {@link Scope"forum.write"}
+	 * @param topic An object with the id of the topic you're making your reply in
+	 * @param text Your reply! Your message!
+	 * @returns The reply you've made!
+	 */
+	async replyForumTopic(topic: {id: number} | Forum.Topic, text: string): Promise<Forum.Post> {
+		return await this.request("post", `forums/topics/${topic.id}/reply`, {body: text})
+	}
+
+	/**
+	 * Create a new ForumTopic in the forum of your choice!
+	 * @scope {@link Scope"forum.write"}
+	 * @remarks Some users may not be allowed to do that, such as newly registered users, so this can 403 even with the right scopes
+	 * @param forum_id The id of the forum you're creating your topic in
+	 * @param title The topic's title
+	 * @param text The first post's content/message
+	 * @param poll If you want to make a poll, specify the parameters of that poll!
+	 * @returns An object with the topic you've made, and its first initial post (which uses your `text`)
+	 */
+	async createForumTopic(forum_id: number, title: string, text: string, poll?: PollConfig): Promise<{topic: Forum.Topic, post: Forum.Post}> {
+		const with_poll = poll !== undefined
+		const options = poll?.options !== undefined ? poll.options.toString().replace(/,/g, "\n") : undefined
+
+		return await this.request("post", "forums/topics", {forum_id, title, body: text, with_poll, forum_topic_poll: poll ? {
+			title: poll.title,
+			options: options,
+			length_days: poll.length_days,
+			max_options: poll.max_options || 1,
+			vote_change: poll.vote_change || false,
+			hide_results: poll.hide_results || false,
+		} : undefined})
+	}
+
+	/**
+	 * Get a forum topic, as well as its main post (content) and the posts that were sent in it!
+	 * @remarks The oldest post of a topic is the text of a topic
+	 * @param topic An object with the id of the topic in question
+	 * @param limit (defaults to 20, max 50) How many `posts` maximum?
+	 * @param sort (defaults to "id_asc") "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead
+	 * @param first_post (ignored if `cursor_string`) An Object with the id of the first post to be returned in `posts`
+	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
+	 */
+	async getForumTopicAndPosts(topic: {id: number} | Forum.Topic, limit: number = 20, sort: "id_asc" | "id_desc" = "id_asc",
+	first_post?: {id: number} | Forum.Post, cursor_string?: string): Promise<{posts: Forum.Post[], topic: Forum.Topic, cursor_string: string}> {
+		const start = sort === "id_asc" && first_post ? first_post.id : undefined
+		const end = sort === "id_desc" && first_post ? first_post.id : undefined
+		return await this.request("get", `forums/topics/${topic.id}`, {sort, limit, start, end, cursor_string})
+	}
+
+	/**
+	 * Edit the title of a ForumTopic!
+	 * @scope {@link Scope"forum.write"}
+	 * @remarks Use `editForumPost` if you wanna edit the post at the top of the topic
+	 * @param topic An object with the id of the topic in question
+	 * @param new_title The new title of the topic
+	 * @returns The edited ForumTopic
+	 */
+	async editForumTopicTitle(topic: {id: number} | Forum.Topic, new_title: string): Promise<Forum.Topic> {
+		return await this.request("put", `forums/topics/${topic.id}`, {forum_topic: {topic_title:  new_title}})
+	}
+
+	/**
+	 * Edit a ForumPost! Note that it can be the initial one of a ForumTopic!
+	 * @scope {@link Scope"forum.write"}
+	 * @param post An object with the id of the post in question
+	 * @param new_text The new content of the post (replaces the old content)
+	 * @returns The edited ForumPost
+	 */
+	async editForumPost(post: {id: number} | Forum.Post, new_text: string): Promise<Forum.Post> {
+		return await this.request("put", `forums/posts/${post.id}`, {body: new_text})
+	}
+
+
+	// HOME STUFF
+
+	/** {@inheritDoc Home.Search.getUsers} @group Home Functions */
+	searchUser = Home.Search.getUsers
+
+	/** {@inheritDoc Home.Search.getWikiPages} @group Home Functions */
+	searchWiki = Home.Search.getWikiPages
 
 
 	// MULTIPLAYER STUFF
@@ -684,27 +755,7 @@ export class API {
 	}
 
 
-	// HOME STUFF & WIKI STUFF
-
-	/**
-	 * Look for a user like you would on the website!
-	 * @param query What you would put in the searchbar
-	 * @param page (defaults to 1) You normally get the first 20 results, but if page is 2, you'd get results 21 to 40 instead for example!
-	 */
-	async searchUser(query: string, page: number = 1): Promise<SearchResult.User> {
-		const response = await this.request("get", "search", {mode: "user", query, page})
-		return response.user
-	}
-
-	/**
-	 * Look for a wiki page like you would on the website!
-	 * @param query What you would put in the searchbar
-	 * @param page (defaults to 1) You normally get the first 50 results, but if page is 2, you'd get results 51 to 100 instead for example!
-	 */
-	async searchWiki(query: string, page: number = 1): Promise<SearchResult.Wiki> {
-		const response = await this.request("get", "search", {mode: "wiki_page", query, page})
-		return response.wiki_page
-	}
+	// WIKI STUFF
 
 	/**
 	 * Get a wiki page!
@@ -726,81 +777,34 @@ export class API {
 	readonly getNewsPosts = NewsPost.getMultiple
 
 
-	// FORUM STUFF
+	// USER STUFF
 
-	/**
-	 * Make and send a ForumPost in a ForumTopic!
-	 * @scope {@link Scope"forum.write"}
-	 * @param topic An object with the id of the topic you're making your reply in
-	 * @param text Your reply! Your message!
-	 * @returns The reply you've made!
-	 */
-	async replyForumTopic(topic: {id: number} | Forum.Topic, text: string): Promise<Forum.Post> {
-		return await this.request("post", `forums/topics/${topic.id}/reply`, {body: text})
-	}
+	/** {@inheritDoc User.getResourceOwner} @group User Functions */
+	readonly getResourceOwner = User.getResourceOwner
 
-	/**
-	 * Create a new ForumTopic in the forum of your choice!
-	 * @scope {@link Scope"forum.write"}
-	 * @remarks Some users may not be allowed to do that, such as newly registered users, so this can 403 even with the right scopes
-	 * @param forum_id The id of the forum you're creating your topic in
-	 * @param title The topic's title
-	 * @param text The first post's content/message
-	 * @param poll If you want to make a poll, specify the parameters of that poll!
-	 * @returns An object with the topic you've made, and its first initial post (which uses your `text`)
-	 */
-	async createForumTopic(forum_id: number, title: string, text: string, poll?: PollConfig): Promise<{topic: Forum.Topic, post: Forum.Post}> {
-		const with_poll = poll !== undefined
-		const options = poll?.options !== undefined ? poll.options.toString().replace(/,/g, "\n") : undefined
+	/** {@inheritDoc User.getOne} @group User Functions */
+	readonly getUser = User.getOne
 
-		return await this.request("post", "forums/topics", {forum_id, title, body: text, with_poll, forum_topic_poll: poll ? {
-			title: poll.title,
-			options: options,
-			length_days: poll.length_days,
-			max_options: poll.max_options || 1,
-			vote_change: poll.vote_change || false,
-			hide_results: poll.hide_results || false,
-		} : undefined})
-	}
+	/** {@inheritDoc User.getMultiple} @group User Functions */
+	readonly getUsers = User.getMultiple
 
-	/**
-	 * Get a forum topic, as well as its main post (content) and the posts that were sent in it!
-	 * @remarks The oldest post of a topic is the text of a topic
-	 * @param topic An object with the id of the topic in question
-	 * @param limit (defaults to 20, max 50) How many `posts` maximum?
-	 * @param sort (defaults to "id_asc") "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead
-	 * @param first_post (ignored if `cursor_string`) An Object with the id of the first post to be returned in `posts`
-	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
-	 */
-	async getForumTopicAndPosts(topic: {id: number} | Forum.Topic, limit: number = 20, sort: "id_asc" | "id_desc" = "id_asc",
-	first_post?: {id: number} | Forum.Post, cursor_string?: string): Promise<{posts: Forum.Post[], topic: Forum.Topic, cursor_string: string}> {
-		const start = sort === "id_asc" && first_post ? first_post.id : undefined
-		const end = sort === "id_desc" && first_post ? first_post.id : undefined
-		return await this.request("get", `forums/topics/${topic.id}`, {sort, limit, start, end, cursor_string})
-	}
+	/** {@inheritDoc User.getScores} @group User Functions */
+	readonly getUserScores = User.getScores
 
-	/**
-	 * Edit the title of a ForumTopic!
-	 * @scope {@link Scope"forum.write"}
-	 * @remarks Use `editForumPost` if you wanna edit the post at the top of the topic
-	 * @param topic An object with the id of the topic in question
-	 * @param new_title The new title of the topic
-	 * @returns The edited ForumTopic
-	 */
-	async editForumTopicTitle(topic: {id: number} | Forum.Topic, new_title: string): Promise<Forum.Topic> {
-		return await this.request("put", `forums/topics/${topic.id}`, {forum_topic: {topic_title:  new_title}})
-	}
+	/** {@inheritDoc User.getBeatmaps} @group User Functions */
+	readonly getUserBeatmaps = User.getBeatmaps
 
-	/**
-	 * Edit a ForumPost! Note that it can be the initial one of a ForumTopic!
-	 * @scope {@link Scope"forum.write"}
-	 * @param post An object with the id of the post in question
-	 * @param new_text The new content of the post (replaces the old content)
-	 * @returns The edited ForumPost
-	 */
-	async editForumPost(post: {id: number} | Forum.Post, new_text: string): Promise<Forum.Post> {
-		return await this.request("put", `forums/posts/${post.id}`, {body: new_text})
-	}
+	/** {@inheritDoc User.getMostPlayed} @group User Functions */
+	readonly getUserMostPlayed = User.getMostPlayed
+
+	/** {@inheritDoc User.getRecentActivity} @group User Functions */
+	readonly getUserRecentActivity = User.getRecentActivity
+
+	/** {@inheritDoc User.getKudosu} @group User Functions */
+	readonly getUserKudosu = User.getKudosu
+
+	/** {@inheritDoc User.getFriends} @group User Functions */
+	readonly getFriends = User.getFriends
 
 	
 	// OTHER STUFF
@@ -821,49 +825,5 @@ export class API {
 	 */
 	async getReplay(score: {id: number} | Score): Promise<string> {
 		return await this.request("get", `scores/${score.id}/download`)
-	}
-
-	/**
-	 * Get everything note-worthy that happened on osu! recently!
-	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead
-	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
-	 */
-	async getEvents(sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string): Promise<{events: Event.Any[], cursor_string: string}> {
-		return await this.request("get", "events", {sort, cursor_string})
-	}
-
-	/**
-	 * Get comments that meet any of your requirements!
-	 * @param from From where are the comments coming from? Maybe a beatmapset, but then, which beatmapset?
-	 * @param parent The comments are replying to which comment? Make the id 0 to filter out replies (and only get top level comments)
-	 * @param sort Should the comments be sorted by votes? Should they be from after a certain date? Maybe you can give a cursor?
-	 */
-	async getComments(from?: {type: Comment["commentable_type"], id: number}, parent?: Comment | {id: number | 0},
-	sort?: {type?: CommentBundle["sort"], after?: Comment | {id: number}, cursor?: CommentBundle["cursor"]}): Promise<CommentBundle.WithTotalToplevelcount> {
-		const after = sort?.after?.id ? String(sort.after.id) : undefined
-		const parent_id = parent?.id ? String(parent.id) : undefined
-
-		let bundle = await this.request("get", "comments", {
-			after, commentable_type: from?.type, commentable_id: from?.id,
-			cursor: sort?.cursor, parent_id, sort: sort?.type
-		})
-		const commentable_meta = bundle.commentable_meta.filter((c: any) => c.id)
-		bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
-		bundle.commentable_meta = commentable_meta
-		
-		return bundle
-	}
-
-	/**
-	 * Get a specific comment by using its id!
-	 * @param comment The comment in question
-	 */
-	async getComment(comment: Comment | {id: number}): Promise<CommentBundle> {
-		let bundle = await this.request("get", `comments/${comment.id}`)
-		const commentable_meta = bundle.commentable_meta.filter((c: any) => c.id)
-		bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
-		bundle.commentable_meta = commentable_meta
-		
-		return bundle
 	}
 }
