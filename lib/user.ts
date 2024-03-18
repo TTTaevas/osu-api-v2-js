@@ -1,4 +1,5 @@
-import { Beatmapset, Beatmap } from "./beatmap.js"
+import { Beatmap } from "./beatmap.js"
+import { Beatmapset } from "./beatmapset.js"
 import { Event } from "./event.js"
 import { API } from "./index.js"
 import { Rulesets } from "./misc.js"

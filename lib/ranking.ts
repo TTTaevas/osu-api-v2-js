@@ -1,4 +1,4 @@
-import { Beatmapset } from "./beatmap.js"
+import { Beatmapset } from "./beatmapset.js"
 import { User } from "./user.js"
 
 /** @obtainableFrom {@link API.getSpotlights} */

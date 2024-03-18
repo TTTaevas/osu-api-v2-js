@@ -1,10 +1,11 @@
 import fetch, { FetchError } from "node-fetch"
 import { WebSocket } from "ws"
 import { User } from "./user.js"
-import { Beatmap, Beatmapset } from "./beatmap.js"
+import { Beatmap } from "./beatmap.js"
+import { Beatmapset } from "./beatmapset.js"
 
 import { Multiplayer } from "./multiplayer.js"
-import { Score, BeatmapUserScore } from "./score.js"
+import { Score } from "./score.js"
 import { Rankings, Spotlight } from "./ranking.js"
 import { Event } from "./event.js"
 
@@ -19,10 +20,11 @@ import { Comment, CommentBundle } from "./comment.js"
 
 
 export { User } from "./user.js"
-export { Beatmap, Beatmapset, RankStatus } from "./beatmap.js"
+export { Beatmap } from "./beatmap.js"
+export { Beatmapset } from "./beatmapset.js"
 
 export { Multiplayer } from "./multiplayer.js"
-export { Score, BeatmapUserScore } from "./score.js"
+export { Score } from "./score.js"
 export { Rankings, Spotlight } from "./ranking.js"
 export { Event } from "./event.js"
 
@@ -31,7 +33,7 @@ export { Forum, PollConfig } from "./forum.js"
 export { WikiPage } from "./wiki.js"
 export { NewsPost } from "./news.js"
 export { SearchResult } from "./home.js"
-export { Rulesets, Mod, Scope, Genres, Languages } from "./misc.js"
+export { Rulesets, Mod, Scope, Genres, Languages, RankStatus } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocket } from "./websocket.js"
 export { Comment, CommentBundle } from "./comment.js"
@@ -439,292 +441,71 @@ export class API {
 	
 	// BEATMAP STUFF
 
-	/** Get extensive beatmap data about whichever beatmap you want! */
-	async lookupBeatmap(query: {checksum?: string, filename?: string, id?: number | string}): Promise<Beatmap.Extended.WithFailtimesBeatmapsetextended> {
-		if (query.id !== undefined) query.id = String(query.id)
-		return await this.request("get", `beatmaps/lookup`, {...query})
-	}
+	/** {@inheritDoc Beatmap.lookup} @group Beatmap Functions */
+	readonly lookupBeatmap = Beatmap.lookup
 
-	/**
-	 * Get extensive beatmap data about whichever beatmap you want!
-	 * @param beatmap An object with the id of the beatmap you're trying to get
-	 */
-	async getBeatmap(beatmap: {id: number} | Beatmap): Promise<Beatmap.Extended.WithFailtimesBeatmapsetextended> {
-		return await this.request("get", `beatmaps/${beatmap.id}`)
-	}
+	/** {@inheritDoc Beatmap.getOne} @group Beatmap Functions */
+	readonly getBeatmap = Beatmap.getOne
 
-	/**
-	 * Get extensive beatmap data for up to 50 beatmaps at once!
-	 * @param beatmaps An array of beatmaps or of objects that have the id of the beatmaps you're trying to get
-	 */
-	async getBeatmaps(beatmaps: Array<{id: number} | Beatmap>): Promise<Beatmap.Extended.WithFailtimesMaxcombo[]> {
-		const ids = beatmaps.map((beatmap) => beatmap.id)
-		const response = await this.request("get", "beatmaps", {ids})
-		return response.beatmaps
-	}
+	/** {@inheritDoc Beatmap.getMultiple} @group Beatmap Functions */
+	readonly getBeatmaps = Beatmap.getMultiple
 
-	/**
-	 * Get various data about the difficulty of a beatmap!
-	 * @remarks You may want to use getBeatmapDifficultyAttributesOsu (or Taiko or whatever) instead for better type safety
-	 * @param beatmap The Beatmap in question
-	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
-	 * @param ruleset (defaults to the ruleset the beatmap was intended for) Useful to specify if the beatmap is a convert
-	 */
-	async getBeatmapDifficultyAttributes(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number, ruleset?: Rulesets):
-	Promise<Beatmap.DifficultyAttributes | Beatmap.DifficultyAttributes.Any> {
-		const response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
-		return response.attributes
-	}
-	/**
-	 * Get various data about the difficulty of an osu! beatmap!
-	 * @param beatmap The Beatmap in question
-	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
-	 */
-	async getBeatmapDifficultyAttributesOsu(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Osu> {
-		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.osu) as Beatmap.DifficultyAttributes.Osu
-	}
-	/**
-	 * Get various data about the difficulty of a taiko beatmap!
-	 * @param beatmap The Beatmap in question
-	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
-	 */
-	async getBeatmapDifficultyAttributesTaiko(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Taiko> {
-		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.taiko) as Beatmap.DifficultyAttributes.Taiko
-	}
-	/**
-	 * Get various data about the difficulty of a ctb beatmap!
-	 * @param beatmap The Beatmap in question
-	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
-	 */
-	async getBeatmapDifficultyAttributesFruits(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Fruits> {
-		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.fruits) as Beatmap.DifficultyAttributes.Fruits
-	}
-	/**
-	 * Get various data about the difficulty of a mania beatmap!
-	 * @param beatmap The Beatmap in question
-	 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
-	 */
-	async getBeatmapDifficultyAttributesMania(beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Mania> {
-		return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.mania) as Beatmap.DifficultyAttributes.Mania
-	}
+	/** {@inheritDoc Beatmap.DifficultyAttributes.get} @group Beatmap Functions */
+	readonly getBeatmapDifficultyAttributes = Beatmap.DifficultyAttributes.get
 
-	/**
-	 * Get the top scores of a beatmap!
-	 * @param beatmap The Beatmap in question
-	 * @param include_lazer_scores Whether or not lazer scores should be included, defaults to true
-	 * @param ruleset The Ruleset used to make the scores, useful if they were made on a convert
-	 * @param mods (2023-11-16) Currently doesn't do anything
-	 * @param type (2023-11-16) Currently doesn't do anything
-	 */
-	async getBeatmapScores(beatmap: {id: number} | Beatmap, include_lazer_scores: boolean = true,
-		ruleset?: Rulesets, mods?: string[], type?: string): Promise<Score.WithUser[]> {
-		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-		const response = await this.request("get", `beatmaps/${beatmap.id}/scores`, {mode, mods, legacy_only: Number(!include_lazer_scores), type})
-		return response.scores
-	}
+	/** {@inheritDoc Beatmap.DifficultyAttributes.getOsu} @group Beatmap Functions */
+	readonly getBeatmapDifficultyAttributesOsu = Beatmap.DifficultyAttributes.getOsu
 
-	/**
-	 * Get the top scores of a beatmap, in the "solo score" format lazer brought with it!
-	 * More info on GitHub if needed https://github.com/ppy/osu-infrastructure/blob/master/score-submission.md
-	 * @param beatmap The Beatmap in question
-	 * @param ruleset The Ruleset used to make the scores, useful if they were made on a convert
-	 * @param mods (2023-11-16) Currently doesn't do anything
-	 * @param type (2023-11-16) Currently doesn't do anything
-	 */
-	async getBeatmapSoloScores(beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<Score.Solo[]> {
-		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-		const response = await this.request("get", `beatmaps/${beatmap.id}/solo-scores`, {mode, mods, type})
-		return response.scores
-	}
+	/** {@inheritDoc Beatmap.DifficultyAttributes.getTaiko} @group Beatmap Functions */
+	readonly getBeatmapDifficultyAttributesTaiko = Beatmap.DifficultyAttributes.getTaiko
 
-	/**
-	 * Get the score on a beatmap made by a specific user (with specific mods and on a specific ruleset if needed)
-	 * @param beatmap The Beatmap the score was made on
-	 * @param user The User who made the score
-	 * @param mods The Mods used to make the score, defaults to any, you can use `["NM"]` to filter out scores with mods
-	 * @param ruleset The Ruleset used to make the score, useful if it was made on a convert
-	 * @returns An Object with the position of the score according to the specified Mods and Ruleset, and with the score itself
-	 */
-	async getBeatmapUserScore(beatmap: {id: number} | Beatmap, user: {id: number} | User,
-		mods?: string[], ruleset?: Rulesets): Promise<BeatmapUserScore> {
-		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-		return await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`, {mods, mode})
-	}
+	/** {@inheritDoc Beatmap.DifficultyAttributes.getFruits} @group Beatmap Functions */
+	readonly getBeatmapDifficultyAttributesFruits = Beatmap.DifficultyAttributes.getFruits
 
-	/**
-	 * Get the score on a beatmap made by a specific user (with the possibility to specify if the scores are on a convert)
-	 * @param beatmap The Beatmap the scores were made on
-	 * @param user The User who made the scores
-	 * @param ruleset The Ruleset used to make the scores, defaults to the Ruleset the Beatmap was made for
-	 */
-	async getBeatmapUserScores(beatmap: {id: number} | Beatmap, user: {id: number} | User, ruleset?: Rulesets): Promise<Score.Legacy[]> {
-		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-		const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}/all`, {mode})
-		return response.scores
-	}
+	/** {@inheritDoc Beatmap.DifficultyAttributes.getMania} @group Beatmap Functions */
+	readonly getBeatmapDifficultyAttributesMania = Beatmap.DifficultyAttributes.getMania
 
-	/**
-	 * Search for beatmapsets as if you were on the website or on lazer!
-	 * @param query All the filters and sorting options that you'd normally find on the website or on lazer 
-	 * @returns Relevant Beatmapsets that contain Beatmaps, and a cursor_string to allow you to look for more of the same!
-	 * @remarks This does not bypass the current osu!supporter requirement for certain filters
-	 */
-	async searchBeatmapsets(query?: {
-	/** What you'd put in the searchbar, like the name of a beatmapset or a mapper! */
-	keywords?: string
-	/** Sort by what, in ascending/descending order */
-	sort?: {by: "title" | "artist" | "difficulty" | "ranked" | "rating" | "plays" | "favourites" | "updated", in: "asc" | "desc"},
-	/** Various filters to activate */
-	general?: ("Recommended difficulty" | "Include converted beatmaps" | "Subscribed mappers" | "Spotlighted beatmaps" | "Featured Artists")[],
-	/** Only get sets that have maps that you can play in the ruleset of your choice */
-	mode?: Rulesets,
-	/** (defaults to all that have leaderboard) Filter in sets depending on their status or on their relation with the authorized user */
-	categories?: "Any" | "Ranked" | "Qualified" | "Loved" | "Favourites" | "Pending" | "WIP" | "Graveyard" | "My Maps",
-	/** Use this to hide all sets that are marked as explicit */
-	hide_explicit_content?: true,
-	/** Specify the musical genre of the music of the beatmapsets you're searching for */
-	genre?: Exclude<Genres, 0>,
-	/** Specify the spoken language of the music of the beatmapsets you're searching for */
-	language?: Exclude<Languages, 0>,
-	/** Should all sets have a video, a storyboard, maybe both at once? */
-	extra?: ("must_have_video" | "must_have_storyboard")[],
-	/** Does the authorized user with osu!supporter have already achieved certain ranks on those sets? */
-	rank_achieved?: ("Silver SS" | "SS" | "Silver S" | "S" | "A" | "B" | "C" | "D")[],
-	/** Does the authorized user with osu!supporter have already played those sets, or have they not played them yet? */
-	played?: "Played" | "Unplayed",
-	/** The thing you've got from a previous request to get another page of results! */
-	cursor_string?: string}):
-	Promise<{beatmapsets: Beatmapset.Extended.WithBeatmapExtendedPacktags[], recommended_difficulty: number | null, total: number, error: any | null,
-	cursor_string: string | null}> {
-		const sort = query?.sort ? (query.sort.by + "_" + query.sort.in) : undefined
-		const c = query?.general ? query.general.map((general_value) => {
-			if (general_value === "Recommended difficulty") return "recommended"
-			if (general_value === "Include converted beatmaps") return "converts"
-			if (general_value === "Subscribed mappers") return "follows"
-			if (general_value === "Spotlighted beatmaps") return "spotlights"
-			if (general_value === "Featured Artists") return "featured_artists"
-		}).join(".") : undefined
-		const s = query?.categories ? query.categories === "My Maps" ? "mine" : query.categories.toLowerCase() : undefined
-		const nsfw = query?.hide_explicit_content ? false : undefined
-		const e = query?.extra ? query.extra.map((extra_value) => {
-			if (extra_value === "must_have_video") return "video"
-			if (extra_value === "must_have_storyboard") return "storyboard"
-		}).join(".") : undefined
-		const r = query?.rank_achieved ? query.rank_achieved.map((rank_achieved_value) => {
-			if (rank_achieved_value === "Silver SS") return "XH"
-			if (rank_achieved_value === "SS") return "X"
-			if (rank_achieved_value === "Silver S") return "SH"
-			return rank_achieved_value
-		}).join("x") : undefined
-		const played = query?.played ? query.played.toLowerCase() : undefined
+	/** {@inheritDoc Beatmap.Pack.getOne} @group Beatmap Functions */
+	readonly getBeatmapPack = Beatmap.Pack.getOne
 
-		return await this.request("get", `beatmapsets/search`,
-		{q: query?.keywords, sort, c, m: query?.mode, s, nsfw, g: query?.genre, l: query?.language, e, r, played, cursor_string: query?.cursor_string})
-	}
+	/** {@inheritDoc Beatmap.Pack.getMultiple} @group Beatmap Functions */
+	readonly getBeatmapPacks = Beatmap.Pack.getMultiple
 
-	/**
-	 * Get extensive data about a beatmapset by using a beatmap!
-	 * @param beatmap A beatmap from the beatmapset you're looking for
-	 */
-	async lookupBeatmapset(beatmap: {id: number} | Beatmap): Promise<Beatmapset.Extended.Plus> {
-		return await this.request("get", `beatmapsets/lookup`, {beatmap_id: beatmap.id})
-	}
+	/** {@inheritDoc Beatmap.getScores} @group Beatmap Functions */
+	readonly getBeatmapScores = Beatmap.getScores
 
-	/**
-	 * Get extensive beatmapset data about whichever beatmapset you want!
-	 * @param beatmapset An object with the id of the beatmapset you're trying to get
-	 */
-	async getBeatmapset(beatmapset: {id: number} | Beatmapset): Promise<Beatmapset.Extended.Plus> {
-		return await this.request("get", `beatmapsets/${beatmapset.id}`)
-	}
+	/** {@inheritDoc Beatmap.getSoloScores} @group Beatmap Functions */
+	readonly getBeatmapSoloScores = Beatmap.getSoloScores
 
-	/**
-	 * Get data about a BeatmapPack using its tag!
-	 * @param pack An object with the tag of the beatmappack you're trying to get
-	 * @remarks Currently in https://osu.ppy.sh/beatmaps/packs, when hovering a pack, its link with its tag should show up on your browser's bottom left
-	 */
-	async getBeatmapPack(pack: {tag: string} | Beatmap.Pack): Promise<Beatmap.Pack> {
-		return await this.request("get", `beatmaps/packs/${pack.tag}`)
-	}
+	/** {@inheritDoc Beatmap.UserScore.getOne} @group Beatmap Functions */
+	readonly getBeatmapUserScore = Beatmap.UserScore.getOne
 
-	/**
-	 * Get an Array of up to 100 BeatmapPacks of a specific type!
-	 * @param type The type of the BeatmapPacks, defaults to "standard"
-	 */
-	async getBeatmapPacks(type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<Beatmap.Pack[]> {
-		const response = await this.request("get", "beatmaps/packs", {type})
-		return response.beatmap_packs
-	}
+	/** {@inheritDoc Beatmap.UserScore.getMultiple} @group Beatmap Functions */
+	readonly getBeatmapUserScores = Beatmap.UserScore.getMultiple
 
-	/**
-	 * Get complex data about the discussion page of any beatmapet that you want!
-	 * @param from From where/who are the discussions coming from? Maybe only qualified sets?
-	 * @param filter Should those discussions only be unresolved problems, for example?
-	 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent discussion first, "id_desc" to have the newest instead
-	 * @returns Relevant discussions and info about them
-	 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
-	 * @privateRemarks I don't allow setting `beatmap_id` because my testing has led me to believe it does nothing (and is therefore misleading)
-	 */
-	async getBeatmapsetDiscussions(from?: {beatmapset?: Beatmapset | {id: number}, user?: User | {id: number},
-	status?: "all" | "ranked" | "qualified" | "disqualified" | "never_qualified"}, filter?: {types?: Beatmapset.Discussion["message_type"][],
-	only_unresolved?: boolean}, cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
-	Promise<{beatmaps: Beatmap.Extended[], beatmapsets: Beatmapset.Extended[], discussions: Beatmapset.Discussion.WithStartingpost[]
-	included_discussions: Beatmapset.Discussion.WithStartingpost[], reviews_config: {max_blocks: number}, users: User.WithGroups[], cursor_string: string}> {
-		return await this.request("get", "beatmapsets/discussions", {beatmapset_id: from?.beatmapset?.id, beatmapset_status: from?.status,
-		limit: cursor_stuff?.limit, message_types: filter?.types, only_unresolved: filter?.only_unresolved, page: cursor_stuff?.page, sort,
-		user: from?.user?.id, cursor_string: cursor_stuff?.cursor_string})
-	}
 
-	/**
-	 * Get complex data about the posts of a beatmapset's discussion or of a user!
-	 * @param from From where/who are the posts coming from? A specific discussion, a specific user?
-	 * @param types What kind of posts?
-	 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent post first, "id_desc" to have the newest instead
-	 * @returns Relevant posts and info about them
-	 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
-	 */
-	async getBeatmapsetDiscussionPosts(from?: {discussion?: Beatmapset.Discussion | {id: number}, user?: User | {id: number}},
-	types?: ("first" | "reply" | "system")[], cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
-	Promise<{beatmapsets: Beatmapset.WithHype[], posts: Beatmapset.Discussion.Post[], users: User[], cursor_string: string}> {
-		return await this.request("get", "beatmapsets/discussions/posts", {beatmapset_discussion_id: from?.discussion?.id, limit: cursor_stuff?.limit,
-		page: cursor_stuff?.page, sort, types, user: from?.user?.id, cursor_string: cursor_stuff?.cursor_string})
-	}
+	// BEATMAPSET STUFF
 
-	/**
-	 * Get complex data about the votes of a beatmapset's discussions or/and received/given by a specific user!
-	 * @param from The discussion with the votes, the user who voted, the user who's gotten the votes...
-	 * @param score An upvote (1) or a downvote (-1)
-	 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent vote first, "id_desc" to have the newest instead
-	 * @returns Relevant votes and info about them
-	 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
-	 */
-	async getBeatmapsetDiscussionVotes(from?: {discussion?: Beatmapset.Discussion | {id: number}, vote_giver?: User | {id: number},
-	vote_receiver?: User | {id: number}}, score?: 1 | -1, cursor_stuff?: {page?: number, limit?: number, cursor_string?: string},
-	sort: "id_desc" | "id_asc" = "id_desc"): Promise<{votes: Beatmapset.Discussion.Vote[], discussions: Beatmapset.Discussion[], users: User.WithGroups[],
-	cursor_string: string}> {
-		return await this.request("get", "beatmapsets/discussions/votes", {beatmapset_discussion_id: from?.discussion?.id, limit: cursor_stuff?.limit,
-		page: cursor_stuff?.page, receiver: from?.vote_receiver?.id, score, sort, user: from?.vote_giver?.id, cursor_string: cursor_stuff?.cursor_string})
-	}
+	/** {@inheritDoc Beatmapset.search} @group Beatmapset Functions */
+	readonly searchBeatmapsets = Beatmapset.search
 
-	/**
-	 * Get complex data about the events of a beatmapset and the users involved with them!
-	 * @param from Which beatmapset, or caused by which user? When?
-	 * @param types What kinds of events?
-	 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-	 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead
-	 * @returns Relevant events and users
-	 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware,
-	 * and also there's no documentation for this route in the API, so this is only the result of my interpretation of the website's code lol
-	 */
-	async getBeatmapsetEvents(from?: {beatmapset?: Beatmapset | {id: number}, user?: User | {id: number}, min_date?: Date, max_date?: Date},
-	types?: Beatmapset.Event["type"][], cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
-	Promise<{events: Beatmapset.Event[], users: User.WithGroups[]}> {
-		return await this.request("get", "beatmapsets/events", {beatmapset_id: from?.beatmapset?.id, user: from?.user?.id, min_date: from?.min_date?.toISOString(),
-		max_date: from?.max_date?.toISOString(), types, sort, page: cursor_stuff?.page, limit: cursor_stuff?.page, cursor_string: cursor_stuff?.cursor_string})
-	}
+	/** {@inheritDoc Beatmapset.lookup} @group Beatmapset Functions */
+	readonly lookupBeatmapset = Beatmapset.lookup
+
+	/** {@inheritDoc Beatmapset.getOne} @group Beatmapset Functions */
+	readonly getBeatmapset = Beatmapset.getOne
+
+	/** {@inheritDoc Beatmapset.Discussion.getMultiple} @group Beatmapset Functions */
+	readonly getBeatmapsetDiscussions = Beatmapset.Discussion.getMultiple
+
+	/** {@inheritDoc Beatmapset.Discussion.Post.getMultiple} @group Beatmapset Functions */
+	readonly getBeatmapsetDiscussionPosts = Beatmapset.Discussion.Post.getMultiple
+
+	/** {@inheritDoc Beatmapset.Discussion.Vote.getMultiple} @group Beatmapset Functions */
+	readonly getBeatmapsetDiscussionVotes = Beatmapset.Discussion.Vote.getMultiple
+
+	/** {@inheritDoc Beatmapset.Event.getMultiple} @group Beatmapset Functions */
+	readonly getBeatmapsetEvents = Beatmapset.Event.getMultiple
 
 
 	// CHANGELOG STUFF

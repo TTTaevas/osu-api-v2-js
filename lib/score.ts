@@ -1,4 +1,5 @@
-import { Beatmap, Beatmapset } from "./beatmap.js"
+import { Beatmap } from "./beatmap.js"
+import { Beatmapset } from "./beatmapset.js"
 import { Mod, Rulesets } from "./misc.js"
 import { User } from "./user.js"
 
@@ -133,11 +134,4 @@ export namespace Score {
 			pp: number
 		}
 	}
-}
-
-/** @obtainableFrom {@link API.getBeatmapUserScore} */
-export interface BeatmapUserScore {
-	/** Value depends on the requested mode and mods! */
-	position: number
-	score: Score.WithUserBeatmap
 }

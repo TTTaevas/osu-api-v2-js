@@ -147,7 +147,7 @@ const testBeatmapStuff = async (): Promise<boolean> => {
 	const b9 = await attempt(api.lookupBeatmapset, {id: beatmap_id})
 	if (!isOk(b9, !b9 || (b9.id === 58951 && validate(b9, "Beatmapset.Extended.Plus")))) okay = false
 	const b10 = await attempt(api.getBeatmapUserScore, {id: 176960}, {id: 7276846}, ["NM"])
-	if (!isOk(b10, !b10 || (b10.score.accuracy < 0.99 && validate(b10, "BeatmapUserScore")))) okay = false
+	if (!isOk(b10, !b10 || (b10.score.accuracy < 0.99 && validate(b10, "Beatmap.UserScore")))) okay = false
 	const b11 = await attempt(api.getBeatmapUserScores, {id: 203993}, {id: 7276846}, osu.Rulesets.fruits)
 	if (!isOk(b11, !b11 || (b11.length === 1 && validate(b11, "Score")))) okay = false
 	const b12 = await attempt(api.getBeatmapset, {id: 1971037})

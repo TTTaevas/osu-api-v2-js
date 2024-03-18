@@ -17,6 +17,16 @@ export enum Rulesets {
 	mania 	= 3
 }
 
+export enum RankStatus {
+	Graveyard 	= -2,
+	Wip 		= -1,
+	Pending		= 0,
+	Ranked		= 1,
+	Approved	= 2,
+	Qualified	= 3,
+	Loved 		= 4
+}
+
 export enum Genres {
 	Any				= 0,
 	Unspecified		= 1,

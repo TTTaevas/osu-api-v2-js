@@ -1,15 +1,7 @@
-import { Genres, Languages, Rulesets } from "./misc.js"
-import { User } from "./user.js"
-
-export enum RankStatus {
-	Graveyard 	= -2,
-	Wip 		= -1,
-	Pending		= 0,
-	Ranked		= 1,
-	Approved	= 2,
-	Qualified	= 3,
-	Loved 		= 4
-}
+import { Beatmapset } from "./beatmapset.js"
+import { API, User } from "./index.js"
+import { Rulesets, RankStatus, Mod } from "./misc.js"
+import { Score } from "./score.js"
 
 export interface Beatmap {
 	beatmapset_id: number
@@ -109,6 +101,26 @@ export namespace Beatmap {
 		}
 	}
 
+	export namespace Pack {
+		/**
+		 * Get data about a BeatmapPack using its tag!
+		 * @param pack An object with the tag of the beatmappack you're trying to get
+		 * @remarks Currently in https://osu.ppy.sh/beatmaps/packs, when hovering a pack, its link with its tag should show up on your browser's bottom left
+		 */
+		export async function getOne(this: API, pack: {tag: string} | Beatmap.Pack): Promise<Beatmap.Pack> {
+			return await this.request("get", `beatmaps/packs/${pack.tag}`)
+		}
+
+		/**
+		 * Get an Array of up to 100 BeatmapPacks of a specific type!
+		 * @param type The type of the BeatmapPacks, defaults to "standard"
+		 */
+		export async function getMultiple(this: API, type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<Beatmap.Pack[]> {
+			const response = await this.request("get", "beatmaps/packs", {type})
+			return response.beatmap_packs
+		}
+	}
+
 	/** @obtainableFrom {@link API.getBeatmapDifficultyAttributes} */
 	export interface DifficultyAttributes {
 		star_rating: number
@@ -151,199 +163,140 @@ export namespace Beatmap {
 		}
 
 		export type Any = Osu | Taiko | Fruits | Mania
-	}
-}
 
-export interface Beatmapset {
-	artist: string
-	artist_unicode: string
-	covers: {
-		cover: string
-		"cover@2x": string
-		card: string
-		"card@2x": string
-		list: string
-		"list@2x": string
-		slimcover: string
-		"slimcover@2x": string
-	}
-	creator: string
-	favourite_count: number
-	id: number
-	nsfw: boolean
-	offset: number
-	play_count: number
-	/** A string like that where id is the `id` of the beatmapset: `//b.ppy.sh/preview/58951.mp3` */
-	preview_url: string
-	source: string
-	spotlight: boolean
-	/** Is it ranked, is it graveyarded, etc */
-	status: string
-	/** A title readable by any english-speaking person, so it'd be in romaji if the song's title is in Japanese */
-	title: string
-	/** Basically the title is the original language, so with hiragana, katakana and kanji if Japanese */
-	title_unicode: string
-	user_id: number
-	video: boolean
-}
-
-export namespace Beatmapset {
-	/** Whether properties are there or not and null or not depend of the `type` */
-	export interface Event {
-		id: number
-		/** Port of https://github.com/ppy/osu-web/blob/master/app/Models/BeatmapsetEvent.php */
-		type: "nominate" | "love" | "remove_from_loved" | "qualify" | "disqualify" | "approve" | "rank" |
-			"kudosu_allow" | "kudosu_denied" | "kudosu_gain" | "kudosu_lost" | "kudosu_recalculate" |
-			"issue_resolve" | "issue_reopen" | "discussion_lock" | "disccusion_unlock" | "discussion_delete" | "discussion_restore" |
-			"discussion_post_delete" | "discussion_post_restore" | "nomination_reset" | "nomination_reset_received" |
-			"genre_edit" | "language_edit" | "nsfw_toggle" | "offset_edit" | "tags_edit" | "beatmap_owner_change"
-		comment: {
-			beatmap_discussion_id?: number | null
-			beatmap_discussion_post_id?: number | null
-			reason?: string
-			old?: keyof typeof Genres | keyof typeof Languages | boolean
-			new?: keyof typeof Genres | keyof typeof Languages | boolean
-			modes?: (keyof typeof Rulesets)[]
-			new_vote?: {
-				user_id: number
-				score: number
-			}
-			votes?: {
-				user_id: number
-				score: number
-			}[]
-		} | null
-		created_at: Date
-		user_id: number | null
-		beatmapset: Beatmapset.WithUserHype
-		discussion?: Beatmapset.Discussion.WithStartingpost | null
-	}
-
-	export interface WithHype extends Beatmapset {
-		hype: {
-			current: number
-			required: number
-		} | null
-	}
-
-	export interface WithUserHype extends WithHype {
-		user: User
-	}
-
-	export interface Extended extends WithHype {
-		availability: {
-			/** So it's `false` if you can download it */
-			download_disabled: boolean
-			more_information: string | null
-		}
-		bpm: number
-		can_be_hyped: boolean
-		creator: string
-		deleted_at: string | null
-		discussion_locked: boolean
-		is_scoreable: boolean
-		last_updated: Date
-		legacy_thread_url: string
-		nominations_summary: {
-			current: number
-			required: number
-		}
-		ranked: RankStatus
-		ranked_date: Date | null
-		source: string
-		storyboard: boolean
-		submitted_date: Date | null
-		tags: string
-	}
-
-	export namespace Extended {
-		/** @obtainableFrom {@link API.getUserBeatmaps} */
-		export interface WithBeatmapExtended extends Extended {
-			beatmaps: Beatmap.Extended[]
+		/**
+		 * Get various data about the difficulty of a beatmap!
+		 * @remarks You may want to use getBeatmapDifficultyAttributesOsu (or Taiko or whatever) instead for better type safety
+		 * @param beatmap The Beatmap in question
+		 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+		 * @param ruleset (defaults to the ruleset the beatmap was intended for) Useful to specify if the beatmap is a convert
+		 */
+		export async function get(this: API, beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number, ruleset?: Rulesets):
+		Promise<Beatmap.DifficultyAttributes | Beatmap.DifficultyAttributes.Any> {
+			const response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
+			return response.attributes
 		}
 
-		export interface WithBeatmapExtendedPacktags extends Extended {
-			beatmaps: Beatmap.Extended.WithMaxcombo[]
-			pack_tags: string[]
+		/**
+		 * Get various data about the difficulty of an osu! beatmap!
+		 * @param beatmap The Beatmap in question
+		 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+		 */
+		export async function getOsu(this: API, beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Osu> {
+			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.osu) as Beatmap.DifficultyAttributes.Osu
 		}
 
-		/** @obtainableFrom {@link API.getBeatmapset} */
-		export interface Plus extends Extended, WithUserHype {
-			/** The different beatmaps/difficulties this beatmapset has */
-			beatmaps: Beatmap.Extended.WithFailtimes[]
-			/** The different beatmaps made for osu!, but converted to the other Rulesets */
-			converts: Beatmap.Extended.WithFailtimes[]
-			current_nominations: {
-				beatmapset_id: number
-				rulesets: Rulesets[]
-				reset: boolean
-				user_id: number
-			}[]
-			description: {
-				/** In HTML */
-				description: string
-			}
-			genre: {
-				id: Genres
-				name: keyof typeof Genres
-			}
-			language: {
-				id: Languages
-				name: keyof typeof Languages
-			}
-			pack_tags: string[]
-			ratings: number[]
-			recent_favourites: User[]
-			related_users: User[]
-			/** Only exists if authorized user */
-			has_favourited?: boolean
+		/**
+		 * Get various data about the difficulty of a taiko beatmap!
+		 * @param beatmap The Beatmap in question
+		 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+		 */
+		export async function getTaiko(this: API, beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Taiko> {
+			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.taiko) as Beatmap.DifficultyAttributes.Taiko
+		}
+		/**
+		 * Get various data about the difficulty of a ctb beatmap!
+		 * @param beatmap The Beatmap in question
+		 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+		 */
+		export async function getFruits(this: API, beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Fruits> {
+			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.fruits) as Beatmap.DifficultyAttributes.Fruits
+		}
+		/**
+		 * Get various data about the difficulty of a mania beatmap!
+		 * @param beatmap The Beatmap in question
+		 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+		 */
+		export async function getMania(this: API, beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Mania> {
+			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.mania) as Beatmap.DifficultyAttributes.Mania
 		}
 	}
 
-	export interface Discussion {
-		id: number
-		beatmapset_id: number
-		beatmap_id: number | null
-		user_id: number
-		deleted_by_id: number | null
-		message_type: "suggestion" | "problem" | "mapper_note" | "praise" | "hype" | "review"
-		parent_id: number | null
-		timestamp: number | null
-		resolved: boolean
-		can_be_resolved: boolean
-		can_grant_kudosu: boolean
-		created_at: Date
-		updated_at: Date
-		deleted_at: Date | null
-		last_post_at: Date
-		kudosu_denied: boolean
+	/** @obtainableFrom {@link API.getBeatmapUserScore} */
+	export interface UserScore {
+		/** Value depends on the requested mode and mods! */
+		position: number
+		score: Score.WithUserBeatmap
 	}
 
-	export namespace Discussion {
-		export interface WithStartingpost extends Discussion {
-			starting_post: Discussion.Post
+	export namespace UserScore {
+		/**
+		 * Get the score on a beatmap made by a specific user (with specific mods and on a specific ruleset if needed)
+		 * @param beatmap The Beatmap the score was made on
+		 * @param user The User who made the score
+		 * @param mods The Mods used to make the score, defaults to any, you can use `["NM"]` to filter out scores with mods
+		 * @param ruleset The Ruleset used to make the score, useful if it was made on a convert
+		 * @returns An Object with the position of the score according to the specified Mods and Ruleset, and with the score itself
+		 */
+		export async function getOne(this: API, beatmap: {id: number} | Beatmap, user: {id: number} | User,
+			mods?: string[], ruleset?: Rulesets): Promise<UserScore> {
+			const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
+			return await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`, {mods, mode})
 		}
 
-		export interface Post {
-			beatmapset_discussion_id: number
-			created_at: Date
-			deleted_at: Date | null
-			deleted_by_id: number | null
-			id: number
-			last_editor_id: number | null
-			message: string
-			system: boolean
-			updated_at: Date
-			user_id: number
+		/**
+		 * Get the scores on a beatmap made by a specific user (with the possibility to specify if the scores are on a convert)
+		 * @param beatmap The Beatmap the scores were made on
+		 * @param user The User who made the scores
+		 * @param ruleset The Ruleset used to make the scores, defaults to the Ruleset the Beatmap was made for
+		 */
+		export async function getMultiple(this: API, beatmap: {id: number} | Beatmap, user: {id: number} | User, ruleset?: Rulesets): Promise<Score.Legacy[]> {
+			const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
+			const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}/all`, {mode})
+			return response.scores
 		}
+	}
+	
+	/** Get extensive beatmap data about whichever beatmap you want! */
+	export async function lookup(this: API, query: {checksum?: string, filename?: string, id?: number | string}): Promise<Beatmap.Extended.WithFailtimesBeatmapsetextended> {
+		if (query.id !== undefined) query.id = String(query.id)
+		return await this.request("get", `beatmaps/lookup`, {...query})
+	}
 
-		export interface Vote {
-			beatmapset_discussion_id: number
-			created_at: Date
-			id: number
-			score: number
-			updated_at: Date
-			user_id: number
-		}
+	/**
+	 * Get extensive beatmap data about whichever beatmap you want!
+	 * @param beatmap An object with the id of the beatmap you're trying to get
+	 */
+	export async function getOne(this: API, beatmap: {id: number} | Beatmap): Promise<Beatmap.Extended.WithFailtimesBeatmapsetextended> {
+		return await this.request("get", `beatmaps/${beatmap.id}`)
+	}
+
+	/**
+	 * Get extensive beatmap data for up to 50 beatmaps at once!
+	 * @param beatmaps An array of beatmaps or of objects that have the id of the beatmaps you're trying to get
+	 */
+	export async function getMultiple(this: API, beatmaps: Array<{id: number} | Beatmap>): Promise<Beatmap.Extended.WithFailtimesMaxcombo[]> {
+		const ids = beatmaps.map((beatmap) => beatmap.id)
+		const response = await this.request("get", "beatmaps", {ids})
+		return response.beatmaps
+	}
+
+	/**
+	 * Get the top scores of a beatmap!
+	 * @param beatmap The Beatmap in question
+	 * @param include_lazer_scores Whether or not lazer scores should be included, defaults to true
+	 * @param ruleset The Ruleset used to make the scores, useful if they were made on a convert
+	 * @param mods (2023-11-16) Currently doesn't do anything
+	 * @param type (2023-11-16) Currently doesn't do anything
+	 */
+	export async function getScores(this: API, beatmap: {id: number} | Beatmap, include_lazer_scores: boolean = true,
+		ruleset?: Rulesets, mods?: string[], type?: string): Promise<Score.WithUser[]> {
+		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
+		const response = await this.request("get", `beatmaps/${beatmap.id}/scores`, {mode, mods, legacy_only: Number(!include_lazer_scores), type})
+		return response.scores
+	}
+
+	/**
+	 * Get the top scores of a beatmap, in the "solo score" format lazer brought with it!
+	 * More info on GitHub if needed https://github.com/ppy/osu-infrastructure/blob/master/score-submission.md
+	 * @param beatmap The Beatmap in question
+	 * @param ruleset The Ruleset used to make the scores, useful if they were made on a convert
+	 * @param mods (2023-11-16) Currently doesn't do anything
+	 * @param type (2023-11-16) Currently doesn't do anything
+	 */
+	export async function getSoloScores(this: API, beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<Score.Solo[]> {
+		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
+		const response = await this.request("get", `beatmaps/${beatmap.id}/solo-scores`, {mode, mods, type})
+		return response.scores
 	}
 }
