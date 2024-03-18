@@ -546,159 +546,59 @@ export class API {
 
 	// FORUM STUFF
 
-	/**
-	 * Make and send a ForumPost in a ForumTopic!
-	 * @scope {@link Scope"forum.write"}
-	 * @param topic An object with the id of the topic you're making your reply in
-	 * @param text Your reply! Your message!
-	 * @returns The reply you've made!
-	 */
-	async replyForumTopic(topic: {id: number} | Forum.Topic, text: string): Promise<Forum.Post> {
-		return await this.request("post", `forums/topics/${topic.id}/reply`, {body: text})
-	}
+	/** {@inheritDoc Forum.Topic.create} @group Forum Functions */
+	readonly createForumTopic = Forum.Topic.create
 
-	/**
-	 * Create a new ForumTopic in the forum of your choice!
-	 * @scope {@link Scope"forum.write"}
-	 * @remarks Some users may not be allowed to do that, such as newly registered users, so this can 403 even with the right scopes
-	 * @param forum_id The id of the forum you're creating your topic in
-	 * @param title The topic's title
-	 * @param text The first post's content/message
-	 * @param poll If you want to make a poll, specify the parameters of that poll!
-	 * @returns An object with the topic you've made, and its first initial post (which uses your `text`)
-	 */
-	async createForumTopic(forum_id: number, title: string, text: string, poll?: PollConfig): Promise<{topic: Forum.Topic, post: Forum.Post}> {
-		const with_poll = poll !== undefined
-		const options = poll?.options !== undefined ? poll.options.toString().replace(/,/g, "\n") : undefined
+	/** {@inheritDoc Forum.Topic.reply} @group Forum Functions */
+	readonly replyForumTopic = Forum.Topic.reply
 
-		return await this.request("post", "forums/topics", {forum_id, title, body: text, with_poll, forum_topic_poll: poll ? {
-			title: poll.title,
-			options: options,
-			length_days: poll.length_days,
-			max_options: poll.max_options || 1,
-			vote_change: poll.vote_change || false,
-			hide_results: poll.hide_results || false,
-		} : undefined})
-	}
+	/** {@inheritDoc Forum.Topic.editTitle} @group Forum Functions */
+	readonly editForumTopicTitle = Forum.Topic.editTitle
 
-	/**
-	 * Get a forum topic, as well as its main post (content) and the posts that were sent in it!
-	 * @remarks The oldest post of a topic is the text of a topic
-	 * @param topic An object with the id of the topic in question
-	 * @param limit (defaults to 20, max 50) How many `posts` maximum?
-	 * @param sort (defaults to "id_asc") "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead
-	 * @param first_post (ignored if `cursor_string`) An Object with the id of the first post to be returned in `posts`
-	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
-	 */
-	async getForumTopicAndPosts(topic: {id: number} | Forum.Topic, limit: number = 20, sort: "id_asc" | "id_desc" = "id_asc",
-	first_post?: {id: number} | Forum.Post, cursor_string?: string): Promise<{posts: Forum.Post[], topic: Forum.Topic, cursor_string: string}> {
-		const start = sort === "id_asc" && first_post ? first_post.id : undefined
-		const end = sort === "id_desc" && first_post ? first_post.id : undefined
-		return await this.request("get", `forums/topics/${topic.id}`, {sort, limit, start, end, cursor_string})
-	}
+	/** {@inheritDoc Forum.Post.edit} @group Forum Functions */
+	readonly editForumPost = Forum.Post.edit
 
-	/**
-	 * Edit the title of a ForumTopic!
-	 * @scope {@link Scope"forum.write"}
-	 * @remarks Use `editForumPost` if you wanna edit the post at the top of the topic
-	 * @param topic An object with the id of the topic in question
-	 * @param new_title The new title of the topic
-	 * @returns The edited ForumTopic
-	 */
-	async editForumTopicTitle(topic: {id: number} | Forum.Topic, new_title: string): Promise<Forum.Topic> {
-		return await this.request("put", `forums/topics/${topic.id}`, {forum_topic: {topic_title:  new_title}})
-	}
-
-	/**
-	 * Edit a ForumPost! Note that it can be the initial one of a ForumTopic!
-	 * @scope {@link Scope"forum.write"}
-	 * @param post An object with the id of the post in question
-	 * @param new_text The new content of the post (replaces the old content)
-	 * @returns The edited ForumPost
-	 */
-	async editForumPost(post: {id: number} | Forum.Post, new_text: string): Promise<Forum.Post> {
-		return await this.request("put", `forums/posts/${post.id}`, {body: new_text})
-	}
+	/** {@inheritDoc Forum.getTopicAndPosts} @group Forum Functions */
+	readonly getForumTopicAndPosts = Forum.getTopicAndPosts
 
 
 	// HOME STUFF
 
 	/** {@inheritDoc Home.Search.getUsers} @group Home Functions */
-	searchUser = Home.Search.getUsers
+	readonly searchUser = Home.Search.getUsers
 
 	/** {@inheritDoc Home.Search.getWikiPages} @group Home Functions */
-	searchWiki = Home.Search.getWikiPages
+	readonly searchWiki = Home.Search.getWikiPages
 
 
 	// MULTIPLAYER STUFF
 
-	/**
-	 * Get data about a lazer multiplayer room (realtime or playlists)!
-	 * @param room An object with the id of the room, is at the end of its URL (after `/multiplayer/rooms/`)
-	 */
-	async getRoom(room: {id: number} | Multiplayer.Room): Promise<Multiplayer.Room> {
-		return await this.request("get", `rooms/${room.id}`)
-	}
+	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	readonly getRoom = Multiplayer.Room.getOne
 
-	/**
-	 * Get playlists/realtime rooms that are active, that have ended, that the user participated in, that the user made, or just simply any room!
-	 * @scope {@link Scope"public"}
-	 * @param type Whether the multiplayer rooms are in playlist format (like current spotlights) or realtime
-	 * @param mode The state of the room, or the relation of the authorized user with the room
-	 * @param limit The maximum amount of rooms to return, defaults to 10
-	 * @param sort Sort (where most recent is first) by creation date or end date, defaults to the creation date
-	 */
-	async getRooms(type: "playlists" | "realtime", mode: "active" | "all" | "ended" | "participated" | "owned",
-	limit: number = 10, sort: "ended" | "created" = "created"): Promise<Multiplayer.Room[]> {
-		return await this.request("get", "rooms", {type_group: type, mode, limit, sort})
-	}
+	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	readonly getRooms = Multiplayer.Room.getMultiple
 
-	/**
-	 * Get the room stats of all the users of that room!
-	 * @scope {@link Scope"public"}
-	 * @param room An object with the id of the room in question
-	 */
-	async getRoomLeaderboard(room: {id: number} | Multiplayer.Room): Promise<Multiplayer.Leader[]> {
-		const response = await this.request("get", `rooms/${room.id}/leaderboard`)
-		return response.leaderboard
-	}
+	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	readonly getRoomLeaderboard = Multiplayer.Room.getLeaderboard
 
-	/**
-	 * Get the scores on a specific item of a room!
-	 * @param item An object with the id of the item in question, as well as the id of the room
-	 * @param limit How many scores maximum? Defaults to 50, the maximum the API will return
-	 * @param sort Sort by scores, ascending or descending? Defaults to descending
-	 * @param cursor_string Use a Multiplayer.Scores' `params` and `cursor_string` to get the next page (scores 51 to 100 for example)
-	 * @remarks (2024-03-04) This may not work for rooms from before March 5th, use at your own risk
-	 * https://github.com/ppy/osu-web/issues/10725
-	 */
-	async getPlaylistItemScores(item: {id: number, room_id: number} | Multiplayer.PlaylistItem, limit: number = 50,
-	sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<Multiplayer.Scores> {
-		return await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
-	}
+	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	readonly getPlaylistItemScores = Multiplayer.Room.PlaylistItem.getScores
 
-	/**
-	 * Get data of a multiplayer lobby from the stable (non-lazer) client that have URLs with `community/matches` or `mp`
-	 * @param id Can be found at the end of the URL of said match
-	 */
-	async getMatch(id: number): Promise<Multiplayer.Match> {
-		const response = await this.request("get", `matches/${id}`) as Multiplayer.Match
-		// I know `events[i].game.scores[e].perfect` can at least be 0 instead of being false; fix that
-		for (let i = 0; i < response.events.length; i++) {
-			for (let e = 0; e < Number(response.events[i].game?.scores.length); e++) {
-				response.events[i].game!.scores[e].perfect = Boolean(response.events[i].game!.scores[e].perfect)
-			}
-		}
-		return response
-	}
+	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	readonly getMatch = Multiplayer.Match.getOne
 
-	/**
-	 * Gets the info of the 50 most recently created stable (non-lazer) matches, descending order (most recent is at index 0)
-	 */
-	async getMatches(): Promise<Multiplayer.MatchInfo[]> {
-		const response = await this.request("get", "matches")
-		return response.matches
-	}
+	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	readonly getMatches = Multiplayer.Match.getMultiple
+
+
+	// NEWS STUFF
+
+	/** {@inheritDoc NewsPost.getOne} @group NewsPost Functions */
+	readonly getNewsPost = NewsPost.getOne
+
+	/** {@inheritDoc NewsPost.getMultiple} @group NewsPost Functions */
+	readonly getNewsPosts = NewsPost.getMultiple
 
 
 	// RANKING STUFF
@@ -755,28 +655,6 @@ export class API {
 	}
 
 
-	// WIKI STUFF
-
-	/**
-	 * Get a wiki page!
-	 * @param path What's in the page's URL after `https://osu.ppy.sh/wiki/` (so the title, after the subtitle if there is a subtitle)
-	 * (An example for `https://osu.ppy.sh/wiki/en/Game_mode/osu!` would be `Game_mode/osu!`)
-	 * @param locale (defaults to "en") The BCP 47 language (sub)tag, lowercase (for example, for the article in french, use "fr")
-	 */
-	async getWikiPage(path: string, locale: string = "en"): Promise<WikiPage> {
-		return await this.request("get", `wiki/${locale}/${path}`)
-	}
-
-
-	// NEWS STUFF
-
-	/** {@inheritDoc NewsPost.getOne} @group NewsPost Functions */
-	readonly getNewsPost = NewsPost.getOne
-
-	/** {@inheritDoc NewsPost.getMultiple} @group NewsPost Functions */
-	readonly getNewsPosts = NewsPost.getMultiple
-
-
 	// USER STUFF
 
 	/** {@inheritDoc User.getResourceOwner} @group User Functions */
@@ -805,6 +683,12 @@ export class API {
 
 	/** {@inheritDoc User.getFriends} @group User Functions */
 	readonly getFriends = User.getFriends
+
+
+	// WIKI STUFF
+
+	/** {@inheritDoc WikiPage.getOne} @group WikiPage Functions */
+	readonly getWikiPage = WikiPage.getOne
 
 	
 	// OTHER STUFF

@@ -211,16 +211,16 @@ const testMultiplayerStuff = async (): Promise<boolean> => {
 	if (!isOk(d2, !d2 || (d2.participant_count === 27 && validate(d2, "Multiplayer.Room")))) okay = false
 	if (d1) {
 		const d3 = await attempt(api.getPlaylistItemScores, {id: d1.playlist[0].id, room_id: d1.id})
-		if (!isOk(d3, !d3 || (d3.scores.length > 0 && validate(d3, "Multiplayer.Scores")), 1)) okay = false
+		if (!isOk(d3, !d3 || (d3.scores.length > 0 && validate(d3, "Multiplayer.Room.PlaylistItem.Scores")), 1)) okay = false
 	}
 	if (d2) {
 		const d4 = await attempt(api.getPlaylistItemScores, {id: d2.playlist[0].id, room_id: d2.id})
-		if (!isOk(d4, !d4 || (d4.scores.length >= 9 && validate(d4, "Multiplayer.Scores")), 1)) okay = false
+		if (!isOk(d4, !d4 || (d4.scores.length >= 9 && validate(d4, "Multiplayer.Room.PlaylistItem.Scores")), 1)) okay = false
 	}
 	const d5 = await attempt(api.getMatch, 62006076)
 	if (!isOk(d5, !d5 || (d5.match.name === "CWC2020: (Italy) vs (Indonesia)" && validate(d5, "Multiplayer.Match")), 3)) okay = false
 	const d6 = await attempt(api.getMatches)
-	if (!isOk(d6, !d6 || (d6[0].id > 111250329 && validate(d6, "Multiplayer.MatchInfo")))) okay = false
+	if (!isOk(d6, !d6 || (d6[0].id > 111250329 && validate(d6, "Multiplayer.Match.Info")))) okay = false
 
 	return okay
 }
