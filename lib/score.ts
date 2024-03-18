@@ -1,5 +1,6 @@
 import { Beatmap } from "./beatmap.js"
 import { Beatmapset } from "./beatmapset.js"
+import { API } from "./index.js"
 import { Mod, Rulesets } from "./misc.js"
 import { User } from "./user.js"
 
@@ -133,5 +134,15 @@ export namespace Score {
 			percentage: number
 			pp: number
 		}
+	}
+
+	/**
+	 * Get the replay for a score!
+	 * @scope {@link Scope"public"}
+	 * @param score The score that has created the replay
+	 * @returns The correctly encoded content of what would be a replay file (you can just fs.writeFileSync with it!)
+	 */
+	export async function getReplay(this: API, score: {id: number} | Score): Promise<string> {
+		return await this.request("get", `scores/${score.id}/download`)
 	}
 }

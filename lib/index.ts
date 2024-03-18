@@ -1,20 +1,21 @@
 import fetch, { FetchError } from "node-fetch"
 import { WebSocket } from "ws"
+
 import { User } from "./user.js"
 import { Beatmap } from "./beatmap.js"
 import { Beatmapset } from "./beatmapset.js"
 
 import { Multiplayer } from "./multiplayer.js"
 import { Score } from "./score.js"
-import { Rankings, Spotlight } from "./ranking.js"
+import { Ranking } from "./ranking.js"
 import { Event } from "./event.js"
 
 import { Changelog } from "./changelog.js"
-import { Forum, PollConfig } from "./forum.js"
+import { Forum } from "./forum.js"
 import { WikiPage } from "./wiki.js"
 import { NewsPost } from "./news.js"
 import { Home } from "./home.js"
-import { Rulesets, Mod, Scope, Genres, Languages } from "./misc.js"
+import { Scope, Spotlight } from "./misc.js"
 import { Chat } from "./chat.js"
 import { Comment } from "./comment.js"
 
@@ -25,7 +26,7 @@ export { Beatmapset } from "./beatmapset.js"
 
 export { Multiplayer } from "./multiplayer.js"
 export { Score } from "./score.js"
-export { Rankings, Spotlight } from "./ranking.js"
+export { Ranking } from "./ranking.js"
 export { Event } from "./event.js"
 
 export { Changelog } from "./changelog.js"
@@ -33,7 +34,7 @@ export { Forum, PollConfig } from "./forum.js"
 export { WikiPage } from "./wiki.js"
 export { NewsPost } from "./news.js"
 export { Home } from "./home.js"
-export { Rulesets, Mod, Scope, Genres, Languages, RankStatus } from "./misc.js"
+export { Rulesets, Mod, Scope, Genres, Languages, RankStatus, Spotlight } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocket } from "./websocket.js"
 export { Comment } from "./comment.js"
@@ -603,56 +604,17 @@ export class API {
 
 	// RANKING STUFF
 
-	/**
-	 * Get the top 50 players who have the most total kudosu!
-	 */
-	async getKudosuRanking(): Promise<User.WithKudosu[]> {
-		const response = await this.request("get", "rankings/kudosu")
-		return response.ranking
-	}
+	/** {@inheritDoc Ranking.getUser} @group Ranking Functions */
+	readonly getUserRanking = Ranking.getUser
 
-	/**
-	 * Get the top players of the game, with some filters!
-	 * @param ruleset Self-explanatory, is also known as "Gamemode"
-	 * @param type Rank players by their performance points or by their ranked score?
-	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 players, while 50 others may be on the next one
-	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
-	 * @param country Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`)
-	 * @param variant If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k!
-	 */
-	async getUserRanking(ruleset: Rulesets, type: "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
-	country?: string, variant?: "4k" | "7k"): Promise<Rankings.User> {
-		return await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, variant})
-	}
+	/** {@inheritDoc Ranking.getCountry} @group Ranking Functions */
+	readonly getCountryRanking = Ranking.getCountry
 
-	/**
-	 * Get the top countries of a specific ruleset!
-	 * @param ruleset On which Ruleset should the countries be compared?
-	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one
-	 */
-	async getCountryRanking(ruleset: Rulesets, page: number = 1): Promise<Rankings.Country> {
-		return await this.request("get", `rankings/${Rulesets[ruleset]}/country`, {page})
-	}
+	/** {@inheritDoc Ranking.getKudosu} @group Ranking Functions */
+	readonly getKudosuRanking = Ranking.getKudosu
 
-	/**
-	 * Get the rankings of a spotlight from 2009 to 2020 on a specific ruleset!
-	 * @param ruleset Each spotlight has a different ranking (and often maps) depending on the ruleset
-	 * @param spotlight The spotlight in question
-	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
-	 */
-	async getSpotlightRanking(ruleset: Rulesets, spotlight: {id: number} | Spotlight, filter: "all" | "friends" = "all"): Promise<Rankings.Spotlight> {
-		return await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: spotlight.id, filter})
-	}
-
-	/**
-	 * Get ALL legacy spotlights! (2009-2020, somewhat known as charts/ranking charts, available @ https://osu.ppy.sh/rankings/osu/charts)
-	 * @remarks The data for newer spotlights (2020-, somewhat known as seasons) can be obtained through `getRoom()`
-	 * but you can't really get their id without going through the website's URLs (https://osu.ppy.sh/seasons/latest) as far as I know :(
-	 */
-	async getSpotlights(): Promise<Spotlight[]> {
-		const response = await this.request("get", "spotlights")
-		return response.spotlights
-	}
+	/** {@inheritDoc Ranking.getSpotlight} @group Ranking Functions */
+	readonly getSpotlightRanking = Ranking.getSpotlight
 
 
 	// USER STUFF
@@ -693,21 +655,18 @@ export class API {
 	
 	// OTHER STUFF
 
+	/** {@inheritDoc Spotlight.getAll} @group Other Functions */
+	readonly getSpotlights = Spotlight.getAll
+
+	/** {@inheritDoc Score.getReplay} @group Other Functions */
+	readonly getReplay = Score.getReplay
+
 	/**
 	 * Get the backgrounds made and selected for this season or for last season!
 	 * @returns When the season ended, and for each background, its URL and its artist
+	 * @group Other Functions
 	 */
 	async getSeasonalBackgrounds(): Promise<{ends_at: Date, backgrounds: {url: string, user: User}[]}> {
 		return await this.request("get", "seasonal-backgrounds")
-	}
-
-	/**
-	 * Get the replay for a score!
-	 * @scope {@link Scope"public"}
-	 * @param score The score that has created the replay
-	 * @returns The correctly encoded content of what would be a replay file (you can just fs.writeFileSync with it!)
-	 */
-	async getReplay(score: {id: number} | Score): Promise<string> {
-		return await this.request("get", `scores/${score.id}/download`)
 	}
 }

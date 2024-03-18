@@ -236,11 +236,11 @@ const testRankingStuff = async (): Promise<boolean> => {
 	const e1 = await attempt(api.getKudosuRanking)
 	if (!isOk(e1, !e1 || (e1[0].kudosu.total > 10000 && validate(e1, "User.WithKudosu")))) okay = false
 	const e2 = await attempt(api.getUserRanking, osu.Rulesets.osu, "score", 1, "all", "FR")
-	if (!isOk(e2, !e2 || (e2.ranking[0].level.current > 106 && validate(e2, "Rankings.User")), 2)) okay = false
+	if (!isOk(e2, !e2 || (e2.ranking[0].level.current > 106 && validate(e2, "Ranking.User")), 2)) okay = false
 	const e3 = await attempt(api.getCountryRanking, osu.Rulesets.osu)
-	if (!isOk(e3, !e3 || (e3.ranking[0].code === "US" && validate(e3, "Rankings.Country")))) okay = false
+	if (!isOk(e3, !e3 || (e3.ranking[0].code === "US" && validate(e3, "Ranking.Country")))) okay = false
 	const e4 = await attempt(api.getSpotlightRanking, osu.Rulesets.taiko, {id: 48})
-	if (!isOk(e4, !e4 || (e4.ranking[0].hit_accuracy === 97.85 && validate(e4, "Rankings.Spotlight")), 2)) okay = false
+	if (!isOk(e4, !e4 || (e4.ranking[0].hit_accuracy === 97.85 && validate(e4, "Ranking.Spotlight")), 2)) okay = false
 	const e5 = await attempt(api.getSpotlights)
 	if (!isOk(e5, !e5 || (e5.length >= 132 && validate(e5, "Spotlight")))) okay = false
 
