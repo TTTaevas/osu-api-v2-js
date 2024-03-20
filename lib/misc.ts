@@ -90,3 +90,12 @@ export namespace Spotlight {
 		return response.spotlights
 	}
 }
+
+/**
+ * A function that makes it easy to get the id from the argument of a function
+ * @param arg The id or the object with the id
+ * @returns The id
+ */
+export function getId(arg: number | {id: number}): number {
+	return typeof arg === "number" ? arg : arg.id
+}

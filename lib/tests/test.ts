@@ -128,37 +128,37 @@ const testBeatmapStuff = async (): Promise<boolean> => {
 
 	const b1 = await attempt(api.lookupBeatmap, {id: beatmap_id})
 	if (!isOk(b1, !b1 || (b1.id === beatmap_id && validate(b1, long_str)))) okay = false
-	const b2 = await attempt(api.getBeatmap, {id: beatmap_id})
+	const b2 = await attempt(api.getBeatmap, beatmap_id)
 	if (!isOk(b2, !b2 || (b2.beatmapset.title_unicode == "夜啼く兎は夢を見る" && validate(b2, long_str)))) okay = false
-	const b3 = await attempt(api.getBeatmaps, [beatmap_id, 4089655].map((i) => {return {id: i}}))
+	const b3 = await attempt(api.getBeatmaps, [beatmap_id, 4089655])
 	if (!isOk(b3, !b3 || (b3.length === 2 && validate(b3, "Beatmap.Extended")))) okay = false
 
-	const b4 = await attempt(api.getBeatmapDifficultyAttributesOsu, {id: 125660}, ["DT"])
+	const b4 = await attempt(api.getBeatmapDifficultyAttributesOsu, 125660, ["DT"])
 	if (!isOk(b4, !b4 || (b4.approach_rate.toFixed(2) === "9.67" && validate(b4, "Beatmap.DifficultyAttributes.Osu")))) okay = false
-	const b5 = await attempt(api.getBeatmapDifficultyAttributesTaiko, {id: beatmap_id}, ["DT"])
+	const b5 = await attempt(api.getBeatmapDifficultyAttributesTaiko, beatmap_id, ["DT"])
 	if (!isOk(b5, !b5 || (b5.great_hit_window < 35 && validate(b5, "Beatmap.DifficultyAttributes.Taiko")))) okay = false
-	const b6 = await attempt(api.getBeatmapDifficultyAttributesFruits, {id: 705339}, ["DT"])
+	const b6 = await attempt(api.getBeatmapDifficultyAttributesFruits, 705339, ["DT"])
 	if (!isOk(b6, !b6 || (b6.approach_rate.toFixed(2) === "10.33" && validate(b6, "Beatmap.DifficultyAttributes.Fruits")))) okay = false
-	const b7 = await attempt(api.getBeatmapDifficultyAttributesMania, {id: 3980252}, ["DT"])
+	const b7 = await attempt(api.getBeatmapDifficultyAttributesMania, 3980252, ["DT"])
 	if (!isOk(b7, !b7 || (b7.great_hit_window === 40 && validate(b7, "Beatmap.DifficultyAttributes.Mania")))) okay = false
 	
 	const b8 = await attempt(api.searchBeatmapsets, {categories: "Any"})
 	if (!isOk(b8, !b8 || (b8.total >= 10000 && validate(b8.beatmapsets, "Beatmapset.Extended.WithBeatmapExtendedPacktags")))) okay = false
 	const b9 = await attempt(api.lookupBeatmapset, {id: beatmap_id})
 	if (!isOk(b9, !b9 || (b9.id === 58951 && validate(b9, "Beatmapset.Extended.Plus")))) okay = false
-	const b10 = await attempt(api.getBeatmapUserScore, {id: 176960}, {id: 7276846}, ["NM"])
+	const b10 = await attempt(api.getBeatmapUserScore, 176960, 7276846, {mods: ["NM"]})
 	if (!isOk(b10, !b10 || (b10.score.accuracy < 0.99 && validate(b10, "Beatmap.UserScore")))) okay = false
-	const b11 = await attempt(api.getBeatmapUserScores, {id: 203993}, {id: 7276846}, osu.Rulesets.fruits)
+	const b11 = await attempt(api.getBeatmapUserScores, 203993, 7276846, {ruleset: osu.Rulesets.fruits})
 	if (!isOk(b11, !b11 || (b11.length === 1 && validate(b11, "Score")))) okay = false
 	const b12 = await attempt(api.getBeatmapset, {id: 1971037})
 	if (!isOk(b12, !b12 || (b12.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(b12, "Beatmapset.Extended.Plus")))) okay = false
-	const b13 = await attempt(api.getBeatmapPack, {tag: "P217"})
+	const b13 = await attempt(api.getBeatmapPack, "P217")
 	if (!isOk(b13, !b13 || (b13.tag === "P217" && validate(b13, "Beatmap.Pack")))) okay = false
 	const b14 = await attempt(api.getBeatmapPacks, "tournament")
-	if (!isOk(b14, !b14 || (b14.length >= 100 && validate(b14, "Beatmap.Pack")))) okay = false
-	const b15 = await attempt(api.getBeatmapScores, {id: 129891}, false)
+	if (!isOk(b14, !b14 || (b14.beatmap_packs.length >= 100 && validate(b14.beatmap_packs, "Beatmap.Pack")))) okay = false
+	const b15 = await attempt(api.getBeatmapScores, 129891, {legacy_only: true})
 	if (!isOk(b15, !b15 || (b15[0].score >= 132408001 && validate(b15, "Score.WithUser")))) okay = false
-	const b16 = await attempt(api.getBeatmapSoloScores, {id: 129891})
+	const b16 = await attempt(api.getBeatmapSoloScores, 129891)
 	if (!isOk(b16, !b16 || (b16[0].total_score >= 1073232 && validate(b16, "Score.Solo")))) okay = false
 
 	const b17 = await attempt(api.getBeatmapsetDiscussions, {beatmapset: {id: 2119925}})

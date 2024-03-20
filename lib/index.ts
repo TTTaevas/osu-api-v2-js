@@ -275,6 +275,7 @@ export class API {
 	}
 
 	/**
+	 * The function that directly communicates with the API! Almost every functions of the API object uses this function!
 	 * @param method The type of request, each endpoint uses a specific one (if it uses multiple, the intent and parameters become different)
 	 * @param endpoint What comes in the URL after `api/`
 	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap

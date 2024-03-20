@@ -1,25 +1,41 @@
 import { Beatmapset } from "./beatmapset.js"
 import { API, User } from "./index.js"
-import { Rulesets, RankStatus, Mod } from "./misc.js"
+import { Rulesets, RankStatus, Mod, getId } from "./misc.js"
 import { Score } from "./score.js"
 
 export interface Beatmap {
-	beatmapset_id: number
+	beatmapset_id: Beatmapset["id"]
 	difficulty_rating: number
 	id: number
 	mode: keyof typeof Rulesets
 	status: string
 	total_length: number
-	user_id: number
+	user_id: User["id"]
 	version: string
 }
 
 export namespace Beatmap {
+	/** 
+	 * An interface to tell the API what kind of scores should be in an array returned by a function
+	 * @group Parameter Object Interfaces
+	 * @remarks Please note that some properties will be ignored by certain functions, check this in case of doubt: https://osu.ppy.sh/docs/index.html#beatmaps
+	 */
+	export interface Config {
+		/** The Ruleset used to make the score, useful if it was made on a convert */
+		ruleset?: Rulesets
+		/** The Mods used to make the score, you can simply use `["NM"]` to filter out scores with mods (defaults to **any mods**, no scores filtered) */
+		mods?: string[]
+		/** "Beatmap score ranking type", whatever that means... */
+		type?: string
+		/** Exclude lazer scores? (defaults to **false**) */
+		legacy_only?: boolean
+	}
+
 	export interface WithBeatmapset extends Beatmap {
 		beatmapset: Beatmapset
 	}
 
-	interface WithChecksum extends Beatmap {
+	export interface WithChecksum extends Beatmap {
 		checksum: string
 	}
 
@@ -71,7 +87,7 @@ export namespace Beatmap {
 
 	/** @obtainableFrom {@link API.getUserMostPlayed} */
 	export interface Playcount {
-		beatmap_id: number
+		beatmap_id: Beatmap["id"]
 		/** Playcount */
 		count: number
 		beatmap: Beatmap
@@ -84,18 +100,18 @@ export namespace Beatmap {
 	 * {@link API.getBeatmapPacks}
 	 */
 	export interface Pack {
-		author: string
+		author: User["username"]
 		date: Date
 		name: string
 		/** Are difficulty reduction mods unable to be used to clear this pack? (is `false` if you can use such mods) */
 		no_diff_reduction: boolean
-		ruleset_id: number | null,
+		ruleset_id: Rulesets | null,
 		tag: string,
 		url: string,
 		beatmapsets?: Beatmapset.Extended[],
 		user_completion_data?:{
 			/** IDs of beatmapsets completed by the user (according to the requirements of the pack) */
-			beatmapset_ids: number[],
+			beatmapset_ids: Beatmapset["id"][],
 			/** Whether all beatmapsets are completed by the user or not */
 			completed: boolean
 		}
@@ -103,21 +119,24 @@ export namespace Beatmap {
 
 	export namespace Pack {
 		/**
-		 * Get data about a BeatmapPack using its tag!
-		 * @param pack An object with the tag of the beatmappack you're trying to get
-		 * @remarks Currently in https://osu.ppy.sh/beatmaps/packs, when hovering a pack, its link with its tag should show up on your browser's bottom left
+		 * Get data about a Beatmap.Pack using its tag!
+		 * @param pack The Pack or the pack tag of the Pack you're trying to get
+		 * @param legacy_only Should lazer scores be excluded from the pack's `user_completion_data`? (defaults to **false**)
+		 * @remarks Currently in https://osu.ppy.sh/beatmaps/packs, when hovering a pack, its URL with its tag should be preview by your browser
 		 */
-		export async function getOne(this: API, pack: {tag: string} | Beatmap.Pack): Promise<Beatmap.Pack> {
-			return await this.request("get", `beatmaps/packs/${pack.tag}`)
+		export async function getOne(this: API, pack: Pack["tag"] | Pack, legacy_only: boolean = false): Promise<Pack> {
+			const tag = typeof pack === "string" ? pack : pack.tag
+			return await this.request("get", `beatmaps/packs/${tag}`, {legacy_only})
 		}
 
 		/**
-		 * Get an Array of up to 100 BeatmapPacks of a specific type!
+		 * Get an Array of up to 100 Beatmap.Packs of a specific type!
 		 * @param type The type of the BeatmapPacks, defaults to "standard"
+		 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results!
 		 */
-		export async function getMultiple(this: API, type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard"): Promise<Beatmap.Pack[]> {
-			const response = await this.request("get", "beatmaps/packs", {type})
-			return response.beatmap_packs
+		export async function getMultiple(this: API, type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard",
+		cursor_string?: string): Promise<{beatmap_packs: Pack[], cursor_string: string | null}> {
+			return await this.request("get", "beatmaps/packs", {type, cursor_string})
 		}
 	}
 
@@ -156,9 +175,7 @@ export namespace Beatmap {
 		/** @obtainableFrom {@link API.getBeatmapDifficultyAttributesMania} */
 		export interface Mania extends DifficultyAttributes {
 			great_hit_window: number
-			/**
-			 * @remarks (2023-11-20) Doesn't exist anymore?
-			 */
+			/** @remarks API documentation says it exists, my thorough testing says it doesn't, so... */
 			score_multiplier?: number
 		}
 
@@ -166,49 +183,49 @@ export namespace Beatmap {
 
 		/**
 		 * Get various data about the difficulty of a beatmap!
-		 * @remarks You may want to use getBeatmapDifficultyAttributesOsu (or Taiko or whatever) instead for better type safety
 		 * @param beatmap The Beatmap in question
-		 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
-		 * @param ruleset (defaults to the ruleset the beatmap was intended for) Useful to specify if the beatmap is a convert
+		 * @param mods Can be a bitset of mods, an array of mod acronyms, or an array of Mods (ignores mod settings) (defaults to **No Mod**)
+		 * @param ruleset Useful to specify if the beatmap is a convert (defaults to **the ruleset the beatmap was intended for**)
+		 * @remarks You may want to use api.getBeatmapDifficultyAttributesOsu (or Taiko or whatever) instead for better type safety
 		 */
-		export async function get(this: API, beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number, ruleset?: Rulesets):
-		Promise<Beatmap.DifficultyAttributes | Beatmap.DifficultyAttributes.Any> {
-			const response = await this.request("post", `beatmaps/${beatmap.id}/attributes`, {ruleset_id: ruleset, mods})
-			return response.attributes
+		export async function get(this: API, beatmap: Beatmap["id"] | Beatmap, mods?: Mod[] | string[] | number, ruleset?: Rulesets):
+		Promise<DifficultyAttributes.Any> {
+			const response = await this.request("post", `beatmaps/${getId(beatmap)}/attributes`, {ruleset_id: ruleset, mods})
+			return response.attributes // It's the only property
 		}
 
 		/**
 		 * Get various data about the difficulty of an osu! beatmap!
 		 * @param beatmap The Beatmap in question
-		 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+		 * @param mods Can be a bitset of mods, an array of mod acronyms, or an array of Mods (ignores mod settings) (defaults to **No Mod**)
 		 */
-		export async function getOsu(this: API, beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Osu> {
-			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.osu) as Beatmap.DifficultyAttributes.Osu
+		export async function getOsu(this: API, beatmap: Beatmap["id"] | Beatmap, mods?: Mod[] | string[] | number): Promise<DifficultyAttributes.Osu> {
+			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.osu) as DifficultyAttributes.Osu
 		}
 
 		/**
 		 * Get various data about the difficulty of a taiko beatmap!
 		 * @param beatmap The Beatmap in question
-		 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+		 * @param mods Can be a bitset of mods, an array of mod acronyms, or an array of Mods (ignores mod settings) (defaults to **No Mod**)
 		 */
-		export async function getTaiko(this: API, beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Taiko> {
-			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.taiko) as Beatmap.DifficultyAttributes.Taiko
+		export async function getTaiko(this: API, beatmap: Beatmap["id"] | Beatmap, mods?: Mod[] | string[] | number): Promise<DifficultyAttributes.Taiko> {
+			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.taiko) as DifficultyAttributes.Taiko
 		}
 		/**
 		 * Get various data about the difficulty of a ctb beatmap!
 		 * @param beatmap The Beatmap in question
-		 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+		 * @param mods Can be a bitset of mods, an array of mod acronyms, or an array of Mods (ignores mod settings) (defaults to **No Mod**)
 		 */
-		export async function getFruits(this: API, beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Fruits> {
-			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.fruits) as Beatmap.DifficultyAttributes.Fruits
+		export async function getFruits(this: API, beatmap: Beatmap["id"] | Beatmap, mods?: Mod[] | string[] | number): Promise<DifficultyAttributes.Fruits> {
+			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.fruits) as DifficultyAttributes.Fruits
 		}
 		/**
 		 * Get various data about the difficulty of a mania beatmap!
 		 * @param beatmap The Beatmap in question
-		 * @param mods (defaults to No Mod) (will ignore mod settings) Can be a bitset of mods, an array of mod acronyms ("DT" for DoubleTime), or an array of Mods
+		 * @param mods Can be a bitset of mods, an array of mod acronyms, or an array of Mods (ignores mod settings) (defaults to **No Mod**)
 		 */
-		export async function getMania(this: API, beatmap: {id: number} | Beatmap, mods?: Mod[] | string[] | number): Promise<Beatmap.DifficultyAttributes.Mania> {
-			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.mania) as Beatmap.DifficultyAttributes.Mania
+		export async function getMania(this: API, beatmap: Beatmap["id"] | Beatmap, mods?: Mod[] | string[] | number): Promise<DifficultyAttributes.Mania> {
+			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Rulesets.mania) as DifficultyAttributes.Mania
 		}
 	}
 
@@ -224,79 +241,80 @@ export namespace Beatmap {
 		 * Get the score on a beatmap made by a specific user (with specific mods and on a specific ruleset if needed)
 		 * @param beatmap The Beatmap the score was made on
 		 * @param user The User who made the score
-		 * @param mods The Mods used to make the score, defaults to any, you can use `["NM"]` to filter out scores with mods
-		 * @param ruleset The Ruleset used to make the score, useful if it was made on a convert
+		 * @param config Specify the score's ruleset, the score's mods, prevent a lazer score from being returned **(`type` should not be supported)**
 		 * @returns An Object with the position of the score according to the specified Mods and Ruleset, and with the score itself
 		 */
-		export async function getOne(this: API, beatmap: {id: number} | Beatmap, user: {id: number} | User,
-			mods?: string[], ruleset?: Rulesets): Promise<UserScore> {
-			const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-			return await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}`, {mods, mode})
+		export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Config): Promise<UserScore> {
+			const mode = config?.ruleset !== undefined ? Rulesets[config.ruleset] : undefined
+			return await this.request("get", `beatmaps/${getId(beatmap)}/scores/users/${getId(user)}`,
+			{legacy_only: config?.legacy_only, mode, mods: config?.mods, type: config?.type})
 		}
 
 		/**
 		 * Get the scores on a beatmap made by a specific user (with the possibility to specify if the scores are on a convert)
 		 * @param beatmap The Beatmap the scores were made on
 		 * @param user The User who made the scores
-		 * @param ruleset The Ruleset used to make the scores, defaults to the Ruleset the Beatmap was made for
+		 * @param config Specify the score's ruleset, prevent a lazer score from being returned **(`mods` and `type` should not be supported)**
 		 */
-		export async function getMultiple(this: API, beatmap: {id: number} | Beatmap, user: {id: number} | User, ruleset?: Rulesets): Promise<Score.Legacy[]> {
-			const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-			const response = await this.request("get", `beatmaps/${beatmap.id}/scores/users/${user.id}/all`, {mode})
-			return response.scores
+		export async function getMultiple(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Config): Promise<Score.Legacy[]> {
+			const mode = config?.ruleset !== undefined ? Rulesets[config.ruleset] : undefined
+			const response = await this.request("get", `beatmaps/${getId(beatmap)}/scores/users/${getId(user)}/all`,
+			{legacy_only: config?.legacy_only, mode, mods: config?.mods, type: config?.type})
+			return response.scores // It's the only property
 		}
 	}
 	
-	/** Get extensive beatmap data about whichever beatmap you want! */
-	export async function lookup(this: API, query: {checksum?: string, filename?: string, id?: number | string}): Promise<Beatmap.Extended.WithFailtimesBeatmapsetextended> {
-		if (query.id !== undefined) query.id = String(query.id)
-		return await this.request("get", `beatmaps/lookup`, {...query})
+	/** 
+	 * Get extensive beatmap data about whichever beatmap you want!
+	 * @param query What to specify in order to find the right beatmap
+	*/
+	export async function lookup(this: API, query: {checksum?: Beatmap.WithChecksum["checksum"], filename?: string, id?: Beatmap["id"]}):
+	Promise<Extended.WithFailtimesBeatmapsetextended> {
+		return await this.request("get", `beatmaps/lookup`, {checksum: query.checksum, filename: query.filename, id: query.id ? String(query.id) : undefined})
 	}
 
 	/**
 	 * Get extensive beatmap data about whichever beatmap you want!
 	 * @param beatmap An object with the id of the beatmap you're trying to get
 	 */
-	export async function getOne(this: API, beatmap: {id: number} | Beatmap): Promise<Beatmap.Extended.WithFailtimesBeatmapsetextended> {
-		return await this.request("get", `beatmaps/${beatmap.id}`)
+	export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Extended.WithFailtimesBeatmapsetextended> {
+		return await this.request("get", `beatmaps/${getId(beatmap)}`)
 	}
 
 	/**
 	 * Get extensive beatmap data for up to 50 beatmaps at once!
 	 * @param beatmaps An array of beatmaps or of objects that have the id of the beatmaps you're trying to get
 	 */
-	export async function getMultiple(this: API, beatmaps: Array<{id: number} | Beatmap>): Promise<Beatmap.Extended.WithFailtimesMaxcombo[]> {
-		const ids = beatmaps.map((beatmap) => beatmap.id)
+	export async function getMultiple(this: API, beatmaps: Array<Beatmap["id"] | Beatmap>): Promise<Extended.WithFailtimesMaxcombo[]> {
+		const ids = beatmaps.map((beatmap) => getId(beatmap))
 		const response = await this.request("get", "beatmaps", {ids})
-		return response.beatmaps
+		return response.beatmaps // It's the only property
 	}
 
 	/**
 	 * Get the top scores of a beatmap!
 	 * @param beatmap The Beatmap in question
-	 * @param include_lazer_scores Whether or not lazer scores should be included, defaults to true
-	 * @param ruleset The Ruleset used to make the scores, useful if they were made on a convert
-	 * @param mods (2023-11-16) Currently doesn't do anything
-	 * @param type (2023-11-16) Currently doesn't do anything
+	 * @param config Specify the score's ruleset, mods, type, prevent a lazer score from being returned
+	 * @remarks Please check if `mods` and `type` seem to be supported or not by the API: https://osu.ppy.sh/docs/index.html#get-beatmap-scores
 	 */
-	export async function getScores(this: API, beatmap: {id: number} | Beatmap, include_lazer_scores: boolean = true,
-		ruleset?: Rulesets, mods?: string[], type?: string): Promise<Score.WithUser[]> {
-		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-		const response = await this.request("get", `beatmaps/${beatmap.id}/scores`, {mode, mods, legacy_only: Number(!include_lazer_scores), type})
-		return response.scores
+	export async function getScores(this: API, beatmap: Beatmap["id"] | Beatmap, config?: Config): Promise<Score.WithUser[]> {
+		const mode = config?.ruleset !== undefined ? Rulesets[config.ruleset] : undefined
+		const response = await this.request("get", `beatmaps/${getId(beatmap)}/scores`,
+		{legacy_only: config?.legacy_only, mode, mods: config?.mods, type: config?.type})
+		return response.scores // It's the only property
 	}
 
 	/**
 	 * Get the top scores of a beatmap, in the "solo score" format lazer brought with it!
 	 * More info on GitHub if needed https://github.com/ppy/osu-infrastructure/blob/master/score-submission.md
 	 * @param beatmap The Beatmap in question
-	 * @param ruleset The Ruleset used to make the scores, useful if they were made on a convert
-	 * @param mods (2023-11-16) Currently doesn't do anything
-	 * @param type (2023-11-16) Currently doesn't do anything
+	 * @param config Specify the score's ruleset, mods, type **(`legacy_only` should not be supported)**
+	 * @remarks Please check if `mods` and `type` seem to be supported or not by the API: https://osu.ppy.sh/docs/index.html#get-beatmap-scores-non-legacy
 	 */
-	export async function getSoloScores(this: API, beatmap: {id: number} | Beatmap, ruleset?: Rulesets, mods?: string[], type?: string): Promise<Score.Solo[]> {
-		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-		const response = await this.request("get", `beatmaps/${beatmap.id}/solo-scores`, {mode, mods, type})
-		return response.scores
+	export async function getSoloScores(this: API, beatmap: Beatmap["id"] | Beatmap, config?: Config): Promise<Score.Solo[]> {
+		const mode = config?.ruleset !== undefined ? Rulesets[config.ruleset] : undefined
+		const response = await this.request("get", `beatmaps/${getId(beatmap)}/solo-scores`,
+		{legacy_only: config?.legacy_only, mode, mods: config?.mods, type: config?.type})
+		return response.scores // It's the only property
 	}
 }
