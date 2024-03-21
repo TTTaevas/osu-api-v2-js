@@ -126,11 +126,11 @@ export namespace Beatmapset {
 
 	export namespace Extended {
 		/** @obtainableFrom {@link API.getUserBeatmaps} */
-		export interface WithBeatmapExtended extends Extended {
+		export interface WithBeatmap extends Extended {
 			beatmaps: Beatmap.Extended[]
 		}
 
-		export interface WithBeatmapExtendedPacktags extends Extended {
+		export interface WithBeatmapPacktags extends Extended {
 			beatmaps: Beatmap.Extended.WithMaxcombo[]
 			pack_tags: string[]
 		}
@@ -304,7 +304,7 @@ export namespace Beatmapset {
 		/** The thing you've got from a previous request to get another page of results! */
 		cursor_string?: string
 	}):
-	Promise<{beatmapsets: Beatmapset.Extended.WithBeatmapExtendedPacktags[], recommended_difficulty: number | null, total: number, error: any | null,
+	Promise<{beatmapsets: Beatmapset.Extended.WithBeatmapPacktags[], recommended_difficulty: number | null, total: number, error: any | null,
 	cursor_string: string | null}> {
 		const sort = query?.sort ? (query.sort.by + "_" + query.sort.in) : undefined
 		const c = query?.general ? query.general.map((general_value) => {

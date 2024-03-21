@@ -96,6 +96,6 @@ export namespace Spotlight {
  * @param arg The id or the object with the id
  * @returns The id
  */
-export function getId(arg: number | {id: number}): number {
-	return typeof arg === "number" ? arg : arg.id
+export function getId(arg: number | {[key: string]: any}, property_name: string = "id"): number {
+	return typeof arg === "number" ? arg : arg[property_name]
 }

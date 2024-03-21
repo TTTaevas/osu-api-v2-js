@@ -1,6 +1,6 @@
 import { Beatmap } from "./beatmap.js"
 import { API } from "./index.js"
-import { Rulesets, Mod } from "./misc.js"
+import { Rulesets, Mod, getId } from "./misc.js"
 import { Score } from "./score.js"
 import { User } from "./user.js"
 
@@ -31,13 +31,13 @@ export namespace Multiplayer {
 			attempts: number
 			completed: number
 			pp: number
-			room_id: number
+			room_id: Room["id"]
 			total_score: number
-			user_id: number
+			user_id: User["id"]
 			/** How many (completed (I think)) attempts on each item? Empty array if the multiplayer room is the realtime kind */
 			playlist_item_attempts: {
 				attempts: number
-				id: number
+				id: Room.PlaylistItem["id"]
 			}[]
 		}
 	}
@@ -45,13 +45,13 @@ export namespace Multiplayer {
 	export namespace Room {
 		export interface PlaylistItem {
 			id: number
-			room_id: number
-			beatmap_id: number
-			ruleset_id: number
+			room_id: number // `Room["id"]` messes up tsj/ajv somehow in tests
+			beatmap_id: Beatmap["id"]
+			ruleset_id: Rulesets
 			allowed_mods: Mod[]
 			required_mods: Mod[]
 			expired: boolean
-			owner_id: number
+			owner_id: User["id"]
 			/** @remarks Should be null if the room isn't the realtime multiplayer kind */
 			playlist_order: number | null
 			/** @remarks Should be null if the room isn't the realtime multiplayer kind */
@@ -90,17 +90,15 @@ export namespace Multiplayer {
 			}
 		}
 	
-		
-	
 		export interface Leader {
 			/** In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero) */
 			accuracy: number
 			attempts: number
 			completed: number
 			pp: number
-			room_id: number
+			room_id: Room["id"]
 			total_score: number
-			user_id: number
+			user_id: User["id"]
 			user: User.WithCountry
 		}
 
@@ -108,8 +106,8 @@ export namespace Multiplayer {
 		 * Get data about a lazer multiplayer room (realtime or playlists)!
 		 * @param room An object with the id of the room, is at the end of its URL (after `/multiplayer/rooms/`)
 		 */
-		export async function getOne(this: API, room: {id: number} | Multiplayer.Room): Promise<Multiplayer.Room> {
-			return await this.request("get", `rooms/${room.id}`)
+		export async function getOne(this: API, room: number | Multiplayer.Room): Promise<Multiplayer.Room> {
+			return await this.request("get", `rooms/${getId(room)}`)
 		}
 
 		/**
@@ -130,8 +128,8 @@ export namespace Multiplayer {
 		 * @scope {@link Scope"public"}
 		 * @param room An object with the id of the room in question
 		 */
-		export async function getLeaderboard(this: API, room: {id: number} | Multiplayer.Room): Promise<Multiplayer.Room.Leader[]> {
-			const response = await this.request("get", `rooms/${room.id}/leaderboard`)
+		export async function getLeaderboard(this: API, room: number | Multiplayer.Room): Promise<Multiplayer.Room.Leader[]> {
+			const response = await this.request("get", `rooms/${getId(room)}/leaderboard`)
 			return response.leaderboard
 		}
 	}
@@ -143,16 +141,12 @@ export namespace Multiplayer {
 			id: number
 			detail: {
 				type: string
-				/**
-				 * If `detail.type` is `other`, this exists and will be the name of the room
-				 */
+				/** If `detail.type` is `other`, this exists and will be the name of the room */
 				text?: string
 			}
 			timestamp: Date
 			user_id: number | null
-			/**
-			 * If `detail.type` is `other`, then this should exist!
-			 */
+			/** If `detail.type` is `other`, then this should exist! */
 			game?: {
 				beatmap_id: number
 				id: number
@@ -186,8 +180,8 @@ export namespace Multiplayer {
 		 * Get data of a multiplayer lobby from the stable (non-lazer) client that have URLs with `community/matches` or `mp`
 		 * @param id Can be found at the end of the URL of said match
 		 */
-		export async function getOne(this: API, id: number): Promise<Multiplayer.Match> {
-			const response = await this.request("get", `matches/${id}`) as Multiplayer.Match
+		export async function getOne(this: API, id: number | Match.Info): Promise<Multiplayer.Match> {
+			const response = await this.request("get", `matches/${getId(id)}`) as Multiplayer.Match
 			// I know `events[i].game.scores[e].perfect` can at least be 0 instead of being false; fix that
 			for (let i = 0; i < response.events.length; i++) {
 				for (let e = 0; e < Number(response.events[i].game?.scores.length); e++) {

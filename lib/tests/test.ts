@@ -89,7 +89,7 @@ const testBeatmapPack = async (): Promise<boolean> => {
 	console.log("\n===> BEATMAP PACK")
 	let okay = true
 	const a = await attempt(api.getBeatmapPack, "P217")
-	if (!isOk(a, !a || (a.tag === "P217" && validate(a, "Beatmap.Pack")))) okay = false
+	if (!isOk(a, !a || (a.tag === "P217" && validate(a, "Beatmap.Pack.WithBeatmapset")))) okay = false
 	const b = await attempt(api.getBeatmapPacks, "tournament")
 	if (!isOk(b, !b || (b.beatmap_packs.length >= 100 && validate(b.beatmap_packs, "Beatmap.Pack")))) okay = false
 	return okay
@@ -98,7 +98,7 @@ const testBeatmapPack = async (): Promise<boolean> => {
 const testBeatmap = async (): Promise<boolean> => {
 	console.log("\n===> BEATMAP")
 	let okay = true
-	const [beatmap_id, long_str] = [388463, "Beatmap.Extended.WithFailtimesBeatmapsetextended"]
+	const [beatmap_id, long_str] = [388463, "Beatmap.Extended.WithFailtimesBeatmapset"]
 
 	const a = await attempt(api.lookupBeatmap, {id: beatmap_id})
 	if (!isOk(a, !a || (a.id === beatmap_id && validate(a, long_str)))) okay = false
@@ -119,7 +119,7 @@ const testBeatmap = async (): Promise<boolean> => {
 	const e = await attempt(api.lookupBeatmapset, {id: beatmap_id})
 	if (!isOk(e, !e || (e.id === 58951 && validate(e, "Beatmapset.Extended.Plus")))) okay = false
 	const f = await attempt(api.searchBeatmapsets, {categories: "Any"})
-	if (!isOk(f, !f || (f.total >= 10000 && validate(f.beatmapsets, "Beatmapset.Extended.WithBeatmapExtendedPacktags")))) okay = false
+	if (!isOk(f, !f || (f.total >= 10000 && validate(f.beatmapsets, "Beatmapset.Extended.WithBeatmapPacktags")))) okay = false
 	const g = await attempt(api.getBeatmapUserScore, 176960, 7276846, {mods: ["NM"]})
 	if (!isOk(g, !g || (g.score.accuracy < 0.99 && validate(g, "Beatmap.UserScore")))) okay = false
 	const h = await attempt(api.getBeatmapUserScores, 203993, 7276846, {ruleset: osu.Rulesets.fruits})
@@ -181,7 +181,7 @@ const testComment = async (): Promise<boolean> => {
 	let okay = true
 	console.log("\n===> COMMENT")
 
-	const a = await attempt(api.getComment, {id: 2418884})
+	const a = await attempt(api.getComment, 2418884)
 	if (!isOk(a, !a || (a.users.find((u) => u.id === 8) && validate(a, "Comment.Bundle")))) okay = false
 	const b1 = await attempt(api.getComments)
 	if (!isOk(b1, !b1 || validate(b1, "Comment.Bundle"))) okay = false
@@ -216,9 +216,9 @@ const testHome = async (): Promise<boolean> => {
 	console.log("\n===> HOME")
 
 	const a1 = await attempt(api.searchUser, "Tae", 2)
-	if (!isOk(a1, !a1 || (a1.data.length === 20 && validate(a1, "Home.Search.User")))) okay = false
+	if (!isOk(a1, !a1 || (a1.data.length === 20 && validate(a1.data, "User")))) okay = false
 	const a2 = await attempt(api.searchWiki, "Beat", 2)
-	if (!isOk(a2, !a2 || (a2.data.length === 50 && validate(a2, "Home.Search.Wiki")))) okay = false
+	if (!isOk(a2, !a2 || (a2.data.length === 50 && validate(a2.data, "WikiPage")))) okay = false
 
 	return okay
 }
@@ -227,9 +227,9 @@ const testMultiplayer = async (): Promise<boolean> => {
 	let okay = true
 	console.log("\n===> MULTIPLAYER")
 
-	const a1 = await attempt(api.getRoom, {id: 591993})
+	const a1 = await attempt(api.getRoom, 591993)
 	if (!isOk(a1, !a1 || (a1.recent_participants.length === 5 && validate(a1, "Multiplayer.Room")))) okay = false
-	const a2 = await attempt(api.getRoom, {id: 588230})
+	const a2 = await attempt(api.getRoom, 588230)
 	if (!isOk(a2, !a2 || (a2.participant_count === 27 && validate(a2, "Multiplayer.Room")))) okay = false
 	if (a1) {
 		const b1 = await attempt(api.getPlaylistItemScores, {id: a1.playlist[0].id, room_id: a1.id})
@@ -294,7 +294,7 @@ const testUser = async (): Promise<boolean> => {
 	if (!isOk(c3, !c3 || (c3.length === 1 && validate(c3, "Score.WithUserBeatmapBeatmapset")))) okay = false
 
 	const d = await attempt(api.getUserBeatmaps, user_id, "guest")
-	if (!isOk(d, !d || (d.length === 1 && validate(d, "Beatmapset.Extended.WithBeatmapExtended")))) okay = false
+	if (!isOk(d, !d || (d.length === 1 && validate(d, "Beatmapset.Extended.WithBeatmap")))) okay = false
 	const e = await attempt(api.getUserMostPlayed, user_id)
 	if (!isOk(e, !e || (e[0].beatmapset.title === "furioso melodia" && validate(e, "Beatmap.Playcount")))) okay = false
 	const f = await attempt(api.getUserRecentActivity, 7562902, {limit: 25})

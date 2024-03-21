@@ -296,7 +296,7 @@ export namespace User {
 	 * @param config Array limit & offset
 	 */
 	export async function getBeatmaps(this: API, user: User["id"] | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
-	config?: Config): Promise<Beatmapset.Extended.WithBeatmapExtended[]> {
+	config?: Config): Promise<Beatmapset.Extended.WithBeatmap[]> {
 		const id = typeof user === "number" ? user : user.id
 		return await this.request("get", `users/${id}/beatmapsets/${type}`, {limit: config?.limit, offset: config?.offset})
 	}

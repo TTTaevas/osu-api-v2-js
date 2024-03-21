@@ -1,4 +1,5 @@
 import { API } from "./index.js"
+import { getId } from "./misc.js"
 import { User } from "./user.js"
 
 export interface Comment {
@@ -77,8 +78,8 @@ export namespace Comment {
 	 * Get a specific comment by using its id!
 	 * @param comment The comment in question
 	 */
-	export async function getOne(this: API, comment: Comment | {id: number}): Promise<Comment.Bundle> {
-		let bundle = await this.request("get", `comments/${comment.id}`)
+	export async function getOne(this: API, comment: Comment["id"] | Comment): Promise<Comment.Bundle> {
+		let bundle = await this.request("get", `comments/${getId(comment)}`)
 		const commentable_meta = bundle.commentable_meta.filter((c: any) => c.id)
 		bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
 		bundle.commentable_meta = commentable_meta
@@ -92,10 +93,10 @@ export namespace Comment {
 	 * @param parent The comments are replying to which comment? Make the id 0 to filter out replies (and only get top level comments)
 	 * @param sort Should the comments be sorted by votes? Should they be from after a certain date? Maybe you can give a cursor?
 	 */
-	export async function getMultiple(this: API, from?: {type: Comment["commentable_type"], id: number}, parent?: Comment | {id: number | 0},
-	sort?: {type?: Comment.Bundle["sort"], after?: Comment | {id: number}, cursor?: Comment.Bundle["cursor"]}): Promise<Comment.Bundle.WithTotalToplevelcount> {
-		const after = sort?.after?.id ? String(sort.after.id) : undefined
-		const parent_id = parent?.id ? String(parent.id) : undefined
+	export async function getMultiple(this: API, from?: {type: Comment["commentable_type"], id: number}, parent?: Comment["id"] | Comment,
+	sort?: {type?: Comment.Bundle["sort"], after?: Comment["id"] | Comment, cursor?: Comment.Bundle["cursor"]}): Promise<Comment.Bundle.WithTotalToplevelcount> {
+		const after = sort?.after ? String(getId(sort.after)) : undefined
+		const parent_id = parent ? String(getId(parent)) : undefined
 
 		let bundle = await this.request("get", "comments", {
 			after, commentable_type: from?.type, commentable_id: from?.id,

@@ -80,7 +80,7 @@ export namespace Beatmap {
 		export interface WithFailtimesMaxcombo extends WithFailtimes, WithMaxcombo {}
 
 		/** @obtainableFrom {@link API.getBeatmap} */
-		export interface WithFailtimesBeatmapsetextended extends WithFailtimesMaxcombo {
+		export interface WithFailtimesBeatmapset extends WithFailtimesMaxcombo {
 			beatmapset: Beatmapset.Extended
 		}
 	}
@@ -94,11 +94,7 @@ export namespace Beatmap {
 		beatmapset: Beatmapset
 	}
 
-	/**
-	 * @obtainableFrom
-	 * {@link API.getBeatmapPack} /
-	 * {@link API.getBeatmapPacks}
-	 */
+	/** @obtainableFrom {@link API.getBeatmapPacks} */
 	export interface Pack {
 		author: User["username"]
 		date: Date
@@ -108,7 +104,6 @@ export namespace Beatmap {
 		ruleset_id: Rulesets | null,
 		tag: string,
 		url: string,
-		beatmapsets?: Beatmapset.Extended[],
 		user_completion_data?:{
 			/** IDs of beatmapsets completed by the user (according to the requirements of the pack) */
 			beatmapset_ids: Beatmapset["id"][],
@@ -116,8 +111,13 @@ export namespace Beatmap {
 			completed: boolean
 		}
 	}
-
+	
 	export namespace Pack {
+		/** @obtainableFrom {@link API.getBeatmapPack} */
+		export interface WithBeatmapset extends Pack {
+			beatmapsets: Beatmapset.Extended[]
+		}
+
 		/**
 		 * Get data about a Beatmap.Pack using its tag!
 		 * @param pack The Pack or the pack tag of the Pack you're trying to get
@@ -269,7 +269,7 @@ export namespace Beatmap {
 	 * @param query What to specify in order to find the right beatmap
 	*/
 	export async function lookup(this: API, query: {checksum?: Beatmap.WithChecksum["checksum"], filename?: string, id?: Beatmap["id"]}):
-	Promise<Extended.WithFailtimesBeatmapsetextended> {
+	Promise<Extended.WithFailtimesBeatmapset> {
 		return await this.request("get", `beatmaps/lookup`, {checksum: query.checksum, filename: query.filename, id: query.id ? String(query.id) : undefined})
 	}
 
@@ -277,7 +277,7 @@ export namespace Beatmap {
 	 * Get extensive beatmap data about whichever beatmap you want!
 	 * @param beatmap An object with the id of the beatmap you're trying to get
 	 */
-	export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Extended.WithFailtimesBeatmapsetextended> {
+	export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Extended.WithFailtimesBeatmapset> {
 		return await this.request("get", `beatmaps/${getId(beatmap)}`)
 	}
 
