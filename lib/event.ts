@@ -139,7 +139,7 @@ export namespace Event {
 	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
 	 */
 	export async function getMultiple(this: API, sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string):
-	Promise<{events: Event.Any[], cursor_string: string}> {
+	Promise<{events: Event.Any[], cursor_string: string | null}> {
 		return await this.request("get", "events", {sort, cursor_string})
 	}
 }

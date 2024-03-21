@@ -1,6 +1,6 @@
 import { Beatmapset } from "./beatmapset.js"
 import { API } from "./index.js"
-import { Spotlight as SpotlightInterface, Rulesets } from "./misc.js"
+import { Spotlight as SpotlightInterface, Rulesets, getId } from "./misc.js"
 import { User } from "./user.js"
 
 interface RankingBare {
@@ -79,7 +79,7 @@ export namespace Ranking {
 	 * @param spotlight The spotlight in question
 	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
 	 */
-	export async function getSpotlight(this: API, ruleset: Rulesets, spotlight: {id: number} | SpotlightInterface, filter: "all" | "friends" = "all"): Promise<Ranking.Spotlight> {
-		return await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: spotlight.id, filter})
+	export async function getSpotlight(this: API, ruleset: Rulesets, spotlight: SpotlightInterface["id"] | SpotlightInterface, filter: "all" | "friends" = "all"): Promise<Ranking.Spotlight> {
+		return await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: getId(spotlight), filter})
 	}
 }

@@ -1,7 +1,5 @@
-import { Beatmapset } from "./beatmapset.js"
-import { API, User } from "./index.js"
-import { Rulesets, RankStatus, Mod, getId } from "./misc.js"
-import { Score } from "./score.js"
+import { API, Beatmapset, Mod, RankStatus, Rulesets, Score, User } from "./index.js"
+import { getId } from "./misc.js"
 
 export interface Beatmap {
 	beatmapset_id: Beatmapset["id"]

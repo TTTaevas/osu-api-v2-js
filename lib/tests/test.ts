@@ -116,7 +116,7 @@ const testBeatmap = async (): Promise<boolean> => {
 	const d4 = await attempt(api.getBeatmapDifficultyAttributesMania, 3980252, ["DT"])
 	if (!isOk(d4, !d4 || (d4.great_hit_window === 40 && validate(d4, "Beatmap.DifficultyAttributes.Mania")))) okay = false
 
-	const e = await attempt(api.lookupBeatmapset, {id: beatmap_id})
+	const e = await attempt(api.lookupBeatmapset, beatmap_id)
 	if (!isOk(e, !e || (e.id === 58951 && validate(e, "Beatmapset.Extended.Plus")))) okay = false
 	const f = await attempt(api.searchBeatmapsets, {categories: "Any"})
 	if (!isOk(f, !f || (f.total >= 10000 && validate(f.beatmapsets, "Beatmapset.Extended.WithBeatmapPacktags")))) okay = false
@@ -137,14 +137,14 @@ const testBeatmapsetDiscussion = async (): Promise<boolean> => {
 	console.log("\n===> BEATMAPSET DISCUSSION")
 	let okay = true
 
-	const a = await attempt(api.getBeatmapsetDiscussions, {beatmapset: {id: 2119925}})
+	const a = await attempt(api.getBeatmapsetDiscussions, {beatmapset: 2119925})
 	if (!isOk(a, !a || (validate(a.beatmaps, "Beatmap.Extended") && validate(a.beatmapsets, "Beatmapset.Extended") &&
 	validate(a.users, "User.WithGroups") && validate(a.discussions, "Beatmapset.Discussion.WithStartingpost") &&
 	validate(a.included_discussions, "Beatmapset.Discussion.WithStartingpost")))) okay = false
-	const b = await attempt(api.getBeatmapsetDiscussionPosts, {discussion: {id: 4143461}})
+	const b = await attempt(api.getBeatmapsetDiscussionPosts, {discussion: 4143461})
 	if (!isOk(b, !b || (validate(b.beatmapsets, "Beatmapset.WithHype") && validate(b.users, "User") &&
 	validate(b.posts, "Beatmapset.Discussion.Post")))) okay = false
-	const c = await attempt(api.getBeatmapsetDiscussionVotes, {vote_receiver: {id: 7276846}})
+	const c = await attempt(api.getBeatmapsetDiscussionVotes, {vote_receiver: 7276846})
 	if (!isOk(c, !c || (validate(c.votes, "Beatmapset.Discussion.Vote") && validate(c.discussions, "Beatmapset.Discussion") &&
 	validate(c.users, "User.WithGroups")))) okay = false
 
@@ -154,7 +154,7 @@ const testBeatmapsetDiscussion = async (): Promise<boolean> => {
 const testBeatmapset = async (): Promise<boolean> => {
 	console.log("\n===> BEATMAPSET")
 	let okay = true
-	const a = await attempt(api.getBeatmapset, {id: 1971037})
+	const a = await attempt(api.getBeatmapset, 1971037)
 	if (!isOk(a, !a || (a.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(a, "Beatmapset.Extended.Plus")))) okay = false
 	const b = await attempt(api.getBeatmapsetEvents)
 	if (!isOk(b, !b || (validate(b.events, "Beatmapset.Event") && validate(b.users, "User.WithGroups")))) okay = false
@@ -206,7 +206,7 @@ const testEvent = async (): Promise<boolean> => {
 const testForum = async (): Promise<boolean> => {
 	let okay = true
 	console.log("\n===> FORUM")
-	const a = await attempt(api.getForumTopicAndPosts, {id: 1848236}, 2)
+	const a = await attempt(api.getForumTopicAndPosts, 1848236, 2)
 	if (!isOk(a, !a || (a.topic.title === "survey" && validate(a.topic, "Forum.Topic") && validate(a.posts, "Forum.Post")))) okay = false
 	return okay
 }
@@ -269,7 +269,7 @@ const testRanking = async (): Promise<boolean> => {
 	if (!isOk(b, !b || (b.ranking[0].level.current > 106 && validate(b, "Ranking.User")), 2)) okay = false
 	const c = await attempt(api.getCountryRanking, osu.Rulesets.osu)
 	if (!isOk(c, !c || (c.ranking[0].code === "US" && validate(c, "Ranking.Country")))) okay = false
-	const d = await attempt(api.getSpotlightRanking, osu.Rulesets.taiko, {id: 48})
+	const d = await attempt(api.getSpotlightRanking, osu.Rulesets.taiko, 48)
 	if (!isOk(d, !d || (d.ranking[0].hit_accuracy === 97.85 && validate(d, "Ranking.Spotlight")), 2)) okay = false
 
 	return okay

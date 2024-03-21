@@ -1,7 +1,5 @@
-import { Beatmap } from "./beatmap.js"
-import { API } from "./index.js"
-import { Genres, Languages, RankStatus, Rulesets } from "./misc.js"
-import { User } from "./user.js"
+import { API, Beatmap, Genres, Languages, RankStatus, Rulesets, User } from "./index.js"
+import { getId } from "./misc.js"
 
 export interface Beatmapset {
 	artist: string
@@ -32,7 +30,7 @@ export interface Beatmapset {
 	title: string
 	/** Basically the title is the original language, so with hiragana, katakana and kanji if Japanese */
 	title_unicode: string
-	user_id: number
+	user_id: User["id"]
 	video: boolean
 }
 
@@ -47,25 +45,25 @@ export namespace Beatmapset {
 			"discussion_post_delete" | "discussion_post_restore" | "nomination_reset" | "nomination_reset_received" |
 			"genre_edit" | "language_edit" | "nsfw_toggle" | "offset_edit" | "tags_edit" | "beatmap_owner_change"
 		comment: {
-			beatmap_discussion_id?: number | null
-			beatmap_discussion_post_id?: number | null
+			beatmap_discussion_id?: Discussion["id"] | null
+			beatmap_discussion_post_id?: Discussion.Post["id"] | null
 			reason?: string
 			old?: keyof typeof Genres | keyof typeof Languages | boolean
 			new?: keyof typeof Genres | keyof typeof Languages | boolean
 			modes?: (keyof typeof Rulesets)[]
 			new_vote?: {
-				user_id: number
+				user_id: User["id"]
 				score: number
 			}
 			votes?: {
-				user_id: number
+				user_id: User["id"]
 				score: number
 			}[]
 		} | null
 		created_at: Date
-		user_id: number | null
+		user_id: User["id"] | null
 		beatmapset: Beatmapset.WithUserHype
-		discussion?: Beatmapset.Discussion.WithStartingpost | null
+		discussion?: Discussion.WithStartingpost | null
 	}
 
 	export namespace Event {
@@ -79,10 +77,12 @@ export namespace Beatmapset {
 		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware,
 		 * and also there's no documentation for this route in the API, so this is only the result of my interpretation of the website's code lol
 		 */
-		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset | {id: number}, user?: User | {id: number}, min_date?: Date, max_date?: Date},
-		types?: Beatmapset.Event["type"][], cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
+		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset["id"] | Beatmapset, user?: User["id"] | User, min_date?: Date, max_date?: Date},
+		types?: Event["type"][], cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
 		Promise<{events: Beatmapset.Event[], users: User.WithGroups[]}> {
-			return await this.request("get", "beatmapsets/events", {beatmapset_id: from?.beatmapset?.id, user: from?.user?.id, min_date: from?.min_date?.toISOString(),
+			const beatmapset = from?.beatmapset ? getId(from.beatmapset) : undefined
+			const user = from?.user ? getId(from.user) : undefined
+			return await this.request("get", "beatmapsets/events", {beatmapset_id: beatmapset, user, min_date: from?.min_date?.toISOString(),
 			max_date: from?.max_date?.toISOString(), types, sort, page: cursor_stuff?.page, limit: cursor_stuff?.page, cursor_string: cursor_stuff?.cursor_string})
 		}
 	}
@@ -106,8 +106,8 @@ export namespace Beatmapset {
 		}
 		bpm: number
 		can_be_hyped: boolean
-		creator: string
-		deleted_at: string | null
+		creator: User["username"]
+		deleted_at: Date | null
 		discussion_locked: boolean
 		is_scoreable: boolean
 		last_updated: Date
@@ -142,10 +142,10 @@ export namespace Beatmapset {
 			/** The different beatmaps made for osu!, but converted to the other Rulesets */
 			converts: Beatmap.Extended.WithFailtimes[]
 			current_nominations: {
-				beatmapset_id: number
+				beatmapset_id: Beatmapset["id"]
 				rulesets: Rulesets[]
 				reset: boolean
-				user_id: number
+				user_id: User["id"]
 			}[]
 			description: {
 				/** In HTML */
@@ -170,12 +170,13 @@ export namespace Beatmapset {
 
 	export interface Discussion {
 		id: number
-		beatmapset_id: number
-		beatmap_id: number | null
-		user_id: number
-		deleted_by_id: number | null
+		beatmapset_id: Beatmapset["id"]
+		beatmap_id: Beatmap["id"] | null
+		user_id: User["id"]
+		deleted_by_id: User["id"] | null
 		message_type: "suggestion" | "problem" | "mapper_note" | "praise" | "hype" | "review"
-		parent_id: number | null
+		/** For example, the id of the review this discussion is included in */
+		parent_id: Discussion["id"] | null
 		timestamp: number | null
 		resolved: boolean
 		can_be_resolved: boolean
@@ -189,20 +190,20 @@ export namespace Beatmapset {
 
 	export namespace Discussion {
 		export interface WithStartingpost extends Discussion {
-			starting_post: Discussion.Post
+			starting_post: Post
 		}
 
 		export interface Post {
-			beatmapset_discussion_id: number
+			beatmapset_discussion_id: Discussion["id"]
 			created_at: Date
 			deleted_at: Date | null
-			deleted_by_id: number | null
+			deleted_by_id: User["id"] | null
 			id: number
-			last_editor_id: number | null
+			last_editor_id: User["id"] | null
 			message: string
 			system: boolean
 			updated_at: Date
-			user_id: number
+			user_id: User["id"]
 		}
 
 		export namespace Post {
@@ -215,21 +216,23 @@ export namespace Beatmapset {
 			 * @returns Relevant posts and info about them
 			 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 			 */
-			export async function getMultiple(this: API, from?: {discussion?: Beatmapset.Discussion | {id: number}, user?: User | {id: number}},
+			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, user?: User["id"] | User},
 			types?: ("first" | "reply" | "system")[], cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
-			Promise<{beatmapsets: Beatmapset.WithHype[], posts: Beatmapset.Discussion.Post[], users: User[], cursor_string: string}> {
-				return await this.request("get", "beatmapsets/discussions/posts", {beatmapset_discussion_id: from?.discussion?.id, limit: cursor_stuff?.limit,
-				page: cursor_stuff?.page, sort, types, user: from?.user?.id, cursor_string: cursor_stuff?.cursor_string})
+			Promise<{beatmapsets: Beatmapset.WithHype[], posts: Post[], users: User[], cursor_string: string | null}> {
+				const discussion = from?.discussion ? getId(from.discussion) : undefined
+				const user = from?.user ? getId(from.user) : undefined
+				return await this.request("get", "beatmapsets/discussions/posts", {beatmapset_discussion_id: discussion, limit: cursor_stuff?.limit,
+				page: cursor_stuff?.page, sort, types, user, cursor_string: cursor_stuff?.cursor_string})
 			}
 		}
 
 		export interface Vote {
-			beatmapset_discussion_id: number
+			beatmapset_discussion_id: Discussion["id"]
 			created_at: Date
 			id: number
 			score: number
 			updated_at: Date
-			user_id: number
+			user_id: User["id"]
 		}
 
 		export namespace Vote {
@@ -242,12 +245,15 @@ export namespace Beatmapset {
 			 * @returns Relevant votes and info about them
 			 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 			 */
-			export async function getMultiple(this: API, from?: {discussion?: Beatmapset.Discussion | {id: number}, vote_giver?: User | {id: number},
-			vote_receiver?: User | {id: number}}, score?: 1 | -1, cursor_stuff?: {page?: number, limit?: number, cursor_string?: string},
-			sort: "id_desc" | "id_asc" = "id_desc"): Promise<{votes: Beatmapset.Discussion.Vote[], discussions: Beatmapset.Discussion[], users: User.WithGroups[],
-			cursor_string: string}> {
-				return await this.request("get", "beatmapsets/discussions/votes", {beatmapset_discussion_id: from?.discussion?.id, limit: cursor_stuff?.limit,
-				page: cursor_stuff?.page, receiver: from?.vote_receiver?.id, score, sort, user: from?.vote_giver?.id, cursor_string: cursor_stuff?.cursor_string})
+			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, vote_giver?: User["id"] | User,
+			vote_receiver?: User["id"] | User}, score?: 1 | -1, cursor_stuff?: {page?: number, limit?: number, cursor_string?: string},
+			sort: "id_desc" | "id_asc" = "id_desc"): Promise<{votes: Vote[], discussions: Discussion[], users: User.WithGroups[], cursor_string: string | null}> {
+				const discussion = from?.discussion ? getId(from.discussion) : undefined
+				const user = from?.vote_giver ? getId(from.vote_giver) : undefined
+				const receiver = from?.vote_receiver ? getId(from.vote_receiver) : undefined
+
+				return await this.request("get", "beatmapsets/discussions/votes", {beatmapset_discussion_id: discussion, limit: cursor_stuff?.limit,
+				page: cursor_stuff?.page, receiver, score, sort, user, cursor_string: cursor_stuff?.cursor_string})
 			}
 		}
 
@@ -261,14 +267,18 @@ export namespace Beatmapset {
 		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 		 * @privateRemarks I don't allow setting `beatmap_id` because my testing has led me to believe it does nothing (and is therefore misleading)
 		 */
-		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset | {id: number}, user?: User | {id: number},
+		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset["id"] | Beatmapset, user?: User["id"] | User,
 		status?: "all" | "ranked" | "qualified" | "disqualified" | "never_qualified"}, filter?: {types?: Beatmapset.Discussion["message_type"][],
 		only_unresolved?: boolean}, cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
 		Promise<{beatmaps: Beatmap.Extended[], beatmapsets: Beatmapset.Extended[], discussions: Beatmapset.Discussion.WithStartingpost[]
-		included_discussions: Beatmapset.Discussion.WithStartingpost[], reviews_config: {max_blocks: number}, users: User.WithGroups[], cursor_string: string}> {
-			return await this.request("get", "beatmapsets/discussions", {beatmapset_id: from?.beatmapset?.id, beatmapset_status: from?.status,
+		included_discussions: Beatmapset.Discussion.WithStartingpost[], reviews_config: {max_blocks: number}, users: User.WithGroups[],
+		cursor_string: string | null}> {
+			const beatmapset = from?.beatmapset ? getId(from.beatmapset) : undefined
+			const user = from?.user ? getId(from.user) : undefined
+
+			return await this.request("get", "beatmapsets/discussions", {beatmapset_id: beatmapset, beatmapset_status: from?.status,
 			limit: cursor_stuff?.limit, message_types: filter?.types, only_unresolved: filter?.only_unresolved, page: cursor_stuff?.page, sort,
-			user: from?.user?.id, cursor_string: cursor_stuff?.cursor_string})
+			user, cursor_string: cursor_stuff?.cursor_string})
 		}
 	}
 
@@ -336,15 +346,15 @@ export namespace Beatmapset {
 	 * Get extensive data about a beatmapset by using a beatmap!
 	 * @param beatmap A beatmap from the beatmapset you're looking for
 	 */
-	export async function lookup(this: API, beatmap: {id: number} | Beatmap): Promise<Beatmapset.Extended.Plus> {
-		return await this.request("get", `beatmapsets/lookup`, {beatmap_id: beatmap.id})
+	export async function lookup(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Beatmapset.Extended.Plus> {
+		return await this.request("get", `beatmapsets/lookup`, {beatmap_id: getId(beatmap)})
 	}
 
 	/**
 	 * Get extensive beatmapset data about whichever beatmapset you want!
 	 * @param beatmapset An object with the id of the beatmapset you're trying to get
 	 */
-	export async function getOne(this: API, beatmapset: {id: number} | Beatmapset): Promise<Beatmapset.Extended.Plus> {
-		return await this.request("get", `beatmapsets/${beatmapset.id}`)
+	export async function getOne(this: API, beatmapset: Beatmapset["id"] | Beatmapset): Promise<Beatmapset.Extended.Plus> {
+		return await this.request("get", `beatmapsets/${getId(beatmapset)}`)
 	}
 }

@@ -1,7 +1,7 @@
 import { Beatmap } from "./beatmap.js"
 import { Beatmapset } from "./beatmapset.js"
 import { API } from "./index.js"
-import { Mod, Rulesets } from "./misc.js"
+import { Mod, Rulesets, getId } from "./misc.js"
 import { User } from "./user.js"
 
 interface Bare {
@@ -14,7 +14,7 @@ interface Bare {
 	/** Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%) */
 	rank: string
 	/** The ID of the user who made the score */
-	user_id: number
+	user_id: User["id"]
 	pp: number | null
 	/** Can this score's replay be downloaded from the website? */
 	replay: boolean
@@ -48,7 +48,7 @@ export namespace Score {
 	export interface Multiplayer extends Bare {
 		/** In a format where `96.40%` would be `0.9640` **(and no number afterwards)** */
 		accuracy: number
-		beatmap_id: number
+		beatmap_id: Beatmap["id"]
 		ended_at: Date
 		maximum_statistics: Statistics
 		mods: Mod[]
@@ -142,7 +142,7 @@ export namespace Score {
 	 * @param score The score that has created the replay
 	 * @returns The correctly encoded content of what would be a replay file (you can just fs.writeFileSync with it!)
 	 */
-	export async function getReplay(this: API, score: {id: number} | Score): Promise<string> {
-		return await this.request("get", `scores/${score.id}/download`)
+	export async function getReplay(this: API, score: Exclude<Score["id"], null> | Score): Promise<string> {
+		return await this.request("get", `scores/${getId(score)}/download`)
 	}
 }

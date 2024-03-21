@@ -1,4 +1,5 @@
 import { API } from "./index.js"
+import { getId } from "./misc.js"
 
 export namespace Forum {
 	/**
@@ -33,8 +34,8 @@ export namespace Forum {
 		 * @param new_text The new content of the post (replaces the old content)
 		 * @returns The edited ForumPost
 		 */
-		export async function edit(this: API, post: {id: number} | Forum.Post, new_text: string): Promise<Forum.Post> {
-			return await this.request("put", `forums/posts/${post.id}`, {body: new_text})
+		export async function edit(this: API, post: Post["id"] | Post, new_text: string): Promise<Post> {
+			return await this.request("put", `forums/posts/${getId(post)}`, {body: new_text})
 		}
 	}
 
@@ -51,7 +52,7 @@ export namespace Forum {
 		forum_id: number
 		id: number
 		is_locked: boolean
-		last_post_id: number
+		last_post_id: Post["id"]
 		post_count: number
 		title: string
 		type: "normal" | "sticky" | "announcement"
@@ -114,8 +115,8 @@ export namespace Forum {
 		 * @param text Your reply! Your message!
 		 * @returns The reply you've made!
 		 */
-		export async function reply(this: API, topic: {id: number} | Forum.Topic, text: string): Promise<Forum.Post> {
-			return await this.request("post", `forums/topics/${topic.id}/reply`, {body: text})
+		export async function reply(this: API, topic: Topic["id"] | Topic, text: string): Promise<Post> {
+			return await this.request("post", `forums/topics/${getId(topic)}/reply`, {body: text})
 		}
 
 		/**
@@ -126,8 +127,8 @@ export namespace Forum {
 		 * @param new_title The new title of the topic
 		 * @returns The edited ForumTopic
 		 */
-		export async function editTitle(this: API, topic: {id: number} | Forum.Topic, new_title: string): Promise<Forum.Topic> {
-			return await this.request("put", `forums/topics/${topic.id}`, {forum_topic: {topic_title:  new_title}})
+		export async function editTitle(this: API, topic: Topic["id"] | Topic, new_title: string): Promise<Topic> {
+			return await this.request("put", `forums/topics/${getId(topic)}`, {forum_topic: {topic_title:  new_title}})
 		}
 	}
 
@@ -140,11 +141,11 @@ export namespace Forum {
 	 * @param first_post (ignored if `cursor_string`) An Object with the id of the first post to be returned in `posts`
 	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
 	 */
-	export async function getTopicAndPosts(this: API, topic: {id: number} | Forum.Topic, limit: number = 20, sort: "id_asc" | "id_desc" = "id_asc",
-	first_post?: {id: number} | Forum.Post, cursor_string?: string): Promise<{posts: Forum.Post[], topic: Forum.Topic, cursor_string: string}> {
-		const start = sort === "id_asc" && first_post ? first_post.id : undefined
-		const end = sort === "id_desc" && first_post ? first_post.id : undefined
-		return await this.request("get", `forums/topics/${topic.id}`, {sort, limit, start, end, cursor_string})
+	export async function getTopicAndPosts(this: API, topic: Topic["id"] | Topic, limit: number = 20, sort: "id_asc" | "id_desc" = "id_asc",
+	first_post?: Post["id"] | Post, cursor_string?: string): Promise<{posts: Post[], topic: Topic, cursor_string: string | null}> {
+		const start = sort === "id_asc" && first_post ? getId(first_post) : undefined
+		const end = sort === "id_desc" && first_post ? getId(first_post) : undefined
+		return await this.request("get", `forums/topics/${getId(topic)}`, {sort, limit, start, end, cursor_string})
 	}
 }
 
