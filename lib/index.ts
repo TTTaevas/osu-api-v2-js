@@ -77,7 +77,7 @@ function correctType(x: any): any {
  * @param client_id The Client ID, find it at https://osu.ppy.sh/home/account/edit#new-oauth-application
  * @param redirect_uri The specified Application Callback URL, aka where the user will be redirected upon clicking the button to authorize
  * @param scopes What you want to do with/as the user
- * @param server (defaults to https://osu.ppy.sh) The API server
+ * @param server The API server (defaults to **https://osu.ppy.sh**, leave as is if you don't know exactly what you're doing)
  * @returns The link people should click on
  */
 export function generateAuthorizationURL(client_id: number, redirect_uri: string, scopes: Scope[], server: string = "https://osu.ppy.sh"): string {
@@ -111,9 +111,7 @@ export class API {
 		id: number
 		secret: string
 	}
-	/**
-	 * Should always be "Bearer"
-	 */
+	/** Should always be "Bearer" */
 	token_type: string
 	expires: Date
 	access_token: string
@@ -122,24 +120,20 @@ export class API {
 	 * Use the API's `refreshToken` function to do that
 	 */
 	refresh_token?: string
-	/**
-	 * The osu! user id of the user who went through the Authorization Code Grant
-	 */
-	user?: number
+	/** The osu! user id of the user who went through the Authorization Code Grant */
+	user?: User["id"]
 	scopes: Scope[]
-	/**
-	 * (default `none`) Which events should be logged
-	 */
+	/** Which events should be logged (defaults to **none**) */
 	verbose: "none" | "errors" | "all"
 	/**
-	 * (default `https://osu.ppy.sh`) The base url of the server where the requests should land
+	 * The base url of the server where the requests should land (defaults to **https://osu.ppy.sh**)
 	 * @remarks For tokens, requests will be sent to the `oauth/token` route, other requests will be sent to the `api/v2` route
 	 */
 	server: string
 
 	/**
-	 * Use the API's `createAsync` instead of the default constructor if you don't have at least an access_token!
-	 * `createAsync` should always be your way of creating API instances!!
+	 * **Please use the API's `createAsync` method instead of the default constructor** if you don't have at least an `access_token`!
+	 * An API object without an `access_token` is pretty much useless!
 	 */
 	constructor(client?: {id: number, secret: string}, token_type?: string, expires?: Date,
 	access_token?: string, scopes?: Scope[], refresh_token?: string, user?: number,
@@ -153,55 +147,6 @@ export class API {
 		this.user = user
 		this.verbose = verbose
 		this.server = server
-	}
-
-	/**
-	 * Use this instead of `console.log` to log any information
-	 * @param is_error Is the logging happening because of an error?
-	 * @param to_log Whatever you would put between the parentheses of `console.log()`
-	 */
-	private log(is_error: boolean, ...to_log: any[]) {
-		if (this.verbose === "all" || (this.verbose === "errors" && is_error === true)) {
-			console.log("osu!api v2 ->", ...to_log)
-		}
-	}
-
-	/**
-	 * Set most of an `api`'s properties, like tokens, token_type, scopes, expiration_date  
-	 * @param body An Object with the client id & secret, grant_type, and stuff that depends of the grant_type
-	 * @param api The `api` which will see its properties change
-	 * @returns `api`, just in case, because in theory it should modify the original object
-	 */
-	private async obtainToken(body: object, api: API): Promise<API> {
-		const response = await fetch(`${this.server}/oauth/token`, {
-			method: "post",
-			headers: {
-				"Accept": "application/json",
-				"Content-Type": "application/json",
-				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)"
-			},
-			body: JSON.stringify(body)
-		})
-
-		const json: any = await response.json()
-		if (!json.access_token) {
-			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-			throw new APIError("No token obtained", this.server, "oauth/token", body)
-		}
-		
-		const token = json.access_token
-		const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
-		if (token_payload.sub && token_payload.sub.length) {api.user = Number(token_payload.sub)}
-		api.scopes = token_payload.scopes
-		api.access_token = token
-		api.token_type = json.token_type
-		if (json.refresh_token) {api.refresh_token = json.refresh_token}
-
-		const expiration_date = new Date()
-		expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
-		api.expires = expiration_date
-
-		return api
 	}
 
 	/**
@@ -236,14 +181,78 @@ export class API {
 			scope: user ? null : "public"
 		}
 
-		const api = await new_api.obtainToken(body, new_api)
+		const api = await new_api.getAndSetToken(body, new_api)
+		return api
+	}
+
+	/**
+	 * Use this instead of `console.log` to log any information
+	 * @param is_error Is the logging happening because of an error?
+	 * @param to_log Whatever you would put between the parentheses of `console.log()`
+	 */
+	private log(is_error: boolean, ...to_log: any[]) {
+		if (this.verbose === "all" || (this.verbose === "errors" && is_error === true)) {
+			console.log("osu!api v2 ->", ...to_log)
+		}
+	}
+
+	/** 
+	 * Get a websocket to get WebSocket events from!
+	 * @param server Where the "notification websocket/server" is
+	 * (defaults to **the api's `server`'s protocol and a maximum of 1 subdomain being replaced by "wss://notify."** (so usually `wss://notify.ppy.sh`))
+	*/
+	public generateWebSocket(
+	server: string =`${this.server.replace(/^\w*:\/\/(?:[A-Za-z0-9]+[.](?=[A-Za-z0-9]+[.]([A-Za-z0-9]+)$))?/g, "wss://notify.")}`):WebSocket{
+		return new WebSocket(server, [], {
+			headers: {
+				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
+				"Authorization": `${this.token_type} ${this.access_token}`
+			}
+		})
+	}
+
+	/**
+	 * Set most of an `api`'s properties, like tokens, token_type, scopes, expiration_date  
+	 * @param body An Object with the client id & secret, grant_type, and stuff that depends of the grant_type
+	 * @param api The `api` which will see its properties change
+	 * @returns `api`, just in case, because in theory it should modify the original object
+	 */
+	private async getAndSetToken(body: object, api: API): Promise<API> {
+		const response = await fetch(`${this.server}/oauth/token`, {
+			method: "post",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)"
+			},
+			body: JSON.stringify(body)
+		})
+
+		const json: any = await response.json()
+		if (!json.access_token) {
+			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
+			throw new APIError("No token obtained", this.server, "oauth/token", body)
+		}
+		
+		const token = json.access_token
+		const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
+		if (token_payload.sub && token_payload.sub.length) {api.user = Number(token_payload.sub)}
+		api.scopes = token_payload.scopes
+		api.access_token = token
+		api.token_type = json.token_type
+		if (json.refresh_token) {api.refresh_token = json.refresh_token}
+
+		const expiration_date = new Date()
+		expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
+		api.expires = expiration_date
+
 		return api
 	}
 
 	/** @returns Whether or not the token has been refreshed */
 	public async refreshToken(): Promise<boolean> {
 		if (!this.refresh_token) {
-			this.log(true, "Attempted to get a new access token despite not having a refresh token!")
+			this.log(true, "Ignored an attempt at refreshing the access token despite not having a refresh token!")
 			return false
 		}
 
@@ -256,22 +265,18 @@ export class API {
 		}
 
 		try {
-			await this.obtainToken(body, this)
+			await this.getAndSetToken(body, this)
 			if (old_token !== this.access_token) this.log(false, "The token has been refreshed!")
-			return old_token !== this.access_token
-		} catch {
-			this.log(true, "Failed to refresh the token :(")
-			return false
+		} catch(e) {
+			this.log(true, "Failed to refresh the token :(", e)
 		}
+		return old_token !== this.access_token
 	}
 
-	public generateWebSocket(): WebSocket {
-		return new WebSocket(`${this.server.replace(/https{0,1}:\/\/\w*/g, "wss://notify")}`, [], {
-			headers: {
-				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
-				"Authorization": `${this.token_type} ${this.access_token}`
-			}
-		})
+	/** Revoke your current token! Revokes the refresh token as well */
+	public async revokeToken(): Promise<true> {
+		await this.request("delete", "oauth/tokens/current")
+		return true
 	}
 
 	/**
@@ -279,11 +284,11 @@ export class API {
 	 * @param method The type of request, each endpoint uses a specific one (if it uses multiple, the intent and parameters become different)
 	 * @param endpoint What comes in the URL after `api/`
 	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
-	 * @param number_try Attempt number for doing this specific request
+	 * @param info Context given by a prior request
 	 * @returns A Promise with the API's response
 	 */
 	public async request(method: "get" | "post" | "put" | "delete", endpoint: string,
-	parameters: {[k: string]: any} = {}, number_try: number = 1): Promise<any> {
+	parameters: {[k: string]: any} = {}, info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}): Promise<any> {
 		const max_tries = 5
 		let err = "none"
 		let to_retry = false
@@ -359,12 +364,12 @@ export class API {
 				err = response.statusText
 
 				if (response.status === 401) {
-					if (this.refresh_token && new Date() > this.expires) {
+					if (this.refresh_token && !info.just_refreshed) {
 						this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
-						let refreshed = await this.refreshToken()
-
-						if (refreshed) {
+						
+						if (await this.refreshToken()) {
 							to_retry = true
+							info.just_refreshed = true
 						}
 					} else {
 						this.log(true, "Server responded with status code 401, maybe you need to do this action as a user?")
@@ -386,11 +391,11 @@ export class API {
 			 * However, spamming the server during the same second in any of these circumstances would be pointless
 			 * So we wait for 1 to 5 seconds to make our request, 5 times maximum
 			*/
-			if (to_retry === true && number_try < max_tries) {
-				this.log(true, "Will request again in a few instants...", `(Try #${number_try})`)
+			if (to_retry === true && info.number_try < max_tries) {
+				this.log(true, "Will request again in a few instants...", `(Try #${info.number_try})`)
 				const to_wait = (Math.floor(Math.random() * (500 - 100 + 1)) + 100) * 10
 				await new Promise(res => setTimeout(res, to_wait))
-				return await this.request(method, endpoint, parameters, number_try + 1)
+				return await this.request(method, endpoint, parameters, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
 			throw new APIError(err, `${this.server}/api/v2`, endpoint, parameters)

@@ -82,229 +82,269 @@ function validate(object: unknown, schemaName: string): boolean {
 	}
 }
 
-/**
- * Check if getUser() and similar work fine 
- */
-const testUserStuff = async (): Promise<boolean> => {
+
+// THE ACTUAL TESTS
+
+const testBeatmapPack = async (): Promise<boolean> => {
+	console.log("\n===> BEATMAP PACK")
+	let okay = true
+	const a = await attempt(api.getBeatmapPack, "P217")
+	if (!isOk(a, !a || (a.tag === "P217" && validate(a, "Beatmap.Pack")))) okay = false
+	const b = await attempt(api.getBeatmapPacks, "tournament")
+	if (!isOk(b, !b || (b.beatmap_packs.length >= 100 && validate(b.beatmap_packs, "Beatmap.Pack")))) okay = false
+	return okay
+}
+
+const testBeatmap = async (): Promise<boolean> => {
+	console.log("\n===> BEATMAP")
+	let okay = true
+	const [beatmap_id, long_str] = [388463, "Beatmap.Extended.WithFailtimesBeatmapsetextended"]
+
+	const a = await attempt(api.lookupBeatmap, {id: beatmap_id})
+	if (!isOk(a, !a || (a.id === beatmap_id && validate(a, long_str)))) okay = false
+	const b = await attempt(api.getBeatmap, beatmap_id)
+	if (!isOk(b, !b || (b.beatmapset.title_unicode == "夜啼く兎は夢を見る" && validate(b, long_str)))) okay = false
+	const c = await attempt(api.getBeatmaps, [beatmap_id, 4089655])
+	if (!isOk(c, !c || (c.length === 2 && validate(c, "Beatmap.Extended")))) okay = false
+
+	const d1 = await attempt(api.getBeatmapDifficultyAttributesOsu, 125660, ["DT"])
+	if (!isOk(d1, !d1 || (d1.approach_rate.toFixed(2) === "9.67" && validate(d1, "Beatmap.DifficultyAttributes.Osu")))) okay = false
+	const d2 = await attempt(api.getBeatmapDifficultyAttributesTaiko, beatmap_id, ["DT"])
+	if (!isOk(d2, !d2 || (d2.great_hit_window < 35 && validate(d2, "Beatmap.DifficultyAttributes.Taiko")))) okay = false
+	const d3 = await attempt(api.getBeatmapDifficultyAttributesFruits, 705339, ["DT"])
+	if (!isOk(d3, !d3 || (d3.approach_rate.toFixed(2) === "10.33" && validate(d3, "Beatmap.DifficultyAttributes.Fruits")))) okay = false
+	const d4 = await attempt(api.getBeatmapDifficultyAttributesMania, 3980252, ["DT"])
+	if (!isOk(d4, !d4 || (d4.great_hit_window === 40 && validate(d4, "Beatmap.DifficultyAttributes.Mania")))) okay = false
+
+	const e = await attempt(api.lookupBeatmapset, {id: beatmap_id})
+	if (!isOk(e, !e || (e.id === 58951 && validate(e, "Beatmapset.Extended.Plus")))) okay = false
+	const f = await attempt(api.searchBeatmapsets, {categories: "Any"})
+	if (!isOk(f, !f || (f.total >= 10000 && validate(f.beatmapsets, "Beatmapset.Extended.WithBeatmapExtendedPacktags")))) okay = false
+	const g = await attempt(api.getBeatmapUserScore, 176960, 7276846, {mods: ["NM"]})
+	if (!isOk(g, !g || (g.score.accuracy < 0.99 && validate(g, "Beatmap.UserScore")))) okay = false
+	const h = await attempt(api.getBeatmapUserScores, 203993, 7276846, {ruleset: osu.Rulesets.fruits})
+	if (!isOk(h, !h || (h.length === 1 && validate(h, "Score")))) okay = false
+
+	const i = await attempt(api.getBeatmapScores, 129891, {legacy_only: true})
+	if (!isOk(i, !i || (i[0].score >= 132408001 && validate(i, "Score.WithUser")))) okay = false
+	const j = await attempt(api.getBeatmapSoloScores, 129891)
+	if (!isOk(j, !j || (j[0].total_score >= 1073232 && validate(j, "Score.Solo")))) okay = false
+
+	return okay
+}
+
+const testBeatmapsetDiscussion = async (): Promise<boolean> => {
+	console.log("\n===> BEATMAPSET DISCUSSION")
+	let okay = true
+
+	const a = await attempt(api.getBeatmapsetDiscussions, {beatmapset: {id: 2119925}})
+	if (!isOk(a, !a || (validate(a.beatmaps, "Beatmap.Extended") && validate(a.beatmapsets, "Beatmapset.Extended") &&
+	validate(a.users, "User.WithGroups") && validate(a.discussions, "Beatmapset.Discussion.WithStartingpost") &&
+	validate(a.included_discussions, "Beatmapset.Discussion.WithStartingpost")))) okay = false
+	const b = await attempt(api.getBeatmapsetDiscussionPosts, {discussion: {id: 4143461}})
+	if (!isOk(b, !b || (validate(b.beatmapsets, "Beatmapset.WithHype") && validate(b.users, "User") &&
+	validate(b.posts, "Beatmapset.Discussion.Post")))) okay = false
+	const c = await attempt(api.getBeatmapsetDiscussionVotes, {vote_receiver: {id: 7276846}})
+	if (!isOk(c, !c || (validate(c.votes, "Beatmapset.Discussion.Vote") && validate(c.discussions, "Beatmapset.Discussion") &&
+	validate(c.users, "User.WithGroups")))) okay = false
+
+	return okay
+}
+
+const testBeatmapset = async (): Promise<boolean> => {
+	console.log("\n===> BEATMAPSET")
+	let okay = true
+	const a = await attempt(api.getBeatmapset, {id: 1971037})
+	if (!isOk(a, !a || (a.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(a, "Beatmapset.Extended.Plus")))) okay = false
+	const b = await attempt(api.getBeatmapsetEvents)
+	if (!isOk(b, !b || (validate(b.events, "Beatmapset.Event") && validate(b.users, "User.WithGroups")))) okay = false
+	return okay
+}
+
+const testChangelog = async (): Promise<boolean> => {
+	let okay = true
+	console.log("\n===> CHANGELOG")
+
+	const a = await attempt(api.lookupChangelogBuild, 7156)
+	if (!isOk(a, !a || (a.display_version == "2023.1008.1" && validate(a, "Changelog.Build.WithChangelogentriesVersions")))) okay = false
+	const b = await attempt(api.getChangelogBuild, "lazer", "2023.1008.1")
+	if (!isOk(b, !b || (b.id === 7156 && validate(b, "Changelog.Build.WithChangelogentriesVersions")))) okay = false
+	const c = await attempt(api.getChangelogBuilds, undefined, {from: "2023.1031.0", to: 7184}, ["markdown"])
+	if (!isOk(c, !c || (c.length === 4 && validate(c, "Changelog.Build.WithUpdatestreamsChangelogentries")))) okay = false
+	const d = await attempt(api.getChangelogStreams)
+	if (!isOk(d, !d || (d.length > 2 && validate(d, "Changelog.UpdateStream.WithLatestbuildUsercount")))) okay = false
+
+	return okay
+}
+
+const testComment = async (): Promise<boolean> => {
+	let okay = true
+	console.log("\n===> COMMENT")
+
+	const a = await attempt(api.getComment, {id: 2418884})
+	if (!isOk(a, !a || (a.users.find((u) => u.id === 8) && validate(a, "Comment.Bundle")))) okay = false
+	const b1 = await attempt(api.getComments)
+	if (!isOk(b1, !b1 || validate(b1, "Comment.Bundle"))) okay = false
+	const b2 = await attempt(api.getComments, {type: "beatmapset", id: 1971037})
+	if (!isOk(b2, !b2 || validate(b2, "Comment.Bundle"))) okay = false
+	const b3 = await attempt(api.getComments, {type: "build", id: 7463})
+	if (!isOk(b3, !b3 || validate(b3, "Comment.Bundle"))) okay = false
+	const b4 = await attempt(api.getComments, {type: "news_post", id: 1451})
+	if (!isOk(b4, !b4 || validate(b4, "Comment.Bundle"))) okay = false
+
+	return okay
+}
+
+const testEvent = async (): Promise<boolean> => {
+	let okay = true
+	console.log("\n===> EVENT")
+	const a = await attempt(api.getEvents)
+	if (!isOk(a, !a || (a.events.length === 50 && validate(a.events, "Event.Any")))) okay = false
+	return okay
+}
+
+const testForum = async (): Promise<boolean> => {
+	let okay = true
+	console.log("\n===> FORUM")
+	const a = await attempt(api.getForumTopicAndPosts, {id: 1848236}, 2)
+	if (!isOk(a, !a || (a.topic.title === "survey" && validate(a.topic, "Forum.Topic") && validate(a.posts, "Forum.Post")))) okay = false
+	return okay
+}
+
+const testHome = async (): Promise<boolean> => {
+	let okay = true
+	console.log("\n===> HOME")
+
+	const a1 = await attempt(api.searchUser, "Tae", 2)
+	if (!isOk(a1, !a1 || (a1.data.length === 20 && validate(a1, "Home.Search.User")))) okay = false
+	const a2 = await attempt(api.searchWiki, "Beat", 2)
+	if (!isOk(a2, !a2 || (a2.data.length === 50 && validate(a2, "Home.Search.Wiki")))) okay = false
+
+	return okay
+}
+
+const testMultiplayer = async (): Promise<boolean> => {
+	let okay = true
+	console.log("\n===> MULTIPLAYER")
+
+	const a1 = await attempt(api.getRoom, {id: 591993})
+	if (!isOk(a1, !a1 || (a1.recent_participants.length === 5 && validate(a1, "Multiplayer.Room")))) okay = false
+	const a2 = await attempt(api.getRoom, {id: 588230})
+	if (!isOk(a2, !a2 || (a2.participant_count === 27 && validate(a2, "Multiplayer.Room")))) okay = false
+	if (a1) {
+		const b1 = await attempt(api.getPlaylistItemScores, {id: a1.playlist[0].id, room_id: a1.id})
+		if (!isOk(b1, !b1 || (b1.scores.length > 0 && validate(b1, "Multiplayer.Room.PlaylistItem.Scores")), 1)) okay = false
+	}
+	if (a2) {
+		const b2 = await attempt(api.getPlaylistItemScores, {id: a2.playlist[0].id, room_id: a2.id})
+		if (!isOk(b2, !b2 || (b2.scores.length >= 9 && validate(b2, "Multiplayer.Room.PlaylistItem.Scores")), 1)) okay = false
+	}
+	const c = await attempt(api.getMatch, 62006076)
+	if (!isOk(c, !c || (c.match.name === "CWC2020: (Italy) vs (Indonesia)" && validate(c, "Multiplayer.Match")), 3)) okay = false
+	const d = await attempt(api.getMatches)
+	if (!isOk(d, !d || (d[0].id > 111250329 && validate(d, "Multiplayer.Match.Info")))) okay = false
+
+	return okay
+}
+
+const testNews = async (): Promise<boolean> => {
+	let okay = true
+	console.log("\n===> NEWS")
+
+	const a = await attempt(api.getNewsPost, {id: 26})
+	if (!isOk(a, !a || (a.title === "Official osu! Fanart Contest 5 Begins!" && validate(a, "NewsPost.WithContentNavigation")))) okay = false
+	const b = await attempt(api.getNewsPosts)
+	if (!isOk(b, !b || (b.length >= 1 && validate(b, "NewsPost")))) okay = false
+
+	return okay
+}
+
+const testRanking = async (): Promise<boolean> => {
+	let okay = true
+	console.log("\n===> RANKING")
+
+	const a = await attempt(api.getKudosuRanking)
+	if (!isOk(a, !a || (a[0].kudosu.total > 10000 && validate(a, "User.WithKudosu")))) okay = false
+	const b = await attempt(api.getUserRanking, osu.Rulesets.osu, "score", 1, "all", "FR")
+	if (!isOk(b, !b || (b.ranking[0].level.current > 106 && validate(b, "Ranking.User")), 2)) okay = false
+	const c = await attempt(api.getCountryRanking, osu.Rulesets.osu)
+	if (!isOk(c, !c || (c.ranking[0].code === "US" && validate(c, "Ranking.Country")))) okay = false
+	const d = await attempt(api.getSpotlightRanking, osu.Rulesets.taiko, {id: 48})
+	if (!isOk(d, !d || (d.ranking[0].hit_accuracy === 97.85 && validate(d, "Ranking.Spotlight")), 2)) okay = false
+
+	return okay
+}
+
+const testUser = async (): Promise<boolean> => {
 	let okay = true
 	const user_id = 7276846
-
-	console.log("\n===> USER FUNCTIONS")
+	console.log("\n===> USER")
 	
-	const a1 = await attempt(api.getUser, user_id)
-	if (!isOk(a1, !a1 || (a1.id === user_id && validate(a1, "User.Extended")))) okay = false
-	const a2 = await attempt(api.getUsers, [user_id, 2])
-	if (!isOk(a2, !a2 || (a2.length === 2 && validate(a2, "User.WithCountryCoverGroupsStatisticsrulesets")))) okay = false
+	const a = await attempt(api.getUser, user_id)
+	if (!isOk(a, !a || (a.id === user_id && validate(a, "User.Extended")))) okay = false
+	const b = await attempt(api.getUsers, [user_id, 2])
+	if (!isOk(b, !b || (b.length === 2 && validate(b, "User.WithCountryCoverGroupsStatisticsrulesets")))) okay = false
 
-	const a3 = await attempt(api.getUserScores, user_id, "best", undefined, {fails: false, lazer: true}, {limit: 5})
-	if (!isOk(a3, !a3 || (a3.length === 5 && validate(a3, "Score.WithUserBeatmapBeatmapset")))) okay = false
-	const a4 = await attempt(api.getUserScores, 6503700, "firsts", osu.Rulesets.taiko, undefined, {limit: 3})
-	if (!isOk(a4, !a4 || (a4.length === 3 && validate(a4, "Score.WithUserBeatmapBeatmapset")))) okay = false
-	const a5 = await attempt(api.getUserScores, 9269034, "recent", osu.Rulesets.osu, {fails: true, lazer: true}, {limit: 1})
+	const c1 = await attempt(api.getUserScores, user_id, "best", undefined, {fails: false, lazer: true}, {limit: 5})
+	if (!isOk(c1, !c1 || (c1.length === 5 && validate(c1, "Score.WithUserBeatmapBeatmapset")))) okay = false
+	const c2 = await attempt(api.getUserScores, 6503700, "firsts", osu.Rulesets.taiko, undefined, {limit: 3})
+	if (!isOk(c2, !c2 || (c2.length === 3 && validate(c2, "Score.WithUserBeatmapBeatmapset")))) okay = false
+	const c3 = await attempt(api.getUserScores, 9269034, "recent", osu.Rulesets.osu, {fails: true, lazer: true}, {limit: 1})
 	// Due to the nature of the test, it might fail, you may adapt the user id
-	if (!isOk(a5, !a5 || (a5.length === 1 && validate(a5, "Score.WithUserBeatmapBeatmapset")))) okay = false
-	const a6 = await attempt(api.getUserBeatmaps, user_id, "guest")
-	if (!isOk(a6, !a6 || (a6.length === 1 && validate(a6, "Beatmapset.Extended.WithBeatmapExtended")))) okay = false
-	const a7 = await attempt(api.getUserMostPlayed, user_id)
-	if (!isOk(a7, !a7 || (a7[0].beatmapset.title === "furioso melodia" && validate(a7, "Beatmap.Playcount")))) okay = false
+	if (!isOk(c3, !c3 || (c3.length === 1 && validate(c3, "Score.WithUserBeatmapBeatmapset")))) okay = false
 
-	const a8 = await attempt(api.getUserRecentActivity, 7562902, {limit: 25})
-	if (!isOk(a8, !a8 || (a8.length <= 25 && validate(a8, "Event.AnyRecentActivity")))) okay = false
-	const a9 = await attempt(api.getUserKudosu, user_id, {limit: 5})
-	if (!isOk(a9, !a9 || (a9.length === 5 && validate(a9, "User.KudosuHistory")))) okay = false
+	const d = await attempt(api.getUserBeatmaps, user_id, "guest")
+	if (!isOk(d, !d || (d.length === 1 && validate(d, "Beatmapset.Extended.WithBeatmapExtended")))) okay = false
+	const e = await attempt(api.getUserMostPlayed, user_id)
+	if (!isOk(e, !e || (e[0].beatmapset.title === "furioso melodia" && validate(e, "Beatmap.Playcount")))) okay = false
+	const f = await attempt(api.getUserRecentActivity, 7562902, {limit: 25})
+	if (!isOk(f, !f || (f.length <= 25 && validate(f, "Event.AnyRecentActivity")))) okay = false
+	const g = await attempt(api.getUserKudosu, user_id, {limit: 5})
+	if (!isOk(g, !g || (g.length === 5 && validate(g, "User.KudosuHistory")))) okay = false
 
 	return okay
 }
 
-/**
- * Check if getBeatmap() and similar work fine 
- */
-const testBeatmapStuff = async (): Promise<boolean> => {
+const testWiki = async (): Promise<boolean> => {
 	let okay = true
-	const beatmap_id = 388463
-	const long_str = "Beatmap.Extended.WithFailtimesBeatmapsetextended"
-
-	console.log("\n===> BEATMAP FUNCTIONS")
-
-	const b1 = await attempt(api.lookupBeatmap, {id: beatmap_id})
-	if (!isOk(b1, !b1 || (b1.id === beatmap_id && validate(b1, long_str)))) okay = false
-	const b2 = await attempt(api.getBeatmap, beatmap_id)
-	if (!isOk(b2, !b2 || (b2.beatmapset.title_unicode == "夜啼く兎は夢を見る" && validate(b2, long_str)))) okay = false
-	const b3 = await attempt(api.getBeatmaps, [beatmap_id, 4089655])
-	if (!isOk(b3, !b3 || (b3.length === 2 && validate(b3, "Beatmap.Extended")))) okay = false
-
-	const b4 = await attempt(api.getBeatmapDifficultyAttributesOsu, 125660, ["DT"])
-	if (!isOk(b4, !b4 || (b4.approach_rate.toFixed(2) === "9.67" && validate(b4, "Beatmap.DifficultyAttributes.Osu")))) okay = false
-	const b5 = await attempt(api.getBeatmapDifficultyAttributesTaiko, beatmap_id, ["DT"])
-	if (!isOk(b5, !b5 || (b5.great_hit_window < 35 && validate(b5, "Beatmap.DifficultyAttributes.Taiko")))) okay = false
-	const b6 = await attempt(api.getBeatmapDifficultyAttributesFruits, 705339, ["DT"])
-	if (!isOk(b6, !b6 || (b6.approach_rate.toFixed(2) === "10.33" && validate(b6, "Beatmap.DifficultyAttributes.Fruits")))) okay = false
-	const b7 = await attempt(api.getBeatmapDifficultyAttributesMania, 3980252, ["DT"])
-	if (!isOk(b7, !b7 || (b7.great_hit_window === 40 && validate(b7, "Beatmap.DifficultyAttributes.Mania")))) okay = false
-	
-	const b8 = await attempt(api.searchBeatmapsets, {categories: "Any"})
-	if (!isOk(b8, !b8 || (b8.total >= 10000 && validate(b8.beatmapsets, "Beatmapset.Extended.WithBeatmapExtendedPacktags")))) okay = false
-	const b9 = await attempt(api.lookupBeatmapset, {id: beatmap_id})
-	if (!isOk(b9, !b9 || (b9.id === 58951 && validate(b9, "Beatmapset.Extended.Plus")))) okay = false
-	const b10 = await attempt(api.getBeatmapUserScore, 176960, 7276846, {mods: ["NM"]})
-	if (!isOk(b10, !b10 || (b10.score.accuracy < 0.99 && validate(b10, "Beatmap.UserScore")))) okay = false
-	const b11 = await attempt(api.getBeatmapUserScores, 203993, 7276846, {ruleset: osu.Rulesets.fruits})
-	if (!isOk(b11, !b11 || (b11.length === 1 && validate(b11, "Score")))) okay = false
-	const b12 = await attempt(api.getBeatmapset, {id: 1971037})
-	if (!isOk(b12, !b12 || (b12.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(b12, "Beatmapset.Extended.Plus")))) okay = false
-	const b13 = await attempt(api.getBeatmapPack, "P217")
-	if (!isOk(b13, !b13 || (b13.tag === "P217" && validate(b13, "Beatmap.Pack")))) okay = false
-	const b14 = await attempt(api.getBeatmapPacks, "tournament")
-	if (!isOk(b14, !b14 || (b14.beatmap_packs.length >= 100 && validate(b14.beatmap_packs, "Beatmap.Pack")))) okay = false
-	const b15 = await attempt(api.getBeatmapScores, 129891, {legacy_only: true})
-	if (!isOk(b15, !b15 || (b15[0].score >= 132408001 && validate(b15, "Score.WithUser")))) okay = false
-	const b16 = await attempt(api.getBeatmapSoloScores, 129891)
-	if (!isOk(b16, !b16 || (b16[0].total_score >= 1073232 && validate(b16, "Score.Solo")))) okay = false
-
-	const b17 = await attempt(api.getBeatmapsetDiscussions, {beatmapset: {id: 2119925}})
-	if (!isOk(b17, !b17 || (validate(b17.beatmaps, "Beatmap.Extended") && validate(b17.beatmapsets, "Beatmapset.Extended") &&
-	validate(b17.users, "User.WithGroups") && validate(b17.discussions, "Beatmapset.Discussion.WithStartingpost") &&
-	validate(b17.included_discussions, "Beatmapset.Discussion.WithStartingpost")))) okay = false
-	const b18 = await attempt(api.getBeatmapsetDiscussionPosts, {discussion: {id: 4143461}})
-	if (!isOk(b18, !b18 || (validate(b18.beatmapsets, "Beatmapset.WithHype") && validate(b18.users, "User") &&
-	validate(b18.posts, "Beatmapset.Discussion.Post")))) okay = false
-	const b19 = await attempt(api.getBeatmapsetDiscussionVotes, {vote_receiver: {id: 7276846}})
-	if (!isOk(b19, !b19 || (validate(b19.votes, "Beatmapset.Discussion.Vote") && validate(b19.discussions, "Beatmapset.Discussion") &&
-	validate(b19.users, "User.WithGroups")))) okay = false
-	const b20 = await attempt(api.getBeatmapsetEvents)
-	if (!isOk(b20, !b20 || (validate(b20.events, "Beatmapset.Event") && validate(b20.users, "User.WithGroups")))) okay = false
-
+	console.log("\n===> WIKI")
+	const a = await attempt(api.getWikiPage, "Rules")
+	if (!isOk(a, !a || (a.title === "Rules" && validate(a, "WikiPage")))) okay = false
 	return okay
 }
 
-/**
- * Check if getChangelogBuild() and similar work fine 
- */
-const testChangelogStuff = async (): Promise<boolean> => {
+const testOther = async (): Promise<boolean> => {
 	let okay = true
+	console.log("\n===> OTHER")
 
-	console.log("\n===> CHANGELOG FUNCTIONS")
-
-	const c1 = await attempt(api.lookupChangelogBuild, 7156)
-	if (!isOk(c1, !c1 || (c1.display_version == "2023.1008.1" && validate(c1, "Changelog.Build.WithChangelogentriesVersions")))) okay = false
-	const c2 = await attempt(api.getChangelogBuild, "lazer", "2023.1008.1")
-	if (!isOk(c2, !c2 || (c2.id === 7156 && validate(c2, "Changelog.Build.WithChangelogentriesVersions")))) okay = false
-	const c3 = await attempt(api.getChangelogBuilds, undefined, {from: "2023.1031.0", to: 7184}, ["markdown"])
-	if (!isOk(c3, !c3 || (c3.length === 4 && validate(c3, "Changelog.Build.WithUpdatestreamsChangelogentries")))) okay = false
-	const c4 = await attempt(api.getChangelogStreams)
-	if (!isOk(c4, !c4 || (c4.length > 2 && validate(c4, "Changelog.UpdateStream.WithLatestbuildUsercount")))) okay = false
+	const a = await attempt(api.getSpotlights)
+	if (!isOk(a, !a || (a.length >= 132 && validate(a, "Spotlight")))) okay = false
+	const b = await attempt(api.getSeasonalBackgrounds)
+	if (!isOk(b, !b || (b.ends_at > new Date("2024-01-01") && b.backgrounds.length > 0))) okay = false
 
 	return okay
 }
 
-/**
- * Check if getRoom(), getMatch() and similar work fine
- */
-const testMultiplayerStuff = async (): Promise<boolean> => {
-	let okay = true
-
-	console.log("\n===> MULTIPLAYER FUNCTIONS")
-
-	const d1 = await attempt(api.getRoom, {id: 591993})
-	if (!isOk(d1, !d1 || (d1.recent_participants.length === 5 && validate(d1, "Multiplayer.Room")))) okay = false
-	const d2 = await attempt(api.getRoom, {id: 588230})
-	if (!isOk(d2, !d2 || (d2.participant_count === 27 && validate(d2, "Multiplayer.Room")))) okay = false
-	if (d1) {
-		const d3 = await attempt(api.getPlaylistItemScores, {id: d1.playlist[0].id, room_id: d1.id})
-		if (!isOk(d3, !d3 || (d3.scores.length > 0 && validate(d3, "Multiplayer.Room.PlaylistItem.Scores")), 1)) okay = false
-	}
-	if (d2) {
-		const d4 = await attempt(api.getPlaylistItemScores, {id: d2.playlist[0].id, room_id: d2.id})
-		if (!isOk(d4, !d4 || (d4.scores.length >= 9 && validate(d4, "Multiplayer.Room.PlaylistItem.Scores")), 1)) okay = false
-	}
-	const d5 = await attempt(api.getMatch, 62006076)
-	if (!isOk(d5, !d5 || (d5.match.name === "CWC2020: (Italy) vs (Indonesia)" && validate(d5, "Multiplayer.Match")), 3)) okay = false
-	const d6 = await attempt(api.getMatches)
-	if (!isOk(d6, !d6 || (d6[0].id > 111250329 && validate(d6, "Multiplayer.Match.Info")))) okay = false
-
-	return okay
-}
-
-/**
- * Check if getRanking() and similar work fine
- */
-const testRankingStuff = async (): Promise<boolean> => {
-	let okay = true
-
-	console.log("\n===> RANKING FUNCTIONS")
-
-	const e1 = await attempt(api.getKudosuRanking)
-	if (!isOk(e1, !e1 || (e1[0].kudosu.total > 10000 && validate(e1, "User.WithKudosu")))) okay = false
-	const e2 = await attempt(api.getUserRanking, osu.Rulesets.osu, "score", 1, "all", "FR")
-	if (!isOk(e2, !e2 || (e2.ranking[0].level.current > 106 && validate(e2, "Ranking.User")), 2)) okay = false
-	const e3 = await attempt(api.getCountryRanking, osu.Rulesets.osu)
-	if (!isOk(e3, !e3 || (e3.ranking[0].code === "US" && validate(e3, "Ranking.Country")))) okay = false
-	const e4 = await attempt(api.getSpotlightRanking, osu.Rulesets.taiko, {id: 48})
-	if (!isOk(e4, !e4 || (e4.ranking[0].hit_accuracy === 97.85 && validate(e4, "Ranking.Spotlight")), 2)) okay = false
-	const e5 = await attempt(api.getSpotlights)
-	if (!isOk(e5, !e5 || (e5.length >= 132 && validate(e5, "Spotlight")))) okay = false
-
-	return okay
-}
-
-/**
- * Check if searchUser() and similar work fine
- */
-const testHomeStuff = async (): Promise<boolean> => {
-	let okay = true
-
-	console.log("\n===> HOME FUNCTIONS")
-
-	const f1 = await attempt(api.searchUser, "Tae", 2)
-	if (!isOk(f1, !f1 || (f1.data.length === 20 && validate(f1, "Home.Search.User")))) okay = false
-	const f2 = await attempt(api.searchWiki, "Beat", 2)
-	if (!isOk(f2, !f2 || (f2.data.length === 50 && validate(f2, "Home.Search.Wiki")))) okay = false
-	const f3 = await attempt(api.getWikiPage, "Rules")
-	if (!isOk(f3, !f3 || (f3.title === "Rules" && validate(f3, "WikiPage")))) okay = false
-	const f4 = await attempt(api.getNewsPosts)
-	if (!isOk(f4, !f4 || (f4.length >= 1 && validate(f4, "NewsPost")))) okay = false
-	const f5 = await attempt(api.getNewsPost, {id: 26})
-	if (!isOk(f5, !f5 || (f5.title === "Official osu! Fanart Contest 5 Begins!" && validate(f5, "NewsPost.WithContentNavigation")))) okay = false
-
-	return okay
-}
-
-const testMiscStuff = async (): Promise<boolean> => {
-	let okay = true
-
-	console.log("\n===> MISC FUNCTIONS")
-
-	const g1 = await attempt(api.getForumTopicAndPosts, {id: 1848236}, 2)
-	if (!isOk(g1, !g1 || (g1.topic.title === "survey" && validate(g1.topic, "Forum.Topic") && validate(g1.posts, "Forum.Post")))) okay = false
-	const g2 = await attempt(api.getEvents)
-	if (!isOk(g2, !g2 || (g2.events.length === 50 && validate(g2.events, "Event.Any")))) okay = false
-	const g3 = await attempt(api.getSeasonalBackgrounds)
-	if (!isOk(g3, !g3 || (g3.ends_at > new Date("2024-01-01") && g3.backgrounds.length > 0))) okay = false
-	const g4 = await attempt(api.getComments)
-	if (!isOk(g4, !g4 || validate(g4, "Comment.Bundle"))) okay = false
-	const g5 = await attempt(api.getComments, {type: "beatmapset", id: 1971037})
-	if (!isOk(g5, !g5 || validate(g5, "Comment.Bundle"))) okay = false
-	const g6 = await attempt(api.getComments, {type: "build", id: 7463})
-	if (!isOk(g6, !g6 || validate(g6, "Comment.Bundle"))) okay = false
-	const g7 = await attempt(api.getComments, {type: "news_post", id: 1451})
-	if (!isOk(g7, !g7 || validate(g7, "Comment.Bundle"))) okay = false
-	const g8 = await attempt(api.getComment, {id: 2418884})
-	if (!isOk(g8, !g8 || (g8.users.find((u) => u.id === 8) && validate(g8, "Comment.Bundle")))) okay = false
-
-	return okay
-}
 
 const test = async (id: string, secret: string): Promise<void> => {
 	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all") //"http://127.0.0.1:8080")
 
 	const tests = [
-		testUserStuff,
-		testBeatmapStuff,
-		testChangelogStuff,
-		testMultiplayerStuff,
-		testRankingStuff,
-		testHomeStuff,
-		testMiscStuff,
+		testBeatmapPack,
+		testBeatmap,
+		testBeatmapsetDiscussion,
+		testBeatmapset,
+		testChangelog,
+		testComment,
+		testEvent,
+		testForum,
+		testHome,
+		testMultiplayer,
+		testNews,
+		testRanking,
+		testUser,
+		testWiki,
+		testOther,
 	]
 
 	const results: {test_name: string, passed: boolean}[] = []
@@ -312,6 +352,7 @@ const test = async (id: string, secret: string): Promise<void> => {
 		results.push({test_name: tests[i].name, passed: await tests[i]()})
 	}
 	console.log("\n", ...results.map((r) => `${r.test_name}: ${r.passed ? "✔️" : "❌"}\n`))
+	await api.revokeToken()
 
 	if (!results.find((r) => !r.passed)) {
 		console.log("✔️ Looks like the test went well!")
