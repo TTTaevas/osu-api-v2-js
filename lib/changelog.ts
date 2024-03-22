@@ -1,4 +1,4 @@
-import { API } from "./index.js"
+import { API, User } from "./index.js"
 
 export namespace Changelog {
 	export interface Build {
@@ -41,8 +41,8 @@ export namespace Changelog {
 					github_url: string | null
 					github_username: string | null
 					id: number | null
-					osu_username: string | null
-					user_id: number | null
+					osu_username: User["username"] | null
+					user_id: User["id"] | null
 					user_url: string | null
 				}
 				/**

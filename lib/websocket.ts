@@ -1,5 +1,4 @@
-import { Chat } from "./chat.js"
-import { User } from "./user.js"
+import { Chat, User } from "./index.js"
 
 /** Everything here is great to use with the WebSocket you can get with {@link API.generateWebSocket}! */
 export namespace WebSocket {

@@ -1,12 +1,10 @@
 import { API } from "./index.js"
 
-/**
- * Expected from api.getWikiPage(), SearchResultWiki
- */
+/** @obtainableFrom {@link API.getWikiPage} */
 export interface WikiPage {
 	available_locales: string[]
 	layout: string
-	/** BCP 47 language (sub)tag, lowercase (for example, `en` for english) */
+	/** Lowercase BCP 47 language (sub)tag (for example, `en` for english) */
 	locale: string
 	markdown: string
 	/** It's what should be after `https://osu.ppy.sh/wiki/{locale}/` */
@@ -25,9 +23,9 @@ export namespace WikiPage {
 	 * Get a wiki page!
 	 * @param path What's in the page's URL after `https://osu.ppy.sh/wiki/` (so the title, after the subtitle if there is a subtitle)
 	 * (An example for `https://osu.ppy.sh/wiki/en/Game_mode/osu!` would be `Game_mode/osu!`)
-	 * @param locale (defaults to "en") The BCP 47 language (sub)tag, lowercase (for example, for the article in french, use "fr")
+	 * @param locale The BCP 47 language (sub)tag lowercase (for example, for a french WikiPage, use "fr") (defaults to **en**) 
 	 */
-	export async function getOne(this: API, path: string, locale: string = "en"): Promise<WikiPage> {
+	export async function getOne(this: API, path: string, locale: WikiPage["locale"] = "en"): Promise<WikiPage> {
 		return await this.request("get", `wiki/${locale}/${path}`)
 	}
 }

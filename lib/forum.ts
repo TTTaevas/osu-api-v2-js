@@ -136,8 +136,8 @@ export namespace Forum {
 	 * Get a forum topic, as well as its main post (content) and the posts that were sent in it!
 	 * @remarks The oldest post of a topic is the text of a topic
 	 * @param topic An object with the id of the topic in question
-	 * @param limit (defaults to 20, max 50) How many `posts` maximum?
-	 * @param sort (defaults to "id_asc") "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead
+	 * @param limit How many `posts` maximum, up to 50 (defaults to **20**)
+	 * @param sort "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead (defaults to **id_asc**)
 	 * @param first_post (ignored if `cursor_string`) An Object with the id of the first post to be returned in `posts`
 	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
 	 */

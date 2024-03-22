@@ -1,6 +1,5 @@
-import { API } from "./index.js";
+import { API, User } from "./index.js";
 import { getId } from "./misc.js";
-import { User } from "./user.js";
 
 export namespace Chat {
 	/** @obtainableFrom {@link API.keepChatAlive} */

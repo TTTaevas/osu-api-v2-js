@@ -46,8 +46,8 @@ export namespace Ranking {
 	 * Get the top players of the game, with some filters!
 	 * @param ruleset Self-explanatory, is also known as "Gamemode"
 	 * @param type Rank players by their performance points or by their ranked score?
-	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 players, while 50 others may be on the next one
-	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
+	 * @param page Imagine the array you get as a page, it can only have a maximum of 50 players, while 50 others may be on the next one (defaults to **1**)
+	 * @param filter What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user (defaults to **all**)
 	 * @param country Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`)
 	 * @param variant If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k!
 	 */
@@ -59,15 +59,13 @@ export namespace Ranking {
 	/**
 	 * Get the top countries of a specific ruleset!
 	 * @param ruleset On which Ruleset should the countries be compared?
-	 * @param page (defaults to 1) Imagine `Rankings` as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one
+	 * @param page Imagine the array you get as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one (defaults to **1**)
 	 */
 	export async function getCountry(this: API, ruleset: Rulesets, page: number = 1): Promise<Ranking.Country> {
 		return await this.request("get", `rankings/${Rulesets[ruleset]}/country`, {page})
 	}
 
-	/**
-	 * Get the top 50 players who have the most total kudosu!
-	 */
+	/** Get the top 50 players who have the most total kudosu! */
 	export async function getKudosu(this: API): Promise<User.WithKudosu[]> {
 		const response = await this.request("get", "rankings/kudosu")
 		return response.ranking
@@ -77,7 +75,7 @@ export namespace Ranking {
 	 * Get the rankings of a spotlight from 2009 to 2020 on a specific ruleset!
 	 * @param ruleset Each spotlight has a different ranking (and often maps) depending on the ruleset
 	 * @param spotlight The spotlight in question
-	 * @param filter What kind of players do you want to see? Defaults to `all`, `friends` has no effect if no authorized user
+	 * @param filter What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user (defaults to **all**)
 	 */
 	export async function getSpotlight(this: API, ruleset: Rulesets, spotlight: SpotlightInterface["id"] | SpotlightInterface, filter: "all" | "friends" = "all"): Promise<Ranking.Spotlight> {
 		return await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: getId(spotlight), filter})

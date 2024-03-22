@@ -1,4 +1,4 @@
-import { API, Beatmap, Genres, Languages, RankStatus, Rulesets, User } from "./index.js"
+import { API, Beatmap, Rulesets, User } from "./index.js"
 import { getId } from "./misc.js"
 
 export interface Beatmapset {
@@ -14,7 +14,7 @@ export interface Beatmapset {
 		slimcover: string
 		"slimcover@2x": string
 	}
-	creator: string
+	creator: User["username"]
 	favourite_count: number
 	id: number
 	nsfw: boolean
@@ -35,6 +35,51 @@ export interface Beatmapset {
 }
 
 export namespace Beatmapset {
+	export enum RankStatus {
+		Graveyard 	= -2,
+		Wip 		= -1,
+		Pending		= 0,
+		Ranked		= 1,
+		Approved	= 2,
+		Qualified	= 3,
+		Loved 		= 4
+	}
+
+	export enum Genres {
+		Any				= 0,
+		Unspecified		= 1,
+		"Video Game"	= 2,
+		Anime			= 3,
+		Rock			= 4,
+		Pop				= 5,
+		Other			= 6,
+		Novelty			= 7,
+		"Hip Hop"		= 9,
+		Electronic		= 10,
+		Metal			= 11,
+		Classical		= 12,
+		Folk			= 13,
+		Jazz			= 14
+	}
+
+	export enum Languages {
+		Any				= 0,
+		Unspecified		= 1,
+		English			= 2,
+		Japanese 		= 3,
+		Chinese			= 4,
+		Instrumental	= 5,
+		Korean			= 6,
+		French			= 7,
+		German			= 8,
+		Swedish			= 9,
+		Spanish			= 10,
+		Italian			= 11,
+		Russian			= 12,
+		Polish			= 13,
+		Other			= 14
+	}
+
 	/** Whether properties are there or not and null or not depend of the `type` */
 	export interface Event {
 		id: number
@@ -72,7 +117,7 @@ export namespace Beatmapset {
 		 * @param from Which beatmapset, or caused by which user? When?
 		 * @param types What kinds of events?
 		 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-		 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead
+		 * @param sort "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead (defaults to **id_desc**)
 		 * @returns Relevant events and users
 		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware,
 		 * and also there's no documentation for this route in the API, so this is only the result of my interpretation of the website's code lol
@@ -106,7 +151,6 @@ export namespace Beatmapset {
 		}
 		bpm: number
 		can_be_hyped: boolean
-		creator: User["username"]
 		deleted_at: Date | null
 		discussion_locked: boolean
 		is_scoreable: boolean
@@ -118,7 +162,6 @@ export namespace Beatmapset {
 		}
 		ranked: RankStatus
 		ranked_date: Date | null
-		source: string
 		storyboard: boolean
 		submitted_date: Date | null
 		tags: string
@@ -176,7 +219,7 @@ export namespace Beatmapset {
 		deleted_by_id: User["id"] | null
 		message_type: "suggestion" | "problem" | "mapper_note" | "praise" | "hype" | "review"
 		/** For example, the id of the review this discussion is included in */
-		parent_id: Discussion["id"] | null
+		parent_id: number | null
 		timestamp: number | null
 		resolved: boolean
 		can_be_resolved: boolean
@@ -241,7 +284,7 @@ export namespace Beatmapset {
 			 * @param from The discussion with the votes, the user who voted, the user who's gotten the votes...
 			 * @param score An upvote (1) or a downvote (-1)
 			 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-			 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent vote first, "id_desc" to have the newest instead
+			 * @param sort "id_asc" to have the oldest recent vote first, "id_desc" to have the newest instead (defaults to **id_desc**)
 			 * @returns Relevant votes and info about them
 			 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 			 */
@@ -262,7 +305,7 @@ export namespace Beatmapset {
 		 * @param from From where/who are the discussions coming from? Maybe only qualified sets?
 		 * @param filter Should those discussions only be unresolved problems, for example?
 		 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-		 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent discussion first, "id_desc" to have the newest instead
+		 * @param sort "id_asc" to have the oldest recent discussion first, "id_desc" to have the newest instead (defaults to **id_desc**)
 		 * @returns Relevant discussions and info about them
 		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 		 * @privateRemarks I don't allow setting `beatmap_id` because my testing has led me to believe it does nothing (and is therefore misleading)
@@ -297,7 +340,7 @@ export namespace Beatmapset {
 		general?: ("Recommended difficulty" | "Include converted beatmaps" | "Subscribed mappers" | "Spotlighted beatmaps" | "Featured Artists")[],
 		/** Only get sets that have maps that you can play in the ruleset of your choice */
 		mode?: Rulesets,
-		/** (defaults to all that have leaderboard) Filter in sets depending on their status or on their relation with the authorized user */
+		/** Filter in sets depending on their status or on their relation with the authorized user (defaults to **all that have a leaderboard**) */
 		categories?: "Any" | "Ranked" | "Qualified" | "Loved" | "Favourites" | "Pending" | "WIP" | "Graveyard" | "My Maps",
 		/** Use this to hide all sets that are marked as explicit */
 		hide_explicit_content?: true,

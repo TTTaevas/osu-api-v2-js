@@ -1,9 +1,9 @@
-import { API } from "./index.js"
+import { API, User } from "./index.js"
 
 /** @obtainableFrom {@link API.getNewsPosts} */
 export interface NewsPost {
 	id: number
-	author: string
+	author: User["username"]
 	/** Link to view the file on GitHub */
 	edit_url: string
 	/** Link to the first image in the document */
@@ -28,21 +28,23 @@ export namespace NewsPost {
 
 	/**
 	 * Get a NewsPost, its content, and the NewsPosts right before and right after it!
-	 * @param post An object with the id or the slug of a NewsPost (the slug being the filename minus the extension, used in its URL)
+	 * @param post The NewsPost, or its id, or its slug
 	 */
-	export async function getOne(this: API, post: {id?: number, slug?: string} | NewsPost): Promise<NewsPost.WithContentNavigation> {
-		const key = post.id !== undefined ? "id" : undefined
-		const lookup = post.id !== undefined ? post.id : post.slug
+	export async function getOne(this: API, post: NewsPost["id"] | NewsPost["slug"] | NewsPost): Promise<NewsPost.WithContentNavigation> {
+		const lookup = typeof post === "object" ? post.id : post
+		const key = typeof post === "string" ? undefined : "id"
 		return await this.request("get", `news/${lookup}`, {key})
 	}
 
 	/**
 	 * Get all the NewsPosts of a specific year!
 	 * @remarks If the specified year is invalid/has no news, it fallbacks to the default year
-	 * @param year (defaults to current year) The year the posts were made
+	 * @param year The year the posts were made (defaults to **current year**)
+	 * @privateRemarks Because the only filter is the year, everything but `news_sidebar.news_posts` is actually completely useless!
+	 * You could maybe make a case for `years` being useful, but I don't believe it's useful enough to sacrifice the simplicity
 	 */
 	export async function getMultiple(this: API, year?: number): Promise<NewsPost[]> {
-		const response = await this.request("get", "news", {year, limit: 1})
-		return response.news_sidebar.news_posts
+		const response = await this.request("get", "news", {year, limit: 0}) // Put the limit at minimum because it's about stuff we're filtering out anyway
+		return response.news_sidebar.news_posts // NOT the only property as explained by the private remarks; it's believed to be the only USEFUL property
 	}
 }

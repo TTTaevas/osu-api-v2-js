@@ -1,4 +1,4 @@
-import { API, Beatmapset, Mod, RankStatus, Rulesets, Score, User } from "./index.js"
+import { API, Beatmapset, Mod, Rulesets, Score, User } from "./index.js"
 import { getId } from "./misc.js"
 
 export interface Beatmap {
@@ -58,7 +58,7 @@ export namespace Beatmap {
 		mode_int: Rulesets
 		passcount: number
 		playcount: number
-		ranked: RankStatus
+		ranked: Beatmapset.RankStatus
 		url: string
 	}
 
@@ -129,7 +129,7 @@ export namespace Beatmap {
 
 		/**
 		 * Get an Array of up to 100 Beatmap.Packs of a specific type!
-		 * @param type The type of the BeatmapPacks, defaults to "standard"
+		 * @param type The type of the BeatmapPacks (defaults to **standard**)
 		 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results!
 		 */
 		export async function getMultiple(this: API, type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard",

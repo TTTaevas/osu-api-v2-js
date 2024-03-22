@@ -45,7 +45,7 @@ export namespace Multiplayer {
 	export namespace Room {
 		export interface PlaylistItem {
 			id: number
-			room_id: number // `Room["id"]` messes up tsj/ajv somehow in tests
+			room_id: number
 			beatmap_id: Beatmap["id"]
 			ruleset_id: Rulesets
 			allowed_mods: Mod[]

@@ -1,8 +1,5 @@
-import { Beatmap } from "./beatmap.js"
-import { Beatmapset } from "./beatmapset.js"
-import { API } from "./index.js"
-import { Mod, Rulesets, getId } from "./misc.js"
-import { User } from "./user.js"
+import { API, Beatmap, Beatmapset, Changelog, Mod, Multiplayer as MultiplayerImport, Rulesets, User } from "./index.js"
+import { getId } from "./misc.js"
 
 interface Bare {
 	/** In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero) */
@@ -52,12 +49,12 @@ export namespace Score {
 		ended_at: Date
 		maximum_statistics: Statistics
 		mods: Mod[]
-		ruleset_id: number
+		ruleset_id: Rulesets
 		started_at: Date
 		statistics: Statistics
 		total_score: number
-		playlist_item_id: number
-		room_id: number
+		playlist_item_id: MultiplayerImport.Room.PlaylistItem["id"]
+		room_id: MultiplayerImport.Room["id"]
 		id: number
 		user: User.WithCountryCover
 	}
@@ -71,9 +68,9 @@ export namespace Score {
 		preserve: boolean
 		mods: Mod[]
 		statistics: Statistics
-		beatmap_id: number
+		beatmap_id: Beatmap["id"]
 		/** @remarks Is null if the score has not been set on lazer */
-		build_id: number | null
+		build_id: Changelog.Build["id"] | null
 		ended_at: Date
 		has_replay: boolean
 		is_perfect_combo: boolean

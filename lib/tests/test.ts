@@ -7,6 +7,8 @@ import * as osu from "../index.js"
 import "dotenv/config"
 import util from "util"
 
+// Because of the way tests are made, some things in the package are basic types instead of referring to other properties
+// A basic example would be WikiPage's available_locales, which could've been WikiPage["locale"]
 import tsj from "ts-json-schema-generator"
 import ajv from "ajv"
 
@@ -251,7 +253,7 @@ const testNews = async (): Promise<boolean> => {
 	let okay = true
 	console.log("\n===> NEWS")
 
-	const a = await attempt(api.getNewsPost, {id: 26})
+	const a = await attempt(api.getNewsPost, 26)
 	if (!isOk(a, !a || (a.title === "Official osu! Fanart Contest 5 Begins!" && validate(a, "NewsPost.WithContentNavigation")))) okay = false
 	const b = await attempt(api.getNewsPosts)
 	if (!isOk(b, !b || (b.length >= 1 && validate(b, "NewsPost")))) okay = false
