@@ -1,8 +1,5 @@
-import { Beatmap } from "./beatmap.js"
-import { API } from "./index.js"
-import { Rulesets, Mod, getId } from "./misc.js"
-import { Score } from "./score.js"
-import { User } from "./user.js"
+import { API, Beatmap, Chat, Mod, Rulesets, Score, User } from "./index.js"
+import { getId } from "./misc.js"
 
 export namespace Multiplayer {
 	/** @obtainableFrom {@link API.getRoom} */
@@ -10,7 +7,7 @@ export namespace Multiplayer {
 		active: boolean
 		auto_skip: boolean
 		category: string
-		channel_id: number
+		channel_id: Chat.Channel["channel_id"]
 		ends_at: Date | null
 		has_password: boolean
 		host: User.WithCountry
@@ -23,7 +20,7 @@ export namespace Multiplayer {
 		recent_participants: User[]
 		starts_at: Date
 		type: string
-		user_id: number
+		user_id: User["id"]
 		/** Only exists if authorized user */
 		current_user_score?: {
 			/** In a format where `96.40%` would be `0.9640` (with some numbers after the zero) */
@@ -81,7 +78,7 @@ export namespace Multiplayer {
 			 * @param limit How many scores maximum? Defaults to 50, the maximum the API will return
 			 * @param sort Sort by scores, ascending or descending? Defaults to descending
 			 * @param cursor_string Use a Multiplayer.Scores' `params` and `cursor_string` to get the next page (scores 51 to 100 for example)
-			 * @remarks (2024-03-04) This may not work for rooms from before March 5th, use at your own risk
+			 * @remarks (2024-03-04) This may not work for rooms from before March 5th 2024, use at your own risk
 			 * https://github.com/ppy/osu-web/issues/10725
 			 */
 			export async function getScores(this: API, item: {id: number, room_id: number} | Multiplayer.Room.PlaylistItem, limit: number = 50,
@@ -145,10 +142,10 @@ export namespace Multiplayer {
 				text?: string
 			}
 			timestamp: Date
-			user_id: number | null
+			user_id: User["id"] | null
 			/** If `detail.type` is `other`, then this should exist! */
 			game?: {
-				beatmap_id: number
+				beatmap_id: Beatmap["id"]
 				id: number
 				start_time: Date
 				end_time: Date | null
@@ -178,11 +175,11 @@ export namespace Multiplayer {
 
 		/**
 		 * Get data of a multiplayer lobby from the stable (non-lazer) client that have URLs with `community/matches` or `mp`
-		 * @param id Can be found at the end of the URL of said match
+		 * @param match The id of a match can be found at the end of its URL
 		 */
-		export async function getOne(this: API, id: number | Match.Info): Promise<Multiplayer.Match> {
-			const response = await this.request("get", `matches/${getId(id)}`) as Multiplayer.Match
-			// I know `events[i].game.scores[e].perfect` can at least be 0 instead of being false; fix that
+		export async function getOne(this: API, match: Match.Info["id"] | Match.Info): Promise<Multiplayer.Match> {
+			const response = await this.request("get", `matches/${getId(match)}`) as Multiplayer.Match
+			// Fix `events[i].game.scores[e].perfect` being a number instead of a boolean
 			for (let i = 0; i < response.events.length; i++) {
 				for (let e = 0; e < Number(response.events[i].game?.scores.length); e++) {
 					response.events[i].game!.scores[e].perfect = Boolean(response.events[i].game!.scores[e].perfect)
@@ -191,9 +188,26 @@ export namespace Multiplayer {
 			return response
 		}
 
-		export async function getMultiple(this: API): Promise<Multiplayer.Match.Info[]> {
-			const response = await this.request("get", "matches")
-			return response.matches
+		/**
+		 * Get the info about several matches!
+		 * @param query The id of the first match of the array, and the sorting and size of said array
+		 */
+		export async function getMultiple(this: API, query?: {
+			/** 
+			 * Which match should be featured at index 0 of the returned array? Will get one with a similar id if it is unavailable
+			 * @remarks You can use this argument differently to get all matches before/after (depending of `query.sort`) a certain match,
+			 * by adding +1/-1 to its id! So if you want all matches after match_id 10 with sorting is_desc, just have this argument be 10 + 1, or 11!
+			 */
+			first_match_in_array?: Match.Info["id"] | Match.Info
+			/** The maximum amount of elements returned in the array (defaults to **50**) */
+			limit?: number
+			/** "id_desc" has the biggest id (most recent start_time) at the beginning of the array, "id_asc" is the opposite (defaults to **id_desc**) */
+			sort?: "id_desc" | "id_asc"
+		}): Promise<Multiplayer.Match.Info[]> {
+			// `first_match_in_array` is a cool way to use the endpoint's cursor
+			const cursor = query?.first_match_in_array ? {match_id: getId(query.first_match_in_array) + (query?.sort === "id_asc" ? -1 : 1)} : undefined
+			const response = await this.request("get", "matches", {cursor, limit: query?.limit, sort: query?.sort})
+			return response.matches // NOT the only property; `params` is useless while `cursor` and `cursor_string` are superseded by `first_match_in_array`
 		}	
 	}
 }

@@ -243,7 +243,7 @@ const testMultiplayer = async (): Promise<boolean> => {
 	}
 	const c = await attempt(api.getMatch, 62006076)
 	if (!isOk(c, !c || (c.match.name === "CWC2020: (Italy) vs (Indonesia)" && validate(c, "Multiplayer.Match")), 3)) okay = false
-	const d = await attempt(api.getMatches)
+	const d = await attempt(api.getMatches, {limit: 2})
 	if (!isOk(d, !d || (d[0].id > 111250329 && validate(d, "Multiplayer.Match.Info")))) okay = false
 
 	return okay

@@ -1,24 +1,23 @@
-import { API } from "./index.js"
+import { API, Beatmapset, Changelog, NewsPost, User } from "./index.js"
 import { getId } from "./misc.js"
-import { User } from "./user.js"
 
 export interface Comment {
 	id: number
 	parent_id: number | null
-	user_id: number
+	user_id: User["id"]
 	pinned: boolean
 	replies_count: number
 	votes_count: number
 	/** "build" means changelog, like pretty much everywhere in the API */
 	commentable_type: "beatmapset" | "build" | "news_post"
-	commentable_id: number
+	commentable_id: Beatmapset["id"] | Changelog.Build["id"] | NewsPost["id"]
 	/** I think it's the name used by the person who made the comment before a migration to a new comment system in 2018 or before? */
 	legacy_name: string | null
 	created_at: Date
 	updated_at: Date
 	deleted_at: Date | null
 	edited_at: Date | null
-	edited_by_id: number | null
+	edited_by_id: User["id"] | null
 	/** 
 	 * Yes comments may not have this property, yes this is stupid 
 	 * @privateRemarks Example is comment 3063736 from build 7463
@@ -49,7 +48,8 @@ export namespace Comment {
 			title: string
 			type: Comment["commentable_type"]
 			url: string
-			owner_id: number | null
+			owner_id: User["id"] | null
+			/** Like MAPPER */
 			owner_title: string | null
 			current_user_attributes: {
 				/** 
@@ -78,9 +78,10 @@ export namespace Comment {
 	 * Get a specific comment by using its id!
 	 * @param comment The comment in question
 	 */
-	export async function getOne(this: API, comment: Comment["id"] | Comment): Promise<Comment.Bundle> {
-		let bundle = await this.request("get", `comments/${getId(comment)}`)
-		const commentable_meta = bundle.commentable_meta.filter((c: any) => c.id)
+	export async function getOne(this: API, comment: Comment["id"] | Comment): Promise<Bundle> {
+		const bundle = await this.request("get", `comments/${getId(comment)}`) as Bundle
+		// Remove so-called "Deleted Items" / items that lack an id, add a "deleted_commentable_meta" and make it the number of removed objects
+		const commentable_meta = bundle.commentable_meta.filter((c) => c.id)
 		bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
 		bundle.commentable_meta = commentable_meta
 		
@@ -94,14 +95,15 @@ export namespace Comment {
 	 * @param sort Should the comments be sorted by votes? Should they be from after a certain date? Maybe you can give a cursor?
 	 */
 	export async function getMultiple(this: API, from?: {type: Comment["commentable_type"], id: number}, parent?: Comment["id"] | Comment,
-	sort?: {type?: Comment.Bundle["sort"], after?: Comment["id"] | Comment, cursor?: Comment.Bundle["cursor"]}): Promise<Comment.Bundle.WithTotalToplevelcount> {
+	sort?: {type?: Bundle["sort"], after?: Comment["id"] | Comment, cursor?: Bundle["cursor"]}): Promise<Bundle.WithTotalToplevelcount> {
 		const after = sort?.after ? String(getId(sort.after)) : undefined
 		const parent_id = parent ? String(getId(parent)) : undefined
 
-		let bundle = await this.request("get", "comments", {
+		const bundle = await this.request("get", "comments", {
 			after, commentable_type: from?.type, commentable_id: from?.id,
 			cursor: sort?.cursor, parent_id, sort: sort?.type
 		})
+		// Remove so-called "Deleted Items" / items that lack an id, add a "deleted_commentable_meta" and make it the number of removed objects
 		const commentable_meta = bundle.commentable_meta.filter((c: any) => c.id)
 		bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
 		bundle.commentable_meta = commentable_meta

@@ -1,9 +1,5 @@
-import { Beatmap } from "./beatmap.js"
-import { Beatmapset } from "./beatmapset.js"
-import { Event } from "./event.js"
-import { API } from "./index.js"
-import { Rulesets } from "./misc.js"
-import { Score } from "./score.js"
+import { API, Beatmap, Beatmapset, Event, Rulesets, Score } from "./index.js"
+import { getId } from "./misc.js"
 
 export interface User {
 	avatar_url: string
@@ -146,7 +142,7 @@ export namespace User {
 			raw: string
 		}
 		pending_beatmapset_count: number
-		previous_usernames: string[]
+		previous_usernames: User["username"][]
 		rank_highest: {
 			rank: number
 			updated_at: Date
@@ -257,10 +253,10 @@ export namespace User {
 	 * @param ruleset The data should be relevant to which ruleset? (defaults to **user's default Ruleset**)
 	 */
 	export async function getOne(this: API, user: User["id"] | User["username"] | User, ruleset?: Rulesets): Promise<User.Extended> {
-		const mode = ruleset !== undefined ? `/${Rulesets[ruleset]}` : ""
-		if (typeof user === "string") return await this.request("get", `users/${user}${mode}`, {key: "username"})
-		if (typeof user === "number") return await this.request("get", `users/${user}${mode}`, {key: "id"})
-		return await this.request("get", `users/${user.id}${mode}`, {key: "id"})
+		const mode = ruleset !== undefined ? Rulesets[ruleset] : ""
+		if (typeof user === "string") return await this.request("get", `users/${user}/${mode}`, {key: "username"})
+		if (typeof user === "number") return await this.request("get", `users/${user}/${mode}`, {key: "id"})
+		return await this.request("get", `users/${user.id}/${mode}`, {key: "id"})
 	}
 
 	/**
@@ -268,7 +264,7 @@ export namespace User {
 	 * @param users An array containing user ids or/and `User` objects!
 	 */
 	export async function getMultiple(this: API, users: Array<User["id"] | User>): Promise<User.WithCountryCoverGroupsStatisticsrulesets[]> {
-		const ids = users.map((user) => typeof user === "number" ? user : user.id)
+		const ids = users.map((user) => getId(user))
 		const response = await this.request("get", "users", {ids})
 		return response.users
 	}
@@ -284,8 +280,7 @@ export namespace User {
 	export async function getScores(this: API, user: User["id"] | User, type: "best" | "firsts" | "recent", ruleset?: Rulesets,
 	include: {lazer?: boolean, fails?: boolean} = {lazer: true, fails: false}, config?: Config): Promise<Score.WithUserBeatmapBeatmapset[]> {
 		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
-		const id = typeof user === "number" ? user : user.id
-		return await this.request("get", `users/${id}/scores/${type}`,
+		return await this.request("get", `users/${getId(user)}/scores/${type}`,
 		{mode, limit: config?.limit, offset: config?.offset, legacy_only: Number(!include.lazer), include_fails: String(Number(include.fails))})
 	}
 
@@ -297,8 +292,7 @@ export namespace User {
 	 */
 	export async function getBeatmaps(this: API, user: User["id"] | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
 	config?: Config): Promise<Beatmapset.Extended.WithBeatmap[]> {
-		const id = typeof user === "number" ? user : user.id
-		return await this.request("get", `users/${id}/beatmapsets/${type}`, {limit: config?.limit, offset: config?.offset})
+		return await this.request("get", `users/${getId(user)}/beatmapsets/${type}`, {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**
@@ -307,8 +301,7 @@ export namespace User {
 	 * @param config Array limit & offset
 	 */
 	export async function getMostPlayed(this: API, user: User["id"] | User, config?: Config): Promise<Beatmap.Playcount[]> {
-		const id = typeof user === "number" ? user : user.id
-		return await this.request("get", `users/${id}/beatmapsets/most_played`, {limit: config?.limit, offset: config?.offset})
+		return await this.request("get", `users/${getId(user)}/beatmapsets/most_played`, {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**
@@ -316,9 +309,8 @@ export namespace User {
 	 * @param user The user in question
 	 * @param config Array limit & offset
 	 */
-	export async function getRecentActivity(this: API, user: User["id"] | User, config?: Config): Promise<Array<Event.AnyRecentActivity>> {
-		const id = typeof user === "number" ? user : user.id
-		return await this.request("get", `users/${id}/recent_activity`, {limit: config?.limit, offset: config?.offset})
+	export async function getRecentActivity(this: API, user: User["id"] | User, config?: Config): Promise<Event.AnyRecentActivity[]> {
+		return await this.request("get", `users/${getId(user)}/recent_activity`, {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**
@@ -327,8 +319,7 @@ export namespace User {
 	 * @param config Array limit & offset
 	 */
 	export async function getKudosu(this: API, user: User["id"] | User, config?: Config): Promise<User.KudosuHistory[]> {
-		const id = typeof user === "number" ? user : user.id
-		return await this.request("get", `users/${id}/kudosu`, {limit: config?.limit, offset: config?.offset})
+		return await this.request("get", `users/${getId(user)}/kudosu`, {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**
