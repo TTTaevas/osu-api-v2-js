@@ -24,7 +24,7 @@ async function test(id: string | undefined, secret: string | undefined, redirect
 	let url = osu.generateAuthorizationURL(Number(id), redirect_uri, ["public", "chat.read"], server)
 	exec(`xdg-open "${url}"`)
 	let code = prompt(`What code do you get from: ${url}\n\n`)
-	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri}, "errors", server)
+	let api = await osu.API.createAsync({id: Number(id), secret}, {code, redirect_uri}, "all", server)
 
 	// Proof web socket stuff is working well
 	const socket = api.generateWebSocket()

@@ -9,6 +9,7 @@ export interface Beatmap {
 	status: string
 	total_length: number
 	user_id: User["id"]
+	/** The name of the difficulty, maybe something like "Someone's Insane" */
 	version: string
 }
 
@@ -99,9 +100,11 @@ export namespace Beatmap {
 		name: string
 		/** Are difficulty reduction mods unable to be used to clear this pack? (is `false` if you can use such mods) */
 		no_diff_reduction: boolean
-		ruleset_id: Rulesets | null,
-		tag: string,
-		url: string,
+		ruleset_id: Rulesets | null
+		tag: string
+		/** Download page; going there with a web browser should start the download of a zip file automatically */
+		url: string
+		/** Not there if the application doesn't act as a specific user */
 		user_completion_data?:{
 			/** IDs of beatmapsets completed by the user (according to the requirements of the pack) */
 			beatmapset_ids: Beatmapset["id"][],
@@ -231,6 +234,7 @@ export namespace Beatmap {
 	export interface UserScore {
 		/** Value depends on the requested mode and mods! */
 		position: number
+		/** The score itself */
 		score: Score.WithUserBeatmap
 	}
 

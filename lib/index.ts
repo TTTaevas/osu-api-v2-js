@@ -105,24 +105,17 @@ export class APIError {
 	}
 }
 
-/** You can create an API instance using its `createAsync` function! {@link API.createAsync} */
+/** You can create an API instance without directly providing an access_token by using the API's `createAsync` function! {@link API.createAsync} */
 export class API {
+	access_token: string
 	client: {
 		id: number
 		secret: string
 	}
 	/** Should always be "Bearer" */
 	token_type: string
+	/** The expiration date of your access_token */
 	expires: Date
-	access_token: string
-	/**
-	 * Valid for an unknown amount of time, allows you to get a new token without going through the Authorization Code Grant!
-	 * Use the API's `refreshToken` function to do that
-	 */
-	refresh_token?: string
-	/** The osu! user id of the user who went through the Authorization Code Grant */
-	user?: User["id"]
-	scopes: Scope[]
 	/** Which events should be logged (defaults to **none**) */
 	verbose: "none" | "errors" | "all"
 	/**
@@ -131,22 +124,60 @@ export class API {
 	 */
 	server: string
 
+	/** If true, upon failing a request due to a 401, it will use the `refresh_token` and retry the request */
+	refresh_on_401: boolean
+	/** If true, the application will silently use the `refresh_token` right before the `access_token` expires, as determined by `expires` */
+	refresh_on_expires: boolean
+
+	/**
+	 * Valid for an unknown amount of time, allows you to get a new token without going through the Authorization Code Grant!
+	 * Use the API's `refreshToken` function to do that
+	 */
+	refresh_token?: string
+	/** The osu! user id of the user who went through the Authorization Code Grant */
+	user?: User["id"]
+	/** The scopes your application have, assuming it acts as a user */
+	scopes?: Scope[]
+
 	/**
 	 * **Please use the API's `createAsync` method instead of the default constructor** if you don't have at least an `access_token`!
 	 * An API object without an `access_token` is pretty much useless!
 	 */
-	constructor(client?: {id: number, secret: string}, token_type?: string, expires?: Date,
-	access_token?: string, scopes?: Scope[], refresh_token?: string, user?: number,
-	verbose: "none" | "errors" | "all" = "all", server: string = "https://osu.ppy.sh") {
+	constructor({access_token, token_type, refresh_token, expires, scopes, user, server, client, verbose, refresh_on_401, refresh_on_expires}: {
+		/** The token used in basically all requests! */
+		access_token?: string
+		/** Should always be "Bearer" */
+		token_type?: string
+		/** The token used to update your access_token and your refresh_token */
+		refresh_token?: string
+		/** The expiration date of your access_token (doesn't affect application behaviour) */
+		expires?: Date
+		/** The scopes your application have, assuming it acts as a user (doesn't affect application behaviour) */
+		scopes?: Scope[]
+		/** The id of the user this application acts as, if any (doesn't affect application behaviour) */
+		user?: User["id"]
+		/** The URL of the API server the package contacts */
+		server?: string
+		/** The details of your application client, necessary for using the refresh_token */
+		client?: {id: number, secret: string}
+		/** How much stuff should the package log */
+		verbose?: "none" | "errors" | "all"
+		/** If a 401 error is gotten from the server while it has a refresh token, should it use it and try the request again? (defaults to **true**) */
+		refresh_on_401?: boolean
+		/** Should the application schedule a task to silently refresh the token right before the access_token expires? (defaults to **true**) */
+		refresh_on_expires?: boolean
+	}) {
 		this.client = client ?? {id: 0, secret: ""}
-		this.token_type = token_type ?? ""
-		this.expires = expires ?? new Date()
 		this.access_token = access_token ?? ""
-		this.scopes = scopes ?? []
+		this.token_type = token_type ?? "Bearer"
+		this.expires = expires ?? new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
+		this.verbose = verbose ?? "none"
+		this.server = server ?? "https://osu.ppy.sh"
+		this.refresh_on_401 = refresh_on_401 ?? true
+		this.refresh_on_expires = refresh_on_expires ?? true
+		this.scopes = scopes
 		this.refresh_token = refresh_token
 		this.user = user
-		this.verbose = verbose
-		this.server = server
 	}
 
 	/**
@@ -167,22 +198,16 @@ export class API {
 		verbose: "none" | "errors" | "all" = "none",
 		server: string = "https://osu.ppy.sh"
 	): Promise<API> {
-		const new_api = new API()
-		new_api.client = client
-		new_api.verbose = verbose
-		new_api.server = server
-		
-		const body = {
-			client_id: client.id,
-			client_secret: client.secret,
-			grant_type: user ? "authorization_code" : "client_credentials",
-			redirect_uri: user ? user.redirect_uri : null,
-			code: user ? user.code : null,
-			scope: user ? null : "public"
-		}
+		const new_api = new API({
+			client,
+			verbose,
+			server
+		})
 
-		const api = await new_api.getAndSetToken(body, new_api)
-		return api
+		return user ?
+		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "authorization_code",
+		redirect_uri: user.redirect_uri, code: user.code}, new_api) :
+		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "client_credentials", scope: "public"}, new_api)
 	}
 
 	/**
@@ -217,7 +242,18 @@ export class API {
 	 * @param api The `api` which will see its properties change
 	 * @returns `api`, just in case, because in theory it should modify the original object
 	 */
-	private async getAndSetToken(body: object, api: API): Promise<API> {
+	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "authorization_code", redirect_uri: string, code: string}, api: API):
+	Promise<API>;
+	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "client_credentials", scope: "public"}, api: API): Promise<API>;
+	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "refresh_token", refresh_token: string}, api: API): Promise<API>;
+	private async getAndSetToken(body: {
+		client_id: number,
+		client_secret: string,
+		grant_type: "authorization_code" | "client_credentials" | "refresh_token",
+		redirect_uri?: string,
+		code?: string
+		refresh_token?: string	
+	}, api: API): Promise<API> {
 		const response = await fetch(`${this.server}/oauth/token`, {
 			method: "post",
 			headers: {
@@ -233,18 +269,30 @@ export class API {
 			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
 			throw new APIError("No token obtained", this.server, "oauth/token", body)
 		}
-		
-		const token = json.access_token
-		const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
-		if (token_payload.sub && token_payload.sub.length) {api.user = Number(token_payload.sub)}
-		api.scopes = token_payload.scopes
-		api.access_token = token
 		api.token_type = json.token_type
 		if (json.refresh_token) {api.refresh_token = json.refresh_token}
 
+		const token = json.access_token
+		api.access_token = token
+
+		const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
+		api.scopes = token_payload.scopes
+		if (token_payload.sub && token_payload.sub.length) {api.user = Number(token_payload.sub)}
+	
 		const expiration_date = new Date()
 		expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
 		api.expires = expiration_date
+
+		// By being at the bottom of the function, it means it won't be trigerred if getAndSetToken throws an error
+		// This is recursive as this calls refreshToken, which calls getAndSetToken
+		// I prefer doing this over setInterval once because it's not fair to assume a token will take the same amount of time to expire after a refresh
+		if (this.refresh_on_expires && api.refresh_token) {
+			setTimeout(() => {
+				try {
+					this.refreshToken()
+				} catch {}
+			}, (json.expires_in - 60) * 1000) // 1 minute before the received date
+		}
 
 		return api
 	}
@@ -257,19 +305,14 @@ export class API {
 		}
 
 		const old_token = this.access_token
-		const body = {
-			client_id: this.client.id,
-			client_secret: this.client.secret,
-			grant_type: "refresh_token",
-			refresh_token: this.refresh_token	
-		}
-
 		try {
-			await this.getAndSetToken(body, this)
-			if (old_token !== this.access_token) this.log(false, "The token has been refreshed!")
+			await this.getAndSetToken(
+			{client_id: this.client.id, client_secret: this.client.secret, grant_type: "refresh_token", refresh_token: this.refresh_token}, this)
+			if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
 		} catch(e) {
 			this.log(true, "Failed to refresh the token :(", e)
 		}
+
 		return old_token !== this.access_token
 	}
 
@@ -337,8 +380,9 @@ export class API {
 			}
 		}
 
+		// parameters are here if request is GET
 		const url = `${this.server}/api/v2/${endpoint}` + (method === "get" ? "?" + (Object.entries(parameters).map((param) => {
-			if (!Array.isArray(param[1])) return `${param[0]}=${param[1]}`
+			if (!Array.isArray(param[1])) {return `${param[0]}=${param[1]}`}
 			return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
 		}).join("&")) : "")
 
@@ -351,8 +395,7 @@ export class API {
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`
 			},
-			body: method !== "get" ? JSON.stringify(parameters) : undefined,
-			
+			body: method !== "get" ? JSON.stringify(parameters) : undefined // parameters are here if request is NOT GET
 		})
 		.catch((error: FetchError) => {
 			this.log(true, error.message)
@@ -364,7 +407,7 @@ export class API {
 				err = response.statusText
 
 				if (response.status === 401) {
-					if (this.refresh_token && !info.just_refreshed) {
+					if (this.refresh_on_401 && this.refresh_token && !info.just_refreshed) {
 						this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
 						
 						if (await this.refreshToken()) {
