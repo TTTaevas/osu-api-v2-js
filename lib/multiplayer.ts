@@ -101,7 +101,7 @@ export namespace Multiplayer {
 
 		/**
 		 * Get data about a lazer multiplayer room (realtime or playlists)!
-		 * @param room An object with the id of the room, is at the end of its URL (after `/multiplayer/rooms/`)
+		 * @param room The room or the id of the room, can be found at the end of its URL (after `/multiplayer/rooms/`)
 		 */
 		export async function getOne(this: API, room: number | Multiplayer.Room): Promise<Multiplayer.Room> {
 			return await this.request("get", `rooms/${getId(room)}`)
@@ -123,7 +123,7 @@ export namespace Multiplayer {
 		/**
 		 * Get the room stats of all the users of that room!
 		 * @scope {@link Scope"public"}
-		 * @param room An object with the id of the room in question
+		 * @param room The room or the id of the room in question
 		 */
 		export async function getLeaderboard(this: API, room: number | Multiplayer.Room): Promise<Multiplayer.Room.Leader[]> {
 			const response = await this.request("get", `rooms/${getId(room)}/leaderboard`)

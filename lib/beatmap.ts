@@ -277,7 +277,7 @@ export namespace Beatmap {
 
 	/**
 	 * Get extensive beatmap data about whichever beatmap you want!
-	 * @param beatmap An object with the id of the beatmap you're trying to get
+	 * @param beatmap The beatmap or the id of the beatmap you're trying to get
 	 */
 	export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Extended.WithFailtimesBeatmapset> {
 		return await this.request("get", `beatmaps/${getId(beatmap)}`)

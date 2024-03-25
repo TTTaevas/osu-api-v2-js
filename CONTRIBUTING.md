@@ -1,7 +1,7 @@
-You are more than welcome to contribute to this package if you feel like it!! If you want to get started with developing this package, read below:
+You are more than welcome to contribute to this package if you feel like it!! If you want to get started with developing this package, fork it, then read below:
 
 ```bash
-git clone https://github.com/TTTaevas/osu-api-v2-js.git # Clone this package's repository
+git clone https://github.com/<your_github>/osu-api-v2-js.git # Clone your fork of this package's repository
 yarn install # Add its dependencies using Yarn Classic
 
 # Duplicate the .env.example file and rename it .env, then fill it with the details of one of your clients

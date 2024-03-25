@@ -208,7 +208,7 @@ const testEvent = async (): Promise<boolean> => {
 const testForum = async (): Promise<boolean> => {
 	let okay = true
 	console.log("\n===> FORUM")
-	const a = await attempt(api.getForumTopicAndPosts, 1848236, 2)
+	const a = await attempt(api.getForumTopicAndPosts, 1848236, {limit: 2})
 	if (!isOk(a, !a || (a.topic.title === "survey" && validate(a.topic, "Forum.Topic") && validate(a.posts, "Forum.Post")))) okay = false
 	return okay
 }
@@ -267,7 +267,7 @@ const testRanking = async (): Promise<boolean> => {
 
 	const a = await attempt(api.getKudosuRanking)
 	if (!isOk(a, !a || (a[0].kudosu.total > 10000 && validate(a, "User.WithKudosu")))) okay = false
-	const b = await attempt(api.getUserRanking, osu.Rulesets.osu, "score", 1, "all", "FR")
+	const b = await attempt(api.getUserRanking, osu.Rulesets.osu, "score", {country: "FR"})
 	if (!isOk(b, !b || (b.ranking[0].level.current > 106 && validate(b, "Ranking.User")), 2)) okay = false
 	const c = await attempt(api.getCountryRanking, osu.Rulesets.osu)
 	if (!isOk(c, !c || (c.ranking[0].code === "US" && validate(c, "Ranking.Country")))) okay = false

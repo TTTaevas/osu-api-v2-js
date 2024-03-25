@@ -395,7 +395,7 @@ export namespace Beatmapset {
 
 	/**
 	 * Get extensive beatmapset data about whichever beatmapset you want!
-	 * @param beatmapset An object with the id of the beatmapset you're trying to get
+	 * @param beatmapset The beatmapset or the id of the beatmapset you're trying to get
 	 */
 	export async function getOne(this: API, beatmapset: Beatmapset["id"] | Beatmapset): Promise<Beatmapset.Extended.Plus> {
 		return await this.request("get", `beatmapsets/${getId(beatmapset)}`)

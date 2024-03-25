@@ -30,7 +30,7 @@ export { Ranking } from "./ranking.js"
 export { Event } from "./event.js"
 
 export { Changelog } from "./changelog.js"
-export { Forum, PollConfig } from "./forum.js"
+export { Forum } from "./forum.js"
 export { WikiPage } from "./wiki.js"
 export { NewsPost } from "./news.js"
 export { Home } from "./home.js"

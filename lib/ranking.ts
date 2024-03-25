@@ -1,9 +1,7 @@
-import { Beatmapset } from "./beatmapset.js"
-import { API } from "./index.js"
-import { Spotlight as SpotlightInterface, Rulesets, getId } from "./misc.js"
-import { User } from "./user.js"
+import { API, Beatmapset, Rulesets, Spotlight as SpotlightInterface, User } from "./index.js"
+import { getId } from "./misc.js"
 
-interface RankingBare {
+interface Ranking {
 	cursor: {
 		/** The number of the next page, is null if no more results are available */
 		page: number | null
@@ -14,12 +12,12 @@ interface RankingBare {
 
 export namespace Ranking {
 	/** @obtainableFrom {@link API.getUserRanking} */
-	export interface User extends RankingBare {
+	export interface User extends Ranking {
 		ranking: User.Statistics.WithUser[]
 	}
 
 	/** @obtainableFrom {@link API.getCountryRanking} */
-	export interface Country extends RankingBare {
+	export interface Country extends Ranking {
 		ranking: {
 			/** Same as `country.code` */
 			code: string
@@ -46,14 +44,20 @@ export namespace Ranking {
 	 * Get the top players of the game, with some filters!
 	 * @param ruleset Self-explanatory, is also known as "Gamemode"
 	 * @param type Rank players by their performance points or by their ranked score?
-	 * @param page Imagine the array you get as a page, it can only have a maximum of 50 players, while 50 others may be on the next one (defaults to **1**)
-	 * @param filter What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user (defaults to **all**)
-	 * @param country Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`)
-	 * @param variant If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k!
+	 * @param config Specify which page, country, filter out non-friends...
 	 */
-	export async function getUser(this: API, ruleset: Rulesets, type: "performance" | "score", page: number = 1, filter: "all" | "friends" = "all",
-	country?: string, variant?: "4k" | "7k"): Promise<Ranking.User> {
-		return await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`, {page, filter, country, variant})
+	export async function getUser(this: API, ruleset: Rulesets, type: "performance" | "score", config?: {
+		/** Imagine the array you get as a page, it can only have a maximum of 50 players, while 50 others may be on the next one */
+		page?: number,
+		/** What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user */
+		filter?: "all" | "friends",
+		/** Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`) */
+		country?: string
+		/** If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k! */
+		variant?: "4k" | "7k"
+	}): Promise<Ranking.User> {
+		return await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`,
+		{page: config?.page, filter: config?.filter, country: config?.country, variant: config?.variant})
 	}
 
 	/**
@@ -68,7 +72,7 @@ export namespace Ranking {
 	/** Get the top 50 players who have the most total kudosu! */
 	export async function getKudosu(this: API): Promise<User.WithKudosu[]> {
 		const response = await this.request("get", "rankings/kudosu")
-		return response.ranking
+		return response.ranking // It's the only property
 	}
 
 	/**
@@ -77,7 +81,8 @@ export namespace Ranking {
 	 * @param spotlight The spotlight in question
 	 * @param filter What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user (defaults to **all**)
 	 */
-	export async function getSpotlight(this: API, ruleset: Rulesets, spotlight: SpotlightInterface["id"] | SpotlightInterface, filter: "all" | "friends" = "all"): Promise<Ranking.Spotlight> {
+	export async function getSpotlight(this: API, ruleset: Rulesets, spotlight: SpotlightInterface["id"] | SpotlightInterface, filter: "all" | "friends" = "all"):
+	Promise<Ranking.Spotlight> {
 		return await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: getId(spotlight), filter})
 	}
 }

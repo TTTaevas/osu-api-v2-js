@@ -30,7 +30,7 @@ export namespace Forum {
 		/**
 		 * Edit a ForumPost! Note that it can be the initial one of a ForumTopic!
 		 * @scope {@link Scope"forum.write"}
-		 * @param post An object with the id of the post in question
+		 * @param post The post or the id of the post in question
 		 * @param new_text The new content of the post (replaces the old content)
 		 * @returns The edited ForumPost
 		 */
@@ -94,7 +94,19 @@ export namespace Forum {
 		 * @param poll If you want to make a poll, specify the parameters of that poll!
 		 * @returns An object with the topic you've made, and its first initial post (which uses your `text`)
 		 */
-		export async function create(this: API, forum_id: number, title: string, text: string, poll?: PollConfig): Promise<{topic: Forum.Topic, post: Forum.Post}> {
+		export async function create(this: API, forum_id: number, title: string, text: string, poll?: {
+			title: string
+			/** The things the users can vote for */
+			options: string[]
+			/** Length of voting period in days, 0 means forever */
+			length_days: number
+			/** The maximum amount of votes per user! (defaults to **1**) */
+			max_options?: number
+			/** Do you allow users to change their vote? (defaults to **false**) */
+			vote_change?: boolean
+			/** Should the results of the poll be hidden while the voting period is still active? (defaults to **false**) */
+			hide_results?: boolean
+		}): Promise<{topic: Forum.Topic, post: Forum.Post}> {
 			const with_poll = poll !== undefined
 			const options = poll?.options !== undefined ? poll.options.toString().replace(/,/g, "\n") : undefined
 
@@ -109,21 +121,21 @@ export namespace Forum {
 		}
 
 		/**
-		 * Make and send a ForumPost in a ForumTopic!
+		 * Make and send a Forum.Post in a Forum.Topic!
 		 * @scope {@link Scope"forum.write"}
-		 * @param topic An object with the id of the topic you're making your reply in
+		 * @param topic The topic or the id of the topic you're making your reply in
 		 * @param text Your reply! Your message!
-		 * @returns The reply you've made!
+		 * @returns The reply you've made, as a Forum.Post!
 		 */
 		export async function reply(this: API, topic: Topic["id"] | Topic, text: string): Promise<Post> {
 			return await this.request("post", `forums/topics/${getId(topic)}/reply`, {body: text})
 		}
 
 		/**
-		 * Edit the title of a ForumTopic!
+		 * Edit the title of a Forum.Topic!
 		 * @scope {@link Scope"forum.write"}
 		 * @remarks Use `editForumPost` if you wanna edit the post at the top of the topic
-		 * @param topic An object with the id of the topic in question
+		 * @param topic The topic or the id of the topic in question
 		 * @param new_title The new title of the topic
 		 * @returns The edited ForumTopic
 		 */
@@ -136,30 +148,21 @@ export namespace Forum {
 	 * Get a forum topic, as well as its main post (content) and the posts that were sent in it!
 	 * @remarks The oldest post of a topic is the text of a topic
 	 * @param topic An object with the id of the topic in question
-	 * @param limit How many `posts` maximum, up to 50 (defaults to **20**)
-	 * @param sort "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead (defaults to **id_asc**)
-	 * @param first_post (ignored if `cursor_string`) An Object with the id of the first post to be returned in `posts`
-	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
+	 * @param config How many results maximum, how to sort them, etc...
 	 */
-	export async function getTopicAndPosts(this: API, topic: Topic["id"] | Topic, limit: number = 20, sort: "id_asc" | "id_desc" = "id_asc",
-	first_post?: Post["id"] | Post, cursor_string?: string): Promise<{posts: Post[], topic: Topic, cursor_string: string | null}> {
-		const start = sort === "id_asc" && first_post ? getId(first_post) : undefined
-		const end = sort === "id_desc" && first_post ? getId(first_post) : undefined
-		return await this.request("get", `forums/topics/${getId(topic)}`, {sort, limit, start, end, cursor_string})
+	export async function getTopicAndPosts(this: API, topic: Topic["id"] | Topic, config?: {
+		/** The id (or the post itself) of the first post to be returned in `posts` (irrelevant if using a `cursor_string`) */
+		first_post?: Post["id"] | Post
+		/** How many `posts` maximum, up to 50 */
+		limit?: number
+		/** "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead */
+		sort?: "id_asc" | "id_desc"
+		/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance! */
+		cursor_string?: string
+	}): Promise<{topic: Topic, posts: Post[], cursor_string: string | null}> {
+		const start = config?.sort === "id_asc" && config?.first_post ? getId(config.first_post) : undefined
+		const end = config?.sort === "id_desc" && config?.first_post ? getId(config.first_post) : undefined
+		return await this.request("get", `forums/topics/${getId(topic)}`,
+		{start, end, sort: config?.sort, limit: config?.limit, cursor_string: config?.cursor_string})
 	}
-}
-
-/** Feel free to use this interface to help you create polls with {@link API.createForumTopic}! */
-export interface PollConfig {
-	title: string
-	/** The things the users can vote for */
-	options: string[]
-	/** Length of voting period in days, 0 means forever */
-	length_days: number
-	/** (defaults to 1) The maximum amount of votes per user! */
-	max_options?: number
-	/** defaults to false) Do you allow users to change their vote? */
-	vote_change?: boolean
-	/** (defaults to false) Should the results of the poll be hidden while the voting period is still active? */
-	hide_results?: boolean
 }
