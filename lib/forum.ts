@@ -1,4 +1,4 @@
-import { API } from "./index.js"
+import { API, User } from "./index.js"
 import { getId } from "./misc.js"
 
 export namespace Forum {
@@ -16,8 +16,8 @@ export namespace Forum {
 		edited_by_id: number | null
 		forum_id: number
 		id: number
-		topic_id: number
-		user_id: number
+		topic_id: Topic["id"]
+		user_id: User["id"]
 		body: {
 			/** Post content in HTML format */
 			html: string
@@ -48,7 +48,7 @@ export namespace Forum {
 	export interface Topic {
 		created_at: Date
 		deleted_at: Date | null
-		first_post_id: number
+		first_post_id: Post["id"]
 		forum_id: number
 		id: number
 		is_locked: boolean
@@ -57,7 +57,7 @@ export namespace Forum {
 		title: string
 		type: "normal" | "sticky" | "announcement"
 		updated_at: Date
-		user_id: number
+		user_id: User["id"]
 		poll: {
 			allow_vote_change: boolean
 			/** @remarks Can be in the future */
@@ -87,12 +87,12 @@ export namespace Forum {
 		/**
 		 * Create a new ForumTopic in the forum of your choice!
 		 * @scope {@link Scope"forum.write"}
-		 * @remarks Some users may not be allowed to do that, such as newly registered users, so this can 403 even with the right scopes
 		 * @param forum_id The id of the forum you're creating your topic in
 		 * @param title The topic's title
 		 * @param text The first post's content/message
 		 * @param poll If you want to make a poll, specify the parameters of that poll!
 		 * @returns An object with the topic you've made, and its first initial post (which uses your `text`)
+		 * @remarks Some users may not be allowed to do that, such as newly registered users, so this can 403 even with the right scopes
 		 */
 		export async function create(this: API, forum_id: number, title: string, text: string, poll?: {
 			title: string
@@ -134,10 +134,10 @@ export namespace Forum {
 		/**
 		 * Edit the title of a Forum.Topic!
 		 * @scope {@link Scope"forum.write"}
-		 * @remarks Use `editForumPost` if you wanna edit the post at the top of the topic
 		 * @param topic The topic or the id of the topic in question
 		 * @param new_title The new title of the topic
 		 * @returns The edited ForumTopic
+		 * @remarks Use `editForumPost` if you wanna edit the post at the top of the topic
 		 */
 		export async function editTitle(this: API, topic: Topic["id"] | Topic, new_title: string): Promise<Topic> {
 			return await this.request("put", `forums/topics/${getId(topic)}`, {forum_topic: {topic_title:  new_title}})
@@ -146,9 +146,9 @@ export namespace Forum {
 
 	/**
 	 * Get a forum topic, as well as its main post (content) and the posts that were sent in it!
-	 * @remarks The oldest post of a topic is the text of a topic
 	 * @param topic An object with the id of the topic in question
 	 * @param config How many results maximum, how to sort them, etc...
+	 * @remarks The oldest post of a topic is the text of a topic
 	 */
 	export async function getTopicAndPosts(this: API, topic: Topic["id"] | Topic, config?: {
 		/** The id (or the post itself) of the first post to be returned in `posts` (irrelevant if using a `cursor_string`) */

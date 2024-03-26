@@ -38,10 +38,10 @@ export namespace NewsPost {
 
 	/**
 	 * Get all the NewsPosts of a specific year!
-	 * @remarks If the specified year is invalid/has no news, it fallbacks to the default year
 	 * @param year The year the posts were made (defaults to **current year**)
 	 * @privateRemarks Because the only filter is the year, everything but `news_sidebar.news_posts` is actually completely useless!
 	 * You could maybe make a case for `years` being useful, but I don't believe it's useful enough to sacrifice the simplicity
+	 * @remarks If the specified year is invalid/has no news, it fallbacks to the default year
 	 */
 	export async function getMultiple(this: API, year?: number): Promise<NewsPost[]> {
 		const response = await this.request("get", "news", {year, limit: 0}) // Put the limit at minimum because it's about stuff we're filtering out anyway

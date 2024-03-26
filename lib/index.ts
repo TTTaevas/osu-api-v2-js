@@ -47,7 +47,7 @@ export { Comment } from "./comment.js"
 function correctType(x: any): any {
 	const bannedProperties = [
 		"name", "artist", "title", "location", "interests", "occupation", "twitter",
-		"discord", "version", "author", "raw", "bbcode", "title", "message"
+		"discord", "version", "author", "raw", "bbcode", "title", "message", "creator"
 	]
 
 	if (typeof x === "boolean") {

@@ -232,6 +232,21 @@ export namespace Beatmapset {
 	}
 
 	export namespace Discussion {
+		/** 
+		 * An interface to tell the API how the returned Array should be like
+		 * @group Parameter Object Interfaces
+		 */
+		export interface Config {
+			/** The maximum amount of elements to get */
+			limit?: number
+			/** "id_asc" to have the oldest element first, "id_desc" to have the newest instead */
+			sort?: "id_desc" | "id_asc"
+			/** Which page of the results to get */
+			page?: number
+			/** A cursor_string provided by a previous request */
+			cursor_string?: string
+		}
+
 		export interface WithStartingpost extends Discussion {
 			starting_post: Post
 		}
@@ -254,18 +269,17 @@ export namespace Beatmapset {
 			 * Get complex data about the posts of a beatmapset's discussion or of a user!
 			 * @param from From where/who are the posts coming from? A specific discussion, a specific user?
 			 * @param types What kind of posts?
-			 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-			 * @param sort (defaults to "id_desc") "id_asc" to have the oldest recent post first, "id_desc" to have the newest instead
+			 * @param config How many results maximum, how to sort them, which page of those, maybe a cursor_string...
 			 * @returns Relevant posts and info about them
 			 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 			 */
 			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, user?: User["id"] | User},
-			types?: ("first" | "reply" | "system")[], cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
+			types?: ("first" | "reply" | "system")[], config?: Config):
 			Promise<{beatmapsets: Beatmapset.WithHype[], posts: Post[], users: User[], cursor_string: string | null}> {
 				const discussion = from?.discussion ? getId(from.discussion) : undefined
 				const user = from?.user ? getId(from.user) : undefined
-				return await this.request("get", "beatmapsets/discussions/posts", {beatmapset_discussion_id: discussion, limit: cursor_stuff?.limit,
-				page: cursor_stuff?.page, sort, types, user, cursor_string: cursor_stuff?.cursor_string})
+				return await this.request("get", "beatmapsets/discussions/posts", {beatmapset_discussion_id: discussion, limit: config?.limit,
+				page: config?.page, sort: config?.sort, types, user, cursor_string: config?.cursor_string})
 			}
 		}
 
@@ -283,20 +297,19 @@ export namespace Beatmapset {
 			 * Get complex data about the votes of a beatmapset's discussions or/and received/given by a specific user!
 			 * @param from The discussion with the votes, the user who voted, the user who's gotten the votes...
 			 * @param score An upvote (1) or a downvote (-1)
-			 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-			 * @param sort "id_asc" to have the oldest recent vote first, "id_desc" to have the newest instead (defaults to **id_desc**)
+			 * @param config How many results maximum, how to sort them, which page of those, maybe a cursor_string...
 			 * @returns Relevant votes and info about them
 			 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 			 */
 			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, vote_giver?: User["id"] | User,
-			vote_receiver?: User["id"] | User}, score?: 1 | -1, cursor_stuff?: {page?: number, limit?: number, cursor_string?: string},
-			sort: "id_desc" | "id_asc" = "id_desc"): Promise<{votes: Vote[], discussions: Discussion[], users: User.WithGroups[], cursor_string: string | null}> {
+			vote_receiver?: User["id"] | User}, score?: 1 | -1, config?: Config):
+			Promise<{votes: Vote[], discussions: Discussion[], users: User.WithGroups[], cursor_string: string | null}> {
 				const discussion = from?.discussion ? getId(from.discussion) : undefined
 				const user = from?.vote_giver ? getId(from.vote_giver) : undefined
 				const receiver = from?.vote_receiver ? getId(from.vote_receiver) : undefined
 
-				return await this.request("get", "beatmapsets/discussions/votes", {beatmapset_discussion_id: discussion, limit: cursor_stuff?.limit,
-				page: cursor_stuff?.page, receiver, score, sort, user, cursor_string: cursor_stuff?.cursor_string})
+				return await this.request("get", "beatmapsets/discussions/votes", {beatmapset_discussion_id: discussion, limit: config?.limit,
+				page: config?.page, receiver, score, sort: config?.sort, user, cursor_string: config?.cursor_string})
 			}
 		}
 
@@ -304,15 +317,14 @@ export namespace Beatmapset {
 		 * Get complex data about the discussion page of any beatmapet that you want!
 		 * @param from From where/who are the discussions coming from? Maybe only qualified sets?
 		 * @param filter Should those discussions only be unresolved problems, for example?
-		 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-		 * @param sort "id_asc" to have the oldest recent discussion first, "id_desc" to have the newest instead (defaults to **id_desc**)
+		 * @param config How many results maximum, how to sort them, which page of those, maybe a cursor_string...
 		 * @returns Relevant discussions and info about them
 		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 		 * @privateRemarks I don't allow setting `beatmap_id` because my testing has led me to believe it does nothing (and is therefore misleading)
 		 */
 		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset["id"] | Beatmapset, user?: User["id"] | User,
 		status?: "all" | "ranked" | "qualified" | "disqualified" | "never_qualified"}, filter?: {types?: Beatmapset.Discussion["message_type"][],
-		only_unresolved?: boolean}, cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
+		only_unresolved?: boolean}, config?: Config):
 		Promise<{beatmaps: Beatmap.Extended[], beatmapsets: Beatmapset.Extended[], discussions: Beatmapset.Discussion.WithStartingpost[]
 		included_discussions: Beatmapset.Discussion.WithStartingpost[], reviews_config: {max_blocks: number}, users: User.WithGroups[],
 		cursor_string: string | null}> {
@@ -320,8 +332,8 @@ export namespace Beatmapset {
 			const user = from?.user ? getId(from.user) : undefined
 
 			return await this.request("get", "beatmapsets/discussions", {beatmapset_id: beatmapset, beatmapset_status: from?.status,
-			limit: cursor_stuff?.limit, message_types: filter?.types, only_unresolved: filter?.only_unresolved, page: cursor_stuff?.page, sort,
-			user, cursor_string: cursor_stuff?.cursor_string})
+			limit: config?.limit, message_types: filter?.types, only_unresolved: filter?.only_unresolved, page: config?.page, sort: config?.sort,
+			user, cursor_string: config?.cursor_string})
 		}
 	}
 
@@ -344,9 +356,17 @@ export namespace Beatmapset {
 		categories?: "Any" | "Ranked" | "Qualified" | "Loved" | "Favourites" | "Pending" | "WIP" | "Graveyard" | "My Maps",
 		/** Use this to hide all sets that are marked as explicit */
 		hide_explicit_content?: true,
-		/** Specify the musical genre of the music of the beatmapsets you're searching for */
+		/** 
+		 * Specify the musical genre of the music of the beatmapsets you're searching for (don't specify to get any genre)
+		 * @remarks "Any"/0 actually looks up sets that specifically have the Genre "Any" such as `5947`, it's excluded because it's counter-intuitive
+		 * and near useless (but you can do something like `1-1` if you actually want that!)
+		 */
 		genre?: Exclude<Genres, 0>,
-		/** Specify the spoken language of the music of the beatmapsets you're searching for */
+		/** 
+		 * Specify the spoken language of the music of the beatmapsets you're searching for (don't specify to get any language)
+		 * @remarks "Any"/0 actually looks up sets that specifically have the Language "Any" (and no set has that), it's excluded because it's counter-intuitive
+		 * and near useless (but you can do something like `1-1` if you actually want that!)
+		 */
 		language?: Exclude<Languages, 0>,
 		/** Should all sets have a video, a storyboard, maybe both at once? */
 		extra?: ("must_have_video" | "must_have_storyboard")[],

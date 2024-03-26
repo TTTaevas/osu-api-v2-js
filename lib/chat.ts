@@ -51,12 +51,12 @@ export namespace Chat {
 		/**
 		 * Get a ChatChannel, and the users in it if it is a private channel!
 		 * @scope {@link Scope"chat.read"}
-		 * @remarks Will 404 if the user has not joined the channel (use `joinChatChannel` for that)
 		 * @param channel The channel in question
+		 * @remarks Will 404 if the user has not joined the channel (use `joinChatChannel` for that)
 		 */
 		export async function getOne(this: API, channel: Channel["channel_id"] | Channel): Promise<Channel.WithDetails> {
 			const response = await this.request("get", `chat/channels/${getId(channel, "channel_id")}`)
-			return response.channel
+			return response.channel // NOT the only property; `users` is already provided within `channel` so it is useless
 		}
 
 		/**
@@ -92,11 +92,11 @@ export namespace Chat {
 		/**
 		 * Create a new announcement!
 		 * @scope {@link Scope"chat.write_manage"}
-		 * @remarks From my understanding, this WILL 403 unless the user is kinda special
 		 * @param channel Details of the channel you're creating
 		 * @param user_targets The people that will receive your message
 		 * @param message The message to send with the announcement
 		 * @returns The newly created channel!
+		 * @remarks From my understanding, this WILL 403 unless the user is kinda special
 		 */
 		export async function createAnnouncement(this: API, channel: {name: string, description: string}, user_targets: Array<User["id"] | User>, message: string):
 		Promise<Channel> {
@@ -177,12 +177,12 @@ export namespace Chat {
 		/**
 		 * Send a private message to someone!
 		 * @scope {@link Scope"chat.write"}
-		 * @remarks You don't need to use `createChatPrivateChannel` before sending a message
 		 * @param user_target The User you wanna send your message to!
 		 * @param message The message you wanna send
 		 * @param is_action Is it a command? Like `/me dances` (defaults to **false**)
 		 * @param uuid A client-side message identifier
 		 * @returns The message you sent
+		 * @remarks You don't need to use `createChatPrivateChannel` before sending a message
 		 */
 		export async function sendPrivate(this: API, user_target: User["id"] | User, message: string, is_action: boolean = false, uuid?: string):
 		Promise<{channel: Channel, message: Message}> {
@@ -197,7 +197,7 @@ export namespace Chat {
 	 * @returns A list of recent silences
 	 * @remarks Every 30 seconds is a good idea
 	 */
-	export async function keepAlive(this: API, since?: {user_silence?: UserSilence["id"]| UserSilence, message?: Message["message_id"] | Message}):
+	export async function keepAlive(this: API, since?: {user_silence?: UserSilence["id"] | UserSilence, message?: Message["message_id"] | Message}):
 	Promise<UserSilence[]> {
 		const history_since = since?.user_silence ? getId(since.user_silence) : undefined
 		const message_since = since?.message ? getId(since.message, "message_id") : undefined
