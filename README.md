@@ -2,7 +2,7 @@
 
 [**osu-api-v2-js**](https://github.com/TTTaevas/osu-api-v2-js) is a JavaScript & TypeScript package that helps you interact with [osu!api (v2)](https://docs.ppy.sh).
 
-It is currently a bit unstable as it's under development, but you can find documentation on [osu-v2.taevas.xyz](https://osu-v2.taevas.xyz) if needed!
+You can find this package's documentation on [osu-v2.taevas.xyz](https://osu-v2.taevas.xyz) if needed!
 
 ## How to install and get started
 
@@ -23,19 +23,19 @@ To use (import) the package in your project and start interacting with the API, 
 import * as osu from "osu-api-v2-js"
 
 async function logUserTopPlayBeatmap(username: string) {
-    // Because of how the API server works, it's more convenient to use `osu.API.createAsync()` instead of `new osu.API()`!
+    // It's more convenient to use `osu.API.createAsync()` instead of `new osu.API()` as it doesn't require you to directly provide an access_token!
     // In a proper application, you'd use this function as soon as the app starts so you can use that object everywhere
     // (or if it acts as a user, you'd use this function at the end of the authorization flow)
     const api = await osu.API.createAsync({id: "<client_id>", secret: "<client_secret>"})
 
-    const user = await api.getUser({username}) // We need to get the id of the user in order to request what we want
-    const score = (await api.getUserScores(user, "best", 1, osu.Rulesets.osu))[0] // Specifying the Ruleset is optional
+    const user = await api.getUser(username) // We need to get the id of the user in order to request what we want
+    const score = (await api.getUserScores(user, "best", osu.Rulesets.osu, {lazer: false}, {limit: 1}))[0] // Specifying the Ruleset is optional
     const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(score.beatmap, score.mods) // Specifying the mods so the SR is adapted to them
 
     const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`
     const y = `+${score.mods.toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
     console.log(`${username}'s top play is on: ${x} ${y}`)
-    // Doomsday fanboy's top play is on: xi - FREEDOM DiVE [FOUR DIMENSIONS] +HR (8.07*)
+    // Doomsday fanboy's top play is on: Yamajet feat. Hiura Masako - Sunglow [Harmony] +DT (8.72*)
 }
 
 logUserTopPlayBeatmap("Doomsday fanboy")
@@ -70,7 +70,7 @@ const api = await osu.API.createAsync({id: "<client_id>", secret: "<client_secre
 Congrats on making your `api` object! Now you should do something in order to not lose it, or not need a new one in order to request more data!
 
 Do note that your `api` object has lots of practical properties: `user` allows you to know which user it acts on behalf of, `expires` allows you to know when your requests with your current `access_token` will fail, and `refresh_token` is your key to getting a new `access_token` without asking the user again!
-Although, you should not need to access them often, because your `api` object has a function to use that refresh token which you can call at any given time, and it **will** call it itself if, upon requesting something, it notices the date the `access_token` `expires` is in the past!
+Although, you should not need to access them often, because your `api` object has a function to use that refresh token which you can call at any given time, and by default, the object will call that function on its own right before the expiration date or when a request seems to fail because of the `access_token` being invalid! (those are features you can deactivate if needed)
 
 Your `refresh_token` can actually also expire at a (purposefully) unknown time, so depending of how your application works, you could use it at some point around the date of expiration, or you could throw away your `api` object while waiting for a user to start the authorization flow again
 
@@ -120,6 +120,26 @@ readChat()
 Above is the code I've written to listen to incoming chat messages by using the API's WebSocket!
 
 Using the WebSocket namespace this package provides, it's relatively easy to send commands (anything under `osu.WebSocket.Command`) and you can have 100% type safety with events (anything under `osu.Websocket.Event`) simply by checking what the `event` property is! With that, anything in the `data` property is yours to play with!
+
+### Calling the functions, but literally
+
+This package's functions can be accessed both through the api object and through namespaces! It essentially means that for convenience's sake, there are two ways to do anything:
+
+```typescript
+// Obtaining a match, assuming an `api` object already exists and everything from the package is imported as `osu`
+const match_1 = await api.getMatch(103845156) // through the api object
+const match_2 = await osu.Multiplayer.Match.getOne.call(api, 103845156) // through the namespaces
+// `match_1` and `match_2` are the same, because they're essentially using the same function!
+
+// The same, but for obtaining multiple lazer updates
+const builds_1 = await api.getChangelogBuilds("lazer")
+const builds_2 = await osu.Changelog.Build.getMultiple.call(api, "lazer")
+// `build_1` and `build_2` are also the same!
+```
+
+As you may have noticed, when calling the functions through the namespaces, instead of doing something like `getOne()`, we instead do `getOne.call()` and use [the call() method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call) in order to provide a `this` value; the api object!
+
+Of course, using [the apply() method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply) would also work, so just do things the way you prefer or the way that is more intuitive to you!
 
 ## Implemented endpoints
 
@@ -215,5 +235,3 @@ Using the WebSocket namespace this package provides, it's relatively easy to sen
 ### Misc Undocumented Stuff
 - [x] `GET /seasonal-backgrounds` -> getSeasonalBackgrounds()
 - [x] `GET /scores/{score}/download` -> getReplay()
-- [ ] `GET /scores/{rulesetOrScore}/{score}/download`
-- [ ] `GET /scores/{rulesetOrScore}/{score?}`

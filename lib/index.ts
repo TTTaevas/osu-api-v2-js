@@ -192,8 +192,10 @@ export class API {
 			secret: string
 		},
 		user?: {
-			code: string,
-			redirect_uri: string
+			/** The Application Callback URL; Where the User has been redirected to after saying "okay" to your application doing stuff */
+			redirect_uri: string,
+			/** The code that appeared as a GET argument when they got redirected to the Application Callback URl (`redirect_url`) */
+			code: string
 		},
 		verbose: "none" | "errors" | "all" = "none",
 		server: string = "https://osu.ppy.sh"

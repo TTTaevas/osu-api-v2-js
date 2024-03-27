@@ -1,6 +1,6 @@
 {
   "name": "osu-api-v2-js",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Package to easily access osu!api version 2.0",
   "type": "module",
   "main": "dist/index.js",
@@ -17,6 +17,16 @@
     "type": "git",
     "url": "https://github.com/TTTaevas/osu-api-v2-js.git"
   },
+  "homepage": "https://osu-v2.taevas.xyz/",
+  "keywords": [
+    "osu",
+    "api",
+    "osu-api",
+    "v2",
+    "wrapper",
+    "api-wrapper",
+    "lazer"
+  ],
   "license": "WTFPL",
   "devDependencies": {
     "@types/node": "^20.8.10",
