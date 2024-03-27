@@ -159,7 +159,7 @@ const testBeatmapset = async (): Promise<boolean> => {
 	const a = await attempt(api.getBeatmapset, 1971037)
 	if (!isOk(a, !a || (a.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(a, "Beatmapset.Extended.Plus")))) okay = false
 	const b = await attempt(api.getBeatmapsetEvents)
-	if (!isOk(b, !b || (validate(b.events, "Beatmapset.Event") && validate(b.users, "User.WithGroups")))) okay = false
+	if (!isOk(b, !b || (validate(b.events, "Beatmapset.Event.Any") && validate(b.users, "User.WithGroups")))) okay = false
 	return okay
 }
 

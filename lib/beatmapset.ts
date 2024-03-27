@@ -35,6 +35,21 @@ export interface Beatmapset {
 }
 
 export namespace Beatmapset {
+	/** 
+	 * An interface to tell the API how the returned Array should be like
+	 * @group Parameter Object Interfaces
+	 */
+	export interface Config {
+		/** The maximum amount of elements to get */
+		limit?: number
+		/** "id_asc" to have the oldest element first, "id_desc" to have the newest instead */
+		sort?: "id_desc" | "id_asc"
+		/** Which page of the results to get */
+		page?: number
+		/** A cursor_string provided by a previous request */
+		cursor_string?: string
+	}
+
 	export enum RankStatus {
 		Graveyard 	= -2,
 		Wip 		= -1,
@@ -80,31 +95,18 @@ export namespace Beatmapset {
 		Other			= 14
 	}
 
-	/** Whether properties are there or not and null or not depend of the `type` */
 	export interface Event {
 		id: number
-		/** Port of https://github.com/ppy/osu-web/blob/master/app/Models/BeatmapsetEvent.php */
+		/** 
+		 * @privateRemarks Searching for `approve` events brings nothing, yet the code seems to indicate it exists, so I'm keeping it here
+		 * https://github.com/ppy/osu-web/blob/master/app/Models/BeatmapsetEvent.php
+		 */
 		type: "nominate" | "love" | "remove_from_loved" | "qualify" | "disqualify" | "approve" | "rank" |
-			"kudosu_allow" | "kudosu_denied" | "kudosu_gain" | "kudosu_lost" | "kudosu_recalculate" |
-			"issue_resolve" | "issue_reopen" | "discussion_lock" | "disccusion_unlock" | "discussion_delete" | "discussion_restore" |
+			"kudosu_allow" | "kudosu_deny" | "kudosu_gain" | "kudosu_lost" | "kudosu_recalculate" |
+			"issue_resolve" | "issue_reopen" | "discussion_lock" | "discussion_unlock" | "discussion_delete" | "discussion_restore" |
 			"discussion_post_delete" | "discussion_post_restore" | "nomination_reset" | "nomination_reset_received" |
 			"genre_edit" | "language_edit" | "nsfw_toggle" | "offset_edit" | "tags_edit" | "beatmap_owner_change"
-		comment: {
-			beatmap_discussion_id?: Discussion["id"] | null
-			beatmap_discussion_post_id?: Discussion.Post["id"] | null
-			reason?: string
-			old?: keyof typeof Genres | keyof typeof Languages | boolean
-			new?: keyof typeof Genres | keyof typeof Languages | boolean
-			modes?: (keyof typeof Rulesets)[]
-			new_vote?: {
-				user_id: User["id"]
-				score: number
-			}
-			votes?: {
-				user_id: User["id"]
-				score: number
-			}[]
-		} | null
+		comment: object | null
 		created_at: Date
 		user_id: User["id"] | null
 		beatmapset: Beatmapset.WithUserHype
@@ -112,23 +114,148 @@ export namespace Beatmapset {
 	}
 
 	export namespace Event {
+		export interface NoComment extends Event {
+			type: "love" | "qualify" | "rank"
+			comment: null
+		}
+
+		export interface Nominate extends Event {
+			type: "nominate"
+			comment: Comment.WithModes
+		}
+
+		export interface Generic extends Event {
+			type: "kudosu_allow" | "kudosu_deny" | "kudosu_recalculate" | "issue_resolve" | "issue_reopen" | "discussion_lock" | "discussion_unlock" |
+			"discussion_delete" | "discussion_restore" | "discussion_post_delete" | "discussion_post_restore" | "tags_edit"
+			comment: Comment.WithDiscussionidPostid
+		}
+
+		export interface RemoveFromLoved extends Event {
+			type: "remove_from_loved"
+			comment: Comment.WithDiscussionidPostidReason
+		}
+
+		export interface DisqualifyORNominationReset extends Event {
+			type: "disqualify" | "nomination_reset"
+			comment: Comment.WithDiscussionidPostidNominatorsids
+		}
+
+		export interface GenreEdit extends Event {
+			type: "genre_edit"
+			comment: Comment.WithDiscussionidPostidOldgenreNewgenre
+		}
+
+		export interface LanguageEdit extends Event {
+			type: "language_edit"
+			comment: Comment.WithDiscussionidPostidOldlanguageNewlanguage
+		}
+
+		export interface NsfwToggle extends Event {
+			type: "nsfw_toggle"
+			comment: Comment.WithDiscussionidPostidOldnsfwNewnsfw
+		}
+
+		export interface OffsetEdit extends Event {
+			type: "offset_edit"
+			comment: Comment.WithDiscussionidPostidOldoffsetNewoffset
+		}
+
+		export interface KudosuChange extends Event {
+			type: "kudosu_gain" | "kudosu_lost"
+			comment: Comment.WithDiscussionidPostidNewvotevotes
+		}
+
+		export interface NominationResetReceived extends Event {
+			type: "nomination_reset_received"
+			comment: Comment.WithDiscussionidPostidSourceuseridSourceuserusername
+		}
+
+		export interface BeatmapOwnerChange extends Event {
+			type: "beatmap_owner_change"
+			comment: Comment.WithDiscussionidPostidBeatmapidBeatmapversionNewuseridNewuserusername
+		}
+
+		export type Any = NoComment | Nominate | Generic | RemoveFromLoved | DisqualifyORNominationReset | GenreEdit | LanguageEdit | NsfwToggle |
+		OffsetEdit | KudosuChange | NominationResetReceived | BeatmapOwnerChange
+
+		export namespace Comment {
+			export interface WithModes {
+				modes: (keyof typeof Rulesets)[]
+			}
+
+			export interface WithDiscussionidPostid {
+				beatmap_discussion_id: Discussion["id"] | null
+				beatmap_discussion_post_id: Discussion.Post["id"] | null
+			}
+
+			export interface WithDiscussionidPostidReason extends WithDiscussionidPostid {
+				reason: string
+			}
+
+			export interface WithDiscussionidPostidNominatorsids extends WithDiscussionidPostid {
+				nominators_ids: User["id"][]
+			}
+
+			export interface WithDiscussionidPostidOldgenreNewgenre extends WithDiscussionidPostid {
+				old: keyof typeof Genres
+				new: keyof typeof Genres
+			}
+
+			export interface WithDiscussionidPostidOldlanguageNewlanguage extends WithDiscussionidPostid {
+				old: keyof typeof Languages
+				new: keyof typeof Languages
+			}
+
+			export interface WithDiscussionidPostidOldnsfwNewnsfw extends WithDiscussionidPostid {
+				old: boolean
+				new: boolean
+			}
+
+			export interface WithDiscussionidPostidOldoffsetNewoffset extends WithDiscussionidPostid {
+				old: number
+				new: number
+			}
+
+			export interface WithDiscussionidPostidNewvotevotes extends WithDiscussionidPostid {
+				new_vote: {
+					user_id: User["id"]
+					score: number
+				}
+				votes: {
+					user_id: User["id"]
+					score: number
+				}[]
+			}
+
+			export interface WithDiscussionidPostidSourceuseridSourceuserusername extends WithDiscussionidPostid {
+				source_user_id: User["id"]
+				source_user_name: User["username"]
+			}
+
+			export interface WithDiscussionidPostidBeatmapidBeatmapversionNewuseridNewuserusername extends WithDiscussionidPostid {
+				beatmap_id: Beatmap["id"]
+				beatmap_version: Beatmap["version"]
+				new_user_id: User["id"]
+				new_user_username: User["username"]
+			}
+		}
+
 		/**
 		 * Get complex data about the events of a beatmapset and the users involved with them!
 		 * @param from Which beatmapset, or caused by which user? When?
 		 * @param types What kinds of events?
-		 * @param cursor_stuff How many results maximum to get, which page of those results, a cursor_string if you have that...
-		 * @param sort "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead (defaults to **id_desc**)
+		 * @param config How many results maximum, how to sort them, which page of those, maybe a cursor_string...
 		 * @returns Relevant events and users
 		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware,
 		 * and also there's no documentation for this route in the API, so this is only the result of my interpretation of the website's code lol
 		 */
 		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset["id"] | Beatmapset, user?: User["id"] | User, min_date?: Date, max_date?: Date},
-		types?: Event["type"][], cursor_stuff?: {page?: number, limit?: number, cursor_string?: string}, sort: "id_desc" | "id_asc" = "id_desc"):
-		Promise<{events: Beatmapset.Event[], users: User.WithGroups[]}> {
+		types?: Event["type"][], config?: Config):
+		Promise<{events: Event.Any[], users: User.WithGroups[]}> {
 			const beatmapset = from?.beatmapset ? getId(from.beatmapset) : undefined
 			const user = from?.user ? getId(from.user) : undefined
 			return await this.request("get", "beatmapsets/events", {beatmapset_id: beatmapset, user, min_date: from?.min_date?.toISOString(),
-			max_date: from?.max_date?.toISOString(), types, sort, page: cursor_stuff?.page, limit: cursor_stuff?.page, cursor_string: cursor_stuff?.cursor_string})
+			max_date: from?.max_date?.toISOString(), types, sort: config?.sort, page: config?.page, limit: config?.limit, cursor_string: config?.cursor_string})
 		}
 	}
 
@@ -232,21 +359,6 @@ export namespace Beatmapset {
 	}
 
 	export namespace Discussion {
-		/** 
-		 * An interface to tell the API how the returned Array should be like
-		 * @group Parameter Object Interfaces
-		 */
-		export interface Config {
-			/** The maximum amount of elements to get */
-			limit?: number
-			/** "id_asc" to have the oldest element first, "id_desc" to have the newest instead */
-			sort?: "id_desc" | "id_asc"
-			/** Which page of the results to get */
-			page?: number
-			/** A cursor_string provided by a previous request */
-			cursor_string?: string
-		}
-
 		export interface WithStartingpost extends Discussion {
 			starting_post: Post
 		}
