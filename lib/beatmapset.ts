@@ -108,7 +108,6 @@ export namespace Beatmapset {
 			"genre_edit" | "language_edit" | "nsfw_toggle" | "offset_edit" | "tags_edit" | "beatmap_owner_change"
 		comment: object | null
 		created_at: Date
-		user_id: User["id"] | null
 		beatmapset: Beatmapset.WithUserHype
 	}
 
@@ -120,89 +119,127 @@ export namespace Beatmapset {
 		interface WithOptionalDiscussion extends Event {
 			discussion?: Discussion.WithStartingpost | null
 		}
-
-		export interface NoComment extends Event {
-			type: "love" | "qualify" | "rank"
-			comment: null
+		
+		interface WithUserid extends Event {
+			user_id: User["id"]
 		}
 
-		export interface Nominate extends Event {
-			type: "nominate"
-			comment: Comment.WithModes
-		}
-
-		/** A Generic event is one where the comment is simply a discussion id and a post id */
-		export interface Generic extends Event {
-			type: "discussion_delete"
-			comment: Comment.WithDiscussionidPostid
-		}
-
-		/**
-		 * @remarks Depending of the type, when the discussion is not a `Discussion`, then it is either `null` or `undefined`;
-		 * Because `null` and `undefined` are both falsy, those types are regrouped in this interface instead of being distinct
-		 */
-		export interface GenericWithOptionalDiscussion extends WithOptionalDiscussion {
-			type: "kudosu_recalculate" | "discussion_lock" | "discussion_unlock" | "discussion_restore"
-			comment: Comment.WithDiscussionidPostid
-		}
-
-		export interface GenericWithDiscussion extends WithDiscussion {
-			type: "kudosu_allow" | "kudosu_deny" | "issue_resolve" | "issue_reopen" | "discussion_post_delete" | "discussion_post_restore"
-			comment: Comment.WithDiscussionidPostid
-		}
-
-		export interface RemoveFromLoved extends Event {
-			type: "remove_from_loved"
-			comment: Comment.WithDiscussionidPostidReason
-		}
-
-		export interface DisqualifyORNominationReset extends WithDiscussion {
-			type: "disqualify" | "nomination_reset"
-			comment: Comment.WithDiscussionidPostidNominatorsids
-		}
-
-		export interface GenreEdit extends Event {
-			type: "genre_edit"
-			comment: Comment.WithDiscussionidPostidOldgenreNewgenre
-		}
-
-		export interface LanguageEdit extends Event {
-			type: "language_edit"
-			comment: Comment.WithDiscussionidPostidOldlanguageNewlanguage
-		}
-
-		export interface NsfwToggle extends Event {
-			type: "nsfw_toggle"
-			comment: Comment.WithDiscussionidPostidOldnsfwNewnsfw
-		}
-
-		export interface OffsetEdit extends Event {
-			type: "offset_edit"
-			comment: Comment.WithDiscussionidPostidOldoffsetNewoffset
-		}
-
-		export interface TagsEdit extends WithOptionalDiscussion {
-			type: "tags_edit"
-			comment: Comment.WithDiscussionidPostidOldtagsNewtags
-		}
-
-		export interface KudosuChange extends WithDiscussion {
-			type: "kudosu_gain" | "kudosu_lost"
-			comment: Comment.WithDiscussionidPostidNewvotevotes
-		}
-
-		export interface NominationResetReceived extends WithDiscussion {
-			type: "nomination_reset_received"
-			comment: Comment.WithDiscussionidPostidSourceuseridSourceuserusername
-		}
-
-		export interface BeatmapOwnerChange extends Event {
+		/** @group Beatmap Change */
+		export interface BeatmapOwnerChange extends WithUserid {
 			type: "beatmap_owner_change"
 			comment: Comment.WithDiscussionidPostidBeatmapidBeatmapversionNewuseridNewuserusername
 		}
 
-		export type Any = NoComment | Nominate | Generic | GenericWithOptionalDiscussion | GenericWithDiscussion | RemoveFromLoved | DisqualifyORNominationReset |
-		GenreEdit | LanguageEdit | NsfwToggle | OffsetEdit | TagsEdit | KudosuChange | NominationResetReceived | BeatmapOwnerChange
+		/** @group Beatmap Change */
+		export interface GenreEdit extends WithUserid {
+			type: "genre_edit"
+			comment: Comment.WithDiscussionidPostidOldgenreNewgenre
+		}
+
+		/** @group Beatmap Change */
+		export interface LanguageEdit extends WithUserid {
+			type: "language_edit"
+			comment: Comment.WithDiscussionidPostidOldlanguageNewlanguage
+		}
+
+		/** @group Beatmap Change */
+		export interface NsfwToggle extends WithUserid {
+			type: "nsfw_toggle"
+			comment: Comment.WithDiscussionidPostidOldnsfwNewnsfw
+		}
+
+		/** @group Beatmap Change */
+		export interface OffsetEdit extends WithUserid {
+			type: "offset_edit"
+			comment: Comment.WithDiscussionidPostidOldoffsetNewoffset
+		}
+
+		/** @group Beatmap Change */
+		export interface TagsEdit extends WithOptionalDiscussion, WithUserid {
+			type: "tags_edit"
+			comment: Comment.WithDiscussionidPostidOldtagsNewtags
+		}
+
+		export type AnyBeatmapChange = BeatmapOwnerChange | GenreEdit | LanguageEdit | NsfwToggle | OffsetEdit | TagsEdit
+
+		/** @group Beatmapset Status Change */
+		export interface QualifyORRank extends Event {
+			type: "qualify" | "rank"
+			comment: null
+		}
+
+		/** @group Beatmapset Status Change */
+		export interface Love extends WithUserid {
+			type: "love"
+			comment: null
+		}
+
+		/** @group Beatmapset Status Change */
+		export interface Nominate extends WithUserid {
+			type: "nominate"
+			comment: Comment.WithModes
+		}
+
+		/** @group Beatmapset Status Change */
+		export interface RemoveFromLoved extends WithUserid {
+			type: "remove_from_loved"
+			comment: Comment.WithDiscussionidPostidReason
+		}
+
+		/** @group Beatmapset Status Change */
+		export interface DisqualifyORNominationReset extends WithDiscussion, WithUserid {
+			type: "disqualify" | "nomination_reset"
+			comment: Comment.WithDiscussionidPostidNominatorsids
+		}
+
+		/** @group Beatmapset Status Change */
+		export interface NominationResetReceived extends WithDiscussion, WithUserid {
+			type: "nomination_reset_received"
+			comment: Comment.WithDiscussionidPostidSourceuseridSourceuserusername
+		}
+
+		export type AnyBeatmapsetStatusChange = QualifyORRank | Love | Nominate | RemoveFromLoved | DisqualifyORNominationReset | NominationResetReceived
+
+		/** @group Discussion Change */
+		export interface DiscussionDelete extends Event {
+			type: "discussion_delete"
+			comment: Comment.WithDiscussionidPostid
+		}
+
+		/** @group Discussion Change */
+		export interface DiscussionRestoreORKudosuRecalculate extends WithOptionalDiscussion {
+			type: "discussion_restore" | "kudosu_recalculate"
+			comment: Comment.WithDiscussionidPostid
+		}
+
+		/** @group Discussion Change */
+		export interface KudosuAllowORDenyORDiscussionPostDeleteORRestore extends WithDiscussion {
+			type: "kudosu_allow" | "kudosu_deny" | "discussion_post_delete" | "discussion_post_restore"
+			comment: Comment.WithDiscussionidPostid
+		}
+
+		/** @group Discussion Change */
+		export interface DiscussionLockORUnlock extends WithOptionalDiscussion, WithUserid {
+			type: "discussion_lock" | "discussion_unlock"
+			comment: Comment.WithDiscussionidPostid
+		}
+
+		/** @group Discussion Change */
+		export interface IssueResolveOrReopen extends WithDiscussion, WithUserid {
+			type: "issue_resolve" | "issue_reopen"
+			comment: Comment.WithDiscussionidPostid
+		}
+
+		/** @group Discussion Change */
+		export interface KudosuGainORLost extends WithDiscussion, WithUserid {
+			type: "kudosu_gain" | "kudosu_lost"
+			comment: Comment.WithDiscussionidPostidNewvotevotes
+		}
+
+		export type AnyDiscussionChange = DiscussionDelete | DiscussionRestoreORKudosuRecalculate | KudosuAllowORDenyORDiscussionPostDeleteORRestore |
+		DiscussionLockORUnlock | IssueResolveOrReopen | KudosuGainORLost
+
+		export type Any = AnyBeatmapChange | AnyBeatmapsetStatusChange | AnyDiscussionChange
 
 		/** An event's comment (unrelated to comments in bundles) can be a **lot** of things depending of the event type */
 		export interface Comment {}
