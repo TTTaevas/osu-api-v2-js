@@ -110,10 +110,17 @@ export namespace Beatmapset {
 		created_at: Date
 		user_id: User["id"] | null
 		beatmapset: Beatmapset.WithUserHype
-		discussion?: Discussion.WithStartingpost | null
 	}
 
 	export namespace Event {
+		interface WithDiscussion extends Event {
+			discussion: Discussion.WithStartingpost
+		}
+
+		interface WithOptionalDiscussion extends Event {
+			discussion?: Discussion.WithStartingpost | null
+		}
+
 		export interface NoComment extends Event {
 			type: "love" | "qualify" | "rank"
 			comment: null
@@ -124,9 +131,23 @@ export namespace Beatmapset {
 			comment: Comment.WithModes
 		}
 
+		/** A Generic event is one where the comment is simply a discussion id and a post id */
 		export interface Generic extends Event {
-			type: "kudosu_allow" | "kudosu_deny" | "kudosu_recalculate" | "issue_resolve" | "issue_reopen" | "discussion_lock" | "discussion_unlock" |
-			"discussion_delete" | "discussion_restore" | "discussion_post_delete" | "discussion_post_restore" | "tags_edit"
+			type: "discussion_delete"
+			comment: Comment.WithDiscussionidPostid
+		}
+
+		/**
+		 * @remarks Depending of the type, when the discussion is not a `Discussion`, then it is either `null` or `undefined`;
+		 * Because `null` and `undefined` are both falsy, those types are regrouped in this interface instead of being distinct
+		 */
+		export interface GenericWithOptionalDiscussion extends WithOptionalDiscussion {
+			type: "kudosu_recalculate" | "discussion_lock" | "discussion_unlock" | "discussion_restore"
+			comment: Comment.WithDiscussionidPostid
+		}
+
+		export interface GenericWithDiscussion extends WithDiscussion {
+			type: "kudosu_allow" | "kudosu_deny" | "issue_resolve" | "issue_reopen" | "discussion_post_delete" | "discussion_post_restore"
 			comment: Comment.WithDiscussionidPostid
 		}
 
@@ -135,7 +156,7 @@ export namespace Beatmapset {
 			comment: Comment.WithDiscussionidPostidReason
 		}
 
-		export interface DisqualifyORNominationReset extends Event {
+		export interface DisqualifyORNominationReset extends WithDiscussion {
 			type: "disqualify" | "nomination_reset"
 			comment: Comment.WithDiscussionidPostidNominatorsids
 		}
@@ -160,12 +181,17 @@ export namespace Beatmapset {
 			comment: Comment.WithDiscussionidPostidOldoffsetNewoffset
 		}
 
-		export interface KudosuChange extends Event {
+		export interface TagsEdit extends WithOptionalDiscussion {
+			type: "tags_edit"
+			comment: Comment.WithDiscussionidPostidOldtagsNewtags
+		}
+
+		export interface KudosuChange extends WithDiscussion {
 			type: "kudosu_gain" | "kudosu_lost"
 			comment: Comment.WithDiscussionidPostidNewvotevotes
 		}
 
-		export interface NominationResetReceived extends Event {
+		export interface NominationResetReceived extends WithDiscussion {
 			type: "nomination_reset_received"
 			comment: Comment.WithDiscussionidPostidSourceuseridSourceuserusername
 		}
@@ -175,15 +201,19 @@ export namespace Beatmapset {
 			comment: Comment.WithDiscussionidPostidBeatmapidBeatmapversionNewuseridNewuserusername
 		}
 
-		export type Any = NoComment | Nominate | Generic | RemoveFromLoved | DisqualifyORNominationReset | GenreEdit | LanguageEdit | NsfwToggle |
-		OffsetEdit | KudosuChange | NominationResetReceived | BeatmapOwnerChange
+		export type Any = NoComment | Nominate | Generic | GenericWithOptionalDiscussion | GenericWithDiscussion | RemoveFromLoved | DisqualifyORNominationReset |
+		GenreEdit | LanguageEdit | NsfwToggle | OffsetEdit | TagsEdit | KudosuChange | NominationResetReceived | BeatmapOwnerChange
 
+		/** An event's comment (unrelated to comments in bundles) can be a **lot** of things depending of the event type */
+		export interface Comment {}
+
+		/** @remarks Unrelated to comments in bundles! */
 		export namespace Comment {
-			export interface WithModes {
+			export interface WithModes extends Comment {
 				modes: (keyof typeof Rulesets)[]
 			}
 
-			export interface WithDiscussionidPostid {
+			export interface WithDiscussionidPostid extends Comment {
 				beatmap_discussion_id: Discussion["id"] | null
 				beatmap_discussion_post_id: Discussion.Post["id"] | null
 			}
@@ -214,6 +244,11 @@ export namespace Beatmapset {
 			export interface WithDiscussionidPostidOldoffsetNewoffset extends WithDiscussionidPostid {
 				old: number
 				new: number
+			}
+
+			export interface WithDiscussionidPostidOldtagsNewtags extends WithDiscussionidPostid {
+				old: string
+				new: string
 			}
 
 			export interface WithDiscussionidPostidNewvotevotes extends WithDiscussionidPostid {
