@@ -1,4 +1,4 @@
-import { API, Beatmap, Beatmapset, Event, Rulesets, Score } from "./index.js"
+import { API, Beatmap, Beatmapset, Event, Ruleset, Score } from "./index.js"
 import { getId } from "./misc.js"
 
 export interface User {
@@ -48,7 +48,7 @@ export namespace User {
 			identifier: string
 			is_probationary: boolean
 			name: string
-			playmodes: (keyof typeof Rulesets)[] | null
+			playmodes: (keyof typeof Ruleset)[] | null
 			short_name: string
 		}[]
 	}
@@ -96,7 +96,7 @@ export namespace User {
 		max_blocks: number
 		max_friends: number
 		occupation: string | null
-		playmode: keyof typeof Rulesets
+		playmode: keyof typeof Ruleset
 		playstyle: string[]
 		post_count: number
 		profile_order: ("me" | "recent_activity" | "beatmaps" | "historical" | "kudosu" | "top_ranks" | "medals")[]
@@ -163,7 +163,7 @@ export namespace User {
 			achievement_id: number
 		}[]
 		rank_history: {
-			mode: keyof typeof Rulesets
+			mode: keyof typeof Ruleset
 			data: number[]
 		} | null
 	}
@@ -243,7 +243,7 @@ export namespace User {
 	 * @scope {@link Scope"identify"}
 	 * @param ruleset The data should be relevant to which ruleset? (defaults to **user's default Ruleset**)
 	 */
-	export async function getResourceOwner(this: API, ruleset?: Rulesets): Promise<User.Extended.WithStatisticsrulesets> {
+	export async function getResourceOwner(this: API, ruleset?: Ruleset): Promise<User.Extended.WithStatisticsrulesets> {
 		return await this.request("get", "me", {mode: ruleset})
 	}
 	
@@ -252,8 +252,8 @@ export namespace User {
 	 * @param user A user id, a username or a `User` object!
 	 * @param ruleset The data should be relevant to which ruleset? (defaults to **user's default Ruleset**)
 	 */
-	export async function getOne(this: API, user: User["id"] | User["username"] | User, ruleset?: Rulesets): Promise<User.Extended> {
-		const mode = ruleset !== undefined ? Rulesets[ruleset] : ""
+	export async function getOne(this: API, user: User["id"] | User["username"] | User, ruleset?: Ruleset): Promise<User.Extended> {
+		const mode = ruleset !== undefined ? Ruleset[ruleset] : ""
 		if (typeof user === "string") return await this.request("get", `users/${user}/${mode}`, {key: "username"})
 		if (typeof user === "number") return await this.request("get", `users/${user}/${mode}`, {key: "id"})
 		return await this.request("get", `users/${user.id}/${mode}`, {key: "id"})
@@ -277,9 +277,9 @@ export namespace User {
 	 * @param include Do you also want lazer scores and failed scores? (defaults to **true for lazer** & **false for fails**)
 	 * @param config Array limit & offset
 	 */
-	export async function getScores(this: API, user: User["id"] | User, type: "best" | "firsts" | "recent", ruleset?: Rulesets,
+	export async function getScores(this: API, user: User["id"] | User, type: "best" | "firsts" | "recent", ruleset?: Ruleset,
 	include: {lazer?: boolean, fails?: boolean} = {lazer: true, fails: false}, config?: Config): Promise<Score.WithUserBeatmapBeatmapset[]> {
-		const mode = ruleset !== undefined ? Rulesets[ruleset] : undefined
+		const mode = ruleset !== undefined ? Ruleset[ruleset] : undefined
 		return await this.request("get", `users/${getId(user)}/scores/${type}`,
 		{mode, limit: config?.limit, offset: config?.offset, legacy_only: Number(!include.lazer), include_fails: String(Number(include.fails))})
 	}

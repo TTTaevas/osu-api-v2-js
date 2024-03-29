@@ -1,4 +1,4 @@
-import { API, Beatmap, Chat, Mod, Rulesets, Score, User } from "./index.js"
+import { API, Beatmap, Chat, Mod, Ruleset, Score, User } from "./index.js"
 import { getId } from "./misc.js"
 
 export namespace Multiplayer {
@@ -44,7 +44,7 @@ export namespace Multiplayer {
 			id: number
 			room_id: number
 			beatmap_id: Beatmap["id"]
-			ruleset_id: Rulesets
+			ruleset_id: Ruleset
 			allowed_mods: Mod[]
 			required_mods: Mod[]
 			expired: boolean
@@ -149,8 +149,8 @@ export namespace Multiplayer {
 				id: number
 				start_time: Date
 				end_time: Date | null
-				mode: keyof typeof Rulesets
-				mode_int: Rulesets
+				mode: keyof typeof Ruleset
+				mode_int: Ruleset
 				scoring_type: string
 				team_type: string
 				mods: string[]

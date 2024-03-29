@@ -124,7 +124,7 @@ const testBeatmap = async (): Promise<boolean> => {
 	if (!isOk(f, !f || (f.total >= 10000 && validate(f.beatmapsets, "Beatmapset.Extended.WithBeatmapPacktags")))) okay = false
 	const g = await attempt(api.getBeatmapUserScore, 176960, 7276846, {mods: ["NM"]})
 	if (!isOk(g, !g || (g.score.accuracy < 0.99 && validate(g, "Beatmap.UserScore")))) okay = false
-	const h = await attempt(api.getBeatmapUserScores, 203993, 7276846, {ruleset: osu.Rulesets.fruits})
+	const h = await attempt(api.getBeatmapUserScores, 203993, 7276846, {ruleset: osu.Ruleset.fruits})
 	if (!isOk(h, !h || (h.length === 1 && validate(h, "Score")))) okay = false
 
 	const i = await attempt(api.getBeatmapScores, 129891, {legacy_only: true})
@@ -267,11 +267,11 @@ const testRanking = async (): Promise<boolean> => {
 
 	const a = await attempt(api.getKudosuRanking)
 	if (!isOk(a, !a || (a[0].kudosu.total > 10000 && validate(a, "User.WithKudosu")))) okay = false
-	const b = await attempt(api.getUserRanking, osu.Rulesets.osu, "score", {country: "FR"})
+	const b = await attempt(api.getUserRanking, osu.Ruleset.osu, "score", {country: "FR"})
 	if (!isOk(b, !b || (b.ranking[0].level.current > 106 && validate(b, "Ranking.User")), 2)) okay = false
-	const c = await attempt(api.getCountryRanking, osu.Rulesets.osu)
+	const c = await attempt(api.getCountryRanking, osu.Ruleset.osu)
 	if (!isOk(c, !c || (c.ranking[0].code === "US" && validate(c, "Ranking.Country")))) okay = false
-	const d = await attempt(api.getSpotlightRanking, osu.Rulesets.taiko, 48)
+	const d = await attempt(api.getSpotlightRanking, osu.Ruleset.taiko, 48)
 	if (!isOk(d, !d || (d.ranking[0].hit_accuracy === 97.85 && validate(d, "Ranking.Spotlight")), 2)) okay = false
 
 	return okay
@@ -289,9 +289,9 @@ const testUser = async (): Promise<boolean> => {
 
 	const c1 = await attempt(api.getUserScores, user_id, "best", undefined, {fails: false, lazer: true}, {limit: 5})
 	if (!isOk(c1, !c1 || (c1.length === 5 && validate(c1, "Score.WithUserBeatmapBeatmapset")))) okay = false
-	const c2 = await attempt(api.getUserScores, 6503700, "firsts", osu.Rulesets.taiko, undefined, {limit: 3})
+	const c2 = await attempt(api.getUserScores, 6503700, "firsts", osu.Ruleset.taiko, undefined, {limit: 3})
 	if (!isOk(c2, !c2 || (c2.length === 3 && validate(c2, "Score.WithUserBeatmapBeatmapset")))) okay = false
-	const c3 = await attempt(api.getUserScores, 9269034, "recent", osu.Rulesets.osu, {fails: true, lazer: true}, {limit: 1})
+	const c3 = await attempt(api.getUserScores, 9269034, "recent", osu.Ruleset.osu, {fails: true, lazer: true}, {limit: 1})
 	// Due to the nature of the test, it might fail, you may adapt the user id
 	if (!isOk(c3, !c3 || (c3.length === 1 && validate(c3, "Score.WithUserBeatmapBeatmapset")))) okay = false
 

@@ -34,7 +34,7 @@ export { Forum } from "./forum.js"
 export { WikiPage } from "./wiki.js"
 export { NewsPost } from "./news.js"
 export { Home } from "./home.js"
-export { Rulesets, Mod, Scope, Spotlight } from "./misc.js"
+export { Ruleset, Mod, Scope, Spotlight } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocket } from "./websocket.js"
 export { Comment } from "./comment.js"
@@ -291,7 +291,8 @@ export class API {
 		if (this.refresh_on_expires && api.refresh_token) {
 			setTimeout(() => {
 				try {
-					this.refreshToken()
+					// check again in case anything has changed
+					if (this.refresh_on_expires && api.refresh_token) {this.refreshToken()}
 				} catch {}
 			}, (json.expires_in - 60) * 1000) // 1 minute before the received date
 		}

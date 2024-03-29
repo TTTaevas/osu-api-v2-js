@@ -29,7 +29,7 @@ async function logUserTopPlayBeatmap(username: string) {
     const api = await osu.API.createAsync({id: "<client_id>", secret: "<client_secret>"})
 
     const user = await api.getUser(username) // We need to get the id of the user in order to request what we want
-    const score = (await api.getUserScores(user, "best", osu.Rulesets.osu, {lazer: false}, {limit: 1}))[0] // Specifying the Ruleset is optional
+    const score = (await api.getUserScores(user, "best", osu.Ruleset.osu, {lazer: false}, {limit: 1}))[0] // Specifying the Ruleset is optional
     const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(score.beatmap, score.mods) // Specifying the mods so the SR is adapted to them
 
     const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`

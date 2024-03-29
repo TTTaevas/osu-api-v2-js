@@ -1,4 +1,4 @@
-import { API, User as UserImport, Rulesets } from "./index.js"
+import { API, User as UserImport, Ruleset } from "./index.js"
 
 export interface Event {
 	created_at: Date
@@ -41,7 +41,7 @@ export namespace Event {
 			slug: string
 			description: string
 			/** If the achievement is for a specific mode only (such as pass a 2* beatmap in taiko) */
-			mode: keyof typeof Rulesets | null
+			mode: keyof typeof Ruleset | null
 			/** @remarks May contain HTML (like have the text between <i></i>) */
 			instructions: string | null
 		}
@@ -90,14 +90,14 @@ export namespace Event {
 		scoreRank: string
 		/** The position achieved, like 14 */
 		rank: number
-		mode: keyof typeof Rulesets
+		mode: keyof typeof Ruleset
 		user: SharedProperties.User
 		beatmap: SharedProperties.Beatmap
 	}
 	
 	export interface RankLost extends Event {
 		type: "rankLost"
-		mode: keyof typeof Rulesets
+		mode: keyof typeof Ruleset
 		user: SharedProperties.User
 		beatmap: SharedProperties.Beatmap
 	}

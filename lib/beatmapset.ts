@@ -1,4 +1,4 @@
-import { API, Beatmap, Rulesets, User } from "./index.js"
+import { API, Beatmap, Ruleset, User } from "./index.js"
 import { getId } from "./misc.js"
 
 export interface Beatmapset {
@@ -60,7 +60,7 @@ export namespace Beatmapset {
 		Loved 		= 4
 	}
 
-	export enum Genres {
+	export enum Genre {
 		Any				= 0,
 		Unspecified		= 1,
 		"Video Game"	= 2,
@@ -77,7 +77,7 @@ export namespace Beatmapset {
 		Jazz			= 14
 	}
 
-	export enum Languages {
+	export enum Language {
 		Any				= 0,
 		Unspecified		= 1,
 		English			= 2,
@@ -247,7 +247,7 @@ export namespace Beatmapset {
 		/** @remarks Unrelated to comments in bundles! */
 		export namespace Comment {
 			export interface WithModes extends Comment {
-				modes: (keyof typeof Rulesets)[]
+				modes: (keyof typeof Ruleset)[]
 			}
 
 			export interface WithDiscussionidPostid extends Comment {
@@ -260,17 +260,17 @@ export namespace Beatmapset {
 			}
 
 			export interface WithDiscussionidPostidNominatorsids extends WithDiscussionidPostid {
-				nominators_ids: User["id"][]
+				nominator_ids: User["id"][]
 			}
 
 			export interface WithDiscussionidPostidOldgenreNewgenre extends WithDiscussionidPostid {
-				old: keyof typeof Genres
-				new: keyof typeof Genres
+				old: keyof typeof Genre
+				new: keyof typeof Genre
 			}
 
 			export interface WithDiscussionidPostidOldlanguageNewlanguage extends WithDiscussionidPostid {
-				old: keyof typeof Languages
-				new: keyof typeof Languages
+				old: keyof typeof Language
+				new: keyof typeof Language
 			}
 
 			export interface WithDiscussionidPostidOldnsfwNewnsfw extends WithDiscussionidPostid {
@@ -301,7 +301,7 @@ export namespace Beatmapset {
 
 			export interface WithDiscussionidPostidSourceuseridSourceuserusername extends WithDiscussionidPostid {
 				source_user_id: User["id"]
-				source_user_name: User["username"]
+				source_user_username: User["username"]
 			}
 
 			export interface WithDiscussionidPostidBeatmapidBeatmapversionNewuseridNewuserusername extends WithDiscussionidPostid {
@@ -385,7 +385,7 @@ export namespace Beatmapset {
 			converts: Beatmap.Extended.WithFailtimes[]
 			current_nominations: {
 				beatmapset_id: Beatmapset["id"]
-				rulesets: Rulesets[]
+				rulesets: Ruleset[]
 				reset: boolean
 				user_id: User["id"]
 			}[]
@@ -394,12 +394,12 @@ export namespace Beatmapset {
 				description: string
 			}
 			genre: {
-				id: Genres
-				name: keyof typeof Genres
+				id: Genre
+				name: keyof typeof Genre
 			}
 			language: {
-				id: Languages
-				name: keyof typeof Languages
+				id: Language
+				name: keyof typeof Language
 			}
 			pack_tags: string[]
 			ratings: number[]
@@ -535,7 +535,7 @@ export namespace Beatmapset {
 		/** Various filters to activate */
 		general?: ("Recommended difficulty" | "Include converted beatmaps" | "Subscribed mappers" | "Spotlighted beatmaps" | "Featured Artists")[],
 		/** Only get sets that have maps that you can play in the ruleset of your choice */
-		mode?: Rulesets,
+		mode?: Ruleset,
 		/** Filter in sets depending on their status or on their relation with the authorized user (defaults to **all that have a leaderboard**) */
 		categories?: "Any" | "Ranked" | "Qualified" | "Loved" | "Favourites" | "Pending" | "WIP" | "Graveyard" | "My Maps",
 		/** Use this to hide all sets that are marked as explicit */
@@ -545,13 +545,13 @@ export namespace Beatmapset {
 		 * @remarks "Any"/0 actually looks up sets that specifically have the Genre "Any" such as `5947`, it's excluded because it's counter-intuitive
 		 * and near useless (but you can do something like `1-1` if you actually want that!)
 		 */
-		genre?: Exclude<Genres, 0>,
+		genre?: Exclude<Genre, 0>,
 		/** 
 		 * Specify the spoken language of the music of the beatmapsets you're searching for (don't specify to get any language)
 		 * @remarks "Any"/0 actually looks up sets that specifically have the Language "Any" (and no set has that), it's excluded because it's counter-intuitive
 		 * and near useless (but you can do something like `1-1` if you actually want that!)
 		 */
-		language?: Exclude<Languages, 0>,
+		language?: Exclude<Language, 0>,
 		/** Should all sets have a video, a storyboard, maybe both at once? */
 		extra?: ("must_have_video" | "must_have_storyboard")[],
 		/** Does the authorized user with osu!supporter have already achieved certain ranks on those sets? */

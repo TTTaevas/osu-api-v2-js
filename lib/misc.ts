@@ -13,7 +13,7 @@ export type Mod = {
 	settings?: {[k: string]: any}
 }
 
-export enum Rulesets {
+export enum Ruleset {
 	osu 	= 0,
 	taiko 	= 1,
 	fruits	= 2,

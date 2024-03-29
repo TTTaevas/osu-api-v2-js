@@ -1,4 +1,4 @@
-import { API, Beatmap, Beatmapset, Changelog, Mod, Multiplayer as MultiplayerImport, Rulesets, User } from "./index.js"
+import { API, Beatmap, Beatmapset, Changelog, Mod, Multiplayer as MultiplayerImport, Ruleset, User } from "./index.js"
 import { getId } from "./misc.js"
 
 interface Bare {
@@ -49,7 +49,7 @@ export namespace Score {
 		ended_at: Date
 		maximum_statistics: Statistics
 		mods: Mod[]
-		ruleset_id: Rulesets
+		ruleset_id: Ruleset
 		started_at: Date
 		statistics: Statistics
 		total_score: number
@@ -88,8 +88,8 @@ export namespace Score {
 	 * @obtainableFrom {@link API.getBeatmapUserScores}
 	 */
 	export interface Legacy extends Score {
-		mode: keyof typeof Rulesets
-		mode_int: Rulesets
+		mode: keyof typeof Ruleset
+		mode_int: Ruleset
 		mods: string[]
 		score: number
 		perfect: boolean

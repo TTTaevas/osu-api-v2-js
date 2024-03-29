@@ -1,4 +1,4 @@
-import { API, Beatmapset, Rulesets, Spotlight as SpotlightInterface, User } from "./index.js"
+import { API, Beatmapset, Ruleset, Spotlight as SpotlightImport, User } from "./index.js"
 import { getId } from "./misc.js"
 
 interface Ranking {
@@ -37,7 +37,7 @@ export namespace Ranking {
 	export interface Spotlight {
 		beatmapsets: Beatmapset.Extended[]
 		ranking: User.Statistics.WithUser[]
-		spotlight: SpotlightInterface.WithParticipantcount
+		spotlight: SpotlightImport.WithParticipantcount
 	}
 
 	/**
@@ -46,7 +46,7 @@ export namespace Ranking {
 	 * @param type Rank players by their performance points or by their ranked score?
 	 * @param config Specify which page, country, filter out non-friends...
 	 */
-	export async function getUser(this: API, ruleset: Rulesets, type: "performance" | "score", config?: {
+	export async function getUser(this: API, ruleset: Ruleset, type: "performance" | "score", config?: {
 		/** Imagine the array you get as a page, it can only have a maximum of 50 players, while 50 others may be on the next one */
 		page?: number,
 		/** What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user */
@@ -56,7 +56,7 @@ export namespace Ranking {
 		/** If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k! */
 		variant?: "4k" | "7k"
 	}): Promise<Ranking.User> {
-		return await this.request("get", `rankings/${Rulesets[ruleset]}/${type}`,
+		return await this.request("get", `rankings/${Ruleset[ruleset]}/${type}`,
 		{page: config?.page, filter: config?.filter, country: config?.country, variant: config?.variant})
 	}
 
@@ -65,8 +65,8 @@ export namespace Ranking {
 	 * @param ruleset On which Ruleset should the countries be compared?
 	 * @param page Imagine the array you get as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one (defaults to **1**)
 	 */
-	export async function getCountry(this: API, ruleset: Rulesets, page: number = 1): Promise<Ranking.Country> {
-		return await this.request("get", `rankings/${Rulesets[ruleset]}/country`, {page})
+	export async function getCountry(this: API, ruleset: Ruleset, page: number = 1): Promise<Ranking.Country> {
+		return await this.request("get", `rankings/${Ruleset[ruleset]}/country`, {page})
 	}
 
 	/** Get the top 50 players who have the most total kudosu! */
@@ -81,8 +81,8 @@ export namespace Ranking {
 	 * @param spotlight The spotlight in question
 	 * @param filter What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user (defaults to **all**)
 	 */
-	export async function getSpotlight(this: API, ruleset: Rulesets, spotlight: SpotlightInterface["id"] | SpotlightInterface, filter: "all" | "friends" = "all"):
+	export async function getSpotlight(this: API, ruleset: Ruleset, spotlight: SpotlightImport["id"] | SpotlightImport, filter: "all" | "friends" = "all"):
 	Promise<Ranking.Spotlight> {
-		return await this.request("get", `rankings/${Rulesets[ruleset]}/charts`, {spotlight: getId(spotlight), filter})
+		return await this.request("get", `rankings/${Ruleset[ruleset]}/charts`, {spotlight: getId(spotlight), filter})
 	}
 }
