@@ -156,10 +156,20 @@ const testBeatmapsetDiscussion = async (): Promise<boolean> => {
 const testBeatmapset = async (): Promise<boolean> => {
 	console.log("\n===> BEATMAPSET")
 	let okay = true
+
 	const a = await attempt(api.getBeatmapset, 1971037)
 	if (!isOk(a, !a || (a.submitted_date?.toISOString().substring(0, 10) === "2023-04-07", validate(a, "Beatmapset.Extended.Plus")))) okay = false
-	const b = await attempt(api.getBeatmapsetEvents)
-	if (!isOk(b, !b || (validate(b.events, "Beatmapset.Event.Any") && validate(b.users, "User.WithGroups")))) okay = false
+
+	const b1 = await attempt(api.getBeatmapsetEvents)
+	if (!isOk(b1, !b1 || (validate(b1.events, "Beatmapset.Event.Any") && validate(b1.users, "User.WithGroups")))) okay = false
+	const b2 = await attempt(api.getBeatmapsetEvents, {}, ["beatmap_owner_change", "genre_edit", "language_edit", "nsfw_toggle", "offset_edit", "tags_edit"])
+	if (!isOk(b2, !b2 || (validate(b2.events, "Beatmapset.Event.AnyBeatmapChange")))) okay = false
+	const b3 = await attempt(api.getBeatmapsetEvents, {}, ["qualify", "love", "nominate", "remove_from_loved", "nomination_reset", "nomination_reset_received"])
+	if (!isOk(b3, !b3 || (validate(b3.events, "Beatmapset.Event.AnyBeatmapsetStatusChange")))) okay = false
+	const b4 = await attempt(api.getBeatmapsetEvents, {}, ["discussion_delete", "discussion_restore", "kudosu_recalculate", "kudosu_allow", "kudosu_deny",
+	"discussion_post_delete", "discussion_post_restore", "discussion_lock", "discussion_unlock", "issue_resolve", "issue_reopen", "kudosu_gain", "kudosu_lost"])
+	if (!isOk(b4, !b4 || (validate(b4.events, "Beatmapset.Event.AnyDiscussionChange")))) okay = false
+
 	return okay
 }
 

@@ -98,7 +98,7 @@ export namespace Beatmapset {
 	export interface Event {
 		id: number
 		/** 
-		 * @privateRemarks Searching for `approve` events brings nothing, yet the code seems to indicate it exists, so I'm keeping it here
+		 * @remarks "approve" is currently not used, it's here just in case that ever changes
 		 * https://github.com/ppy/osu-web/blob/master/app/Models/BeatmapsetEvent.php
 		 */
 		type: "nominate" | "love" | "remove_from_loved" | "qualify" | "disqualify" | "approve" | "rank" |

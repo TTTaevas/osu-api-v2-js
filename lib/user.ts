@@ -97,7 +97,7 @@ export namespace User {
 		max_friends: number
 		occupation: string | null
 		playmode: keyof typeof Ruleset
-		playstyle: string[]
+		playstyle: string[] | null
 		post_count: number
 		profile_order: ("me" | "recent_activity" | "beatmaps" | "historical" | "kudosu" | "top_ranks" | "medals")[]
 		title: string | null
@@ -210,7 +210,7 @@ export namespace User {
 
 	export namespace Statistics {
 		export interface WithCountryrank extends Statistics {
-			country_rank: number
+			country_rank: number | null
 		}
 
 		export interface WithUser extends Statistics {

@@ -49,7 +49,7 @@ export namespace Chat {
 		}
 
 		/**
-		 * Get a ChatChannel, and the users in it if it is a private channel!
+		 * Get a ChatChannel that you have joined, and the users in it if it is a private channel!
 		 * @scope {@link Scope"chat.read"}
 		 * @param channel The channel in question
 		 * @remarks Will 404 if the user has not joined the channel (use `joinChatChannel` for that)
@@ -201,6 +201,7 @@ export namespace Chat {
 	Promise<UserSilence[]> {
 		const history_since = since?.user_silence ? getId(since.user_silence) : undefined
 		const message_since = since?.message ? getId(since.message, "message_id") : undefined
-		return await this.request("post", "chat/ack", {history_since, since: message_since})
+		const response = await this.request("post", "chat/ack", {history_since, since: message_since})
+		return response.silences // It's the only property
 	}
 }
