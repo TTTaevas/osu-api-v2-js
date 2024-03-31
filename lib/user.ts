@@ -266,7 +266,7 @@ export namespace User {
 	export async function getMultiple(this: API, users: Array<User["id"] | User>): Promise<User.WithCountryCoverGroupsStatisticsrulesets[]> {
 		const ids = users.map((user) => getId(user))
 		const response = await this.request("get", "users", {ids})
-		return response.users
+		return response.users // It's the only property
 	}
 
 	/**

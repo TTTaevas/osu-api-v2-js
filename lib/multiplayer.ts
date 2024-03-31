@@ -15,7 +15,7 @@ export namespace Multiplayer {
 		max_attempts: number | null
 		name: string
 		participant_count: number
-		playlist: Multiplayer.Room.PlaylistItem[]
+		playlist: Room.PlaylistItem[]
 		queue_mode: string
 		recent_participants: User[]
 		starts_at: Date
@@ -99,11 +99,27 @@ export namespace Multiplayer {
 			user: User.WithCountry
 		}
 
+		export namespace Leader {
+			export interface WithPosition extends Leader {
+				position: number
+			}
+
+			/**
+			 * Get the room stats of all the users of that room!
+			 * @scope {@link Scope"public"}
+			 * @param room The room or the id of the room in question
+			 * @returns An object with the leaderboard, and the score and position of the authorized user under `user_score`
+			 */
+			export async function getMultiple(this: API, room: number | Room): Promise<{leaderboard: Leader[], user_score: Leader.WithPosition | null}> {
+				return await this.request("get", `rooms/${getId(room)}/leaderboard`)
+			}
+		}
+
 		/**
 		 * Get data about a lazer multiplayer room (realtime or playlists)!
 		 * @param room The room or the id of the room, can be found at the end of its URL (after `/multiplayer/rooms/`)
 		 */
-		export async function getOne(this: API, room: number | Multiplayer.Room): Promise<Multiplayer.Room> {
+		export async function getOne(this: API, room: number | Room): Promise<Room> {
 			return await this.request("get", `rooms/${getId(room)}`)
 		}
 
@@ -116,18 +132,8 @@ export namespace Multiplayer {
 		 * @param sort Sort (where most recent is first) by creation date or end date, defaults to the creation date
 		 */
 		export async function getMultiple(this: API, type: "playlists" | "realtime", mode: "active" | "all" | "ended" | "participated" | "owned",
-		limit: number = 10, sort: "ended" | "created" = "created"): Promise<Multiplayer.Room[]> {
+		limit: number = 10, sort: "ended" | "created" = "created"): Promise<Room[]> {
 			return await this.request("get", "rooms", {type_group: type, mode, limit, sort})
-		}
-
-		/**
-		 * Get the room stats of all the users of that room!
-		 * @scope {@link Scope"public"}
-		 * @param room The room or the id of the room in question
-		 */
-		export async function getLeaderboard(this: API, room: number | Multiplayer.Room): Promise<Multiplayer.Room.Leader[]> {
-			const response = await this.request("get", `rooms/${getId(room)}/leaderboard`)
-			return response.leaderboard
 		}
 	}
 
@@ -177,8 +183,8 @@ export namespace Multiplayer {
 		 * Get data of a multiplayer lobby from the stable (non-lazer) client that have URLs with `community/matches` or `mp`
 		 * @param match The id of a match can be found at the end of its URL
 		 */
-		export async function getOne(this: API, match: Match.Info["id"] | Match.Info): Promise<Multiplayer.Match> {
-			const response = await this.request("get", `matches/${getId(match)}`) as Multiplayer.Match
+		export async function getOne(this: API, match: Info["id"] | Info): Promise<Match> {
+			const response = await this.request("get", `matches/${getId(match)}`) as Match
 			// Fix `events[i].game.scores[e].perfect` being a number instead of a boolean
 			for (let i = 0; i < response.events.length; i++) {
 				for (let e = 0; e < Number(response.events[i].game?.scores.length); e++) {
@@ -198,12 +204,12 @@ export namespace Multiplayer {
 			 * @remarks You can use this argument differently to get all matches before/after (depending of `query.sort`) a certain match,
 			 * by adding +1/-1 to its id! So if you want all matches after match_id 10 with sorting is_desc, just have this argument be 10 + 1, or 11!
 			 */
-			first_match_in_array?: Match.Info["id"] | Match.Info
+			first_match_in_array?: Info["id"] | Info
 			/** The maximum amount of elements returned in the array (defaults to **50**) */
 			limit?: number
 			/** "id_desc" has the biggest id (most recent start_time) at the beginning of the array, "id_asc" is the opposite (defaults to **id_desc**) */
 			sort?: "id_desc" | "id_asc"
-		}): Promise<Multiplayer.Match.Info[]> {
+		}): Promise<Info[]> {
 			// `first_match_in_array` is a cool way to use the endpoint's cursor
 			const cursor = query?.first_match_in_array ? {match_id: getId(query.first_match_in_array) + (query?.sort === "id_asc" ? -1 : 1)} : undefined
 			const response = await this.request("get", "matches", {cursor, limit: query?.limit, sort: query?.sort})

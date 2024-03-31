@@ -90,7 +90,6 @@ function validate(object: unknown, schemaName: string): boolean {
 const testChat = async (): Promise<boolean> => {
 	let okay = true
 	console.log("\n===> CHAT")
-	if (server === "https://osu.ppy.sh") console.warn("⚠️ DOING THE TESTS ON THE ACTUAL OSU SERVER")
 
 	const a = await attempt(api.getChatChannels)
 	if (!isOk(a, !a || (validate(a, "Chat.Channel")))) okay = false
@@ -127,15 +126,23 @@ const testChat = async (): Promise<boolean> => {
 	return okay
 }
 
-// const testForum = async (): Promise<boolean> => {
-// 	let okay = true
-// 	console.log("\n===> FORUM")
+const testForum = async (): Promise<boolean> => {
+	let okay = true
+	console.log("\n===> FORUM")
+	const a = await attempt(api.createForumTopic, 85, "osu-api-v2-js test post", `Please ignore this forum post
+It was automatically made for the sole purpose of testing [url=https://github.com/TTTaevas/osu-api-v2-js]osu-api-v2-js[/url]`,
+	{title: "test poll", options: ["yes", "maybe", "no"], length_days: 14, vote_change: true})
+	if (!isOk(a, !a || (validate(a.topic, "Forum.Topic") && validate(a.post, "Forum.Post")))) okay = false
 
-// 	const a = await attempt(api.getSpotlights)
-// 	if (!isOk(a, !a || (a.length >= 132 && validate(a, "Spotlight")))) okay = false
+	if (a) {
+		const b = await attempt(api.editForumTopicTitle, a.topic, "osu-api-v2-js test post!")
+		if (!isOk(b, !b || (b.title === "osu-api-v2-js test post!" && validate(b, "Forum.Topic")))) okay = false
+		const c = await attempt(api.editForumPost, a.post, a.post.body.raw + " <3")
+		if (!isOk(c, !c || (c.body.raw === a.post.body.raw + " <3" && validate(c, "Forum.Post")))) okay = false
+	}
 
-// 	return okay
-// }
+	return okay
+}
 
 const testMultiplayer = async (): Promise<boolean> => {
 	let okay = true
@@ -148,11 +155,11 @@ const testMultiplayer = async (): Promise<boolean> => {
 
 	if (a1 && a1.length) {
 		const b1 = await attempt(api.getRoomLeaderboard, a1[0])
-		if (!isOk(b1, !b1 || (validate(b1, "Multiplayer.Room.Leader")))) okay = false
+		if (!isOk(b1, !b1 || (validate(b1.leaderboard, "Multiplayer.Room.Leader")))) okay = false
 	}
 	if (a2 && a2.length) {
 		const b2 = await attempt(api.getRoomLeaderboard, a2[0])
-		if (!isOk(b2, !b2 || (validate(b2, "Multiplayer.Room.Leader")))) okay = false
+		if (!isOk(b2, !b2 || (validate(b2.leaderboard, "Multiplayer.Room.Leader")))) okay = false
 	}
 
 	return okay
@@ -185,6 +192,8 @@ const testUser = async (): Promise<boolean> => {
 }
 
 const test = async (id: number | string | undefined, secret: string | undefined, redirect_uri: string | undefined): Promise<void> => {
+	if (server === "https://osu.ppy.sh") console.warn("⚠️ DOING THE TESTS ON THE ACTUAL OSU SERVER")
+
 	if (id === undefined) {throw new Error("no ID env var")}
 	if (secret === undefined) {throw new Error("no SECRET env var")}
 	if (redirect_uri === undefined) {throw new Error("no REDIRECT_URI env var")}
@@ -197,7 +206,7 @@ const test = async (id: number | string | undefined, secret: string | undefined,
 
 	const tests = [
 		testChat,
-		// testForum,
+		testForum,
 		testMultiplayer,
 		testScore,
 		testUser

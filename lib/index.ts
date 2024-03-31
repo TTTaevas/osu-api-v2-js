@@ -633,7 +633,7 @@ export class API {
 	readonly getRooms = Multiplayer.Room.getMultiple
 
 	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
-	readonly getRoomLeaderboard = Multiplayer.Room.getLeaderboard
+	readonly getRoomLeaderboard = Multiplayer.Room.Leader.getMultiple
 
 	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
 	readonly getPlaylistItemScores = Multiplayer.Room.PlaylistItem.getScores

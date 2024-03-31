@@ -126,6 +126,7 @@ export namespace Forum {
 		 * @param topic The topic or the id of the topic you're making your reply in
 		 * @param text Your reply! Your message!
 		 * @returns The reply you've made, as a Forum.Post!
+		 * @remarks Replying when the last post was made by the authorized user will likely cause the server to return a 403
 		 */
 		export async function reply(this: API, topic: Topic["id"] | Topic, text: string): Promise<Post> {
 			return await this.request("post", `forums/topics/${getId(topic)}/reply`, {body: text})
