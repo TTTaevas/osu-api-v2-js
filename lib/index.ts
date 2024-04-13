@@ -87,27 +87,26 @@ export function generateAuthorizationURL(client_id: number, redirect_uri: string
 
 /** If the `API` throws an error, it should always be an `APIError`! */
 export class APIError {
+	/** The reason why things didn't go as expected */
 	message: string
+	/** The server to which the request was sent */
 	server: string
+	/** The type of resource that was requested from the server */
 	endpoint: string
+	/** The filters that were used to specify what resource was wanted */
 	parameters: object
+	/** The status code that was returned by the server, if there is one */
 	status_code?: number
+	/** The error that caused the api to throw an `APIError` in the first place, if there is one */
 	original_error?: Error
-	/**
-	 * @param message The reason why things didn't go as expected
-	 * @param server The server to which the request was sent
-	 * @param endpoint The type of resource that was requested from the server
-	 * @param parameters The filters that were used to specify what resource was wanted
-	 * @param status_code The status code that was returned by the server, if there is one
-	 * @param original_error The error that caused the api to throw an `APIError` in the first place, if there is one
-	 */
-	constructor(message: string, server: string, endpoint: string, parameters: object, status_code?: number, error?: Error) {
+
+	constructor(message: string, server: string, endpoint: string, parameters: object, status_code?: number, original_error?: Error) {
 		this.message = message
 		this.server = server
 		this.endpoint = endpoint
 		this.parameters = parameters
 		this.status_code = status_code
-		this.original_error = error
+		this.original_error = original_error
 	}
 }
 
@@ -130,7 +129,7 @@ export class API {
 	 */
 	server: string
 	/**
-	 * The maximum **amount of seconds** requests should take before returning an answer
+	 * The maximum **amount of seconds** requests should take before returning an answer (defaults to **20**)
 	 * @remarks 0 means no maximum, no timeout
 	 */
 	timeout: number
@@ -171,7 +170,7 @@ export class API {
 		server?: string
 		/** The details of your application client, necessary for using the refresh_token */
 		client?: {id: number, secret: string}
-		/** How much stuff should the package log */
+		/** How much stuff should the package log (defaults to **none**) */
 		verbose?: "none" | "errors" | "all"
 		/** If a 401 error is gotten from the server while it has a refresh token, should it use it and try the request again? (defaults to **true**) */
 		refresh_on_401?: boolean
@@ -245,8 +244,8 @@ export class API {
 	 * @param server Where the "notification websocket/server" is
 	 * (defaults to **the api's `server`'s protocol and a maximum of 1 subdomain being replaced by "wss://notify."** (so usually `wss://notify.ppy.sh`))
 	*/
-	public generateWebSocket(
-	server: string =`${this.server.replace(/^\w*:\/\/(?:[A-Za-z0-9]+[.](?=[A-Za-z0-9]+[.]([A-Za-z0-9]+)$))?/g, "wss://notify.")}`):WebSocket{
+	public generateWebSocket(server: string = `${this.server.replace(/^\w*:\/\/(?:[A-Za-z0-9]+[.](?=[A-Za-z0-9]+[.]([A-Za-z0-9]+)$))?/g, "wss://notify.")}`):
+	WebSocket {
 		return new WebSocket(server, [], {
 			headers: {
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
