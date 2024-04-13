@@ -47,7 +47,7 @@ export { Comment } from "./comment.js"
 function correctType(x: any): any {
 	const bannedProperties = [
 		"name", "artist", "title", "location", "interests", "occupation", "twitter",
-		"discord", "version", "author", "raw", "bbcode", "title", "message", "creator"
+		"discord", "version", "author", "raw", "bbcode", "title", "message", "creator", "source"
 	]
 
 	if (typeof x === "boolean") {
@@ -90,18 +90,24 @@ export class APIError {
 	message: string
 	server: string
 	endpoint: string
-	parameters?: object
+	parameters: object
+	status_code?: number
+	original_error?: Error
 	/**
 	 * @param message The reason why things didn't go as expected
 	 * @param server The server to which the request was sent
 	 * @param endpoint The type of resource that was requested from the server
 	 * @param parameters The filters that were used to specify what resource was wanted
+	 * @param status_code The status code that was returned by the server, if there is one
+	 * @param original_error The error that caused the api to throw an `APIError` in the first place, if there is one
 	 */
-	constructor(message: string, server: string, endpoint: string, parameters?: object) {
+	constructor(message: string, server: string, endpoint: string, parameters: object, status_code?: number, error?: Error) {
 		this.message = message
 		this.server = server
 		this.endpoint = endpoint
 		this.parameters = parameters
+		this.status_code = status_code
+		this.original_error = error
 	}
 }
 
@@ -282,6 +288,9 @@ export class API {
 			body: JSON.stringify(body),
 			signal: controller.signal
 		})
+		.catch((e) => {
+			throw new APIError("Failed to fetch a token", this.server, "oauth/token", body, undefined, e)
+		})
 		.finally(() => {
 			if (timer) {
 				clearTimeout(timer)
@@ -291,7 +300,7 @@ export class API {
 		const json: any = await response.json()
 		if (!json.access_token) {
 			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-			throw new APIError("No token obtained", this.server, "oauth/token", body)
+			throw new APIError("No token obtained", this.server, "oauth/token", body, response.status)
 		}
 		api.token_type = json.token_type
 		if (json.refresh_token) {api.refresh_token = json.refresh_token}
@@ -358,8 +367,11 @@ export class API {
 	public async request(method: "get" | "post" | "put" | "delete", endpoint: string,
 	parameters: {[k: string]: any} = {}, info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}): Promise<any> {
 		const max_tries = 5
-		let err = "none"
 		let to_retry = false
+
+		let error_object: Error | undefined
+		let error_code: number | undefined
+		let error_string = "none"
 
 		// For GET requests specifically, requests need to be shaped in very particular ways
 		if (parameters !== undefined && method === "get") {
@@ -430,7 +442,8 @@ export class API {
 		})
 		.catch((error: AbortError | FetchError) => {
 			this.log(true, error.message)
-			err = `${error.name} (${error.name === "FetchError" ? error.errno : error.type})`
+			error_object = error
+			error_string = `${error.name} (${error.name === "FetchError" ? error.errno : error.type})`
 		})
 		.finally(() => {
 			if (timer) {
@@ -440,7 +453,8 @@ export class API {
 
 		if (!response || !response.ok) {
 			if (response) {
-				err = response.statusText
+				error_code = response.status
+				error_string = response.statusText
 
 				if (response.status === 401) {
 					if (this.refresh_on_401 && this.refresh_token && !info.just_refreshed) {
@@ -477,7 +491,7 @@ export class API {
 				return await this.request(method, endpoint, parameters, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
-			throw new APIError(err, `${this.server}/api/v2`, endpoint, parameters)
+			throw new APIError(error_string, `${this.server}/api/v2`, endpoint, parameters, error_code, error_object)
 		}
 
 		this.log(false, response.statusText, response.status, {endpoint, parameters})
