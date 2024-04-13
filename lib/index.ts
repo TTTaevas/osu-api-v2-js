@@ -1,4 +1,4 @@
-import fetch, { FetchError } from "node-fetch"
+import fetch, { AbortError, FetchError } from "node-fetch"
 import { WebSocket } from "ws"
 
 import { User } from "./user.js"
@@ -123,6 +123,11 @@ export class API {
 	 * @remarks For tokens, requests will be sent to the `oauth/token` route, other requests will be sent to the `api/v2` route
 	 */
 	server: string
+	/**
+	 * The maximum **amount of seconds** requests should take before returning an answer
+	 * @remarks 0 means no maximum, no timeout
+	 */
+	timeout: number
 
 	/** If true, upon failing a request due to a 401, it will use the `refresh_token` and retry the request */
 	refresh_on_401: boolean
@@ -143,7 +148,7 @@ export class API {
 	 * **Please use the API's `createAsync` method instead of the default constructor** if you don't have at least an `access_token`!
 	 * An API object without an `access_token` is pretty much useless!
 	 */
-	constructor({access_token, token_type, refresh_token, expires, scopes, user, server, client, verbose, refresh_on_401, refresh_on_expires}: {
+	constructor({access_token, token_type, refresh_token, expires, scopes, user, server, client, verbose, refresh_on_401, refresh_on_expires, timeout}: {
 		/** The token used in basically all requests! */
 		access_token?: string
 		/** Should always be "Bearer" */
@@ -166,6 +171,8 @@ export class API {
 		refresh_on_401?: boolean
 		/** Should the application schedule a task to silently refresh the token right before the access_token expires? (defaults to **true**) */
 		refresh_on_expires?: boolean
+		/** How many **seconds** maximum should a request take, if there should be a maximum? (defaults to **20**) */
+		timeout?: number
 	}) {
 		this.client = client ?? {id: 0, secret: ""}
 		this.access_token = access_token ?? ""
@@ -178,6 +185,7 @@ export class API {
 		this.scopes = scopes
 		this.refresh_token = refresh_token
 		this.user = user
+		this.timeout = timeout !== undefined ? timeout : 20
 	}
 
 	/**
@@ -198,12 +206,15 @@ export class API {
 			code: string
 		},
 		verbose: "none" | "errors" | "all" = "none",
-		server: string = "https://osu.ppy.sh"
+		server: string = "https://osu.ppy.sh",
+		/** @remarks In **seconds** */
+		timeout: number = 20
 	): Promise<API> {
 		const new_api = new API({
 			client,
 			verbose,
-			server
+			server,
+			timeout
 		})
 
 		return user ?
@@ -256,6 +267,11 @@ export class API {
 		code?: string
 		refresh_token?: string	
 	}, api: API): Promise<API> {
+		const controller = new AbortController()
+		const timer = this.timeout > 0 ? setTimeout(() => {
+			controller.abort()
+		}, this.timeout * 1000) : false
+
 		const response = await fetch(`${this.server}/oauth/token`, {
 			method: "post",
 			headers: {
@@ -263,7 +279,13 @@ export class API {
 				"Content-Type": "application/json",
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)"
 			},
-			body: JSON.stringify(body)
+			body: JSON.stringify(body),
+			signal: controller.signal
+		})
+		.finally(() => {
+			if (timer) {
+				clearTimeout(timer)
+			}
 		})
 
 		const json: any = await response.json()
@@ -389,6 +411,11 @@ export class API {
 			return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
 		}).join("&")) : "")
 
+		const controller = new AbortController()
+		const timer = this.timeout > 0 ? setTimeout(() => {
+			controller.abort()
+		}, this.timeout * 1000) : false
+
 		const response = await fetch(url, {
 			method,
 			headers: {
@@ -398,11 +425,17 @@ export class API {
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`
 			},
-			body: method !== "get" ? JSON.stringify(parameters) : undefined // parameters are here if request is NOT GET
+			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
+			signal: controller.signal
 		})
-		.catch((error: FetchError) => {
+		.catch((error: AbortError | FetchError) => {
 			this.log(true, error.message)
-			err = `${error.name} (${error.errno})`
+			err = `${error.name} (${error.name === "FetchError" ? error.errno : error.type})`
+		})
+		.finally(() => {
+			if (timer) {
+				clearTimeout(timer)
+			}
 		})
 
 		if (!response || !response.ok) {
