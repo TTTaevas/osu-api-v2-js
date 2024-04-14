@@ -134,9 +134,25 @@ export class API {
 	 */
 	timeout: number
 
-	/** If true, upon failing a request due to a 401, it will use the `refresh_token` and retry the request */
+	/** Configure how this instance should behave when it comes to retrying a request */
+	retry: {
+		/** If true, doesn't retry under any circumstances (defaults to **false**) */
+		disabled: boolean
+		/** In seconds, how long should it wait until retrying? (defaults to **2**) */
+		delay: number
+		/** How many retries maximum before throwing an `APIError` (defaults to **5**) */
+		maximum_amount: number
+		/** Should it retry a request upon successfully refreshing the token due to `refresh_on_401` being `true`? (defaults to **true**) */
+		on_automatic_refresh: boolean
+		/** Should it retry a request if that request failed because it has been aborted by the `timeout`? (defaults to **false**) */
+		on_timeout: boolean
+		/** Upon failing a request and receiving a response, because of which received status code should the request be retried? (defaults to **[429]**) */
+		on_status_codes: number[]
+	}
+
+	/** If true, upon failing a request due to a 401, it will use the `refresh_token` if it exists (defaults to **true**) */
 	refresh_on_401: boolean
-	/** If true, the application will silently use the `refresh_token` right before the `access_token` expires, as determined by `expires` */
+	/** If true, the application will silently use the `refresh_token` right before the `access_token` expires, as determined by `expires` (defaults to **true**) */
 	refresh_on_expires: boolean
 
 	/**
@@ -191,6 +207,14 @@ export class API {
 		this.refresh_token = refresh_token
 		this.user = user
 		this.timeout = timeout !== undefined ? timeout : 20
+		this.retry = {
+			disabled: false,
+			delay: 2,
+			maximum_amount: 5,
+			on_automatic_refresh: true,
+			on_timeout: false,
+			on_status_codes: [429]
+		}
 	}
 
 	/**
@@ -365,9 +389,7 @@ export class API {
 	 */
 	public async request(method: "get" | "post" | "put" | "delete", endpoint: string,
 	parameters: {[k: string]: any} = {}, info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}): Promise<any> {
-		const max_tries = 5
 		let to_retry = false
-
 		let error_object: Error | undefined
 		let error_code: number | undefined
 		let error_string = "none"
@@ -424,6 +446,9 @@ export class API {
 
 		const controller = new AbortController()
 		const timer = this.timeout > 0 ? setTimeout(() => {
+			if (this.retry.on_timeout) {
+				to_retry = true
+			}
 			controller.abort()
 		}, this.timeout * 1000) : false
 
@@ -455,11 +480,15 @@ export class API {
 				error_code = response.status
 				error_string = response.statusText
 
+				if (this.retry.on_status_codes.includes(response.status)) {
+					to_retry = true
+				}
+
 				if (response.status === 401) {
 					if (this.refresh_on_401 && this.refresh_token && !info.just_refreshed) {
 						this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
 						
-						if (await this.refreshToken()) {
+						if (await this.refreshToken() && this.retry.on_automatic_refresh) {
 							to_retry = true
 							info.just_refreshed = true
 						}
@@ -472,9 +501,8 @@ export class API {
 					this.log(true, "Server responded with status code 422, you may be unable to use those parameters together!")
 				} else if (response.status === 429) {
 					this.log(true, "Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
-					to_retry = true
 				} else {
-					this.log(true, "Server responded with status:", response.status)
+					this.log(true, "Server responded with status:", response.status, response.statusText)
 				}
 			}
 
@@ -483,10 +511,9 @@ export class API {
 			 * However, spamming the server during the same second in any of these circumstances would be pointless
 			 * So we wait for 1 to 5 seconds to make our request, 5 times maximum
 			*/
-			if (to_retry === true && info.number_try < max_tries) {
+			if (to_retry === true && this.retry.disabled === false && info.number_try < this.retry.maximum_amount) {
 				this.log(true, "Will request again in a few instants...", `(Try #${info.number_try})`)
-				const to_wait = (Math.floor(Math.random() * (500 - 100 + 1)) + 100) * 10
-				await new Promise(res => setTimeout(res, to_wait))
+				await new Promise(res => setTimeout(res, this.retry.delay))
 				return await this.request(method, endpoint, parameters, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
@@ -494,7 +521,7 @@ export class API {
 		}
 
 		this.log(false, response.statusText, response.status, {endpoint, parameters})
-		// 204 means the request worked as intended and did not give us anything, so we can't `.json()` the response
+		// 204 means the request worked as intended and did not give us anything, so just return nothing
 		if (response.status === 204) return undefined
 
 		const arrBuff = await response.arrayBuffer()
