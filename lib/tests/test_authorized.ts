@@ -224,7 +224,6 @@ const test = async (id: number | string | undefined, secret: string | undefined,
 	} else {
 		throw new Error("❌ Something in the test went wrong...")
 	}
-	process.exit()
 }
 
 const id = server === "https://osu.ppy.sh" ? process.env.ID : process.env.DEV_ID

@@ -85,7 +85,7 @@ export function generateAuthorizationURL(client_id: number, redirect_uri: string
 	return `${server}/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${s}&response_type=code`
 }
 
-/** If the `API` throws an error, it should always be an `APIError`! */
+/** If the {@link API} throws an error, it should always be an {@link APIError}! */
 export class APIError {
 	/** The reason why things didn't go as expected */
 	message: string
@@ -97,7 +97,7 @@ export class APIError {
 	parameters: object
 	/** The status code that was returned by the server, if there is one */
 	status_code?: number
-	/** The error that caused the api to throw an `APIError` in the first place, if there is one */
+	/** The error that caused the api to throw an {@link APIError} in the first place, if there is one */
 	original_error?: Error
 
 	constructor(message: string, server: string, endpoint: string, parameters: object, status_code?: number, original_error?: Error) {
@@ -110,7 +110,7 @@ export class APIError {
 	}
 }
 
-/** You can create an API instance without directly providing an access_token by using the API's `createAsync` function! {@link API.createAsync} */
+/** You can create an API instance without directly providing an access_token by using {@link API.createAsync}! */
 export class API {
 	access_token: string
 	client: {
@@ -119,8 +119,17 @@ export class API {
 	}
 	/** Should always be "Bearer" */
 	token_type: string
+
+	private _expires!: Date
 	/** The expiration date of your access_token */
-	expires: Date
+	get expires(): Date {
+		return this._expires
+	}
+	set expires(date: Date) {
+		this._expires = date
+		this.updateRefreshTimeout()
+	}
+
 	/** Which events should be logged (defaults to **none**) */
 	verbose: "none" | "errors" | "all"
 	/**
@@ -134,13 +143,13 @@ export class API {
 	 */
 	timeout: number
 
-	/** Configure how this instance should behave when it comes to retrying a request */
+	/** Configure how this instance should behave when it comes to automatically retrying a request */
 	retry: {
 		/** If true, doesn't retry under any circumstances (defaults to **false**) */
 		disabled: boolean
 		/** In seconds, how long should it wait until retrying? (defaults to **2**) */
 		delay: number
-		/** How many retries maximum before throwing an `APIError` (defaults to **5**) */
+		/** How many retries maximum before throwing an {@link APIError} (defaults to **5**) */
 		maximum_amount: number
 		/** Should it retry a request upon successfully refreshing the token due to `refresh_on_401` being `true`? (defaults to **true**) */
 		on_automatic_refresh: boolean
@@ -152,21 +161,51 @@ export class API {
 
 	/** If true, upon failing a request due to a 401, it will use the `refresh_token` if it exists (defaults to **true**) */
 	refresh_on_401: boolean
+	
+	private _refresh_on_expires: boolean = true
 	/** If true, the application will silently use the `refresh_token` right before the `access_token` expires, as determined by `expires` (defaults to **true**) */
-	refresh_on_expires: boolean
+	get refresh_on_expires(): boolean {
+		return this._refresh_on_expires
+	}
+	set refresh_on_expires(enabled: boolean) {
+		this._refresh_on_expires = enabled
+		this.updateRefreshTimeout()
+	}
 
+	private _refresh_timeout?: NodeJS.Timeout
+	get refresh_timeout(): NodeJS.Timeout | undefined {
+		return this._refresh_timeout
+	}
+	set refresh_timeout(timeout: NodeJS.Timeout) {
+		// if a previous refresh_timeout already exists, clear it
+		if (this._refresh_timeout) {
+			clearTimeout(this._refresh_timeout)
+		}
+
+		this._refresh_timeout = timeout
+		this._refresh_timeout.unref() // don't prevent exiting the program while this timeout is going on
+	}
+
+	private _refresh_token?: string
 	/**
-	 * Valid for an unknown amount of time, allows you to get a new token without going through the Authorization Code Grant!
-	 * Use the API's `refreshToken` function to do that
+	 * Valid for an unknown amount of time, allows you to get a new token without going through the Authorization Code Grant again!
+	 * Use {@link API.refreshToken} to do that
 	 */
-	refresh_token?: string
+	get refresh_token(): string | undefined {
+		return this._refresh_token
+	}
+	set refresh_token(token: string | undefined) {
+		this._refresh_token = token
+		this.updateRefreshTimeout() // because the refresh token may be specified last
+	}
+
 	/** The osu! user id of the user who went through the Authorization Code Grant */
 	user?: User["id"]
 	/** The scopes your application have, assuming it acts as a user */
 	scopes?: Scope[]
 
 	/**
-	 * **Please use the API's `createAsync` method instead of the default constructor** if you don't have at least an `access_token`!
+	 * **Please use {@link API.createAsync} instead of the default constructor** if you don't have at least an `access_token`!
 	 * An API object without an `access_token` is pretty much useless!
 	 */
 	constructor({access_token, token_type, refresh_token, expires, scopes, user, server, client, verbose, refresh_on_401, refresh_on_expires, timeout}: {
@@ -202,7 +241,7 @@ export class API {
 		this.verbose = verbose ?? "none"
 		this.server = server ?? "https://osu.ppy.sh"
 		this.refresh_on_401 = refresh_on_401 ?? true
-		this.refresh_on_expires = refresh_on_expires ?? true
+		this.refresh_on_expires = refresh_on_expires ?? this.refresh_on_expires
 		this.scopes = scopes
 		this.refresh_token = refresh_token
 		this.user = user
@@ -252,17 +291,6 @@ export class API {
 		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "client_credentials", scope: "public"}, new_api)
 	}
 
-	/**
-	 * Use this instead of `console.log` to log any information
-	 * @param is_error Is the logging happening because of an error?
-	 * @param to_log Whatever you would put between the parentheses of `console.log()`
-	 */
-	private log(is_error: boolean, ...to_log: any[]) {
-		if (this.verbose === "all" || (this.verbose === "errors" && is_error === true)) {
-			console.log("osu!api v2 ->", ...to_log)
-		}
-	}
-
 	/** 
 	 * Get a websocket to get WebSocket events from!
 	 * @param server Where the "notification websocket/server" is
@@ -276,6 +304,41 @@ export class API {
 				"Authorization": `${this.token_type} ${this.access_token}`
 			}
 		})
+	}
+
+	/**
+	 * Use this instead of `console.log` to log any information
+	 * @param is_error Is the logging happening because of an error?
+	 * @param to_log Whatever you would put between the parentheses of `console.log()`
+	 */
+	private log(is_error: boolean, ...to_log: any[]) {
+		if (this.verbose === "all" || (this.verbose === "errors" && is_error === true)) {
+			console.log("osu!api v2 ->", ...to_log)
+		}
+	}
+
+	/** Add, remove, change the timeout used for refreshing the token automatically whenever certain properties change */
+	private updateRefreshTimeout() {
+		if (this.refresh_token && this.expires && this.refresh_on_expires) {
+			const now = new Date()
+			const ms = this.expires.getTime() - now.getTime()
+
+			// Let's say that we used a refresh token *after* the expiration time, our refresh token would naturally get updated
+			// However, if it is updated before the (local) expiration date is updated, then ms should be 0
+			// This should mean that, upon using a refresh token, we would use our new refresh token instantly...
+			// In other words, don't allow timeouts that would mean no timeout; refreshToken() exists for that
+			if (ms <= 0) {
+				return undefined
+			}
+
+			this.refresh_timeout = setTimeout(() => {
+				try {
+					this.refreshToken()
+				} catch {}
+			}, ms)
+		} else if (this._refresh_timeout) {
+			clearTimeout(this._refresh_timeout)
+		}
 	}
 
 	/**
@@ -338,18 +401,6 @@ export class API {
 		const expiration_date = new Date()
 		expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
 		api.expires = expiration_date
-
-		// By being at the bottom of the function, it means it won't be trigerred if getAndSetToken throws an error
-		// This is recursive as this calls refreshToken, which calls getAndSetToken
-		// I prefer doing this over setInterval once because it's not fair to assume a token will take the same amount of time to expire after a refresh
-		if (this.refresh_on_expires && api.refresh_token) {
-			setTimeout(() => {
-				try {
-					// check again in case anything has changed
-					if (this.refresh_on_expires && api.refresh_token) {this.refreshToken()}
-				} catch {}
-			}, (json.expires_in - 60) * 1000) // 1 minute before the received date
-		}
 
 		return api
 	}
@@ -512,7 +563,7 @@ export class API {
 			 * So we wait for 1 to 5 seconds to make our request, 5 times maximum
 			*/
 			if (to_retry === true && this.retry.disabled === false && info.number_try < this.retry.maximum_amount) {
-				this.log(true, "Will request again in a few instants...", `(Try #${info.number_try})`)
+				this.log(true, `Will request again in ${this.retry.delay} seconds...`, `(Try #${info.number_try})`)
 				await new Promise(res => setTimeout(res, this.retry.delay))
 				return await this.request(method, endpoint, parameters, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
