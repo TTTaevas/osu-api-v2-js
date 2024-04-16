@@ -1,10 +1,22 @@
 import { API, Beatmapset, Changelog, NewsPost, User } from "./index.js"
 import { getId } from "./misc.js"
 
+/**  Remove so-called "Deleted Items" / items that lack an id, add a "deleted_commentable_meta" and make it the number of removed objects */
+function removeDeletedItems<T extends Comment.Bundle>(bundle: T): T {
+	const commentable_meta = bundle.commentable_meta.filter((c) => c.id)
+	bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
+	bundle.commentable_meta = commentable_meta
+	return bundle
+}
+
 export interface Comment {
 	id: number
 	parent_id: number | null
-	user_id: User["id"]
+	/**
+	 * @remarks Is null if the author of the comment from the old comment system has no associated osu! user, presumably
+	 * @privateRemarks Example is comment 178966 from beatmapset 349238
+	 */
+	user_id: User["id"] | null
 	pinned: boolean
 	replies_count: number
 	votes_count: number
@@ -79,13 +91,7 @@ export namespace Comment {
 	 * @param comment The comment in question
 	 */
 	export async function getOne(this: API, comment: Comment["id"] | Comment): Promise<Bundle> {
-		const bundle = await this.request("get", `comments/${getId(comment)}`) as Bundle
-		// Remove so-called "Deleted Items" / items that lack an id, add a "deleted_commentable_meta" and make it the number of removed objects
-		const commentable_meta = bundle.commentable_meta.filter((c) => c.id)
-		bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
-		bundle.commentable_meta = commentable_meta
-		
-		return bundle
+		return removeDeletedItems(await this.request("get", `comments/${getId(comment)}`))
 	}
 
 	/**
@@ -99,15 +105,9 @@ export namespace Comment {
 		const after = sort?.after ? String(getId(sort.after)) : undefined
 		const parent_id = parent ? String(getId(parent)) : undefined
 
-		const bundle = await this.request("get", "comments", {
+		return removeDeletedItems(await this.request("get", "comments", {
 			after, commentable_type: from?.type, commentable_id: from?.id,
 			cursor: sort?.cursor, parent_id, sort: sort?.type
-		})
-		// Remove so-called "Deleted Items" / items that lack an id, add a "deleted_commentable_meta" and make it the number of removed objects
-		const commentable_meta = bundle.commentable_meta.filter((c: any) => c.id)
-		bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length
-		bundle.commentable_meta = commentable_meta
-		
-		return bundle
+		}))
 	}
 }

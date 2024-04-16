@@ -39,6 +39,10 @@ export namespace Beatmap {
 	}
 
 	export interface WithBeatmapsetChecksumMaxcombo extends WithBeatmapset, WithChecksum {
+		/**
+		 * @privateRemarks I had a single instance of this being null, on beatmap 2124608, specifically on the dev server (it's okay on osu server)
+		 * For the sake of convenience, I cross my fingers that I won't regret not marking this as potentially null
+		 */
 		max_combo: number
 	}
 

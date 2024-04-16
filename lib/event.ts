@@ -135,7 +135,7 @@ export namespace Event {
 	/**
 	 * Get everything note-worthy that happened on osu! recently!
 	 * @param sort "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead (defaults to **id_desc**)
-	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance!
+	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `events` in this instance!
 	 */
 	export async function getMultiple(this: API, sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string):
 	Promise<{events: Event.Any[], cursor_string: string | null}> {

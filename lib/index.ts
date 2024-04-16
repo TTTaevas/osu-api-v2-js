@@ -114,6 +114,7 @@ export class APIError {
 export class API {
 	// ACCESS TOKEN STUFF
 
+	/** The key that allows you to talk with the API */
 	access_token: string = ""
 
 	/** Should always be "Bearer" */
@@ -145,11 +146,14 @@ export class API {
 		this.updateRefreshTimeout() // because the refresh token may be specified last
 	}
 
-	/** If true, upon failing a request due to a 401, it will use the `refresh_token` if it exists (defaults to **true**) */
+	/** If true, upon failing a request due to a 401, it will use the {@link API.refresh_token} if it exists (defaults to **true**) */
 	refresh_on_401: boolean = true
 	
 	private _refresh_on_expires: boolean = true
-	/** If true, the application will silently use the `refresh_token` right before the `access_token` expires, as determined by `expires` (defaults to **true**) */
+	/**
+	 * If true, the application will silently use the {@link API.refresh_token} right before the {@link API.access_token} expires,
+	 * as determined by {@link API.expires} (defaults to **true**)
+	 */
 	get refresh_on_expires(): boolean {
 		return this._refresh_on_expires
 	}
@@ -163,7 +167,7 @@ export class API {
 		return this._refresh_timeout
 	}
 	set refresh_timeout(timeout: NodeJS.Timeout) {
-		// if a previous refresh_timeout already exists, clear it
+		// if a previous one already exists, clear it
 		if (this._refresh_timeout) {
 			clearTimeout(this._refresh_timeout)
 		}
@@ -186,7 +190,7 @@ export class API {
 	server: string = "https://osu.ppy.sh"
 	/** The osu! user id of the user who went through the Authorization Code Grant */
 	user?: User["id"]
-	/** The scopes your application have, assuming it acts as a user */
+	/** The {@link Scope}s your application has, assuming it acts as a user */
 	scopes?: Scope[]
 
 
@@ -209,9 +213,9 @@ export class API {
 		delay: number
 		/** How many retries maximum before throwing an {@link APIError} (defaults to **5**) */
 		maximum_amount: number
-		/** Should it retry a request upon successfully refreshing the token due to `refresh_on_401` being `true`? (defaults to **true**) */
+		/** Should it retry a request upon successfully refreshing the token due to {@link API.refresh_on_401} being `true`? (defaults to **true**) */
 		on_automatic_refresh: boolean
-		/** Should it retry a request if that request failed because it has been aborted by the `timeout`? (defaults to **false**) */
+		/** Should it retry a request if that request failed because it has been aborted by the {@link API.timeout}? (defaults to **false**) */
 		on_timeout: boolean
 		/** Upon failing a request and receiving a response, because of which received status code should the request be retried? (defaults to **[429]**) */
 		on_status_codes: number[]
@@ -226,7 +230,7 @@ export class API {
 	
 
 	/**
-	 * **Please use {@link API.createAsync} instead of the default constructor** if you don't have at least an `access_token`!
+	 * **Please use {@link API.createAsync} instead of the default constructor** if you don't have at least an {@link API.access_token}!
 	 * An API object without an `access_token` is pretty much useless!
 	 */
 	constructor(properties: Partial<API>) {
@@ -250,7 +254,7 @@ export class API {
 		user?: {
 			/** The Application Callback URL; Where the User has been redirected to after saying "okay" to your application doing stuff */
 			redirect_uri: string,
-			/** The code that appeared as a GET argument when they got redirected to the Application Callback URl (`redirect_url`) */
+			/** The code that appeared as a GET argument when they got redirected to the Application Callback URL (`redirect_uri`) */
 			code: string
 		},
 		verbose?: "none" | "errors" | "all",
@@ -274,7 +278,7 @@ export class API {
 	/** 
 	 * Get a websocket to get WebSocket events from!
 	 * @param server Where the "notification websocket/server" is
-	 * (defaults to **the api's `server`'s protocol and a maximum of 1 subdomain being replaced by "wss://notify."** (so usually `wss://notify.ppy.sh`))
+	 * (defaults to **the {@link API.server}'s protocol and a maximum of 1 subdomain being replaced by "wss://notify."** (so usually `wss://notify.ppy.sh`))
 	*/
 	public generateWebSocket(server: string = `${this.server.replace(/^\w*:\/\/(?:[A-Za-z0-9]+[.](?=[A-Za-z0-9]+[.]([A-Za-z0-9]+)$))?/g, "wss://notify.")}`):
 	WebSocket {
