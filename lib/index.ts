@@ -112,15 +112,14 @@ export class APIError {
 
 /** You can create an API instance without directly providing an access_token by using {@link API.createAsync}! */
 export class API {
-	access_token: string
-	client: {
-		id: number
-		secret: string
-	}
-	/** Should always be "Bearer" */
-	token_type: string
+	// ACCESS TOKEN STUFF
 
-	private _expires!: Date
+	access_token: string = ""
+
+	/** Should always be "Bearer" */
+	token_type: string = "Bearer"
+
+	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
 	/** The expiration date of your access_token */
 	get expires(): Date {
 		return this._expires
@@ -130,37 +129,24 @@ export class API {
 		this.updateRefreshTimeout()
 	}
 
-	/** Which events should be logged (defaults to **none**) */
-	verbose: "none" | "errors" | "all"
-	/**
-	 * The base url of the server where the requests should land (defaults to **https://osu.ppy.sh**)
-	 * @remarks For tokens, requests will be sent to the `oauth/token` route, other requests will be sent to the `api/v2` route
-	 */
-	server: string
-	/**
-	 * The maximum **amount of seconds** requests should take before returning an answer (defaults to **20**)
-	 * @remarks 0 means no maximum, no timeout
-	 */
-	timeout: number
 
-	/** Configure how this instance should behave when it comes to automatically retrying a request */
-	retry: {
-		/** If true, doesn't retry under any circumstances (defaults to **false**) */
-		disabled: boolean
-		/** In seconds, how long should it wait until retrying? (defaults to **2**) */
-		delay: number
-		/** How many retries maximum before throwing an {@link APIError} (defaults to **5**) */
-		maximum_amount: number
-		/** Should it retry a request upon successfully refreshing the token due to `refresh_on_401` being `true`? (defaults to **true**) */
-		on_automatic_refresh: boolean
-		/** Should it retry a request if that request failed because it has been aborted by the `timeout`? (defaults to **false**) */
-		on_timeout: boolean
-		/** Upon failing a request and receiving a response, because of which received status code should the request be retried? (defaults to **[429]**) */
-		on_status_codes: number[]
+	// REFRESH TOKEN STUFF
+
+	private _refresh_token?: string
+	/**
+	 * Valid for an unknown amount of time, allows you to get a new token without going through the Authorization Code Grant again!
+	 * Use {@link API.refreshToken} to do that
+	 */
+	get refresh_token(): string | undefined {
+		return this._refresh_token
+	}
+	set refresh_token(token: string | undefined) {
+		this._refresh_token = token
+		this.updateRefreshTimeout() // because the refresh token may be specified last
 	}
 
 	/** If true, upon failing a request due to a 401, it will use the `refresh_token` if it exists (defaults to **true**) */
-	refresh_on_401: boolean
+	refresh_on_401: boolean = true
 	
 	private _refresh_on_expires: boolean = true
 	/** If true, the application will silently use the `refresh_token` right before the `access_token` expires, as determined by `expires` (defaults to **true**) */
@@ -186,74 +172,68 @@ export class API {
 		this._refresh_timeout.unref() // don't prevent exiting the program while this timeout is going on
 	}
 
-	private _refresh_token?: string
-	/**
-	 * Valid for an unknown amount of time, allows you to get a new token without going through the Authorization Code Grant again!
-	 * Use {@link API.refreshToken} to do that
-	 */
-	get refresh_token(): string | undefined {
-		return this._refresh_token
-	}
-	set refresh_token(token: string | undefined) {
-		this._refresh_token = token
-		this.updateRefreshTimeout() // because the refresh token may be specified last
-	}
 
+	// CLIENT INFO
+
+	client: {
+		id: number
+		secret: string
+	} = {id: 0, secret: ""}
+	/**
+	 * The base url of the server where the requests should land (defaults to **https://osu.ppy.sh**)
+	 * @remarks For tokens, requests will be sent to the `oauth/token` route, other requests will be sent to the `api/v2` route
+	 */
+	server: string = "https://osu.ppy.sh"
 	/** The osu! user id of the user who went through the Authorization Code Grant */
 	user?: User["id"]
 	/** The scopes your application have, assuming it acts as a user */
 	scopes?: Scope[]
 
+
+	// CLIENT CONFIGURATION
+
+	/** Which events should be logged (defaults to **none**) */
+	verbose: "none" | "errors" | "all" = "none"
+	
+	/**
+	 * The maximum **amount of seconds** requests should take before returning an answer (defaults to **20**)
+	 * @remarks 0 means no maximum, no timeout
+	 */
+	timeout: number = 20
+
+	/** Configure how this instance should behave when it comes to automatically retrying a request */
+	retry: {
+		/** If true, doesn't retry under any circumstances (defaults to **false**) */
+		disabled: boolean
+		/** In seconds, how long should it wait until retrying? (defaults to **2**) */
+		delay: number
+		/** How many retries maximum before throwing an {@link APIError} (defaults to **5**) */
+		maximum_amount: number
+		/** Should it retry a request upon successfully refreshing the token due to `refresh_on_401` being `true`? (defaults to **true**) */
+		on_automatic_refresh: boolean
+		/** Should it retry a request if that request failed because it has been aborted by the `timeout`? (defaults to **false**) */
+		on_timeout: boolean
+		/** Upon failing a request and receiving a response, because of which received status code should the request be retried? (defaults to **[429]**) */
+		on_status_codes: number[]
+	} = {
+		disabled: false,
+		delay: 2,
+		maximum_amount: 5,
+		on_automatic_refresh: true,
+		on_timeout: false,
+		on_status_codes: [429]
+	}
+	
+
 	/**
 	 * **Please use {@link API.createAsync} instead of the default constructor** if you don't have at least an `access_token`!
 	 * An API object without an `access_token` is pretty much useless!
 	 */
-	constructor({access_token, token_type, refresh_token, expires, scopes, user, server, client, verbose, refresh_on_401, refresh_on_expires, timeout}: {
-		/** The token used in basically all requests! */
-		access_token?: string
-		/** Should always be "Bearer" */
-		token_type?: string
-		/** The token used to update your access_token and your refresh_token */
-		refresh_token?: string
-		/** The expiration date of your access_token (doesn't affect application behaviour) */
-		expires?: Date
-		/** The scopes your application have, assuming it acts as a user (doesn't affect application behaviour) */
-		scopes?: Scope[]
-		/** The id of the user this application acts as, if any (doesn't affect application behaviour) */
-		user?: User["id"]
-		/** The URL of the API server the package contacts */
-		server?: string
-		/** The details of your application client, necessary for using the refresh_token */
-		client?: {id: number, secret: string}
-		/** How much stuff should the package log (defaults to **none**) */
-		verbose?: "none" | "errors" | "all"
-		/** If a 401 error is gotten from the server while it has a refresh token, should it use it and try the request again? (defaults to **true**) */
-		refresh_on_401?: boolean
-		/** Should the application schedule a task to silently refresh the token right before the access_token expires? (defaults to **true**) */
-		refresh_on_expires?: boolean
-		/** How many **seconds** maximum should a request take, if there should be a maximum? (defaults to **20**) */
-		timeout?: number
-	}) {
-		this.client = client ?? {id: 0, secret: ""}
-		this.access_token = access_token ?? ""
-		this.token_type = token_type ?? "Bearer"
-		this.expires = expires ?? new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
-		this.verbose = verbose ?? "none"
-		this.server = server ?? "https://osu.ppy.sh"
-		this.refresh_on_401 = refresh_on_401 ?? true
-		this.refresh_on_expires = refresh_on_expires ?? this.refresh_on_expires
-		this.scopes = scopes
-		this.refresh_token = refresh_token
-		this.user = user
-		this.timeout = timeout !== undefined ? timeout : 20
-		this.retry = {
-			disabled: false,
-			delay: 2,
-			maximum_amount: 5,
-			on_automatic_refresh: true,
-			on_timeout: false,
-			on_status_codes: [429]
-		}
+	constructor(properties: Partial<API>) {
+		// delete every property that is `undefined` so the class defaults aren't overwritten by `undefined`
+		// for example, someone using `createAsync()` is extremely likely to leave `server` as `undefined`, which would call the constructor with that
+		Object.keys(properties).forEach(key => (properties as {[index: string]: any})[key] === undefined ? delete (properties as {[index: string]: any})[key] : {})
+		Object.assign(this, properties)
 	}
 
 	/**
@@ -273,10 +253,10 @@ export class API {
 			/** The code that appeared as a GET argument when they got redirected to the Application Callback URl (`redirect_url`) */
 			code: string
 		},
-		verbose: "none" | "errors" | "all" = "none",
-		server: string = "https://osu.ppy.sh",
+		verbose?: "none" | "errors" | "all",
+		server?: string,
 		/** @remarks In **seconds** */
-		timeout: number = 20
+		timeout?: number
 	): Promise<API> {
 		const new_api = new API({
 			client,
