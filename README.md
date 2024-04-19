@@ -6,7 +6,13 @@ You can find this package's documentation on [osu-v2.taevas.xyz](https://osu-v2.
 
 ## How to install and get started
 
-To install the package, use a command from your package manager:
+Before installing, if using Node.js, check if you're running version 16 or above:
+
+```bash
+node -v # displays your version of node.js
+```
+
+Then to install the package, use a command from your package manager:
 
 ```bash
 npm i osu-api-v2-js # if using npm
