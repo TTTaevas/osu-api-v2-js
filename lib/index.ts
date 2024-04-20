@@ -1,4 +1,4 @@
-import fetch, { AbortError, FetchError } from "node-fetch"
+import fetch, { AbortError, FetchError, RequestInit } from "node-fetch"
 import { WebSocket } from "ws"
 
 import { User } from "./user.js"
@@ -84,22 +84,18 @@ export class API {
 
 	private _access_token: string = ""
 	/** The key that allows you to talk with the API */
-	get access_token() {
-		return this._access_token
-	}
-	set access_token(token: string) {
-		this._access_token = token
-	}
+	get access_token() {return this._access_token}
+	set access_token(token) {this._access_token = token}
 
+	private _token_type: string = "Bearer"
 	/** Should always be "Bearer" */
-	token_type: string = "Bearer"
+	get token_type() {return this._token_type}
+	set token_type(token) {this._token_type = token}
 
-	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
+	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000) // in 24 hours
 	/** The expiration date of your access_token */
-	get expires(): Date {
-		return this._expires
-	}
-	set expires(date: Date) {
+	get expires() {return this._expires}
+	set expires(date) {
 		this._expires = date
 		this.updateRefreshTimeout()
 	}
@@ -112,34 +108,30 @@ export class API {
 	 * Valid for an unknown amount of time, allows you to get a new token without going through the Authorization Code Grant again!
 	 * Use {@link API.refreshToken} to do that
 	 */
-	get refresh_token(): string | undefined {
-		return this._refresh_token
-	}
-	set refresh_token(token: string | undefined) {
+	get refresh_token() {return this._refresh_token}
+	set refresh_token(token) {
 		this._refresh_token = token
 		this.updateRefreshTimeout() // because the refresh token may be specified last
 	}
-
+	
+	private _refresh_on_401: boolean = true
 	/** If true, upon failing a request due to a 401, it will use the {@link API.refresh_token} if it exists (defaults to **true**) */
-	refresh_on_401: boolean = true
+	get refresh_on_401() {return this._refresh_on_401}
+	set refresh_on_401(refresh) {this._refresh_on_401 = refresh}
 	
 	private _refresh_on_expires: boolean = true
 	/**
 	 * If true, the application will silently use the {@link API.refresh_token} right before the {@link API.access_token} expires,
 	 * as determined by {@link API.expires} (defaults to **true**)
 	 */
-	get refresh_on_expires(): boolean {
-		return this._refresh_on_expires
-	}
-	set refresh_on_expires(enabled: boolean) {
+	get refresh_on_expires() {return this._refresh_on_expires}
+	set refresh_on_expires(enabled) {
 		this._refresh_on_expires = enabled
 		this.updateRefreshTimeout()
 	}
 
 	private _refresh_timeout?: NodeJS.Timeout
-	get refresh_timeout(): NodeJS.Timeout | undefined {
-		return this._refresh_timeout
-	}
+	get refresh_timeout(): API["_refresh_timeout"] {return this._refresh_timeout}
 	set refresh_timeout(timeout: NodeJS.Timeout) {
 		// if a previous one already exists, clear it
 		if (this._refresh_timeout) {
@@ -153,34 +145,49 @@ export class API {
 
 	// CLIENT INFO
 
-	client: {
+	private _client: {
 		id: number
 		secret: string
 	} = {id: 0, secret: ""}
+	/** The details of your client, which you've got from https://osu.ppy.sh/home/account/edit#oauth */
+	get client() {return this._client}
+	set client(client) {this._client = client}
+
+	private _server: string = "https://osu.ppy.sh"
 	/**
 	 * The base url of the server where the requests should land (defaults to **https://osu.ppy.sh**)
 	 * @remarks For tokens, requests will be sent to the `oauth/token` route, other requests will be sent to the `api/v2` route
 	 */
-	server: string = "https://osu.ppy.sh"
+	get server() {return this._server}
+	set server(server) {this._server = server}
+
+	private _user?: User["id"]
 	/** The osu! user id of the user who went through the Authorization Code Grant */
-	user?: User["id"]
+	get user() {return this._user}
+	set user(user) {this._user = user}
+
+	private _scopes?: Scope[]
 	/** The {@link Scope}s your application has, assuming it acts as a user */
-	scopes?: Scope[]
+	get scopes() {return this._scopes}
+	set scopes(scopes) {this._scopes = scopes}
 
 
 	// CLIENT CONFIGURATION
 
+	private _verbose?: "none" | "errors" | "all" = "none"
 	/** Which events should be logged (defaults to **none**) */
-	verbose: "none" | "errors" | "all" = "none"
-	
+	get verbose() {return this._verbose}
+	set verbose(verbose) {this._verbose = verbose}
+
+	private _timeout: number = 20
 	/**
 	 * The maximum **amount of seconds** requests should take before returning an answer (defaults to **20**)
 	 * @remarks 0 means no maximum, no timeout
 	 */
-	timeout: number = 20
+	get timeout() {return this._timeout}
+	set timeout(timeout) {this._timeout = timeout}
 
-	/** Configure how this instance should behave when it comes to automatically retrying a request */
-	retry: {
+	private _retry: {
 		/** If true, doesn't retry under any circumstances (defaults to **false**) */
 		disabled: boolean
 		/** In seconds, how long should it wait until retrying? (defaults to **2**) */
@@ -201,6 +208,9 @@ export class API {
 		on_timeout: false,
 		on_status_codes: [429]
 	}
+	/** Configure how this instance should behave when it comes to automatically retrying a request */
+	get retry() {return this._retry}
+	set retry(retry) {this._retry = retry}
 	
 
 	/**
@@ -249,9 +259,8 @@ export class API {
 		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "client_credentials", scope: "public"}, new_api)
 	}
 
-	public with(overrides: RequestInit): ChildAPI {
-		const child_api = new ChildAPI(this, overrides)
-		return child_api
+	public with(overrides: ChildAPI["overrides"]): ChildAPI {
+		return new ChildAPI(this, overrides)
 	}
 
 	/** 
@@ -416,7 +425,7 @@ export class API {
 			}
 			timeout_controller.abort()
 		}, this.timeout * 1000) : false
-		const signal = overrides?.signal ? anySignal([timeout_signal, overrides.signal]) : timeout_signal
+		const signal = overrides?.signal ? anySignal([timeout_signal, overrides.signal as AbortSignal]) : timeout_signal
 
 		// For GET requests specifically, requests need to be shaped in very particular ways
 		if (parameters !== undefined && method === "get") {
@@ -439,6 +448,7 @@ export class API {
 				"Authorization": `${this.token_type} ${this.access_token}`
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
+			...overrides, // has priority over what's above, but not over what's lower
 			signal
 		})
 		.catch((error: AbortError | FetchError) => {
@@ -777,18 +787,53 @@ export class API {
  * Created with {@link API.with}
  */
 export class ChildAPI extends API {
+	/** The {@link API} where {@link API.with} was used; this `ChildAPI` gets everything from it! */
 	original: API
 	overrides: RequestInit
-
-	get access_token(): string {return this.original.access_token}
-	get refresh_token(): string | undefined {return this.original.refresh_token}
-	get refresh_timeout(): NodeJS.Timeout | undefined {return this.original.refresh_timeout}
-	refreshToken = async () => {return await this.original.refreshToken()}
 	request = async (...args: Parameters<API["request"]>) => {
 		args[3] ??= this.overrides
 		return await this.original.request(...args)
 	}
 
+	// Those are first in accessors -> methods order, then in alphabetical order
+	// For the sake of decent documentation and autocomplete
+	/** @hidden @deprecated use API equivalent */
+	get access_token() {return this.original.access_token}
+	/** @hidden @deprecated use API equivalent */
+	get client() {return this.original.client}
+	/** @hidden @deprecated use API equivalent */
+	get expires() {return this.original.expires}
+	/** @hidden @deprecated use API equivalent */
+	get refresh_on_401() {return this.original.refresh_on_401}
+	/** @hidden @deprecated use API equivalent */
+	get refresh_on_expires() {return this.original.refresh_on_expires}
+	/** @hidden @deprecated use API equivalent */
+	get refresh_timeout() {return this.original.refresh_timeout}
+	/** @hidden @deprecated use API equivalent */
+	get refresh_token() {return this.original.refresh_token}
+	/** @hidden @deprecated use API equivalent */
+	get retry() {return this.original.retry}
+	/** @hidden @deprecated use API equivalent */
+	get scopes() {return this.original.scopes}
+	/** @hidden @deprecated use API equivalent */
+	get server() {return this.original.server}
+	/** @hidden @deprecated use API equivalent */
+	get timeout() {return this.original.timeout}
+	/** @hidden @deprecated use API equivalent */
+	get token_type() {return this.original.token_type}
+	/** @hidden @deprecated use API equivalent */
+	get user() {return this.original.user}
+	/** @hidden @deprecated use API equivalent */
+	get verbose() {return this.original.verbose}
+	/** @hidden @deprecated use API equivalent */
+	generateWebSocket = () => {return this.original.generateWebSocket()}
+	/** @hidden @deprecated use API equivalent */
+	refreshToken = async () => {return await this.original.refreshToken()}
+	/** @hidden @deprecated use API equivalent */
+	revokeToken = async () => {return await this.original.revokeToken()}
+	/** @hidden @deprecated use API equivalent */
+	with = (...args: Parameters<API["with"]>) => {return this.original.with(...args)}
+	
 	constructor(original: ChildAPI["original"], overrides: ChildAPI["overrides"]) {
 		super({})
 
