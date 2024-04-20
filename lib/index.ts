@@ -71,6 +71,29 @@ function correctType(x: any): any {
 	return x
 }
 
+function anySignal(signals: AbortSignal[]) {
+	const controller = new AbortController()
+	const unsubscribe: (() => void)[] = []
+
+	function onAbort(signal: AbortSignal) {
+		controller.abort(signal.reason)
+		unsubscribe.forEach((f) => f())
+	}
+
+	for (const signal of signals) {
+		if (signal.aborted) {
+			onAbort(signal)
+			break
+		}
+
+		const handler = onAbort.bind(undefined, signal)
+		signal.addEventListener('abort', handler)
+		unsubscribe.push(() => signal.removeEventListener('abort', handler))
+	}
+
+	return controller.signal
+}
+
 
 /**
  * Generates a link for users to click on in order to use your application!
@@ -114,8 +137,14 @@ export class APIError {
 export class API {
 	// ACCESS TOKEN STUFF
 
+	private _access_token: string = ""
 	/** The key that allows you to talk with the API */
-	access_token: string = ""
+	get access_token() {
+		return this._access_token
+	}
+	set access_token(token: string) {
+		this._access_token = token
+	}
 
 	/** Should always be "Bearer" */
 	token_type: string = "Bearer"
@@ -275,6 +304,11 @@ export class API {
 		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "client_credentials", scope: "public"}, new_api)
 	}
 
+	public with(overrides: RequestInit): ChildAPI {
+		const child_api = new ChildAPI(this, overrides)
+		return child_api
+	}
+
 	/** 
 	 * Get a websocket to get WebSocket events from!
 	 * @param server Where the "notification websocket/server" is
@@ -422,12 +456,22 @@ export class API {
 	 * @param info Context given by a prior request
 	 * @returns A Promise with the API's response
 	 */
-	public async request(method: "get" | "post" | "put" | "delete", endpoint: string,
-	parameters: {[k: string]: any} = {}, info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}): Promise<any> {
+	public async request(method: "get" | "post" | "put" | "delete", endpoint: string, parameters: {[k: string]: any} = {}, overrides?: RequestInit,
+	info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}): Promise<any> {
 		let to_retry = false
 		let error_object: Error | undefined
 		let error_code: number | undefined
 		let error_string = "none"
+
+		const timeout_controller = new AbortController()
+		const timeout_signal = timeout_controller.signal
+		const timeout_timer = this.timeout > 0 ? setTimeout(() => {
+			if (this.retry.on_timeout) {
+				to_retry = true
+			}
+			timeout_controller.abort()
+		}, this.timeout * 1000) : false
+		const signal = overrides?.signal ? anySignal([timeout_signal, overrides.signal]) : timeout_signal
 
 		// For GET requests specifically, requests need to be shaped in very particular ways
 		if (parameters !== undefined && method === "get") {
@@ -479,14 +523,6 @@ export class API {
 			return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
 		}).join("&")) : "")
 
-		const controller = new AbortController()
-		const timer = this.timeout > 0 ? setTimeout(() => {
-			if (this.retry.on_timeout) {
-				to_retry = true
-			}
-			controller.abort()
-		}, this.timeout * 1000) : false
-
 		const response = await fetch(url, {
 			method,
 			headers: {
@@ -497,7 +533,7 @@ export class API {
 				"Authorization": `${this.token_type} ${this.access_token}`
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
-			signal: controller.signal
+			signal
 		})
 		.catch((error: AbortError | FetchError) => {
 			this.log(true, error.message)
@@ -505,8 +541,8 @@ export class API {
 			error_string = `${error.name} (${error.name === "FetchError" ? error.errno : error.type})`
 		})
 		.finally(() => {
-			if (timer) {
-				clearTimeout(timer)
+			if (timeout_timer) {
+				clearTimeout(timeout_timer)
 			}
 		})
 
@@ -549,7 +585,7 @@ export class API {
 			if (to_retry === true && this.retry.disabled === false && info.number_try < this.retry.maximum_amount) {
 				this.log(true, `Will request again in ${this.retry.delay} seconds...`, `(Try #${info.number_try})`)
 				await new Promise(res => setTimeout(res, this.retry.delay))
-				return await this.request(method, endpoint, parameters, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
+				return await this.request(method, endpoint, parameters, overrides, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
 			throw new APIError(error_string, `${this.server}/api/v2`, endpoint, parameters, error_code, error_object)
@@ -828,5 +864,27 @@ export class API {
 	 */
 	async getSeasonalBackgrounds(): Promise<{ends_at: Date, backgrounds: {url: string, user: User}[]}> {
 		return await this.request("get", "seasonal-backgrounds")
+	}
+}
+
+export class ChildAPI extends API {
+	original: API
+	overrides: RequestInit
+
+	get access_token(): string {return this.original.access_token}
+	get refresh_token(): string | undefined {return this.original.refresh_token}
+	get refresh_timeout(): NodeJS.Timeout | undefined {return this.original.refresh_timeout}
+	refreshToken = async () => {return await this.original.refreshToken()}
+	request = async (...args: Parameters<API["request"]>) => {
+		console.log("You would see this if ChildAPI.request() was called") // but it's not called
+		args[3] ??= this.overrides
+		return await this.original.request(...args)
+	}
+
+	constructor(original: API, overrides: RequestInit) {
+		super({})
+
+		this.original = original
+		this.overrides = overrides
 	}
 }
