@@ -343,15 +343,11 @@ const test = async (id: string, secret: string): Promise<void> => {
 
 	const controller = new AbortController()
 	const new_api = api.with({signal: controller.signal})
-
-	setTimeout(() => controller.abort(), 300)
-
-	await Promise.all([
-		attempt(api.getUser, 7276846),
-		attempt(api.getUser, 7276845),
-		attempt(new_api.getUser, 7276846),
-		attempt(new_api.getUser, 7276845),
-	])
+	console.log("reason:", controller.signal.reason)
+	setTimeout(() => controller.abort("manual abort"), 200)
+	await new_api.getUser(7276846)
+	.catch((e: osu.APIError) => console.log(e.original_error))
+	console.log("reason:", controller.signal.reason)
 
 	api.revokeToken()
 

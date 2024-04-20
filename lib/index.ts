@@ -15,7 +15,7 @@ import { Forum } from "./forum.js"
 import { WikiPage } from "./wiki.js"
 import { NewsPost } from "./news.js"
 import { Home } from "./home.js"
-import { Scope, Spotlight } from "./misc.js"
+import { Scope, Spotlight, adaptParametersForGETRequests, anySignal, correctType } from "./misc.js"
 import { Chat } from "./chat.js"
 import { Comment } from "./comment.js"
 
@@ -38,61 +38,6 @@ export { Ruleset, Mod, Scope, Spotlight } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocket } from "./websocket.js"
 export { Comment } from "./comment.js"
-	
-/**
- * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
- * @param x Anything, but should be a string, an array that contains a string, or an object which has a string
- * @returns x, but with it (or what it contains) now having the correct type
- */
-function correctType(x: any): any {
-	const bannedProperties = [
-		"name", "artist", "title", "location", "interests", "occupation", "twitter",
-		"discord", "version", "author", "raw", "bbcode", "title", "message", "creator", "source"
-	]
-
-	if (typeof x === "boolean") {
-		return x
-	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}($|[ T].*)/.test(x)) {
-		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(x)) x += "Z"
-		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}$/.test(x)) x = x.substring(0, x.indexOf("+")) + "Z"
-		return new Date(x)
-	} else if (Array.isArray(x)) {
-		return x.map((e) => correctType(e))
-	} else if (!isNaN(x) && x !== "") {
-		return x === null ? null : Number(x)
-	} else if (typeof x === "object" && x !== null) {
-		const k = Object.keys(x)
-		const v = Object.values(x)
-		for (let i = 0; i < k.length; i++) {
-			if (typeof v[i] === "string" && bannedProperties.some((p) => k[i].includes(p))) continue // don't turn names made of numbers into integers
-			x[k[i]] = correctType(v[i])
-		}
-	}
-	return x
-}
-
-function anySignal(signals: AbortSignal[]) {
-	const controller = new AbortController()
-	const unsubscribe: (() => void)[] = []
-
-	function onAbort(signal: AbortSignal) {
-		controller.abort(signal.reason)
-		unsubscribe.forEach((f) => f())
-	}
-
-	for (const signal of signals) {
-		if (signal.aborted) {
-			onAbort(signal)
-			break
-		}
-
-		const handler = onAbort.bind(undefined, signal)
-		signal.addEventListener('abort', handler)
-		unsubscribe.push(() => signal.removeEventListener('abort', handler))
-	}
-
-	return controller.signal
-}
 
 
 /**
@@ -379,7 +324,7 @@ export class API {
 	}, api: API): Promise<API> {
 		const controller = new AbortController()
 		const timer = this.timeout > 0 ? setTimeout(() => {
-			controller.abort()
+			controller.abort(`The request wasn't made in time (took more than ${this.timeout} seconds)`)
 		}, this.timeout * 1000) : false
 
 		const response = await fetch(`${this.server}/oauth/token`, {
@@ -456,7 +401,7 @@ export class API {
 	 * @param info Context given by a prior request
 	 * @returns A Promise with the API's response
 	 */
-	public async request(method: "get" | "post" | "put" | "delete", endpoint: string, parameters: {[k: string]: any} = {}, overrides?: RequestInit,
+	public async request(method: "get" | "post" | "put" | "delete", endpoint: string, parameters: {[k: string]: any} = {}, overrides?: ChildAPI["overrides"],
 	info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}): Promise<any> {
 		let to_retry = false
 		let error_object: Error | undefined
@@ -475,46 +420,7 @@ export class API {
 
 		// For GET requests specifically, requests need to be shaped in very particular ways
 		if (parameters !== undefined && method === "get") {
-			// If a parameter is an empty string or is undefined, remove it
-			for (let i = 0; i < Object.entries(parameters).length; i++) {
-				if (!String(Object.values(parameters)[i]).length || Object.values(parameters)[i] === undefined) {
-					delete parameters[Object.keys(parameters)[i]]
-					i--
-				}
-			}
-
-			// If a parameter is an Array, add "[]" to its name, so the server understands the request properly
-			for (let i = 0; i < Object.entries(parameters).length; i++) {	
-				if (Array.isArray(Object.values(parameters)[i]) && !Object.keys(parameters)[i].includes("[]")) {
-					parameters[`${Object.keys(parameters)[i]}[]`] = Object.values(parameters)[i]
-					delete parameters[Object.keys(parameters)[i]]
-					i--
-				}
-			}
-
-			// If a parameter is an object, add its properties in "[]" such as "cursor[id]=5&cursor[score]=36.234"
-			let parameters_to_add: {[k: string]: any} = {}
-			for (let i = 0; i < Object.entries(parameters).length; i++) {
-				const value = Object.values(parameters)[i]
-				if (typeof value === "object" && !Array.isArray(value) && value !== null) { 
-					const main_name = Object.keys(parameters)[i]
-					for (let e = 0; e < Object.entries(value).length; e++) {
-						parameters_to_add[`${main_name}[${Object.keys(value)[e]}]`] = Object.values(value)[e]
-					}
-					delete parameters[Object.keys(parameters)[i]]
-					i--
-				}
-			}
-			for (let i = 0; i < Object.entries(parameters_to_add).length; i++) {
-				parameters[Object.keys(parameters_to_add)[i]] = Object.values(parameters_to_add)[i]
-			}
-
-			// If a parameter is a date, make it a string
-			for (let i = 0; i < Object.entries(parameters).length; i++) {
-				if (Object.values(parameters)[i] instanceof Date) {
-					parameters[Object.keys(parameters)[i]] = (Object.values(parameters)[i] as Date).toISOString()
-				}
-			}
+			parameters = adaptParametersForGETRequests(parameters)
 		}
 
 		// parameters are here if request is GET
@@ -867,6 +773,9 @@ export class API {
 	}
 }
 
+/**
+ * Created with {@link API.with}
+ */
 export class ChildAPI extends API {
 	original: API
 	overrides: RequestInit
@@ -876,12 +785,11 @@ export class ChildAPI extends API {
 	get refresh_timeout(): NodeJS.Timeout | undefined {return this.original.refresh_timeout}
 	refreshToken = async () => {return await this.original.refreshToken()}
 	request = async (...args: Parameters<API["request"]>) => {
-		console.log("You would see this if ChildAPI.request() was called") // but it's not called
 		args[3] ??= this.overrides
 		return await this.original.request(...args)
 	}
 
-	constructor(original: API, overrides: RequestInit) {
+	constructor(original: ChildAPI["original"], overrides: ChildAPI["overrides"]) {
 		super({})
 
 		this.original = original
