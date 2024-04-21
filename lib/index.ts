@@ -259,8 +259,18 @@ export class API {
 		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "client_credentials", scope: "public"}, new_api)
 	}
 
-	public with(overrides: ChildAPI["overrides"]): ChildAPI {
-		return new ChildAPI(this, overrides)
+	/**
+	 * You can use this to specify additional settings for the method you're going to call, such as `headers`, an `AbortSignal`, and more advanced things!
+	 * @example
+	 * ```ts
+	 * const controller = new AbortController() // this controller can be used to abort any request that uses its signal!
+	 * const user = await api.withSettings({signal: controller.signal}).getUser(7276846)
+	 * ```
+	 * @param additional_fetch_settings You may get more info at https://www.npmjs.com/package/node-fetch#fetch-options
+	 * @returns A special version of the `API` that changes how requests are done
+	 */
+	public withSettings(additional_fetch_settings: ChildAPI["additional_fetch_settings"]): ChildAPI {
+		return new ChildAPI(this, additional_fetch_settings)
 	}
 
 	/** 
@@ -407,11 +417,13 @@ export class API {
 	 * @param method The type of request, each endpoint uses a specific one (if it uses multiple, the intent and parameters become different)
 	 * @param endpoint What comes in the URL after `api/`
 	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
+	 * @param settings Additional settings **to add** to the current settings of the `fetch()` request
 	 * @param info Context given by a prior request
 	 * @returns A Promise with the API's response
 	 */
-	public async request(method: "get" | "post" | "put" | "delete", endpoint: string, parameters: {[k: string]: any} = {}, overrides?: ChildAPI["overrides"],
-	info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}): Promise<any> {
+	public async request(method: "get" | "post" | "put" | "delete", endpoint: string, parameters: {[k: string]: any} = {},
+	settings?: ChildAPI["additional_fetch_settings"],info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}):
+	Promise<any> {
 		let to_retry = false
 		let error_object: Error | undefined
 		let error_code: number | undefined
@@ -423,9 +435,9 @@ export class API {
 			if (this.retry.on_timeout) {
 				to_retry = true
 			}
-			timeout_controller.abort()
+			timeout_controller.abort(`The request wasn't made in time (took more than ${this.timeout} seconds)`)
 		}, this.timeout * 1000) : false
-		const signal = overrides?.signal ? anySignal([timeout_signal, overrides.signal as AbortSignal]) : timeout_signal
+		const signal = settings?.signal ? anySignal([timeout_signal, settings.signal as AbortSignal]) : timeout_signal
 
 		// For GET requests specifically, requests need to be shaped in very particular ways
 		if (parameters !== undefined && method === "get") {
@@ -440,15 +452,16 @@ export class API {
 
 		const response = await fetch(url, {
 			method,
+			...settings, // has priority over what's above, but not over what's lower
 			headers: {
 				"Accept": "application/json",
 				"Accept-Encoding": "gzip",
 				"Content-Type": "application/json",
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
-				"Authorization": `${this.token_type} ${this.access_token}`
+				"Authorization": `${this.token_type} ${this.access_token}`,
+				...settings?.headers // written that way, custom headers with (for example) only a user-agent would only overwrite the default user-agent
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
-			...overrides, // has priority over what's above, but not over what's lower
 			signal
 		})
 		.catch((error: AbortError | FetchError) => {
@@ -501,7 +514,7 @@ export class API {
 			if (to_retry === true && this.retry.disabled === false && info.number_try < this.retry.maximum_amount) {
 				this.log(true, `Will request again in ${this.retry.delay} seconds...`, `(Try #${info.number_try})`)
 				await new Promise(res => setTimeout(res, this.retry.delay))
-				return await this.request(method, endpoint, parameters, overrides, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
+				return await this.request(method, endpoint, parameters, settings, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
 			throw new APIError(error_string, `${this.server}/api/v2`, endpoint, parameters, error_code, error_object)
@@ -784,14 +797,16 @@ export class API {
 }
 
 /**
- * Created with {@link API.with}
+ * Created with {@link API.withSettings}, this special version of the {@link API} specifies additional settings to every request!
+ * @remarks This **is not** to be used for any purpose other than calling methods; The original {@link ChildAPI.original} handles tokens & configuration
  */
 export class ChildAPI extends API {
-	/** The {@link API} where {@link API.with} was used; this `ChildAPI` gets everything from it! */
+	/** The {@link API} where {@link API.withSettings} was used; this `ChildAPI` gets everything from it! */
 	original: API
-	overrides: RequestInit
+	/** The additional settings that are used for every request made by this object */
+	additional_fetch_settings: Omit<RequestInit, "body">
 	request = async (...args: Parameters<API["request"]>) => {
-		args[3] ??= this.overrides
+		args[3] ??= this.additional_fetch_settings // args[3] is `settings` **for now**
 		return await this.original.request(...args)
 	}
 
@@ -832,12 +847,12 @@ export class ChildAPI extends API {
 	/** @hidden @deprecated use API equivalent */
 	revokeToken = async () => {return await this.original.revokeToken()}
 	/** @hidden @deprecated use API equivalent */
-	with = (...args: Parameters<API["with"]>) => {return this.original.with(...args)}
+	withSettings = (...args: Parameters<API["withSettings"]>) => {return this.original.withSettings(...args)}
 	
-	constructor(original: ChildAPI["original"], overrides: ChildAPI["overrides"]) {
+	constructor(original: ChildAPI["original"], additional_fetch_settings: ChildAPI["additional_fetch_settings"]) {
 		super({})
 
 		this.original = original
-		this.overrides = overrides
+		this.additional_fetch_settings = additional_fetch_settings
 	}
 }

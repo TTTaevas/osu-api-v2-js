@@ -341,46 +341,36 @@ const testOther = async (): Promise<boolean> => {
 const test = async (id: string, secret: string): Promise<void> => {
 	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all") //"http://127.0.0.1:8080")
 
-	const controller = new AbortController()
-	const new_api = api.with({signal: controller.signal})
-	console.log("reason:", controller.signal.reason)
-	setTimeout(() => controller.abort("manual abort"), 200)
-	await new_api.getUser(7276846)
-	.catch((e: osu.APIError) => console.log(e.original_error))
-	console.log("reason:", controller.signal.reason)
+	const tests = [
+		testBeatmapPack,
+		testBeatmap,
+		testBeatmapsetDiscussion,
+		testBeatmapset,
+		testChangelog,
+		testComment,
+		testEvent,
+		testForum,
+		testHome,
+		testMultiplayer,
+		testNews,
+		testRanking,
+		testUser,
+		testWiki,
+		testOther,
+	]
 
-	api.revokeToken()
+	const results: {test_name: string, passed: boolean}[] = []
+	for (let i = 0; i < tests.length; i++) {
+		results.push({test_name: tests[i].name, passed: await tests[i]()})
+	}
+	console.log("\n", ...results.map((r) => `${r.test_name}: ${r.passed ? "✔️" : "❌"}\n`))
+	await api.revokeToken()
 
-	// const tests = [
-	// 	testBeatmapPack,
-	// 	testBeatmap,
-	// 	testBeatmapsetDiscussion,
-	// 	testBeatmapset,
-	// 	testChangelog,
-	// 	testComment,
-	// 	testEvent,
-	// 	testForum,
-	// 	testHome,
-	// 	testMultiplayer,
-	// 	testNews,
-	// 	testRanking,
-	// 	testUser,
-	// 	testWiki,
-	// 	testOther,
-	// ]
-
-	// const results: {test_name: string, passed: boolean}[] = []
-	// for (let i = 0; i < tests.length; i++) {
-	// 	results.push({test_name: tests[i].name, passed: await tests[i]()})
-	// }
-	// console.log("\n", ...results.map((r) => `${r.test_name}: ${r.passed ? "✔️" : "❌"}\n`))
-	// await api.revokeToken()
-
-	// if (!results.find((r) => !r.passed)) {
-	// 	console.log("✔️ Looks like the test went well!")
-	// } else {
-	// 	throw new Error("❌ Something in the test went wrong...")
-	// }
+	if (!results.find((r) => !r.passed)) {
+		console.log("✔️ Looks like the test went well!")
+	} else {
+		throw new Error("❌ Something in the test went wrong...")
+	}
 }
 
 test(process.env.ID, process.env.SECRET)
