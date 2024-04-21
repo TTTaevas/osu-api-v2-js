@@ -91,6 +91,8 @@ export class APIError {
 	message: string
 	/** The server to which the request was sent */
 	server: string
+	/** The method used for this request (like "get", "post", etc...) */
+	method: string
 	/** The type of resource that was requested from the server */
 	endpoint: string
 	/** The filters that were used to specify what resource was wanted */
@@ -100,9 +102,10 @@ export class APIError {
 	/** The error that caused the api to throw an {@link APIError} in the first place, if there is one */
 	original_error?: Error
 
-	constructor(message: string, server: string, endpoint: string, parameters: object, status_code?: number, original_error?: Error) {
+	constructor(message: string, server: string, method: string, endpoint: string, parameters: object, status_code?: number, original_error?: Error) {
 		this.message = message
 		this.server = server
+		this.method = method
 		this.endpoint = endpoint
 		this.parameters = parameters
 		this.status_code = status_code
@@ -359,7 +362,7 @@ export class API {
 			signal: controller.signal
 		})
 		.catch((e) => {
-			throw new APIError("Failed to fetch a token", this.server, "oauth/token", body, undefined, e)
+			throw new APIError("Failed to fetch a token", this.server, "post", "oauth/token", body, undefined, e)
 		})
 		.finally(() => {
 			if (timer) {
@@ -370,7 +373,7 @@ export class API {
 		const json: any = await response.json()
 		if (!json.access_token) {
 			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-			throw new APIError("No token obtained", this.server, "oauth/token", body, response.status)
+			throw new APIError("No token obtained", this.server, "post", "oauth/token", body, response.status)
 		}
 		api.token_type = json.token_type
 		if (json.refresh_token) {api.refresh_token = json.refresh_token}
@@ -552,10 +555,10 @@ export class API {
 				return await this.request(method, endpoint, parameters, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
-			throw new APIError(error_string, `${this.server}/api/v2`, endpoint, parameters, error_code, error_object)
+			throw new APIError(error_string, `${this.server}/api/v2`, method, endpoint, parameters, error_code, error_object)
 		}
 
-		this.log(false, response.statusText, response.status, {endpoint, parameters})
+		this.log(false, response.statusText, response.status, {method, endpoint, parameters})
 		// 204 means the request worked as intended and did not give us anything, so just return nothing
 		if (response.status === 204) return undefined
 
