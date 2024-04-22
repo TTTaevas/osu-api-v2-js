@@ -1,4 +1,4 @@
-import fetch, { AbortError, FetchError } from "node-fetch"
+import fetch, { AbortError, FetchError, RequestInit } from "node-fetch"
 import { WebSocket } from "ws"
 
 import { User } from "./user.js"
@@ -15,7 +15,7 @@ import { Forum } from "./forum.js"
 import { WikiPage } from "./wiki.js"
 import { NewsPost } from "./news.js"
 import { Home } from "./home.js"
-import { Scope, Spotlight } from "./misc.js"
+import { Scope, Spotlight, adaptParametersForGETRequests, anySignal, correctType } from "./misc.js"
 import { Chat } from "./chat.js"
 import { Comment } from "./comment.js"
 
@@ -38,38 +38,6 @@ export { Ruleset, Mod, Scope, Spotlight } from "./misc.js"
 export { Chat } from "./chat.js"
 export { WebSocket } from "./websocket.js"
 export { Comment } from "./comment.js"
-	
-/**
- * Some stuff doesn't have the right type to begin with, such as dates, which are being returned as strings, this fixes that
- * @param x Anything, but should be a string, an array that contains a string, or an object which has a string
- * @returns x, but with it (or what it contains) now having the correct type
- */
-function correctType(x: any): any {
-	const bannedProperties = [
-		"name", "artist", "title", "location", "interests", "occupation", "twitter",
-		"discord", "version", "author", "raw", "bbcode", "title", "message", "creator", "source"
-	]
-
-	if (typeof x === "boolean") {
-		return x
-	} else if (/^[+-[0-9][0-9]+-[0-9]{2}-[0-9]{2}($|[ T].*)/.test(x)) {
-		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(x)) x += "Z"
-		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}$/.test(x)) x = x.substring(0, x.indexOf("+")) + "Z"
-		return new Date(x)
-	} else if (Array.isArray(x)) {
-		return x.map((e) => correctType(e))
-	} else if (!isNaN(x) && x !== "") {
-		return x === null ? null : Number(x)
-	} else if (typeof x === "object" && x !== null) {
-		const k = Object.keys(x)
-		const v = Object.values(x)
-		for (let i = 0; i < k.length; i++) {
-			if (typeof v[i] === "string" && bannedProperties.some((p) => k[i].includes(p))) continue // don't turn names made of numbers into integers
-			x[k[i]] = correctType(v[i])
-		}
-	}
-	return x
-}
 
 
 /**
@@ -117,18 +85,20 @@ export class APIError {
 export class API {
 	// ACCESS TOKEN STUFF
 
+	private _access_token: string = ""
 	/** The key that allows you to talk with the API */
-	access_token: string = ""
+	get access_token() {return this._access_token}
+	set access_token(token) {this._access_token = token}
 
+	private _token_type: string = "Bearer"
 	/** Should always be "Bearer" */
-	token_type: string = "Bearer"
+	get token_type() {return this._token_type}
+	set token_type(token) {this._token_type = token}
 
-	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
+	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000) // in 24 hours
 	/** The expiration date of your access_token */
-	get expires(): Date {
-		return this._expires
-	}
-	set expires(date: Date) {
+	get expires() {return this._expires}
+	set expires(date) {
 		this._expires = date
 		this.updateRefreshTimeout()
 	}
@@ -141,34 +111,30 @@ export class API {
 	 * Valid for an unknown amount of time, allows you to get a new token without going through the Authorization Code Grant again!
 	 * Use {@link API.refreshToken} to do that
 	 */
-	get refresh_token(): string | undefined {
-		return this._refresh_token
-	}
-	set refresh_token(token: string | undefined) {
+	get refresh_token() {return this._refresh_token}
+	set refresh_token(token) {
 		this._refresh_token = token
 		this.updateRefreshTimeout() // because the refresh token may be specified last
 	}
-
+	
+	private _refresh_on_401: boolean = true
 	/** If true, upon failing a request due to a 401, it will use the {@link API.refresh_token} if it exists (defaults to **true**) */
-	refresh_on_401: boolean = true
+	get refresh_on_401() {return this._refresh_on_401}
+	set refresh_on_401(refresh) {this._refresh_on_401 = refresh}
 	
 	private _refresh_on_expires: boolean = true
 	/**
 	 * If true, the application will silently use the {@link API.refresh_token} right before the {@link API.access_token} expires,
 	 * as determined by {@link API.expires} (defaults to **true**)
 	 */
-	get refresh_on_expires(): boolean {
-		return this._refresh_on_expires
-	}
-	set refresh_on_expires(enabled: boolean) {
+	get refresh_on_expires() {return this._refresh_on_expires}
+	set refresh_on_expires(enabled) {
 		this._refresh_on_expires = enabled
 		this.updateRefreshTimeout()
 	}
 
 	private _refresh_timeout?: NodeJS.Timeout
-	get refresh_timeout(): NodeJS.Timeout | undefined {
-		return this._refresh_timeout
-	}
+	get refresh_timeout(): API["_refresh_timeout"] {return this._refresh_timeout}
 	set refresh_timeout(timeout: NodeJS.Timeout) {
 		// if a previous one already exists, clear it
 		if (this._refresh_timeout) {
@@ -182,34 +148,49 @@ export class API {
 
 	// CLIENT INFO
 
-	client: {
+	private _client: {
 		id: number
 		secret: string
 	} = {id: 0, secret: ""}
+	/** The details of your client, which you've got from https://osu.ppy.sh/home/account/edit#oauth */
+	get client() {return this._client}
+	set client(client) {this._client = client}
+
+	private _server: string = "https://osu.ppy.sh"
 	/**
 	 * The base url of the server where the requests should land (defaults to **https://osu.ppy.sh**)
 	 * @remarks For tokens, requests will be sent to the `oauth/token` route, other requests will be sent to the `api/v2` route
 	 */
-	server: string = "https://osu.ppy.sh"
+	get server() {return this._server}
+	set server(server) {this._server = server}
+
+	private _user?: User["id"]
 	/** The osu! user id of the user who went through the Authorization Code Grant */
-	user?: User["id"]
+	get user() {return this._user}
+	set user(user) {this._user = user}
+
+	private _scopes?: Scope[]
 	/** The {@link Scope}s your application has, assuming it acts as a user */
-	scopes?: Scope[]
+	get scopes() {return this._scopes}
+	set scopes(scopes) {this._scopes = scopes}
 
 
 	// CLIENT CONFIGURATION
 
+	private _verbose?: "none" | "errors" | "all" = "none"
 	/** Which events should be logged (defaults to **none**) */
-	verbose: "none" | "errors" | "all" = "none"
-	
+	get verbose() {return this._verbose}
+	set verbose(verbose) {this._verbose = verbose}
+
+	private _timeout: number = 20
 	/**
 	 * The maximum **amount of seconds** requests should take before returning an answer (defaults to **20**)
 	 * @remarks 0 means no maximum, no timeout
 	 */
-	timeout: number = 20
+	get timeout() {return this._timeout}
+	set timeout(timeout) {this._timeout = timeout}
 
-	/** Configure how this instance should behave when it comes to automatically retrying a request */
-	retry: {
+	private _retry: {
 		/** If true, doesn't retry under any circumstances (defaults to **false**) */
 		disabled: boolean
 		/** In seconds, how long should it wait until retrying? (defaults to **2**) */
@@ -230,6 +211,9 @@ export class API {
 		on_timeout: false,
 		on_status_codes: [429]
 	}
+	/** Configure how this instance should behave when it comes to automatically retrying a request */
+	get retry() {return this._retry}
+	set retry(retry) {this._retry = retry}
 	
 
 	/**
@@ -276,6 +260,20 @@ export class API {
 		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "authorization_code",
 		redirect_uri: user.redirect_uri, code: user.code}, new_api) :
 		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "client_credentials", scope: "public"}, new_api)
+	}
+
+	/**
+	 * You can use this to specify additional settings for the method you're going to call, such as `headers`, an `AbortSignal`, and more advanced things!
+	 * @example
+	 * ```ts
+	 * const controller = new AbortController() // this controller can be used to abort any request that uses its signal!
+	 * const user = await api.withSettings({signal: controller.signal}).getUser(7276846)
+	 * ```
+	 * @param additional_fetch_settings You may get more info at https://www.npmjs.com/package/node-fetch#fetch-options
+	 * @returns A special version of the `API` that changes how requests are done
+	 */
+	public withSettings(additional_fetch_settings: ChildAPI["additional_fetch_settings"]): ChildAPI {
+		return new ChildAPI(this, additional_fetch_settings)
 	}
 
 	/** 
@@ -348,7 +346,7 @@ export class API {
 	}, api: API): Promise<API> {
 		const controller = new AbortController()
 		const timer = this.timeout > 0 ? setTimeout(() => {
-			controller.abort()
+			controller.abort(`The request wasn't made in time (took more than ${this.timeout} seconds)`)
 		}, this.timeout * 1000) : false
 
 		const response = await fetch(`${this.server}/oauth/token`, {
@@ -422,58 +420,31 @@ export class API {
 	 * @param method The type of request, each endpoint uses a specific one (if it uses multiple, the intent and parameters become different)
 	 * @param endpoint What comes in the URL after `api/`
 	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
+	 * @param settings Additional settings **to add** to the current settings of the `fetch()` request
 	 * @param info Context given by a prior request
 	 * @returns A Promise with the API's response
 	 */
-	public async request(method: "get" | "post" | "put" | "delete", endpoint: string,
-	parameters: {[k: string]: any} = {}, info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}): Promise<any> {
+	public async request(method: "get" | "post" | "put" | "delete", endpoint: string, parameters: {[k: string]: any} = {},
+	settings?: ChildAPI["additional_fetch_settings"],info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}):
+	Promise<any> {
 		let to_retry = false
 		let error_object: Error | undefined
 		let error_code: number | undefined
 		let error_string = "none"
 
+		const timeout_controller = new AbortController()
+		const timeout_signal = timeout_controller.signal
+		const timeout_timer = this.timeout > 0 ? setTimeout(() => {
+			if (this.retry.on_timeout) {
+				to_retry = true
+			}
+			timeout_controller.abort(`The request wasn't made in time (took more than ${this.timeout} seconds)`)
+		}, this.timeout * 1000) : false
+		const signal = settings?.signal ? anySignal([timeout_signal, settings.signal as AbortSignal]) : timeout_signal
+
 		// For GET requests specifically, requests need to be shaped in very particular ways
 		if (parameters !== undefined && method === "get") {
-			// If a parameter is an empty string or is undefined, remove it
-			for (let i = 0; i < Object.entries(parameters).length; i++) {
-				if (!String(Object.values(parameters)[i]).length || Object.values(parameters)[i] === undefined) {
-					delete parameters[Object.keys(parameters)[i]]
-					i--
-				}
-			}
-
-			// If a parameter is an Array, add "[]" to its name, so the server understands the request properly
-			for (let i = 0; i < Object.entries(parameters).length; i++) {	
-				if (Array.isArray(Object.values(parameters)[i]) && !Object.keys(parameters)[i].includes("[]")) {
-					parameters[`${Object.keys(parameters)[i]}[]`] = Object.values(parameters)[i]
-					delete parameters[Object.keys(parameters)[i]]
-					i--
-				}
-			}
-
-			// If a parameter is an object, add its properties in "[]" such as "cursor[id]=5&cursor[score]=36.234"
-			let parameters_to_add: {[k: string]: any} = {}
-			for (let i = 0; i < Object.entries(parameters).length; i++) {
-				const value = Object.values(parameters)[i]
-				if (typeof value === "object" && !Array.isArray(value) && value !== null) { 
-					const main_name = Object.keys(parameters)[i]
-					for (let e = 0; e < Object.entries(value).length; e++) {
-						parameters_to_add[`${main_name}[${Object.keys(value)[e]}]`] = Object.values(value)[e]
-					}
-					delete parameters[Object.keys(parameters)[i]]
-					i--
-				}
-			}
-			for (let i = 0; i < Object.entries(parameters_to_add).length; i++) {
-				parameters[Object.keys(parameters_to_add)[i]] = Object.values(parameters_to_add)[i]
-			}
-
-			// If a parameter is a date, make it a string
-			for (let i = 0; i < Object.entries(parameters).length; i++) {
-				if (Object.values(parameters)[i] instanceof Date) {
-					parameters[Object.keys(parameters)[i]] = (Object.values(parameters)[i] as Date).toISOString()
-				}
-			}
+			parameters = adaptParametersForGETRequests(parameters)
 		}
 
 		// parameters are here if request is GET
@@ -482,25 +453,19 @@ export class API {
 			return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
 		}).join("&")) : "")
 
-		const controller = new AbortController()
-		const timer = this.timeout > 0 ? setTimeout(() => {
-			if (this.retry.on_timeout) {
-				to_retry = true
-			}
-			controller.abort()
-		}, this.timeout * 1000) : false
-
 		const response = await fetch(url, {
 			method,
+			...settings, // has priority over what's above, but not over what's lower
 			headers: {
 				"Accept": "application/json",
 				"Accept-Encoding": "gzip",
 				"Content-Type": "application/json",
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
-				"Authorization": `${this.token_type} ${this.access_token}`
+				"Authorization": `${this.token_type} ${this.access_token}`,
+				...settings?.headers // written that way, custom headers with (for example) only a user-agent would only overwrite the default user-agent
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
-			signal: controller.signal
+			signal
 		})
 		.catch((error: AbortError | FetchError) => {
 			this.log(true, error.message)
@@ -508,8 +473,8 @@ export class API {
 			error_string = `${error.name} (${error.name === "FetchError" ? error.errno : error.type})`
 		})
 		.finally(() => {
-			if (timer) {
-				clearTimeout(timer)
+			if (timeout_timer) {
+				clearTimeout(timeout_timer)
 			}
 		})
 
@@ -552,7 +517,7 @@ export class API {
 			if (to_retry === true && this.retry.disabled === false && info.number_try < this.retry.maximum_amount) {
 				this.log(true, `Will request again in ${this.retry.delay} seconds...`, `(Try #${info.number_try})`)
 				await new Promise(res => setTimeout(res, this.retry.delay))
-				return await this.request(method, endpoint, parameters, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
+				return await this.request(method, endpoint, parameters, settings, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
 			throw new APIError(error_string, `${this.server}/api/v2`, method, endpoint, parameters, error_code, error_object)
@@ -831,5 +796,66 @@ export class API {
 	 */
 	async getSeasonalBackgrounds(): Promise<{ends_at: Date, backgrounds: {url: string, user: User}[]}> {
 		return await this.request("get", "seasonal-backgrounds")
+	}
+}
+
+/**
+ * Created with {@link API.withSettings}, this special version of the {@link API} specifies additional settings to every request!
+ * @remarks This **is not** to be used for any purpose other than calling methods; The original {@link ChildAPI.original} handles tokens & configuration
+ */
+export class ChildAPI extends API {
+	/** The {@link API} where {@link API.withSettings} was used; this `ChildAPI` gets everything from it! */
+	original: API
+	/** The additional settings that are used for every request made by this object */
+	additional_fetch_settings: Omit<RequestInit, "body">
+	request = async (...args: Parameters<API["request"]>) => {
+		args[3] ??= this.additional_fetch_settings // args[3] is `settings` **for now**
+		return await this.original.request(...args)
+	}
+
+	// Those are first in accessors -> methods order, then in alphabetical order
+	// For the sake of decent documentation and autocomplete
+	/** @hidden @deprecated use API equivalent */
+	get access_token() {return this.original.access_token}
+	/** @hidden @deprecated use API equivalent */
+	get client() {return this.original.client}
+	/** @hidden @deprecated use API equivalent */
+	get expires() {return this.original.expires}
+	/** @hidden @deprecated use API equivalent */
+	get refresh_on_401() {return this.original.refresh_on_401}
+	/** @hidden @deprecated use API equivalent */
+	get refresh_on_expires() {return this.original.refresh_on_expires}
+	/** @hidden @deprecated use API equivalent */
+	get refresh_timeout() {return this.original.refresh_timeout}
+	/** @hidden @deprecated use API equivalent */
+	get refresh_token() {return this.original.refresh_token}
+	/** @hidden @deprecated use API equivalent */
+	get retry() {return this.original.retry}
+	/** @hidden @deprecated use API equivalent */
+	get scopes() {return this.original.scopes}
+	/** @hidden @deprecated use API equivalent */
+	get server() {return this.original.server}
+	/** @hidden @deprecated use API equivalent */
+	get timeout() {return this.original.timeout}
+	/** @hidden @deprecated use API equivalent */
+	get token_type() {return this.original.token_type}
+	/** @hidden @deprecated use API equivalent */
+	get user() {return this.original.user}
+	/** @hidden @deprecated use API equivalent */
+	get verbose() {return this.original.verbose}
+	/** @hidden @deprecated use API equivalent */
+	generateWebSocket = () => {return this.original.generateWebSocket()}
+	/** @hidden @deprecated use API equivalent */
+	refreshToken = async () => {return await this.original.refreshToken()}
+	/** @hidden @deprecated use API equivalent */
+	revokeToken = async () => {return await this.original.revokeToken()}
+	/** @hidden @deprecated use API equivalent */
+	withSettings = (...args: Parameters<API["withSettings"]>) => {return this.original.withSettings(...args)}
+	
+	constructor(original: ChildAPI["original"], additional_fetch_settings: ChildAPI["additional_fetch_settings"]) {
+		super({})
+
+		this.original = original
+		this.additional_fetch_settings = additional_fetch_settings
 	}
 }
