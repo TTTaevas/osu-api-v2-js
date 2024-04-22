@@ -157,12 +157,19 @@ export class API {
 	set client(client) {this._client = client}
 
 	private _server: string = "https://osu.ppy.sh"
-	/**
-	 * The base url of the server where the requests should land (defaults to **https://osu.ppy.sh**)
-	 * @remarks For tokens, requests will be sent to the `oauth/token` route, other requests will be sent to the `api/v2` route
-	 */
+	/** The base url of the server where the requests should land (defaults to **https://osu.ppy.sh**) */
 	get server() {return this._server}
 	set server(server) {this._server = server}
+
+	private _routes: {
+		/** Used by practically every method to interact with the {@link API.server} */
+		normal: string
+		/** Used for getting an {@link API.access_token} and using your {@link API.refresh_token} */
+		token_obtention: string
+	} = {normal: "api/v2", token_obtention: "oauth/token"}
+	/** What follows the {@link API.server} and preceeds the individual endpoints used by each request */
+	get routes() {return this._routes}
+	set routes(routes) {this._routes = routes}
 
 	private _user?: User["id"]
 	/** The osu! user id of the user who went through the Authorization Code Grant */
@@ -349,7 +356,7 @@ export class API {
 			controller.abort(`The request wasn't made in time (took more than ${this.timeout} seconds)`)
 		}, this.timeout * 1000) : false
 
-		const response = await fetch(`${this.server}/oauth/token`, {
+		const response = await fetch(`${this.server}/${this.routes.token_obtention}`, {
 			method: "post",
 			headers: {
 				"Accept": "application/json",
@@ -360,7 +367,7 @@ export class API {
 			signal: controller.signal
 		})
 		.catch((e) => {
-			throw new APIError("Failed to fetch a token", this.server, "post", "oauth/token", body, undefined, e)
+			throw new APIError("Failed to fetch a token", this.server, "post", this.routes.token_obtention, body, undefined, e)
 		})
 		.finally(() => {
 			if (timer) {
@@ -371,7 +378,7 @@ export class API {
 		const json: any = await response.json()
 		if (!json.access_token) {
 			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-			throw new APIError("No token obtained", this.server, "post", "oauth/token", body, response.status)
+			throw new APIError("No token obtained", this.server, "post", this.routes.token_obtention, body, response.status)
 		}
 		api.token_type = json.token_type
 		if (json.refresh_token) {api.refresh_token = json.refresh_token}
@@ -411,6 +418,7 @@ export class API {
 
 	/** Revoke your current token! Revokes the refresh token as well */
 	public async revokeToken(): Promise<true> {
+		// Note that unlike when getting a token, we actually need to use the normal route to revoke a token for some reason
 		await this.request("delete", "oauth/tokens/current")
 		return true
 	}
@@ -447,8 +455,9 @@ export class API {
 			parameters = adaptParametersForGETRequests(parameters)
 		}
 
+		const second_slash = this.routes.normal.length ? "/" : "" // if the server **is** the route, don't have `//` between the server and the endpoint
 		// parameters are here if request is GET
-		const url = `${this.server}/api/v2/${endpoint}` + (method === "get" ? "?" + (Object.entries(parameters).map((param) => {
+		const url = `${this.server}/${this.routes.normal}${second_slash}${endpoint}` + (method === "get" ? "?" + (Object.entries(parameters).map((param) => {
 			if (!Array.isArray(param[1])) {return `${param[0]}=${param[1]}`}
 			return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
 		}).join("&")) : "")
@@ -520,7 +529,7 @@ export class API {
 				return await this.request(method, endpoint, parameters, settings, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
-			throw new APIError(error_string, `${this.server}/api/v2`, method, endpoint, parameters, error_code, error_object)
+			throw new APIError(error_string, `${this.server}/${this.routes.normal}`, method, endpoint, parameters, error_code, error_object)
 		}
 
 		this.log(false, response.statusText, response.status, {method, endpoint, parameters})
@@ -831,6 +840,8 @@ export class ChildAPI extends API {
 	get refresh_token() {return this.original.refresh_token}
 	/** @hidden @deprecated use API equivalent */
 	get retry() {return this.original.retry}
+	/** @hidden @deprecated use API equivalent */
+	get routes() {return this.original.routes}
 	/** @hidden @deprecated use API equivalent */
 	get scopes() {return this.original.scopes}
 	/** @hidden @deprecated use API equivalent */
