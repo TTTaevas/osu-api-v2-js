@@ -340,6 +340,7 @@ const testOther = async (): Promise<boolean> => {
 
 const test = async (id: string, secret: string): Promise<void> => {
 	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all") //"http://127.0.0.1:8080")
+	api.timeout = 30
 
 	const tests = [
 		testBeatmapPack,

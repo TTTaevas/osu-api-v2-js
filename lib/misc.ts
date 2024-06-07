@@ -108,11 +108,15 @@ export function adaptParametersForGETRequests(parameters: {[k: string]: any}): {
  * @param x Anything, but should be a string, an array that contains a string, or an object which has a string
  * @returns x, but with it (or what it contains) now having the correct type
  */
-export function correctType(x: any): any {
+export function correctType(x: any, force_string?: boolean): any {
+	// those MUST be strings; turn the server's numbers into strings and keep the server's strings as strings
 	const bannedProperties = [
-		"name", "artist", "title", "location", "interests", "occupation", "twitter",
-		"discord", "version", "author", "raw", "bbcode", "title", "message", "creator", "source"
+		"name", "artist", "title", "tags", "username", "location", "interests", "occupation", "twitter",
+		"discord", "version", "display_version", "author", "raw", "bbcode", "title", "message", "creator", "source"
 	]
+	if (force_string && typeof x !== "object") {
+		return String(x)
+	}
 
 	if (typeof x === "boolean") {
 		return x
@@ -121,17 +125,17 @@ export function correctType(x: any): any {
 		if (/[0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}$/.test(x)) x = x.substring(0, x.indexOf("+")) + "Z"
 		return new Date(x)
 	} else if (Array.isArray(x)) {
-		return x.map((e) => correctType(e))
+		return x.map((e) => correctType(e, force_string))
 	} else if (!isNaN(x) && x !== "") {
 		return x === null ? null : Number(x)
 	} else if (typeof x === "object" && x !== null) {
-		const k = Object.keys(x)
-		const v = Object.values(x)
-		for (let i = 0; i < k.length; i++) {
-			if (typeof v[i] === "string" && bannedProperties.some((p) => k[i].includes(p))) continue // don't turn names made of numbers into integers
-			x[k[i]] = correctType(v[i])
+		const keys = Object.keys(x)
+		const vals = Object.values(x)
+		for (let i = 0; i < keys.length; i++) {
+			x[keys[i]] = correctType(vals[i], bannedProperties.some((p) => keys[i] === p))
 		}
 	}
+
 	return x
 }
 

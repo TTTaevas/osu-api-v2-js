@@ -357,7 +357,12 @@ export namespace Beatmapset {
 		legacy_thread_url: string
 		nominations_summary: {
 			current: number
-			required: number
+			eligible_main_rulesets: (keyof typeof Ruleset)[] | null
+			/** Required nominations */
+			required_meta: {
+				main_ruleset: number
+				non_main_ruleset: number
+			}
 		}
 		ranked: RankStatus
 		ranked_date: Date | null
