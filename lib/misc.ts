@@ -111,8 +111,8 @@ export function adaptParametersForGETRequests(parameters: {[k: string]: any}): {
 export function correctType(x: any, force_string?: boolean): any {
 	// those MUST be strings; turn the server's numbers into strings and keep the server's strings as strings
 	const bannedProperties = [
-		"name", "artist", "title", "tags", "username", "location", "interests", "occupation", "twitter",
-		"discord", "version", "display_version", "author", "raw", "bbcode", "title", "message", "creator", "source"
+		"name", "artist", "artist_unicode", "title", "title_unicode", "tags", "username", "location", "interests", "occupation", "twitter",
+		"discord", "version", "display_version", "author", "raw", "bbcode", "message", "creator", "source"
 	]
 	if (force_string && typeof x !== "object") {
 		return String(x)

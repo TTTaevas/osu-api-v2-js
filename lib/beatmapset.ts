@@ -390,7 +390,7 @@ export namespace Beatmapset {
 			converts: Beatmap.Extended.WithFailtimes[]
 			current_nominations: {
 				beatmapset_id: Beatmapset["id"]
-				rulesets: Ruleset[]
+				rulesets: Ruleset[] | null
 				reset: boolean
 				user_id: User["id"]
 			}[]

@@ -254,9 +254,9 @@ export namespace User {
 	 */
 	export async function getOne(this: API, user: User["id"] | User["username"] | User, ruleset?: Ruleset): Promise<User.Extended> {
 		const mode = ruleset !== undefined ? Ruleset[ruleset] : ""
-		if (typeof user === "string") return await this.request("get", `users/${user}/${mode}`, {key: "username"})
-		if (typeof user === "number") return await this.request("get", `users/${user}/${mode}`, {key: "id"})
-		return await this.request("get", `users/${user.id}/${mode}`, {key: "id"})
+		if (typeof user === "string") return await this.request("get", `users/@${user}/${mode}`) // `user` is the username, use @ prefix
+		if (typeof user === "number") return await this.request("get", `users/${user}/${mode}`) // `user` is the id
+		return await this.request("get", `users/${user.id}/${mode}`) // `user` is the User object
 	}
 
 	/**
