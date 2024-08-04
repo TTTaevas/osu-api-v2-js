@@ -30,6 +30,11 @@ export interface Beatmapset {
 	title: string
 	/** Basically the title is the original language, so with hiragana, katakana and kanji if Japanese */
 	title_unicode: string
+	/**
+	 * If the song exists on a featured artist's page, then it has a `track_id`
+	 * @remarks https://osu.ppy.sh/beatmaps/artists/tracks/<track_id> redirects to the page of said featured artist
+	 */
+	track_id: number | null
 	user_id: User["id"]
 	video: boolean
 }

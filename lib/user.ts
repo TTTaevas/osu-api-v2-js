@@ -77,6 +77,14 @@ export namespace User {
 			fruits?: Statistics
 			mania?: Statistics
 		}
+		/** Exists only if `include_variant_statistics` was ever specified to be true in a request */
+		variants?: {
+			mode: keyof typeof Ruleset
+			variant: string
+			country_rank: Statistics.WithCountryrank["country_rank"]
+			global_rank: Statistics["global_rank"]
+			pp: number
+		}[]
 	}
 
 	/** @obtainableFrom {@link API.getFriends} */
@@ -125,6 +133,18 @@ export namespace User {
 		}[]
 		beatmap_playcounts_count: number
 		comments_count: number
+		daily_challenge_user_stats: {
+			daily_streak_best: number
+			daily_streak_current: number
+			last_update: Date | null
+			last_weekly_streak: Date | null
+			playcount: number
+			top_10p_placements: number
+			top_50p_placements: number
+			user_id: User["id"]
+			weekly_streak_best: number
+			weekly_streak_current: number
+		}
 		favourite_beatmapset_count: number
 		follower_count: number
 		graveyard_beatmapset_count: number
@@ -262,10 +282,12 @@ export namespace User {
 	/**
 	 * Get user data for up to 50 users at once!
 	 * @param users An array containing user ids or/and `User` objects!
+	 * @param include_variant_statistics Should the response include `variants`, useful to get stats specific to mania 4k/7k for example? (defaults to **false**)
 	 */
-	export async function getMultiple(this: API, users: Array<User["id"] | User>): Promise<User.WithCountryCoverGroupsStatisticsrulesets[]> {
+	export async function getMultiple(this: API, users: Array<User["id"] | User>, include_variant_statistics: boolean = false):
+	Promise<User.WithCountryCoverGroupsStatisticsrulesets[]> {
 		const ids = users.map((user) => getId(user))
-		const response = await this.request("get", "users", {ids})
+		const response = await this.request("get", "users", {ids, include_variant_statistics})
 		return response.users // It's the only property
 	}
 
