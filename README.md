@@ -208,11 +208,13 @@ Of course, using [the apply() method](https://developer.mozilla.org/en-US/docs/W
 ### Home
 - [x] `GET /search` -> searchUser() / searchWiki()
 
+### Matches
+- [x] `GET /matches` -> getMatches()
+- [x] `GET /matches/{match}` -> getMatch()
+
 ### Multiplayer
 - [x] `GET /rooms/{room}/playlist/{playlist}/scores` -> getPlaylistItemScores()
 - [x] `GET /rooms` -> getRooms()
-- [x] `GET /matches` -> getMatches()
-- [x] `GET /matches/{match}` -> getMatch()
 - [x] `GET /rooms/{room}` -> getRoom()
 - [x] `GET /rooms/{room}/leaderboard` -> getRoomLeaderboard()
 

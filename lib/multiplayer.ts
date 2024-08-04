@@ -140,7 +140,15 @@ export namespace Multiplayer {
 	/** @obtainableFrom {@link API.getMatch} */
 	export interface Match {
 		match: Match.Info
-		events: {
+		events: Match.Event[]
+		users: User.WithCountry[]
+		first_event_id: Match.Event["id"]
+		latest_event_id: Match.Event["id"]
+		current_game_id: number | null
+	}
+
+	export namespace Match {
+		export interface Event {
 			id: number
 			detail: {
 				type: string
@@ -163,14 +171,8 @@ export namespace Multiplayer {
 				beatmap: Beatmap.WithBeatmapset
 				scores: Score.WithMatch[]
 			}
-		}[]
-		users: User.WithCountry[]
-		first_event_id: number
-		latest_event_id: number
-		current_game_id: number | null
-	}
+		}
 
-	export namespace Match {
 		/** @obtainableFrom {@link API.getMatches} */
 		export interface Info {
 			id: number
@@ -182,15 +184,32 @@ export namespace Multiplayer {
 		/**
 		 * Get data of a multiplayer lobby from the stable (non-lazer) client that have URLs with `community/matches` or `mp`
 		 * @param match The id of a match can be found at the end of its URL
+		 * @param query Filter and limit the amount of events shown
 		 */
-		export async function getOne(this: API, match: Info["id"] | Info): Promise<Match> {
-			const response = await this.request("get", `matches/${getId(match)}`) as Match
-			// Fix `events[i].game.scores[e].perfect` being a number instead of a boolean
+		export async function getOne(this: API, match: Info["id"] | Info, query?: {
+			/** Filter FOR events BEFORE this one */
+			before?: Match.Event["id"] | Match.Event,
+			/** Filter FOR events AFTER this one */
+			after?: Match.Event["id"] | Match.Event,
+			/** 
+			 * From 1 to 101 events (defaults to **100**)
+			 * @remarks 0 is treated as 1, anything above 101 is treated as 101
+			 */
+			limit?: number
+		}): Promise<Match> {
+			const response = await this.request("get", `matches/${getId(match)}`, {
+				before: query?.before ? getId(query.before) : undefined,
+				after: query?.after ? getId(query.after) : undefined,
+				limit: query?.limit
+			}) as Match
+
+			// This converts scores' "perfect" from number to boolean
 			for (let i = 0; i < response.events.length; i++) {
 				for (let e = 0; e < Number(response.events[i].game?.scores.length); e++) {
 					response.events[i].game!.scores[e].perfect = Boolean(response.events[i].game!.scores[e].perfect)
 				}
 			}
+
 			return response
 		}
 

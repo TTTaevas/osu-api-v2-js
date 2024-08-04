@@ -251,7 +251,7 @@ const testMultiplayer = async (): Promise<boolean> => {
 		const b2 = await attempt(api.getPlaylistItemScores, {id: a2.playlist[0].id, room_id: a2.id})
 		if (!isOk(b2, !b2 || (b2.scores.length >= 9 && validate(b2, "Multiplayer.Room.PlaylistItem.Scores")), 1)) okay = false
 	}
-	const c = await attempt(api.getMatch, 62006076)
+	const c = await attempt(api.getMatch, 62006076, {limit: 0})
 	if (!isOk(c, !c || (c.match.name === "CWC2020: (Italy) vs (Indonesia)" && validate(c, "Multiplayer.Match")), 3)) okay = false
 	const d = await attempt(api.getMatches, {limit: 2})
 	if (!isOk(d, !d || (d[0].id > 111250329 && validate(d, "Multiplayer.Match.Info")))) okay = false
