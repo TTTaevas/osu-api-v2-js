@@ -4,24 +4,24 @@ import { getId } from "./misc.js"
 export namespace Multiplayer {
 	/** @obtainableFrom {@link API.getRoom} */
 	export interface Room {
-		active: boolean
-		auto_skip: boolean
-		category: string
-		channel_id: Chat.Channel["channel_id"]
-		ends_at: Date | null
-		has_password: boolean
-		host: User.WithCountry
 		id: number
-		max_attempts: number | null
 		name: string
-		participant_count: number
-		playlist: Room.PlaylistItem[]
-		queue_mode: string
-		recent_participants: User[]
-		starts_at: Date
+		category: string
 		type: string
 		user_id: User["id"]
-		/** Only exists if authorized user */
+		starts_at: Date
+		ends_at: Date | null
+		max_attempts: number | null
+		participant_count: number
+		channel_id: Chat.Channel["channel_id"]
+		active: boolean
+		has_password: boolean
+		queue_mode: string
+		auto_skip: boolean
+		host: User.WithCountry
+		playlist: Room.PlaylistItem[]
+		recent_participants: User[]
+		/** Only exists if the authorized user has played */
 		current_user_score?: {
 			/** In a format where `96.40%` would be `0.9640` (with some numbers after the zero) */
 			accuracy: number
@@ -130,10 +130,12 @@ export namespace Multiplayer {
 		 * @param mode The state of the room, or the relation of the authorized user with the room
 		 * @param limit The maximum amount of rooms to return, defaults to 10
 		 * @param sort Sort (where most recent is first) by creation date or end date, defaults to the creation date
+		 * @param season_id Only get rooms (playlists) that belong to a specific (modern) *Beatmap Spotlights* season **id**
+		 * (so `5`'d be summer 2020's mania rooms, not winter 2022!!)
 		 */
 		export async function getMultiple(this: API, type: "playlists" | "realtime", mode: "active" | "all" | "ended" | "participated" | "owned",
-		limit: number = 10, sort: "ended" | "created" = "created"): Promise<Room[]> {
-			return await this.request("get", "rooms", {type_group: type, mode, limit, sort})
+		limit: number = 10, sort: "ended" | "created" = "created", season_id?: number): Promise<Room[]> {
+			return await this.request("get", "rooms", {type_group: type, mode, limit, sort, season_id})
 		}
 	}
 
