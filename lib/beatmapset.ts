@@ -113,10 +113,21 @@ export namespace Beatmapset {
 			"genre_edit" | "language_edit" | "nsfw_toggle" | "offset_edit" | "tags_edit" | "beatmap_owner_change"
 		comment: object | null
 		created_at: Date
-		beatmapset: Beatmapset.WithUserHype
 	}
 
 	export namespace Event {
+		interface WithUserid extends Event {
+			user_id: User["id"]
+		}
+
+		interface WithBeatmapset extends Event {
+			beatmapset: Beatmapset.WithUserHype
+		}
+
+		interface WithOptionalBeatmapset extends Event {
+			beatmapset?: Beatmapset.WithUserHype
+		}
+
 		interface WithDiscussion extends Event {
 			discussion: Discussion.WithStartingpost
 		}
@@ -124,43 +135,39 @@ export namespace Beatmapset {
 		interface WithOptionalDiscussion extends Event {
 			discussion?: Discussion.WithStartingpost | null
 		}
-		
-		interface WithUserid extends Event {
-			user_id: User["id"]
-		}
 
 		/** @group Beatmap Change */
-		export interface BeatmapOwnerChange extends WithUserid {
+		export interface BeatmapOwnerChange extends WithUserid, WithBeatmapset {
 			type: "beatmap_owner_change"
 			comment: Comment.WithDiscussionidPostidBeatmapidBeatmapversionNewuseridNewuserusername
 		}
 
 		/** @group Beatmap Change */
-		export interface GenreEdit extends WithUserid {
+		export interface GenreEdit extends WithUserid, WithBeatmapset {
 			type: "genre_edit"
 			comment: Comment.WithDiscussionidPostidOldgenreNewgenre
 		}
 
 		/** @group Beatmap Change */
-		export interface LanguageEdit extends WithUserid {
+		export interface LanguageEdit extends WithUserid, WithBeatmapset {
 			type: "language_edit"
 			comment: Comment.WithDiscussionidPostidOldlanguageNewlanguage
 		}
 
 		/** @group Beatmap Change */
-		export interface NsfwToggle extends WithUserid {
+		export interface NsfwToggle extends WithUserid, WithBeatmapset {
 			type: "nsfw_toggle"
 			comment: Comment.WithDiscussionidPostidOldnsfwNewnsfw
 		}
 
 		/** @group Beatmap Change */
-		export interface OffsetEdit extends WithUserid {
+		export interface OffsetEdit extends WithUserid, WithBeatmapset {
 			type: "offset_edit"
 			comment: Comment.WithDiscussionidPostidOldoffsetNewoffset
 		}
 
 		/** @group Beatmap Change */
-		export interface TagsEdit extends WithOptionalDiscussion, WithUserid {
+		export interface TagsEdit extends WithUserid, WithBeatmapset, WithOptionalDiscussion {
 			type: "tags_edit"
 			comment: Comment.WithDiscussionidPostidOldtagsNewtags
 		}
@@ -168,37 +175,37 @@ export namespace Beatmapset {
 		export type AnyBeatmapChange = BeatmapOwnerChange | GenreEdit | LanguageEdit | NsfwToggle | OffsetEdit | TagsEdit
 
 		/** @group Beatmapset Status Change */
-		export interface QualifyORRank extends Event {
+		export interface QualifyORRank extends WithBeatmapset {
 			type: "qualify" | "rank"
 			comment: null
 		}
 
 		/** @group Beatmapset Status Change */
-		export interface Love extends WithUserid {
+		export interface Love extends WithUserid, WithBeatmapset {
 			type: "love"
 			comment: null
 		}
 
 		/** @group Beatmapset Status Change */
-		export interface Nominate extends WithUserid {
+		export interface Nominate extends WithUserid, WithBeatmapset {
 			type: "nominate"
 			comment: Comment.WithModes
 		}
 
 		/** @group Beatmapset Status Change */
-		export interface RemoveFromLoved extends WithUserid {
+		export interface RemoveFromLoved extends WithUserid, WithOptionalBeatmapset {
 			type: "remove_from_loved"
 			comment: Comment.WithDiscussionidPostidReason
 		}
 
 		/** @group Beatmapset Status Change */
-		export interface DisqualifyORNominationReset extends WithDiscussion, WithUserid {
+		export interface DisqualifyORNominationReset extends WithUserid, WithBeatmapset, WithDiscussion {
 			type: "disqualify" | "nomination_reset"
 			comment: Comment.WithDiscussionidPostidNominatorsids
 		}
 
 		/** @group Beatmapset Status Change */
-		export interface NominationResetReceived extends WithDiscussion, WithUserid {
+		export interface NominationResetReceived extends WithUserid, WithBeatmapset, WithDiscussion {
 			type: "nomination_reset_received"
 			comment: Comment.WithDiscussionidPostidSourceuseridSourceuserusername
 		}
@@ -206,43 +213,55 @@ export namespace Beatmapset {
 		export type AnyBeatmapsetStatusChange = QualifyORRank | Love | Nominate | RemoveFromLoved | DisqualifyORNominationReset | NominationResetReceived
 
 		/** @group Discussion Change */
-		export interface DiscussionDelete extends Event {
+		export interface DiscussionDelete extends WithOptionalBeatmapset {
 			type: "discussion_delete"
 			comment: Comment.WithDiscussionidPostid
 		}
 
 		/** @group Discussion Change */
-		export interface DiscussionRestoreORKudosuRecalculate extends WithOptionalDiscussion {
-			type: "discussion_restore" | "kudosu_recalculate"
+		export interface DiscussionRestore extends WithOptionalBeatmapset, WithOptionalDiscussion {
+			type: "discussion_restore"
 			comment: Comment.WithDiscussionidPostid
 		}
 
 		/** @group Discussion Change */
-		export interface KudosuAllowORDenyORDiscussionPostDeleteORRestore extends WithDiscussion {
-			type: "kudosu_allow" | "kudosu_deny" | "discussion_post_delete" | "discussion_post_restore"
+		export interface KudosuRecalculate extends WithBeatmapset, WithOptionalDiscussion {
+			type: "kudosu_recalculate"
 			comment: Comment.WithDiscussionidPostid
 		}
 
 		/** @group Discussion Change */
-		export interface DiscussionLockORUnlock extends WithOptionalDiscussion, WithUserid {
+		export interface KudosuAllowORDenyORDiscussionPostRestore extends WithBeatmapset, WithDiscussion {
+			type: "kudosu_allow" | "kudosu_deny" | "discussion_post_restore"
+			comment: Comment.WithDiscussionidPostid
+		}
+
+		/** @group Discussion Change */
+		export interface DiscussionPostDelete extends WithOptionalBeatmapset, WithOptionalDiscussion {
+			type: "discussion_post_delete"
+			comment: Comment.WithDiscussionidPostid
+		}
+
+		/** @group Discussion Change */
+		export interface DiscussionLockORUnlock extends WithUserid, WithBeatmapset, WithOptionalDiscussion {
 			type: "discussion_lock" | "discussion_unlock"
 			comment: Comment.WithDiscussionidPostid
 		}
 
 		/** @group Discussion Change */
-		export interface IssueResolveOrReopen extends WithDiscussion, WithUserid {
+		export interface IssueResolveOrReopen extends WithUserid, WithBeatmapset, WithDiscussion {
 			type: "issue_resolve" | "issue_reopen"
 			comment: Comment.WithDiscussionidPostid
 		}
 
 		/** @group Discussion Change */
-		export interface KudosuGainORLost extends WithDiscussion, WithUserid {
+		export interface KudosuGainORLost extends WithUserid, WithBeatmapset, WithDiscussion {
 			type: "kudosu_gain" | "kudosu_lost"
 			comment: Comment.WithDiscussionidPostidNewvotevotes
 		}
 
-		export type AnyDiscussionChange = DiscussionDelete | DiscussionRestoreORKudosuRecalculate | KudosuAllowORDenyORDiscussionPostDeleteORRestore |
-		DiscussionLockORUnlock | IssueResolveOrReopen | KudosuGainORLost
+		export type AnyDiscussionChange = DiscussionDelete | DiscussionRestore | KudosuRecalculate | KudosuAllowORDenyORDiscussionPostRestore |
+		DiscussionPostDelete | DiscussionLockORUnlock | IssueResolveOrReopen | KudosuGainORLost
 
 		export type Any = AnyBeatmapChange | AnyBeatmapsetStatusChange | AnyDiscussionChange
 

@@ -64,6 +64,7 @@ export namespace User {
 	export interface WithCountryCover extends WithCountry {
 		cover: {
 			custom_url: string | null
+			/** @privateRemarks When there's no cover, like on the dev server, this is null; keeping it non-null for convenience */
 			url: string
 			id: number | null
 		}
@@ -95,6 +96,10 @@ export namespace User {
 
 	/** @obtainableFrom {@link API.getUser} */
 	export interface Extended extends WithCountryCoverGroupsStatisticsSupport, WithKudosu {
+		/**
+		 * @deprecated Please use `cover` instead!
+		 * @privateRemarks When there's no cover, like on the dev server, this is null; keeping it non-null for convenience
+		 */
 		cover_url: string
 		discord: string | null
 		has_supported: boolean
