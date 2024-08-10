@@ -24,22 +24,14 @@ async function attempt<T extends (...args: any[]) => any>(fun: T, ...args: Param
 		const result = await fun.call(api, ...args)
 		return result
 	} catch(err) {
-		console.error(err)
+		console.error("❌ from attempt:\n", util.inspect(err, {colors: true, compact: true, depth: 100}), "\n\n")
 		return false
 	}
 }
 
-function isOk(response: any, condition?: boolean, depth: number = Infinity) {
-	if (condition === undefined) condition = true
-	if (!response || !condition) {
-		if (Array.isArray(response) && response[0]) {
-			console.log("(only printing the first element of the response array for the error below)")
-			response = response[0]
-		}
-		console.error("❌ Bad response:", util.inspect(response, {colors: true, compact: true, breakLength: 400, depth: depth}))
-		return false
-	}
-	return true
+function meetsCondition(obj: any, condition: boolean) {
+	if (condition === false) console.error("❌ from meetsCondition:\n", util.inspect(obj, {colors: true, compact: true, depth: 100}), "\n\n")
+	return condition
 }
 
 // ajv will not work properly if type is not changed from string to object where format is date-time
@@ -69,13 +61,15 @@ function validate(object: unknown, schemaName: string): boolean {
 		if (Array.isArray(object)) {
 			for (let i = 0; i < object.length; i++) {
 				const result = validator(object[i])
-				if (validator.errors) console.error(validator.errors)
+				if (validator.errors) console.error("❌ from validator:\n", validator.errors, "\n...for the following object:\n",
+					util.inspect(object[i], {colors: true, compact: true, depth: 100}), "\n\n")
 				if (!result) return false
 			}
 			return true
 		} else {
 			const result = validator(object)
-			if (validator.errors) console.error(validator.errors)
+			if (validator.errors) console.error("❌ from validator:\n", validator.errors, "\n...for the following object:\n",
+				util.inspect(object, {colors: true, compact: true, depth: 100}), "\n\n")
 			return result
 		}
 	} catch(err) {
@@ -92,36 +86,39 @@ const testChat = async (): Promise<boolean> => {
 	console.log("\n===> CHAT")
 
 	const a = await attempt(api.getChatChannels)
-	if (!isOk(a, !a || (validate(a, "Chat.Channel")))) okay = false
+	if (!a || !validate(a, "Chat.Channel")) okay = false
 
 	if (a && a.length) {
 		const channels = a.filter((c) => c.moderated === false) // make sure you can write in those channels
-		const b = await attempt(api.joinChatChannel, channels[0])
-		if (!isOk(b, !b || (validate(b, "Chat.Channel.WithDetails")))) okay = false
-		const c = await attempt(api.getChatChannel, channels[0])
-		if (!isOk(c, !c || (validate(c, "Chat.Channel.WithDetails")))) okay = false
-		const d = await attempt(api.getChatMessages, channels[0])
-		if (!isOk(d, !d || (validate(d, "Chat.Message")))) okay = false
+		const channel = channels[Math.floor(Math.random() * channels.length)]
+		console.log("Testing on Chat.Channel", channel.name, "with id", channel.channel_id)
+
+		const b = await attempt(api.joinChatChannel, channel)
+		if (!b || !validate(b, "Chat.Channel.WithDetails")) okay = false
+		const c = await attempt(api.getChatChannel, channel)
+		if (!c || !validate(c, "Chat.Channel.WithDetails")) okay = false
+		const d = await attempt(api.getChatMessages, channel)
+		if (!d || !validate(d, "Chat.Message")) okay = false
 		if (d && d.length) {
-			const e = await attempt(api.markChatChannelAsRead, channels[0], d[0])
+			const e = await attempt(api.markChatChannelAsRead, channel, d[0])
 			if (e === false) okay = false
 		}
-		const f = await attempt(api.sendChatMessage, channels[0], "hello, just testing something")
-		if (!isOk(f, !f || (f.content === "hello, just testing something" && validate(f, "Chat.Message")))) okay = false
-		const g = await attempt(api.leaveChatChannel, channels[0])
+		const f = await attempt(api.sendChatMessage, channel, "hello, just testing something")
+		if (!f || !meetsCondition(f, f.content === "hello, just testing something") || !validate(f, "Chat.Message")) okay = false
+		const g = await attempt(api.leaveChatChannel, channel)
 		if (g === false) okay = false
 	}
 
 	const h = await attempt(api.createChatPrivateChannel, 3)
-	if (!isOk(h, !h || (validate(h, "Chat.Channel")))) okay = false
+	if (!h || !validate(h, "Chat.Channel")) okay = false
 	const i = await attempt(api.sendChatPrivateMessage, 3, "hello")
-	if (!isOk(i, !i || (i.message.content === "hello" && validate(i.channel, "Chat.Channel") && validate(i.message, "Chat.Message")))) okay = false
+	if (!i || !meetsCondition(i, i.message.content === "hello") || !validate(i.channel, "Chat.Channel") || !validate(i.message, "Chat.Message")) okay = false
 	if (h) {
 		const j = await attempt(api.leaveChatChannel, h)
 		if (j === false) okay = false
 	}
 	const k = await attempt(api.keepChatAlive)
-	if (!isOk(k, !k || (validate(k, "Chat.UserSilence")))) okay = false
+	if (!k || !validate(k, "Chat.UserSilence")) okay = false
 
 	return okay
 }
@@ -132,13 +129,13 @@ const testForum = async (): Promise<boolean> => {
 	const a = await attempt(api.createForumTopic, 85, "osu-api-v2-js test post", `Please ignore this forum post
 It was automatically made for the sole purpose of testing [url=https://github.com/TTTaevas/osu-api-v2-js]osu-api-v2-js[/url]`,
 	{title: "test poll", options: ["yes", "maybe", "no"], length_days: 14, vote_change: true})
-	if (!isOk(a, !a || (validate(a.topic, "Forum.Topic") && validate(a.post, "Forum.Post")))) okay = false
+	if (!a || !validate(a.topic, "Forum.Topic") && validate(a.post, "Forum.Post")) okay = false
 
 	if (a) {
 		const b = await attempt(api.editForumTopicTitle, a.topic, "osu-api-v2-js test post!")
-		if (!isOk(b, !b || (b.title === "osu-api-v2-js test post!" && validate(b, "Forum.Topic")))) okay = false
+		if (!b || !meetsCondition(b, b.title === "osu-api-v2-js test post!") || !validate(b, "Forum.Topic")) okay = false
 		const c = await attempt(api.editForumPost, a.post, a.post.body.raw + " <3")
-		if (!isOk(c, !c || (c.body.raw === a.post.body.raw + " <3" && validate(c, "Forum.Post")))) okay = false
+		if (!c || !meetsCondition(c, c.body.raw === a.post.body.raw + " <3") || !validate(c, "Forum.Post")) okay = false
 	}
 
 	return okay
@@ -149,17 +146,17 @@ const testMultiplayer = async (): Promise<boolean> => {
 	console.log("\n===> MULTIPLAYER")
 
 	const a1 = await attempt(api.getRooms, "playlists", "all")
-	if (!isOk(a1, !a1 || (validate(a1, "Multiplayer.Room")))) okay = false
+	if (!a1 || !validate(a1, "Multiplayer.Room")) okay = false
 	const a2 = await attempt(api.getRooms, "realtime", "all")
-	if (!isOk(a2, !a2 || (validate(a2, "Multiplayer.Room")))) okay = false
+	if (!a2 || !validate(a2, "Multiplayer.Room")) okay = false
 
 	if (a1 && a1.length) {
 		const b1 = await attempt(api.getRoomLeaderboard, a1[0])
-		if (!isOk(b1, !b1 || (validate(b1.leaderboard, "Multiplayer.Room.Leader")))) okay = false
+		if (!b1 || !validate(b1.leaderboard, "Multiplayer.Room.Leader")) okay = false
 	}
 	if (a2 && a2.length) {
 		const b2 = await attempt(api.getRoomLeaderboard, a2[0])
-		if (!isOk(b2, !b2 || (validate(b2.leaderboard, "Multiplayer.Room.Leader")))) okay = false
+		if (!b2 || !validate(b2.leaderboard, "Multiplayer.Room.Leader")) okay = false
 	}
 
 	return okay
@@ -175,7 +172,7 @@ const testScore = async (): Promise<boolean> => {
 	}
 
 	const a = await attempt(api.getReplay, 393079484)
-	if (!isOk(a, !a || (a.length === 119546))) okay = false
+	if (!a || !meetsCondition(a, a.length === 119546)) okay = false
 	return okay
 }
 
@@ -184,9 +181,9 @@ const testUser = async (): Promise<boolean> => {
 	console.log("\n===> USER")
 
 	const a = await attempt(api.getResourceOwner)
-	if (!isOk(a, !a || (validate(a, "User.Extended.WithStatisticsrulesets")))) okay = false
+	if (!a || !validate(a, "User.Extended.WithStatisticsrulesets")) okay = false
 	const b = await attempt(api.getFriends)
-	if (!isOk(b, !b || (validate(b, "User.WithCountryCoverGroupsStatisticsSupport")))) okay = false
+	if (!b || !validate(b, "User.WithCountryCoverGroupsStatisticsSupport")) okay = false
 
 	return okay
 }

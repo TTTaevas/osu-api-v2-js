@@ -112,6 +112,7 @@ export namespace User {
 		playmode: keyof typeof Ruleset
 		playstyle: string[] | null
 		post_count: number
+		profile_hue: number | null
 		profile_order: ("me" | "recent_activity" | "beatmaps" | "historical" | "kudosu" | "top_ranks" | "medals")[]
 		title: string | null
 		title_url: string | null
