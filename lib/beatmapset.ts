@@ -225,14 +225,14 @@ export namespace Beatmapset {
 		}
 
 		/** @group Discussion Change */
-		export interface KudosuRecalculate extends WithBeatmapset, WithOptionalDiscussion {
-			type: "kudosu_recalculate"
+		export interface KudosuRecalculateORAllowORDeny extends WithBeatmapset, WithOptionalDiscussion {
+			type: "kudosu_allow" | "kudosu_deny" | "kudosu_recalculate"
 			comment: Comment.WithDiscussionidPostid
 		}
 
 		/** @group Discussion Change */
-		export interface KudosuAllowORDenyORDiscussionPostRestore extends WithBeatmapset, WithDiscussion {
-			type: "kudosu_allow" | "kudosu_deny" | "discussion_post_restore"
+		export interface DiscussionPostRestore extends WithBeatmapset, WithDiscussion {
+			type: "discussion_post_restore"
 			comment: Comment.WithDiscussionidPostid
 		}
 
@@ -260,7 +260,7 @@ export namespace Beatmapset {
 			comment: Comment.WithDiscussionidPostidNewvotevotes
 		}
 
-		export type AnyDiscussionChange = DiscussionDelete | DiscussionRestore | KudosuRecalculate | KudosuAllowORDenyORDiscussionPostRestore |
+		export type AnyDiscussionChange = DiscussionDelete | DiscussionRestore | KudosuRecalculateORAllowORDeny | DiscussionPostRestore |
 		DiscussionPostDelete | DiscussionLockORUnlock | IssueResolveOrReopen | KudosuGainORLost
 
 		export type Any = AnyBeatmapChange | AnyBeatmapsetStatusChange | AnyDiscussionChange
