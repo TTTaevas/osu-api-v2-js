@@ -297,25 +297,27 @@ const testUser = async (): Promise<boolean> => {
 	
 	const a = await attempt(api.getUser, user_id)
 	if (!a || !meetsCondition(a, a.id === user_id) || !validate(a, "User.Extended")) okay = false
-	const b = await attempt(api.getUsers, [user_id, 2])
-	if (!b || !meetsCondition(b, b.length === 2) || !validate(b, "User.WithCountryCoverGroupsStatisticsrulesets")) okay = false
+	const b = await attempt(api.lookupUsers, [user_id, 2])
+	if (!b || !meetsCondition(b, b.length === 2) || !validate(b, "User.WithCountryCoverGroups")) okay = false
+	const c = await attempt(api.getUsers, [user_id, 2])
+	if (!c || !meetsCondition(c, c.length === 2) || !validate(c, "User.WithCountryCoverGroupsStatisticsrulesets")) okay = false
 
-	const c1 = await attempt(api.getUserScores, user_id, "best", undefined, {fails: false, lazer: true}, {limit: 5})
-	if (!c1 || !meetsCondition(c1, c1.length === 5) || !validate(c1, "Score.WithUserBeatmapBeatmapset")) okay = false
-	const c2 = await attempt(api.getUserScores, 6503700, "firsts", osu.Ruleset.taiko, undefined, {limit: 3})
-	if (!c2 || !meetsCondition(c2, c2.length === 3) || !validate(c2, "Score.WithUserBeatmapBeatmapset")) okay = false
-	const c3 = await attempt(api.getUserScores, 9269034, "recent", osu.Ruleset.osu, {fails: true, lazer: true}, {limit: 1})
+	const d1 = await attempt(api.getUserScores, user_id, "best", undefined, {fails: false, lazer: true}, {limit: 5})
+	if (!d1 || !meetsCondition(d1, d1.length === 5) || !validate(d1, "Score.WithUserBeatmapBeatmapset")) okay = false
+	const d2 = await attempt(api.getUserScores, 6503700, "firsts", osu.Ruleset.taiko, undefined, {limit: 3})
+	if (!d2 || !meetsCondition(d2, d2.length === 3) || !validate(d2, "Score.WithUserBeatmapBeatmapset")) okay = false
+	const d3 = await attempt(api.getUserScores, 9269034, "recent", osu.Ruleset.osu, {fails: true, lazer: true}, {limit: 1})
 	// Due to the nature of this test, it might fail, you may adapt the user id
-	if (!c3 || !meetsCondition(c3, c3.length === 1) || !validate(c3, "Score.WithUserBeatmapBeatmapset")) okay = false
+	if (!d3 || !meetsCondition(d3, d3.length === 1) || !validate(d3, "Score.WithUserBeatmapBeatmapset")) okay = false
 
-	const d = await attempt(api.getUserBeatmaps, user_id, "guest")
-	if (!d || !meetsCondition(d, d.length === 1) || !validate(d, "Beatmapset.Extended.WithBeatmap")) okay = false
-	const e = await attempt(api.getUserMostPlayed, user_id)
-	if (!e || !meetsCondition(e, e[0].beatmapset.title === "furioso melodia") || !validate(e, "Beatmap.Playcount")) okay = false
-	const f = await attempt(api.getUserRecentActivity, 7562902, {limit: 25})
-	if (!f || !meetsCondition(f, f.length <= 25) || !validate(f, "Event.AnyRecentActivity")) okay = false
-	const g = await attempt(api.getUserKudosu, user_id, {limit: 5})
-	if (!g || !meetsCondition(g, g.length === 5) || !validate(g, "User.KudosuHistory")) okay = false
+	const e = await attempt(api.getUserBeatmaps, user_id, "guest")
+	if (!e || !meetsCondition(e, e.length === 1) || !validate(e, "Beatmapset.Extended.WithBeatmap")) okay = false
+	const f = await attempt(api.getUserMostPlayed, user_id)
+	if (!f || !meetsCondition(f, f[0].beatmapset.title === "furioso melodia") || !validate(f, "Beatmap.Playcount")) okay = false
+	const g = await attempt(api.getUserRecentActivity, 7562902, {limit: 25})
+	if (!g || !meetsCondition(g, g.length <= 25) || !validate(g, "Event.AnyRecentActivity")) okay = false
+	const h = await attempt(api.getUserKudosu, user_id, {limit: 5})
+	if (!h || !meetsCondition(h, h.length === 5) || !validate(h, "User.KudosuHistory")) okay = false
 
 	return okay
 }

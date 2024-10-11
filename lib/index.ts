@@ -762,6 +762,9 @@ export class API {
 	/** {@inheritDoc User.getOne} @group User Functions */
 	readonly getUser = User.getOne
 
+	/** {@inheritDoc User.lookupMultiple} @group User Functions */
+	readonly lookupUsers = User.lookupMultiple
+
 	/** {@inheritDoc User.getMultiple} @group User Functions */
 	readonly getUsers = User.getMultiple
 

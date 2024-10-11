@@ -70,8 +70,11 @@ export namespace User {
 		}
 	}
 
+	/** @obtainableFrom {@link API.lookupUsers} */
+	export interface WithCountryCoverGroups extends WithCountryCover, WithGroups {}
+
 	/** @obtainableFrom {@link API.getUsers} */
-	export interface WithCountryCoverGroupsStatisticsrulesets extends WithCountryCover, WithGroups {
+	export interface WithCountryCoverGroupsStatisticsrulesets extends WithCountryCoverGroups {
 		statistics_rulesets: {
 			osu?: Statistics
 			taiko?: Statistics
@@ -198,6 +201,7 @@ export namespace User {
 		/** @obtainableFrom {@link API.getResourceOwner} */
 		export interface WithStatisticsrulesets extends Extended, User.WithCountryCoverGroupsStatisticsrulesets {
 			is_restricted: boolean
+			session_verified: boolean
 		}
 	}
 
@@ -283,6 +287,16 @@ export namespace User {
 		if (typeof user === "string") return await this.request("get", `users/@${user}/${mode}`) // `user` is the username, use @ prefix
 		if (typeof user === "number") return await this.request("get", `users/${user}/${mode}`) // `user` is the id
 		return await this.request("get", `users/${user.id}/${mode}`) // `user` is the User object
+	}
+
+	/**
+	 * Lookup user data for up to 50 users at once!
+	 * @param users An array containing user ids or/and `User` objects!
+	 */
+	export async function lookupMultiple(this: API, users: Array<User["id"] | User>): Promise<User.WithCountryCoverGroups[]> {
+		const ids = users.map((user) => getId(user))
+		const response = await this.request("get", "users/lookup", {ids})
+		return response.users // It's the only property
 	}
 
 	/**
