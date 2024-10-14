@@ -114,20 +114,23 @@ describe("Chat stuff", () => {
 		})
 	})
 
+	let dm_channel: osu.Chat.Channel
 	test("createChatPrivateChannel", async () => {
-		const channel = await api.createChatPrivateChannel(3)
-		expectTypeOf(channel).toEqualTypeOf<Awaited<ReturnType<typeof api.createChatPrivateChannel>>>()
+		dm_channel = await api.createChatPrivateChannel(3)
+		expectTypeOf(dm_channel).toEqualTypeOf<Awaited<ReturnType<typeof api.createChatPrivateChannel>>>()
 	})
 
-	test("sendChatPrivateMessage", async () => {
-		const event = await api.sendChatPrivateMessage(3, "hello")
-		expect(event.message).toHaveProperty("content", "hello")
-		expectTypeOf(event).toEqualTypeOf<Awaited<ReturnType<typeof api.sendChatPrivateMessage>>>()
-	})
+	describe("Interact with a private channel", () => {
+		test("sendChatPrivateMessage", async () => {
+			const event = await api.sendChatPrivateMessage(3, "hello") // sendChatPrivateMessage uses the USER's id
+			expect(event.message).toHaveProperty("content", "hello")
+			expectTypeOf(event).toEqualTypeOf<Awaited<ReturnType<typeof api.sendChatPrivateMessage>>>()
+		})
 
-	test("leaveChatChannel", async () => {
-		const response = await api.leaveChatChannel(3)
-		expectTypeOf(response).toEqualTypeOf<Awaited<ReturnType<typeof api.leaveChatChannel>>>()
+		test("leaveChatChannel", async () => {
+			const response = await api.leaveChatChannel(dm_channel) // leaveChatChannel uses the CHANNEL's id
+			expectTypeOf(response).toEqualTypeOf<Awaited<ReturnType<typeof api.leaveChatChannel>>>()
+		})
 	})
 
 	test("keepChatAlive", async () => {
