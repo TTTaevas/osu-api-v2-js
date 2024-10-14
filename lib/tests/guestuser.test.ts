@@ -23,6 +23,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
+	api.verbose = "all"
 	await api.revokeToken()
 })
 
@@ -250,24 +251,34 @@ describe("Home stuff", () => {
 })
 
 describe("Multiplayer stuff", () => {
-	test("getRoom & getPlaylistItemScores, realtime", async () => {
-		const room = await api.getRoom(591993)
-		expect(room.recent_participants).toHaveLength(5)
-		expectTypeOf(room).toEqualTypeOf<Awaited<ReturnType<typeof api.getRoom>>>()
+	describe("Realtime rooms", () => {
+		let room: osu.Multiplayer.Room
+		test("getRoom", async () => {
+			room = await api.getRoom(591993)
+			expect(room.recent_participants).toHaveLength(5)
+			expectTypeOf(room).toEqualTypeOf<Awaited<ReturnType<typeof api.getRoom>>>()
+		})
 
-		const scores = await api.getPlaylistItemScores({id: room.playlist[0].id, room_id: room.id})
-		expect(scores.scores.length).greaterThan(0)
-		expectTypeOf(scores).toEqualTypeOf<Awaited<ReturnType<typeof api.getPlaylistItemScores>>>()
+		test("getPlaylistItemScores", async () => {
+			const scores = await api.getPlaylistItemScores({id: room.playlist[0].id, room_id: room.id})
+			expect(scores.scores.length).greaterThan(0)
+			expectTypeOf(scores).toEqualTypeOf<Awaited<ReturnType<typeof api.getPlaylistItemScores>>>()
+		})
 	})
 
-	test("getRoom & getPlaylistItemScores, playlist", async () => {
-		const room = await api.getRoom(588230)
-		expect(room.participant_count).toBe(27)
-		expectTypeOf(room).toEqualTypeOf<Awaited<ReturnType<typeof api.getRoom>>>()
+	describe("Playlists rooms", () => {
+		let room: osu.Multiplayer.Room
+		test("getRoom", async () => {
+			room = await api.getRoom(588230)
+			expect(room.participant_count).toBe(27)
+			expectTypeOf(room).toEqualTypeOf<Awaited<ReturnType<typeof api.getRoom>>>()
+		})
 
-		const scores = await api.getPlaylistItemScores({id: room.playlist[0].id, room_id: room.id})
-		expect(scores.scores.length).greaterThanOrEqual(9)
-		expectTypeOf(scores).toEqualTypeOf<Awaited<ReturnType<typeof api.getPlaylistItemScores>>>()
+		test("getPlaylistItemScores", async () => {
+			const scores = await api.getPlaylistItemScores({id: room.playlist[0].id, room_id: room.id})
+			expect(scores.scores.length).greaterThanOrEqual(9)
+			expectTypeOf(scores).toEqualTypeOf<Awaited<ReturnType<typeof api.getPlaylistItemScores>>>()
+		})
 	})
 
 	test("getMatch", async () => {
