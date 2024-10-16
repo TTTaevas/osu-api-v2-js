@@ -1,4 +1,3 @@
-import fetch, { AbortError, FetchError, RequestInit } from "node-fetch"
 import { WebSocket } from "ws"
 
 import { User } from "./user.js"
@@ -202,7 +201,7 @@ export class API {
 		disabled: boolean
 		/** In seconds, how long should it wait until retrying? (defaults to **2**) */
 		delay: number
-		/** How many retries maximum before throwing an {@link APIError} (defaults to **5**) */
+		/** How many retries maximum before throwing an {@link APIError} (defaults to **4**) */
 		maximum_amount: number
 		/** Should it retry a request upon successfully refreshing the token due to {@link API.refresh_on_401} being `true`? (defaults to **true**) */
 		on_automatic_refresh: boolean
@@ -213,7 +212,7 @@ export class API {
 	} = {
 		disabled: false,
 		delay: 2,
-		maximum_amount: 5,
+		maximum_amount: 4,
 		on_automatic_refresh: true,
 		on_timeout: false,
 		on_status_codes: [429]
@@ -276,7 +275,7 @@ export class API {
 	 * const controller = new AbortController() // this controller can be used to abort any request that uses its signal!
 	 * const user = await api.withSettings({signal: controller.signal}).getUser(7276846)
 	 * ```
-	 * @param additional_fetch_settings You may get more info at https://www.npmjs.com/package/node-fetch#fetch-options
+	 * @param additional_fetch_settings You may get more info at https://developer.mozilla.org/en-US/docs/Web/API/RequestInit#instance_properties
 	 * @returns A special version of the `API` that changes how requests are done
 	 */
 	public withSettings(additional_fetch_settings: ChildAPI["additional_fetch_settings"]): ChildAPI {
@@ -351,11 +350,6 @@ export class API {
 		code?: string
 		refresh_token?: string	
 	}, api: API): Promise<API> {
-		const controller = new AbortController()
-		const timer = this.timeout > 0 ? setTimeout(() => {
-			controller.abort(`The request wasn't made in time (took more than ${this.timeout} seconds)`)
-		}, this.timeout * 1000) : false
-
 		const response = await fetch(`${this.server}/${this.routes.token_obtention}`, {
 			method: "post",
 			headers: {
@@ -364,15 +358,10 @@ export class API {
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)"
 			},
 			body: JSON.stringify(body),
-			signal: controller.signal
+			signal: this.timeout > 0 ? AbortSignal.timeout(this.timeout * 1000) : undefined
 		})
 		.catch((e) => {
 			throw new APIError("Failed to fetch a token", this.server, "post", this.routes.token_obtention, body, undefined, e)
-		})
-		.finally(() => {
-			if (timer) {
-				clearTimeout(timer)
-			}
 		})
 
 		const json: any = await response.json()
@@ -438,29 +427,26 @@ export class API {
 		let to_retry = false
 		let error_object: Error | undefined
 		let error_code: number | undefined
-		let error_string = "none"
+		let error_message = "no error message available"
 
-		const timeout_controller = new AbortController()
-		const timeout_signal = timeout_controller.signal
-		const timeout_timer = this.timeout > 0 ? setTimeout(() => {
-			if (this.retry.on_timeout) {
-				to_retry = true
-			}
-			timeout_controller.abort(`The request wasn't made in time (took more than ${this.timeout} seconds)`)
-		}, this.timeout * 1000) : false
-		const signal = settings?.signal ? anySignal([timeout_signal, settings.signal as AbortSignal]) : timeout_signal
-
-		// For GET requests specifically, requests need to be shaped in very particular ways
-		if (parameters !== undefined && method === "get") {
-			parameters = adaptParametersForGETRequests(parameters)
-		}
-
+		const signals: AbortSignal[] = []
+		if (settings?.signal) signals.push(settings.signal)
+		if (this.timeout > 0) signals.push(AbortSignal.timeout(this.timeout * 1000))
+		
 		const second_slash = this.routes.normal.length ? "/" : "" // if the server **is** the route, don't have `//` between the server and the endpoint
-		// parameters are here if request is GET
-		const url = `${this.server}/${this.routes.normal}${second_slash}${endpoint}` + (method === "get" ? "?" + (Object.entries(parameters).map((param) => {
-			if (!Array.isArray(param[1])) {return `${param[0]}=${param[1]}`}
-			return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
-		}).join("&")) : "")
+		let url = `${this.server}/${this.routes.normal}${second_slash}${endpoint}`
+
+		if (method === "get" && parameters) {
+			// For GET requests specifically, requests need to be shaped in very particular ways
+			// adaptParametersForGETRequests feels actually too long to fit in here
+			const get_parameters = adaptParametersForGETRequests(parameters)
+
+			// Let's add the parameters into the URL
+			url += "?" + (Object.entries(get_parameters).map((param) => {
+				if (!Array.isArray(param[1])) {return `${param[0]}=${param[1]}`}
+				return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
+			}).join("&"))
+		}
 
 		const response = await fetch(url, {
 			method,
@@ -474,23 +460,19 @@ export class API {
 				...settings?.headers // written that way, custom headers with (for example) only a user-agent would only overwrite the default user-agent
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
-			signal
+			signal: anySignal(signals)
 		})
-		.catch((error: AbortError | FetchError) => {
+		.catch((error) => {
+			if (error.name === "TimeoutError" && this.retry.on_timeout) to_retry = true
 			this.log(true, error.message)
 			error_object = error
-			error_string = `${error.name} (${error.name === "FetchError" ? error.errno : error.type})`
-		})
-		.finally(() => {
-			if (timeout_timer) {
-				clearTimeout(timeout_timer)
-			}
+			error_message = `${error.name} (${error.message ?? error.errno ?? error.type})`
 		})
 
 		if (!response || !response.ok) {
 			if (response) {
 				error_code = response.status
-				error_string = response.statusText
+				error_message = response.statusText
 
 				if (this.retry.on_status_codes.includes(response.status)) {
 					to_retry = true
@@ -520,16 +502,16 @@ export class API {
 
 			/**
 			 * Under specific circumstances, we want to retry our request automatically
-			 * However, spamming the server during the same second in any of these circumstances would be pointless
-			 * So we wait for 1 to 5 seconds to make our request, 5 times maximum
+			 * However, instantly trying the request again even though it failed (or was made to failed) is usually not desirable
+			 * So we wait a bit to make our request, repeat the process a few times if needed
 			*/
-			if (to_retry === true && this.retry.disabled === false && info.number_try < this.retry.maximum_amount) {
-				this.log(true, `Will request again in ${this.retry.delay} seconds...`, `(Try #${info.number_try})`)
-				await new Promise(res => setTimeout(res, this.retry.delay))
+			if (to_retry === true && this.retry.disabled === false && info.number_try <= this.retry.maximum_amount) {
+				this.log(true, `Will request again in ${this.retry.delay} seconds...`, `(going for retry #${info.number_try}/${this.retry.maximum_amount})`)
+				await new Promise(res => setTimeout(res, this.retry.delay * 1000))
 				return await this.request(method, endpoint, parameters, settings, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
-			throw new APIError(error_string, `${this.server}/${this.routes.normal}`, method, endpoint, parameters, error_code, error_object)
+			throw new APIError(error_message, `${this.server}/${this.routes.normal}`, method, endpoint, parameters, error_code, error_object)
 		}
 
 		this.log(false, response.statusText, response.status, {method, endpoint, parameters})

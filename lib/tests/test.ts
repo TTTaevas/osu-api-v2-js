@@ -35,20 +35,20 @@ function meetsCondition(obj: any, condition: boolean) {
 }
 
 // ajv will not work properly if type is not changed from string to object where format is date-time
-function fixDate(x: any) {
-	if (typeof x === "object" && x !== null) {
-		if (x["format"] && x["format"] === "date-time" && x["type"] && x["type"] === "string") {
-			x["type"] = "object"
+function fixDate(arg: any) {
+	if (typeof arg === "object" && arg !== null) {
+		if (arg["format"] && arg["format"] === "date-time" && arg["type"] && arg["type"] === "string") {
+			arg["type"] = "object"
 		}
 
-		const k = Object.keys(x)
-		const v = Object.values(x)
-		for (let i = 0; i < k.length; i++) {
-			x[k[i]] = fixDate(v[i])
+		const keys = Object.keys(arg)
+		const value = Object.values(arg)
+		for (let i = 0; i < keys.length; i++) {
+			arg[keys[i]] = fixDate(value[i])
 		}
 	}
 
-	return x
+	return arg
 }
 
 function validate(object: unknown, schemaName: string): boolean {
@@ -82,8 +82,8 @@ function validate(object: unknown, schemaName: string): boolean {
 // THE ACTUAL TESTS
 
 const testBeatmapPack = async (): Promise<boolean> => {
-	console.log("\n===> BEATMAP PACK")
 	let okay = true
+
 	const a = await attempt(api.getBeatmapPack, "P217")
 	if (!a || !meetsCondition(a, a.tag === "P217") || !validate(a, "Beatmap.Pack.WithBeatmapset")) okay = false
 	const b = await attempt(api.getBeatmapPacks, "tournament")
@@ -92,7 +92,6 @@ const testBeatmapPack = async (): Promise<boolean> => {
 }
 
 const testBeatmap = async (): Promise<boolean> => {
-	console.log("\n===> BEATMAP")
 	let okay = true
 	const [beatmap_id, long_str] = [388463, "Beatmap.Extended.WithFailtimesBeatmapset"]
 
@@ -131,7 +130,6 @@ const testBeatmap = async (): Promise<boolean> => {
 }
 
 const testBeatmapsetDiscussion = async (): Promise<boolean> => {
-	console.log("\n===> BEATMAPSET DISCUSSION")
 	let okay = true
 
 	const a = await attempt(api.getBeatmapsetDiscussions, {beatmapset: 2119925})
@@ -148,7 +146,6 @@ const testBeatmapsetDiscussion = async (): Promise<boolean> => {
 }
 
 const testBeatmapset = async (): Promise<boolean> => {
-	console.log("\n===> BEATMAPSET")
 	let okay = true
 
 	const a = await attempt(api.getBeatmapset, 1971037)
@@ -178,7 +175,6 @@ const testBeatmapset = async (): Promise<boolean> => {
 
 const testChangelog = async (): Promise<boolean> => {
 	let okay = true
-	console.log("\n===> CHANGELOG")
 
 	const a = await attempt(api.lookupChangelogBuild, 7156)
 	if (!a || !meetsCondition(a, a.display_version === "2023.1008.1") || !validate(a, "Changelog.Build.WithChangelogentriesVersions")) okay = false
@@ -194,7 +190,6 @@ const testChangelog = async (): Promise<boolean> => {
 
 const testComment = async (): Promise<boolean> => {
 	let okay = true
-	console.log("\n===> COMMENT")
 
 	const a = await attempt(api.getComment, 2418884)
 	if (!a || !meetsCondition(a.users, Boolean(a.users.find(((u) => u.id === 32573520)))) || !validate(a, "Comment.Bundle")) okay = false
@@ -212,7 +207,6 @@ const testComment = async (): Promise<boolean> => {
 
 const testEvent = async (): Promise<boolean> => {
 	let okay = true
-	console.log("\n===> EVENT")
 	const a = await attempt(api.getEvents)
 	if (!a || !meetsCondition(a, a.events.length === 50) || !validate(a.events, "Event.Any")) okay = false
 	return okay
@@ -220,7 +214,6 @@ const testEvent = async (): Promise<boolean> => {
 
 const testForum = async (): Promise<boolean> => {
 	let okay = true
-	console.log("\n===> FORUM")
 	const a = await attempt(api.getForumTopicAndPosts, 1848236, {limit: 2})
 	if (!a || !meetsCondition(a, a.topic.title === "survey") || !validate(a.topic, "Forum.Topic") || !validate(a.posts, "Forum.Post")) okay = false
 	return okay
@@ -228,7 +221,6 @@ const testForum = async (): Promise<boolean> => {
 
 const testHome = async (): Promise<boolean> => {
 	let okay = true
-	console.log("\n===> HOME")
 
 	const a1 = await attempt(api.searchUser, "Tae", 2)
 	if (!a1 || !meetsCondition(a1, a1.data.length === 20) || !validate(a1.data, "User")) okay = false
@@ -240,7 +232,6 @@ const testHome = async (): Promise<boolean> => {
 
 const testMultiplayer = async (): Promise<boolean> => {
 	let okay = true
-	console.log("\n===> MULTIPLAYER")
 
 	const a1 = await attempt(api.getRoom, 591993)
 	if (!a1 || !meetsCondition(a1, a1.recent_participants.length === 5) || !validate(a1, "Multiplayer.Room")) okay = false
@@ -264,7 +255,6 @@ const testMultiplayer = async (): Promise<boolean> => {
 
 const testNews = async (): Promise<boolean> => {
 	let okay = true
-	console.log("\n===> NEWS")
 
 	const a = await attempt(api.getNewsPost, 26)
 	if (!a || !meetsCondition(a, a.title === "Official osu! Fanart Contest 5 Begins!") || !validate(a, "NewsPost.WithContentNavigation")) okay = false
@@ -276,7 +266,6 @@ const testNews = async (): Promise<boolean> => {
 
 const testRanking = async (): Promise<boolean> => {
 	let okay = true
-	console.log("\n===> RANKING")
 
 	const a = await attempt(api.getKudosuRanking)
 	if (!a || !meetsCondition(a, a[0].kudosu.total > 10000) || !validate(a, "User.WithKudosu")) okay = false
@@ -293,7 +282,6 @@ const testRanking = async (): Promise<boolean> => {
 const testUser = async (): Promise<boolean> => {
 	let okay = true
 	const user_id = 7276846
-	console.log("\n===> USER")
 	
 	const a = await attempt(api.getUser, user_id)
 	if (!a || !meetsCondition(a, a.id === user_id) || !validate(a, "User.Extended")) okay = false
@@ -324,7 +312,6 @@ const testUser = async (): Promise<boolean> => {
 
 const testWiki = async (): Promise<boolean> => {
 	let okay = true
-	console.log("\n===> WIKI")
 	const a = await attempt(api.getWikiPage, "Rules")
 	if (!a || !meetsCondition(a, a.title === "Rules") || !validate(a, "WikiPage")) okay = false
 	return okay
@@ -332,7 +319,6 @@ const testWiki = async (): Promise<boolean> => {
 
 const testOther = async (): Promise<boolean> => {
 	let okay = true
-	console.log("\n===> OTHER")
 
 	const a = await attempt(api.getSpotlights)
 	if (!a || !meetsCondition(a, a.length >= 132) || !validate(a, "Spotlight")) okay = false
@@ -344,8 +330,8 @@ const testOther = async (): Promise<boolean> => {
 
 
 const test = async (id: string, secret: string): Promise<void> => {
-	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all") //"http://127.0.0.1:8080")
-	api.timeout = 30
+	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all", undefined, 30) //"http://127.0.0.1:8080")
+	api.retry.on_timeout = true
 
 	const tests = [
 		testBeatmapPack,
@@ -367,6 +353,7 @@ const test = async (id: string, secret: string): Promise<void> => {
 
 	const results: {test_name: string, passed: boolean}[] = []
 	for (let i = 0; i < tests.length; i++) {
+		console.log("\n===>", tests[i].name)
 		results.push({test_name: tests[i].name, passed: await tests[i]()})
 	}
 	console.log("\n", ...results.map((r) => `${r.test_name}: ${r.passed ? "✔️" : "❌"}\n`))
