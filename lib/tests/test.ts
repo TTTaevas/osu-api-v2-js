@@ -29,11 +29,6 @@ async function attempt<T extends (...args: any[]) => any>(fun: T, ...args: Param
 	}
 }
 
-function meetsCondition(obj: any, condition: boolean) {
-	if (condition === false) console.error("❌ from meetsCondition:\n", util.inspect(obj, {colors: true, compact: true, depth: 100}), "\n\n")
-	return condition
-}
-
 // ajv will not work properly if type is not changed from string to object where format is date-time
 function fixDate(arg: any) {
 	if (typeof arg === "object" && arg !== null) {
@@ -78,17 +73,20 @@ function validate(object: unknown, schemaName: string): boolean {
 	}
 }
 
+type AR<T extends (...args: any) => any> = Awaited<ReturnType<T>>;
+
 class Test<
 	F extends (...args: any[]) => Promise<T>,
 	T,
-	P extends Partial<Awaited<ReturnType<F>>>
+	P extends Partial<AR<F>>
 > {
 	fun: F
 	args: Parameters<F>
-	schema: string | {[key in keyof P]: string}
+	schema?: string | {[key in keyof P]: string}
 	conditions?: P | ((arg0: T) => boolean)[]
+	response: T | false = false
 
-	constructor(fun: F, args: Parameters<F>, schema: string | {[key in keyof P]: string}, conditions?: P | ((arg0: T) => boolean)[]) {
+	constructor(fun: F, args: Parameters<F>, schema?: string | {[key in keyof P]: string}, conditions?: P | ((arg0: T) => boolean)[]) {
 		this.fun = fun
 		this.args = args
 		this.schema = schema
@@ -105,7 +103,7 @@ class Test<
 			
 			if (typeof this.schema === "string") {
 				validation_pass = validate(response, this.schema)
-			} else {
+			} else if (this.schema) {
 				for (let i = 0; i < Object.keys(this.schema).length; i++) {
 					validation_pass = !validation_pass ? false : validate(response[Object.keys(this.schema)[i]], Object.values(this.schema)[i] as string)
 				}
@@ -119,9 +117,8 @@ class Test<
 						if (!condition(pure_response)) {
 							console.error("❌ from condition checking:\n",
 							`It seems like the anonymous function index ${i} failed...\n`,
-							`Here is condition.arguments: ${condition.arguments}\n`,
 							`(for the following object)\n`,
-							util.inspect(pure_response, {colors: true, compact: true, depth: 1}), "\n\n")
+							util.inspect(pure_response, {colors: true, compact: true, depth: 3}), "\n\n")
 							condition_pass = false
 						}
 					}
@@ -140,6 +137,7 @@ class Test<
 			} else {condition_pass = false}
 		}
 
+		this.response = pure_response
 		return {passes: [Boolean(response), validation_pass, condition_pass], response: response}
     }
 }
@@ -150,246 +148,191 @@ class Test<
 const testBeatmapPack = () => [
 	new Test(api.getBeatmapPack, ["P217"], "Beatmap.Pack.WithBeatmapset", {tag: "P217"}),
 	new Test(api.getBeatmapPacks, ["tournament"], {beatmap_packs: "Beatmap.Pack"},
-		[(r: Awaited<ReturnType<typeof api.getBeatmapPacks>>) => r.beatmap_packs.length >= 100]),
+		[(r: AR<typeof api.getBeatmapPacks>) => r.beatmap_packs.length >= 100]),
 ]
 
-
-// const testBeatmap = async (): Promise<boolean> => {
-// 	let okay = true
-// 	const [beatmap_id, long_str] = [388463, "Beatmap.Extended.WithFailtimesBeatmapset"]
-
-// 	const a = await attempt(api.lookupBeatmap, {id: beatmap_id})
-// 	if (!a || !meetsCondition(a, a.id === beatmap_id) || !validate(a, long_str)) okay = false
-// 	const b = await attempt(api.getBeatmap, beatmap_id)
-// 	if (!b || !meetsCondition(b, b.beatmapset.title_unicode === "夜啼く兎は夢を見る") || !validate(b, long_str)) okay = false
-// 	const c = await attempt(api.getBeatmaps, [beatmap_id, 4089655])
-// 	if (!c || !meetsCondition(c, c.length === 2) || !validate(c, "Beatmap.Extended")) okay = false
-
-// 	const d1 = await attempt(api.getBeatmapDifficultyAttributesOsu, 125660, ["DT"])
-// 	if (!d1 || !meetsCondition(d1, d1.approach_rate.toFixed(2) === "9.67") || !validate(d1, "Beatmap.DifficultyAttributes.Osu")) okay = false
-// 	const d2 = await attempt(api.getBeatmapDifficultyAttributesTaiko, beatmap_id, ["DT"])
-// 	if (!d2 || !meetsCondition(d2, d2.great_hit_window < 35) || !validate(d2, "Beatmap.DifficultyAttributes.Taiko")) okay = false
+const testBeatmap = () => [
+	new Test(api.lookupBeatmap, [{id: 388463}], "Beatmap.Extended.WithFailtimesBeatmapset", {id: 388463}),
+	new Test(api.getBeatmap, [388463], "Beatmap.Extended.WithFailtimesBeatmapset",
+		[(r: AR<typeof api.getBeatmap>) => r.beatmapset.title_unicode === "夜啼く兎は夢を見る"]),
+	new Test(api.getBeatmaps, [[388463, 4089655]], "Beatmap.Extended",
+		[(r: AR<typeof api.getBeatmaps>) => r.length === 2]),
 	
-// 	const d3 = await attempt(api.getBeatmapDifficultyAttributesFruits, 705339, ["DT"])
-// 	if (!d3 || !meetsCondition(d3, d3.approach_rate.toFixed(2) === "10.33") || !validate(d3, "Beatmap.DifficultyAttributes.Fruits")) okay = false
-// 	const d4 = await attempt(api.getBeatmapDifficultyAttributesMania, 3980252, ["DT"])
-// 	if (!d4 || !meetsCondition(d4, d4.great_hit_window === 40) || !validate(d4, "Beatmap.DifficultyAttributes.Mania")) okay = false
-
-// 	const e = await attempt(api.lookupBeatmapset, beatmap_id)
-// 	if (!e || !meetsCondition(e, e.id === 58951) || !validate(e, "Beatmapset.Extended.Plus")) okay = false
-// 	const f = await attempt(api.searchBeatmapsets, {categories: "Any"})
-// 	if (!f || !meetsCondition(f, f.total >= 10000) || !validate(f.beatmapsets, "Beatmapset.Extended.WithBeatmapPacktags")) okay = false
-// 	const g = await attempt(api.getBeatmapUserScore, 176960, 7276846, {mods: ["NM"]})
-// 	if (!g || !meetsCondition(g, g.score.accuracy < 0.99) || !validate(g, "Beatmap.UserScore")) okay = false
-// 	const h = await attempt(api.getBeatmapUserScores, 203993, 7276846, {ruleset: osu.Ruleset.fruits})
-// 	if (!h || !meetsCondition(h, h.length === 1) || !validate(h, "Score")) okay = false
-
-// 	const i = await attempt(api.getBeatmapScores, 129891, {legacy_only: true})
-// 	if (!i || !meetsCondition(i, i[0].score >= 132408001) || !validate(i, "Score.WithUser")) okay = false
-// 	const j = await attempt(api.getBeatmapSoloScores, 129891)
-// 	if (!j || !meetsCondition(j, j[0].total_score >= 1073232) || !validate(j, "Score.Solo")) okay = false
-
-// 	return okay
-// }
-
-// const testBeatmapsetDiscussion = async (): Promise<boolean> => {
-// 	let okay = true
-
-// 	const a = await attempt(api.getBeatmapsetDiscussions, {beatmapset: 2119925})
-// 	if (!a || !validate(a.beatmaps, "Beatmap.Extended") || !validate(a.beatmapsets, "Beatmapset.Extended") &&
-// 	!validate(a.users, "User.WithGroups") || !validate(a.discussions, "Beatmapset.Discussion.WithStartingpost") &&
-// 	!validate(a.included_discussions, "Beatmapset.Discussion.WithStartingpost")) okay = false
-// 	const b = await attempt(api.getBeatmapsetDiscussionPosts, {discussion: 4143461})
-// 	if (!b || (!validate(b.beatmapsets, "Beatmapset.WithHype") || !validate(b.users, "User") && !validate(b.posts, "Beatmapset.Discussion.Post"))) okay = false
-// 	const c = await attempt(api.getBeatmapsetDiscussionVotes, {vote_receiver: 7276846})
-// 	if (!c || (!validate(c.votes, "Beatmapset.Discussion.Vote") || !validate(c.discussions, "Beatmapset.Discussion") &&
-// 	!validate(c.users, "User.WithGroups"))) okay = false
-
-// 	return okay
-// }
-
-// const testBeatmapset = async (): Promise<boolean> => {
-// 	let okay = true
-
-// 	const a = await attempt(api.getBeatmapset, 1971037)
-// 	if (!a || !meetsCondition(a, a.submitted_date?.toISOString().substring(0, 10) === "2023-04-07") || !validate(a, "Beatmapset.Extended.Plus")) okay = false
-
-// 	const events = [
-// 		"nominate", "love", "remove_from_loved", "qualify", "disqualify", "approve", "rank",
-// 		"kudosu_allow", "kudosu_deny", "kudosu_gain", "kudosu_lost", "kudosu_recalculate",
-// 		"issue_resolve", "issue_reopen", "discussion_lock", "discussion_unlock", "discussion_delete", "discussion_restore",
-// 		"discussion_post_delete", "discussion_post_restore", "nomination_reset", "nomination_reset_received",
-// 		"genre_edit", "language_edit", "nsfw_toggle", "offset_edit", "tags_edit", "beatmap_owner_change"
-// 	]
-// 	const unavailable_events = ["discussion_lock", "discussion_unlock", "tags_edit", "approve"]
-// 	const available_events = events.filter((e) => unavailable_events.indexOf(e) === -1)
-
-// 	for (let i = 0; i < available_events.length; i++) {
-// 		const event = available_events[i]
-// 		const b1 = await attempt(api.getBeatmapsetEvents, {}, [event as any])
-// 		if (!b1 || !validate(b1.events, "Beatmapset.Event.Any") || !validate(b1.users, "User.WithGroups")) okay = false
-// 	}
-
-// 	const b2 = await attempt(api.getBeatmapsetEvents)
-// 	if (!b2 || !validate(b2.events, "Beatmapset.Event.Any") || !validate(b2.users, "User.WithGroups")) okay = false
-
-// 	return okay
-// }
-
-// const testChangelog = async (): Promise<boolean> => {
-// 	let okay = true
-
-// 	const a = await attempt(api.lookupChangelogBuild, 7156)
-// 	if (!a || !meetsCondition(a, a.display_version === "2023.1008.1") || !validate(a, "Changelog.Build.WithChangelogentriesVersions")) okay = false
-// 	const b = await attempt(api.getChangelogBuild, "lazer", "2023.1008.1")
-// 	if (!b || !meetsCondition(b, b.id === 7156) || !validate(b, "Changelog.Build.WithChangelogentriesVersions")) okay = false
-// 	const c = await attempt(api.getChangelogBuilds, undefined, {from: "2023.1031.0", to: 7184}, ["markdown"])
-// 	if (!c || !meetsCondition(c, c.length === 4) || !validate(c, "Changelog.Build.WithUpdatestreamsChangelogentries")) okay = false
-// 	const d = await attempt(api.getChangelogStreams)
-// 	if (!d || !meetsCondition(d, d.length > 2) || !validate(d, "Changelog.UpdateStream.WithLatestbuildUsercount")) okay = false
-
-// 	return okay
-// }
-
-// const testComment = async (): Promise<boolean> => {
-// 	let okay = true
-
-// 	const a = await attempt(api.getComment, 2418884)
-// 	if (!a || !meetsCondition(a.users, Boolean(a.users.find(((u) => u.id === 32573520)))) || !validate(a, "Comment.Bundle")) okay = false
-// 	const b1 = await attempt(api.getComments)
-// 	if (!b1 || !validate(b1, "Comment.Bundle")) okay = false
-// 	const b2 = await attempt(api.getComments, {type: "beatmapset", id: 1971037})
-// 	if (!b2 || !validate(b2, "Comment.Bundle")) okay = false
-// 	const b3 = await attempt(api.getComments, {type: "build", id: 7463})
-// 	if (!b3 || !validate(b3, "Comment.Bundle")) okay = false
-// 	const b4 = await attempt(api.getComments, {type: "news_post", id: 1451})
-// 	if (!b4 || !validate(b4, "Comment.Bundle")) okay = false
-
-// 	return okay
-// }
-
-// const testEvent = async (): Promise<boolean> => {
-// 	let okay = true
-// 	const a = await attempt(api.getEvents)
-// 	if (!a || !meetsCondition(a, a.events.length === 50) || !validate(a.events, "Event.Any")) okay = false
-// 	return okay
-// }
-
-// const testForum = async (): Promise<boolean> => {
-// 	let okay = true
-// 	const a = await attempt(api.getForumTopicAndPosts, 1848236, {limit: 2})
-// 	if (!a || !meetsCondition(a, a.topic.title === "survey") || !validate(a.topic, "Forum.Topic") || !validate(a.posts, "Forum.Post")) okay = false
-// 	return okay
-// }
-
-// const testHome = async (): Promise<boolean> => {
-// 	let okay = true
-
-// 	const a1 = await attempt(api.searchUser, "Tae", 2)
-// 	if (!a1 || !meetsCondition(a1, a1.data.length === 20) || !validate(a1.data, "User")) okay = false
-// 	const a2 = await attempt(api.searchWiki, "Beat", 2)
-// 	if (!a2 || !meetsCondition(a2, a2.data.length === 50) || !validate(a2.data, "WikiPage")) okay = false
-
-// 	return okay
-// }
-
-// const testMultiplayer = async (): Promise<boolean> => {
-// 	let okay = true
-
-// 	const a1 = await attempt(api.getRoom, 591993)
-// 	if (!a1 || !meetsCondition(a1, a1.recent_participants.length === 5) || !validate(a1, "Multiplayer.Room")) okay = false
-// 	const a2 = await attempt(api.getRoom, 588230)
-// 	if (!a2 || !meetsCondition(a2, a2.participant_count === 27) || !validate(a2, "Multiplayer.Room")) okay = false
-// 	if (a1) {
-// 		const b1 = await attempt(api.getPlaylistItemScores, {id: a1.playlist[0].id, room_id: a1.id})
-// 		if (!b1 || !meetsCondition(b1, b1.scores.length > 0) || !validate(b1, "Multiplayer.Room.PlaylistItem.Scores")) okay = false
-// 	}
-// 	if (a2) {
-// 		const b2 = await attempt(api.getPlaylistItemScores, {id: a2.playlist[0].id, room_id: a2.id})
-// 		if (!b2 || !meetsCondition(b2, b2.scores.length >= 9) || !validate(b2, "Multiplayer.Room.PlaylistItem.Scores")) okay = false
-// 	}
-// 	const c = await attempt(api.getMatch, 62006076, {limit: 0})
-// 	if (!c || !meetsCondition(c, c.match.name === "CWC2020: (Italy) vs (Indonesia)") || !validate(c, "Multiplayer.Match")) okay = false
-// 	const d = await attempt(api.getMatches, {limit: 2})
-// 	if (!d || !meetsCondition(d, d[0].id > 111250329) || !validate(d, "Multiplayer.Match.Info")) okay = false
-
-// 	return okay
-// }
-
-// const testNews = async (): Promise<boolean> => {
-// 	let okay = true
-
-// 	const a = await attempt(api.getNewsPost, 26)
-// 	if (!a || !meetsCondition(a, a.title === "Official osu! Fanart Contest 5 Begins!") || !validate(a, "NewsPost.WithContentNavigation")) okay = false
-// 	const b = await attempt(api.getNewsPosts)
-// 	if (!b || !meetsCondition(b, b.length >= 1) || !validate(b, "NewsPost")) okay = false
-
-// 	return okay
-// }
-
-// const testRanking = async (): Promise<boolean> => {
-// 	let okay = true
-
-// 	const a = await attempt(api.getKudosuRanking)
-// 	if (!a || !meetsCondition(a, a[0].kudosu.total > 10000) || !validate(a, "User.WithKudosu")) okay = false
-// 	const b = await attempt(api.getUserRanking, osu.Ruleset.osu, "score", {country: "FR"})
-// 	if (!b || !meetsCondition(b, b.ranking[0].level.current > 106) || !validate(b, "Ranking.User")) okay = false
-// 	const c = await attempt(api.getCountryRanking, osu.Ruleset.osu)
-// 	if (!c || !meetsCondition(c, c.ranking[0].code === "US") || !validate(c, "Ranking.Country")) okay = false
-// 	const d = await attempt(api.getSpotlightRanking, osu.Ruleset.taiko, 48)
-// 	if (!d || !meetsCondition(d, d.ranking[0].hit_accuracy === 97.85) || !validate(d, "Ranking.Spotlight")) okay = false
-
-// 	return okay
-// }
-
-// const testUser = async (): Promise<boolean> => {
-// 	let okay = true
-// 	const user_id = 7276846
+	new Test(api.getBeatmapDifficultyAttributesOsu, [125660, ["DT"]], "Beatmap.DifficultyAttributes.Osu",
+		[(r: AR<typeof api.getBeatmapDifficultyAttributesOsu>) => r.approach_rate.toFixed(2) === "9.67"]),
+	new Test(api.getBeatmapDifficultyAttributesTaiko, [388463, ["DT"]], "Beatmap.DifficultyAttributes.Taiko",
+		[(r: AR<typeof api.getBeatmapDifficultyAttributesTaiko>) => r.great_hit_window < 35]),
+	new Test(api.getBeatmapDifficultyAttributesFruits, [705339, ["DT"]], "Beatmap.DifficultyAttributes.Fruits",
+		[(r: AR<typeof api.getBeatmapDifficultyAttributesFruits>) => r.approach_rate.toFixed(2) === "10.33"]),
+	new Test(api.getBeatmapDifficultyAttributesMania, [3980252, ["DT"]], "Beatmap.DifficultyAttributes.Mania",
+		[(r: AR<typeof api.getBeatmapDifficultyAttributesMania>) => r.great_hit_window === 40]),
 	
-// 	const a = await attempt(api.getUser, user_id)
-// 	if (!a || !meetsCondition(a, a.id === user_id) || !validate(a, "User.Extended")) okay = false
-// 	const b = await attempt(api.lookupUsers, [user_id, 2])
-// 	if (!b || !meetsCondition(b, b.length === 2) || !validate(b, "User.WithCountryCoverGroups")) okay = false
-// 	const c = await attempt(api.getUsers, [user_id, 2])
-// 	if (!c || !meetsCondition(c, c.length === 2) || !validate(c, "User.WithCountryCoverGroupsStatisticsrulesets")) okay = false
+	new Test(api.lookupBeatmapset, [388463], "Beatmapset.Extended.Plus", {id: 58951}),
+	new Test(api.searchBeatmapsets, [{categories: "Any"}], {beatmapsets: "Beatmapset.Extended.WithBeatmapPacktags"},
+		[(r: AR<typeof api.searchBeatmapsets>) => r.total >= 10000]),
+	
+	new Test(api.getBeatmapUserScore, [176960, 7276846, {mods: ["NM"]}], "Beatmap.UserScore",
+		[(r: AR<typeof api.getBeatmapUserScore>) => r.score.accuracy < 0.99]),
+	new Test(api.getBeatmapUserScores, [203993, 7276846, {ruleset: osu.Ruleset.fruits}], "Score",
+		[(r: AR<typeof api.getBeatmapUserScores>) => r.length === 1]),
+	new Test(api.getBeatmapScores, [129891, {legacy_only: true}], "Score.WithUser",
+		[(r: AR<typeof api.getBeatmapScores>) => r[0].score >= 132408001]),
+	new Test(api.getBeatmapSoloScores, [129891], "Score.Solo",
+		[(r: AR<typeof api.getBeatmapSoloScores>) => r[0].total_score >= 1073232]),
+]
 
-// 	const d1 = await attempt(api.getUserScores, user_id, "best", undefined, {fails: false, lazer: true}, {limit: 5})
-// 	if (!d1 || !meetsCondition(d1, d1.length === 5) || !validate(d1, "Score.WithUserBeatmapBeatmapset")) okay = false
-// 	const d2 = await attempt(api.getUserScores, 6503700, "firsts", osu.Ruleset.taiko, undefined, {limit: 3})
-// 	if (!d2 || !meetsCondition(d2, d2.length === 3) || !validate(d2, "Score.WithUserBeatmapBeatmapset")) okay = false
-// 	const d3 = await attempt(api.getUserScores, 9269034, "recent", osu.Ruleset.osu, {fails: true, lazer: true}, {limit: 1})
-// 	// Due to the nature of this test, it might fail, you may adapt the user id
-// 	if (!d3 || !meetsCondition(d3, d3.length === 1) || !validate(d3, "Score.WithUserBeatmapBeatmapset")) okay = false
+const testBeatmapsetDiscussion = () => [
+	new Test(api.getBeatmapsetDiscussions, [{beatmapset: 2119925}], {
+		beatmaps: "Beatmap.Extended",
+		beatmapsets: "Beatmapset.Extended",
+		users: "User.WithGroups",
+		discussions: "Beatmapset.Discussion.WithStartingpost",
+		included_discussions: "Beatmapset.Discussion.WithStartingpost"
+	}),
+	new Test(api.getBeatmapsetDiscussionPosts, [{discussion: 4143461}], {
+		beatmapsets: "Beatmapset.WithHype",
+		users: "User",
+		posts: "Beatmapset.Discussion.Post"
+	}),
+	new Test(api.getBeatmapsetDiscussionVotes, [{vote_receiver: 7276846}], {
+		users: "User.WithGroups",
+		votes: "Beatmapset.Discussion.Vote",
+		discussions: "Beatmapset.Discussion"
+	})
+]
 
-// 	const e = await attempt(api.getUserBeatmaps, user_id, "guest")
-// 	if (!e || !meetsCondition(e, e.length === 1) || !validate(e, "Beatmapset.Extended.WithBeatmap")) okay = false
-// 	const f = await attempt(api.getUserMostPlayed, user_id)
-// 	if (!f || !meetsCondition(f, f[0].beatmapset.title === "furioso melodia") || !validate(f, "Beatmap.Playcount")) okay = false
-// 	const g = await attempt(api.getUserRecentActivity, 7562902, {limit: 25})
-// 	if (!g || !meetsCondition(g, g.length <= 25) || !validate(g, "Event.AnyRecentActivity")) okay = false
-// 	const h = await attempt(api.getUserKudosu, user_id, {limit: 5})
-// 	if (!h || !meetsCondition(h, h.length === 5) || !validate(h, "User.KudosuHistory")) okay = false
+const testBeatmapset = () => {
+	const tests: Test<any, any, any>[] = [
+		new Test(api.getBeatmapset, [1971037], "Beatmapset.Extended.Plus",
+			[(r: AR<typeof api.getBeatmapset>) => r.submitted_date?.toISOString().substring(0, 10) === "2023-04-07"]),
+		new Test(api.getBeatmapsetEvents, [{}], {events: "Beatmapset.Event.Any", users: "User.WithGroups"})
+	]
 
-// 	return okay
-// }
+	const events: osu.Beatmapset.Event["type"][] = [
+		"nominate", "love", "remove_from_loved", "qualify", "disqualify", "approve", "rank",
+		"kudosu_allow", "kudosu_deny", "kudosu_gain", "kudosu_lost", "kudosu_recalculate",
+		"issue_resolve", "issue_reopen", "discussion_lock", "discussion_unlock", "discussion_delete", "discussion_restore",
+		"discussion_post_delete", "discussion_post_restore", "nomination_reset", "nomination_reset_received",
+		"genre_edit", "language_edit", "nsfw_toggle", "offset_edit", "tags_edit", "beatmap_owner_change"
+	]
+	const unavailable_events: osu.Beatmapset.Event["type"][] = ["discussion_lock", "discussion_unlock", "tags_edit", "approve"]
+	const available_events = events.filter((e) => unavailable_events.indexOf(e) === -1)
 
-// const testWiki = async (): Promise<boolean> => {
-// 	let okay = true
-// 	const a = await attempt(api.getWikiPage, "Rules")
-// 	if (!a || !meetsCondition(a, a.title === "Rules") || !validate(a, "WikiPage")) okay = false
-// 	return okay
-// }
+	for (let i = 0; i < available_events.length; i++) {
+		tests.push(new Test(api.getBeatmapsetEvents, [{}, [available_events[i]]], {events: "Beatmapset.Event.Any", users: "User.WithGroups"}))
+	}
 
-// const testOther = async (): Promise<boolean> => {
-// 	let okay = true
+	return tests
+}
 
-// 	const a = await attempt(api.getSpotlights)
-// 	if (!a || !meetsCondition(a, a.length >= 132) || !validate(a, "Spotlight")) okay = false
-// 	const b = await attempt(api.getSeasonalBackgrounds)
-// 	if (!b || !meetsCondition(b, b.ends_at > new Date("2024-01-01") && b.backgrounds.length > 0)) okay = false
+const testChangelog = () => [
+	new Test(api.lookupChangelogBuild, [7156], "Changelog.Build.WithChangelogentriesVersions", {display_version: "2023.1008.1"}),
+	new Test(api.getChangelogBuild, ["lazer", "2023.1008.1"], "Changelog.Build.WithChangelogentriesVersions", {id: 7156}),
+	new Test(api.getChangelogBuilds, [undefined, {from: "2023.1031.0", to: 7184}, ["markdown"]], "Changelog.Build.WithUpdatestreamsChangelogentries",
+		[(r: AR<typeof api.getChangelogBuilds>) => r.length === 4]),
+	new Test(api.getChangelogStreams, [], "Changelog.UpdateStream.WithLatestbuildUsercount",
+		[(r: AR<typeof api.getChangelogStreams>) => r.length > 2]),
+]
 
-// 	return okay
-// }
+const testComment = () => [
+	new Test(api.getComment, [2418884], "Comment.Bundle",
+		[(r: AR<typeof api.getComment>) => Boolean(r.users.find(((u) => u.id === 32573520)))]),
+	new Test(api.getComments, [], "Comment.Bundle"),
+	new Test(api.getComments, [{type: "beatmapset", id: 1971037}], "Comment.Bundle"),
+	new Test(api.getComments, [{type: "build", id: 7463}], "Comment.Bundle"),
+	new Test(api.getComments, [{type: "news_post", id: 1451}], "Comment.Bundle")
+]
+
+const testEvent = () => [
+	new Test(api.getEvents, [], {events: "Event.Any"},
+		[(r: AR<typeof api.getEvents>) => r.events.length === 50])
+]
+
+const testForum = () => [
+	new Test(api.getForumTopicAndPosts, [1848236, {limit: 2}], {topic: "Forum.Topic", posts: "Forum.Post"},
+		[(r: AR<typeof api.getForumTopicAndPosts>) => r.topic.title === "survey"])
+]
+
+const testHome = () => [
+	new Test(api.searchUser, ["Tae", 2], {data: "User"},
+		[(r: AR<typeof api.searchUser>) => r.data.length === 20]),
+	new Test(api.searchWiki, ["Beat", 2], {data: "WikiPage"},
+		[(r: AR<typeof api.searchWiki>) => r.data.length === 50])
+]
+
+const testMultiplayer = () => [
+	// PLAYLIST
+	new Test(api.getRoom, [588230], "Multiplayer.Room", {participant_count: 27}),
+	new Test(api.getPlaylistItemScores, [{id: 5371540, room_id: 588230}], "Multiplayer.Room.PlaylistItem.Scores",
+		[(r: AR<typeof api.getPlaylistItemScores>) => r.scores.length >= 9]),
+
+	// REALTIME
+	new Test(api.getRoom, [591993], "Multiplayer.Room",
+		[(r: AR<typeof api.getRoom>) => r.recent_participants.length === 5]),
+	new Test(api.getPlaylistItemScores, [{id: 5421279, room_id: 591993}], "Multiplayer.Room.PlaylistItem.Scores",
+		[(r: AR<typeof api.getPlaylistItemScores>) => r.scores.length > 0]),
+
+	// NON-LAZER
+	new Test(api.getMatch, [62006076, {limit: 0}], "Multiplayer.Match",
+		[(r: AR<typeof api.getMatch>) => r.match.name === "CWC2020: (Italy) vs (Indonesia)"]),
+	new Test(api.getMatches, [{limit: 2}], "Multiplayer.Match.Info",
+		[(r: AR<typeof api.getMatches>) => r[0].id > 111250329])
+]
+
+const testNews = () => [
+	new Test(api.getNewsPost, [26], "NewsPost.WithContentNavigation",
+		[(r: AR<typeof api.getNewsPost>) => r.title === "Official osu! Fanart Contest 5 Begins!"]),
+	new Test(api.getNewsPosts, [], "NewsPost",
+		[(r: AR<typeof api.getNewsPosts>) => r.length >= 1])
+]
+
+const testRanking = () => [
+	new Test(api.getKudosuRanking, [], "User.WithKudosu",
+		[(r: AR<typeof api.getKudosuRanking>) => r[0].kudosu.total > 10000]),
+	new Test(api.getUserRanking, [osu.Ruleset.osu, "score", {country: "FR"}], "Ranking.User",
+		[(r: AR<typeof api.getUserRanking>) => r.ranking[0].level.current > 106]),
+	new Test(api.getCountryRanking, [osu.Ruleset.osu], "Ranking.Country",
+		[(r: AR<typeof api.getCountryRanking>) => r.ranking[0].code === "US"]),
+	new Test(api.getSpotlightRanking, [osu.Ruleset.taiko, 48], "Ranking.Spotlight",
+		[(r: AR<typeof api.getSpotlightRanking>) => r.ranking[0].hit_accuracy === 97.85])
+]
+
+const testUser = () => [
+	new Test(api.getUser, [7276846], "User.Extended", {id: 7276846}),
+	new Test(api.lookupUsers, [[7276846, 2]], "User.WithCountryCoverGroups",
+		[(r: AR<typeof api.lookupUsers>) => r.length === 2]),
+	new Test(api.getUsers, [[7276846, 2]], "User.WithCountryCoverGroupsStatisticsrulesets",
+		[(r: AR<typeof api.getUsers>) => r.length === 2]),
+
+	new Test(api.getUserScores, [7276846, "best", undefined, {fails: false, lazer: true}, {limit: 5}], "Score.WithUserBeatmapBeatmapset",
+		[(r: AR<typeof api.getUserScores>) => r.length === 5]),
+	new Test(api.getUserScores, [6503700, "firsts", osu.Ruleset.taiko, undefined, {limit: 3}], "Score.WithUserBeatmapBeatmapset",
+		[(r: AR<typeof api.getUserScores>) => r.length === 3]),
+	new Test(api.getUserScores, [11367222, "recent", osu.Ruleset.osu, {fails: true, lazer: true}, {limit: 1}], "Score.WithUserBeatmapBeatmapset",
+		[(r: AR<typeof api.getUserScores>) => r.length === 1]),
+
+	new Test(api.getUserBeatmaps, [7276846, "guest"], "Beatmapset.Extended.WithBeatmap",
+		[(r: AR<typeof api.getUserBeatmaps>) => r.length === 1]),
+	new Test(api.getUserMostPlayed, [7276846], "Beatmap.Playcount",
+		[(r: AR<typeof api.getUserMostPlayed>) => r[0].beatmapset.title === "furioso melodia"]),
+	new Test(api.getUserRecentActivity, [7562902, {limit: 25}], "Event.AnyRecentActivity",
+		[(r: AR<typeof api.getUserRecentActivity>) => r.length <= 25]),
+	new Test(api.getUserKudosu, [7276846, {limit: 5}], "User.KudosuHistory",
+		[(r: AR<typeof api.getUserKudosu>) => r.length === 5]),
+]
+
+const testWiki = () => [
+	new Test(api.getWikiPage, ["Rules"], "WikiPage", {title: "Rules"})
+]
+
+const testOther = () => [
+	new Test(api.getSpotlights, [], "Spotlight",
+		[(r: AR<typeof api.getSpotlights>) => r.length >= 132]),
+	new Test(api.getSeasonalBackgrounds, [], undefined, [
+		(r: AR<typeof api.getSeasonalBackgrounds>) => r.ends_at > new Date("2024-01-01"),
+		(r: AR<typeof api.getSeasonalBackgrounds>) => r.backgrounds.length > 0
+	])
+]
 
 
 const test = async (id: string, secret: string): Promise<void> => {
@@ -398,20 +341,20 @@ const test = async (id: string, secret: string): Promise<void> => {
 
 	const tests = [
 		testBeatmapPack,
-		// testBeatmap,
-		// testBeatmapsetDiscussion,
-		// testBeatmapset,
-		// testChangelog,
-		// testComment,
-		// testEvent,
-		// testForum,
-		// testHome,
-		// testMultiplayer,
-		// testNews,
-		// testRanking,
-		// testUser,
-		// testWiki,
-		// testOther,
+		testBeatmap,
+		testBeatmapsetDiscussion,
+		testBeatmapset,
+		testChangelog,
+		testComment,
+		testEvent,
+		testForum,
+		testHome,
+		testMultiplayer,
+		testNews,
+		testRanking,
+		testUser,
+		testWiki,
+		testOther,
 	]
 
 	const results: {test_name: string, passed: boolean}[] = []
