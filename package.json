@@ -8,8 +8,8 @@
   "scripts": {
     "prepublish": "npm run build",
     "build": "tsc",
-    "test": "npm run build && node ./dist/tests/test.js",
-    "test-authorized": "npm run build && node ./dist/tests/test_authorized.js",
+    "test": "npm run build && node ./dist/tests/guest.js",
+    "test-authorized": "npm run build && node ./dist/tests/authenticated.js",
     "doc": "npx typedoc lib/index.ts --cname osu-v2.taevas.xyz"
   },
   "engines": {
@@ -30,7 +30,7 @@
     "api-wrapper",
     "lazer"
   ],
-  "license": "WTFPL",
+  "license": "Unlicense",
   "devDependencies": {
     "@types/node": "^20.8.10",
     "@types/prompt-sync": "^4.2.2",

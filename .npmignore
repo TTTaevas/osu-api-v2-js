@@ -4,8 +4,7 @@
 .gitignore
 lib/
 docs/
-test.*
-interactive_test.*
+tests/
 yarn.lock
 tsconfig.json
 CONTRIBUTING.md
