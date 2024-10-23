@@ -112,7 +112,8 @@ export function correctType(x: any, force_string?: boolean): any {
 	// those MUST be strings; turn the server's numbers into strings and keep the server's strings as strings
 	const bannedProperties = [
 		"name", "artist", "artist_unicode", "title", "title_unicode", "tags", "username", "location", "interests", "occupation", "twitter",
-		"discord", "version", "display_version", "author", "raw", "bbcode", "message", "creator", "source"
+		"discord", "version", "display_version", "author", "raw", "bbcode", "message", "creator", "source", "new_user_username", "source_user_username",
+		"previousUsername", "previous_usernames"
 	]
 	if (force_string && typeof x !== "object") {
 		return String(x)

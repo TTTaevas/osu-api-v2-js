@@ -1,6 +1,7 @@
 /**
  * The Client Credentials way
  * The token is considered by the API as a guest user
+ * https://osu.ppy.sh/docs/index.html#client-credentials-grant
  */
 
 import * as osu from "../index.js"
@@ -135,7 +136,7 @@ class Test<
 					}
 				}
 			} else {condition_pass = false}
-		}
+		} else {condition_pass = false}
 
 		this.response = pure_response
 		return {passes: [Boolean(response), validation_pass, condition_pass], response: response}
@@ -215,11 +216,16 @@ const testBeatmapset = () => {
 		"discussion_post_delete", "discussion_post_restore", "nomination_reset", "nomination_reset_received",
 		"genre_edit", "language_edit", "nsfw_toggle", "offset_edit", "tags_edit", "beatmap_owner_change"
 	]
-	const unavailable_events: osu.Beatmapset.Event["type"][] = ["discussion_lock", "discussion_unlock", "tags_edit", "approve"]
+	/** Asking for those events makes the server return events of any types */
+	const unavailable_events: osu.Beatmapset.Event["type"][] = ["discussion_lock", "discussion_unlock", "tags_edit"]
 	const available_events = events.filter((e) => unavailable_events.indexOf(e) === -1)
 
 	for (let i = 0; i < available_events.length; i++) {
-		tests.push(new Test(api.getBeatmapsetEvents, [{}, [available_events[i]]], {events: "Beatmapset.Event.Any", users: "User.WithGroups"}))
+		const split = available_events[i].split("_")
+		const schema = "Beatmapset.Event." + (split.length > 1 ?
+			split.reduce((a, c) => a.charAt(0).toUpperCase() + a.slice(1) + c.charAt(0).toUpperCase() + c.slice(1)) :
+			split[0].charAt(0).toUpperCase() + split[0].slice(1))
+		tests.push(new Test(api.getBeatmapsetEvents, [{}, [available_events[i]]], {events: schema, users: "User.WithGroups"}))
 	}
 
 	return tests
@@ -308,7 +314,7 @@ const testUser = () => [
 		[(r: AR<typeof api.getUserScores>) => r.length === 5]),
 	new Test(api.getUserScores, [6503700, "firsts", osu.Ruleset.taiko, undefined, {limit: 3}], "Score.WithUserBeatmapBeatmapset",
 		[(r: AR<typeof api.getUserScores>) => r.length === 3]),
-	new Test(api.getUserScores, [11367222, "recent", osu.Ruleset.osu, {fails: true, lazer: true}, {limit: 1}], "Score.WithUserBeatmapBeatmapset",
+	new Test(api.getUserScores, [4568537, "recent", osu.Ruleset.fruits, {fails: true, lazer: true}, {limit: 1}], "Score.WithUserBeatmapBeatmapset",
 		[(r: AR<typeof api.getUserScores>) => r.length === 1]),
 
 	new Test(api.getUserBeatmaps, [7276846, "guest"], "Beatmapset.Extended.WithBeatmap",
