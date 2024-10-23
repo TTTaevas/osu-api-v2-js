@@ -1,7 +1,10 @@
 import { API, Beatmapset, Changelog, NewsPost, User } from "./index.js"
 import { getId } from "./misc.js"
 
-/**  Remove so-called "Deleted Items" / items that lack an id, add a "deleted_commentable_meta" and make it the number of removed objects */
+/**
+ * Remove so-called "Deleted Items" / items that lack an id, add a "deleted_commentable_meta" and make it the number of removed objects
+ * @remarks https://github.com/ppy/osu-web/issues/11077
+ */
 function removeDeletedItems<T extends Comment.Bundle>(bundle: T): T {
 	const commentable_meta = bundle.commentable_meta.filter((c) => c.id)
 	bundle.deleted_commentable_meta = bundle.commentable_meta.length - commentable_meta.length

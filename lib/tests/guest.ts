@@ -342,7 +342,7 @@ const testOther = () => [
 
 
 const test = async (id: string, secret: string): Promise<void> => {
-	api = await osu.API.createAsync({id: Number(id), secret}, undefined, "all", undefined, 30) //"http://127.0.0.1:8080")
+	api = await osu.API.createAsync({id: Number(id), secret}, undefined, {verbose: "all", timeout: 30}) //"http://127.0.0.1:8080")
 	api.retry.on_timeout = true
 
 	const tests = [

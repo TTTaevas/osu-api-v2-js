@@ -308,7 +308,7 @@ const test = async (): Promise<void> => {
 	const scopes: osu.Scope[] = ["public", "chat.read", "chat.write", "chat.write_manage", "forum.write", "friends.read", "identify"]
 	const url = osu.generateAuthorizationURL(id, redirect_uri, scopes, server)
 	const code = await getCode(url)
-	api = await osu.API.createAsync({id, secret}, {code, redirect_uri}, "all", server, 30)
+	api = await osu.API.createAsync({id, secret}, {code, redirect_uri}, {verbose: "all", timeout: 30, server})
 	api.retry.on_timeout = true
 
 	const tests = [

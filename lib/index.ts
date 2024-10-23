@@ -1,43 +1,64 @@
 import { WebSocket } from "ws"
 
-import { User } from "./user.js"
-import { Beatmap } from "./beatmap.js"
-import { Beatmapset } from "./beatmapset.js"
+import { User } from "./User.js"
+import { Beatmap } from "./Beatmap.js"
+import { Beatmapset } from "./Beatmapset.js"
 
-import { Multiplayer } from "./multiplayer.js"
-import { Score } from "./score.js"
-import { Ranking } from "./ranking.js"
-import { Event } from "./event.js"
+import { Multiplayer } from "./Multiplayer.js"
+import { Spotlight } from "./Spotlight.js"
+import { Score } from "./Score.js"
+import { Ranking } from "./Ranking.js"
+import { Event } from "./Event.js"
 
-import { Changelog } from "./changelog.js"
-import { Forum } from "./forum.js"
-import { WikiPage } from "./wiki.js"
-import { NewsPost } from "./news.js"
-import { Home } from "./home.js"
-import { Scope, Spotlight, adaptParametersForGETRequests, anySignal, correctType } from "./misc.js"
-import { Chat } from "./chat.js"
-import { Comment } from "./comment.js"
+import { Changelog } from "./Changelog.js"
+import { Forum } from "./Forum.js"
+import { WikiPage } from "./WikiPage.js"
+import { NewsPost } from "./NewsPost.js"
+import { Home } from "./Home.js"
+import { adaptParametersForGETRequests, anySignal, correctType } from "./misc.js"
+import { Chat } from "./Chat.js"
+import { Comment } from "./Comment.js"
 
 
-export { User } from "./user.js"
-export { Beatmap } from "./beatmap.js"
-export { Beatmapset } from "./beatmapset.js"
+export { User } from "./User.js"
+export { Beatmap } from "./Beatmap.js"
+export { Beatmapset } from "./Beatmapset.js"
 
-export { Multiplayer } from "./multiplayer.js"
-export { Score } from "./score.js"
-export { Ranking } from "./ranking.js"
-export { Event } from "./event.js"
+export { Multiplayer } from "./Multiplayer.js"
+export { Spotlight } from "./Spotlight.js"
+export { Score } from "./Score.js"
+export { Ranking } from "./Ranking.js"
+export { Event } from "./Event.js"
 
-export { Changelog } from "./changelog.js"
-export { Forum } from "./forum.js"
-export { WikiPage } from "./wiki.js"
-export { NewsPost } from "./news.js"
-export { Home } from "./home.js"
-export { Ruleset, Mod, Scope, Spotlight } from "./misc.js"
-export { Chat } from "./chat.js"
-export { WebSocket } from "./websocket.js"
-export { Comment } from "./comment.js"
+export { Changelog } from "./Changelog.js"
+export { Forum } from "./Forum.js"
+export { WikiPage } from "./WikiPage.js"
+export { NewsPost } from "./NewsPost.js"
+export { Home } from "./Home.js"
+export { Chat } from "./Chat.js"
+export { WebSocket } from "./WebSocket.js"
+export { Comment } from "./Comment.js"
 
+
+export enum Ruleset {
+	osu 	= 0,
+	taiko 	= 1,
+	fruits	= 2,
+	mania 	= 3
+}
+
+export type Mod = {
+	acronym: string
+	settings?: {[k: string]: any}
+}
+
+/**
+ * Scopes determine what the API instance can do as a user!
+ * https://osu.ppy.sh/docs/index.html#scopes
+ * @remarks "identify" is always implicity provided, **"public" is implicitly needed for almost everything!!**
+ * The need for the "public" scope is only made explicit when the function can't be used unless the application acts as as a user (non-guest)
+ */
+export type Scope = "chat.read" | "chat.write" | "chat.write_manage" | "delegate" | "forum.write" | "friends.read" | "identify" | "public"
 
 /**
  * Generates a link for users to click on in order to use your application!
@@ -99,7 +120,68 @@ export class API {
 	get expires() {return this._expires}
 	set expires(date) {
 		this._expires = date
-		this.updateRefreshTimeout()
+		this.updateRefreshTokenTimer()
+	}
+
+	/**
+	 * Set most of an `api`'s properties, like tokens, token_type, scopes, expiration_date  
+	 * @param body An Object with the client id & secret, grant_type, and stuff that depends of the grant_type
+	 * @param api The `api` which will see its properties change
+	 * @returns `api`, just in case, because in theory it should modify the original object
+	 */
+	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "authorization_code", redirect_uri: string, code: string}, api: API):
+	Promise<API>;
+	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "client_credentials", scope: "public"}, api: API): Promise<API>;
+	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "refresh_token", refresh_token: string}, api: API): Promise<API>;
+	private async getAndSetToken(body: {
+		client_id: number,
+		client_secret: string,
+		grant_type: "authorization_code" | "client_credentials" | "refresh_token",
+		redirect_uri?: string,
+		code?: string
+		refresh_token?: string	
+	}, api: API): Promise<API> {
+		const response = await fetch(`${this.server}/${this.routes.token_obtention}`, {
+			method: "post",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)"
+			},
+			body: JSON.stringify(body),
+			signal: this.timeout > 0 ? AbortSignal.timeout(this.timeout * 1000) : undefined
+		})
+		.catch((e) => {
+			throw new APIError("Failed to fetch a token", this.server, "post", this.routes.token_obtention, body, undefined, e)
+		})
+
+		const json: any = await response.json()
+		if (!json.access_token) {
+			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
+			throw new APIError("No token obtained", this.server, "post", this.routes.token_obtention, body, response.status)
+		}
+		api.token_type = json.token_type
+		if (json.refresh_token) {api.refresh_token = json.refresh_token}
+
+		const token = json.access_token
+		api.access_token = token
+
+		const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
+		api.scopes = token_payload.scopes
+		if (token_payload.sub && token_payload.sub.length) {api.user = Number(token_payload.sub)}
+	
+		const expiration_date = new Date()
+		expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
+		api.expires = expiration_date
+
+		return api
+	}
+
+	/** Revoke your current token! Revokes the refresh token as well */
+	public async revokeToken(): Promise<true> {
+		// Note that unlike when getting a token, we actually need to use the normal route to revoke a token for some reason
+		await this.request("delete", "oauth/tokens/current")
+		return true
 	}
 
 
@@ -113,35 +195,78 @@ export class API {
 	get refresh_token() {return this._refresh_token}
 	set refresh_token(token) {
 		this._refresh_token = token
-		this.updateRefreshTimeout() // because the refresh token may be specified last
+		this.updateRefreshTokenTimer() // because the refresh token may be specified last
 	}
 	
-	private _refresh_on_401: boolean = true
+	private _refresh_token_on_401: boolean = true
 	/** If true, upon failing a request due to a 401, it will use the {@link API.refresh_token} if it exists (defaults to **true**) */
-	get refresh_on_401() {return this._refresh_on_401}
-	set refresh_on_401(refresh) {this._refresh_on_401 = refresh}
+	get refresh_token_on_401() {return this._refresh_token_on_401}
+	set refresh_token_on_401(refresh) {this._refresh_token_on_401 = refresh}
 	
-	private _refresh_on_expires: boolean = true
+	private _refresh_token_on_expires: boolean = true
 	/**
 	 * If true, the application will silently use the {@link API.refresh_token} right before the {@link API.access_token} expires,
 	 * as determined by {@link API.expires} (defaults to **true**)
 	 */
-	get refresh_on_expires() {return this._refresh_on_expires}
-	set refresh_on_expires(enabled) {
-		this._refresh_on_expires = enabled
-		this.updateRefreshTimeout()
+	get refresh_token_on_expires() {return this._refresh_token_on_expires}
+	set refresh_token_on_expires(enabled) {
+		this._refresh_token_on_expires = enabled
+		this.updateRefreshTokenTimer()
 	}
 
-	private _refresh_timeout?: NodeJS.Timeout
-	get refresh_timeout(): API["_refresh_timeout"] {return this._refresh_timeout}
-	set refresh_timeout(timeout: NodeJS.Timeout) {
+	private _refresh_token_timer?: NodeJS.Timeout
+	get refresh_token_timer(): API["_refresh_token_timer"] {return this._refresh_token_timer}
+	set refresh_token_timer(timer: NodeJS.Timeout) {
 		// if a previous one already exists, clear it
-		if (this._refresh_timeout) {
-			clearTimeout(this._refresh_timeout)
+		if (this._refresh_token_timer) {
+			clearTimeout(this._refresh_token_timer)
 		}
 
-		this._refresh_timeout = timeout
-		this._refresh_timeout.unref() // don't prevent exiting the program while this timeout is going on
+		this._refresh_token_timer = timer
+		this._refresh_token_timer.unref() // don't prevent exiting the program while this timeout is going on
+	}
+
+	/** Add, remove, change the timeout used for refreshing the token automatically whenever certain properties change */
+	private updateRefreshTokenTimer() {
+		if (this.refresh_token && this.expires && this.refresh_token_on_expires) {
+			const now = new Date()
+			const ms = this.expires.getTime() - now.getTime()
+
+			// Let's say that we used a refresh token *after* the expiration time, our refresh token would naturally get updated
+			// However, if it is updated before the (local) expiration date is updated, then ms should be 0
+			// This should mean that, upon using a refresh token, we would use our new refresh token instantly...
+			// In other words, don't allow timeouts that would mean no timeout; refreshToken() exists for that
+			if (ms <= 0) {
+				return undefined
+			}
+
+			this.refresh_token_timer = setTimeout(() => {
+				try {
+					this.refreshToken()
+				} catch {}
+			}, ms)
+		} else if (this._refresh_token_timer) {
+			clearTimeout(this._refresh_token_timer)
+		}
+	}
+
+	/** @returns Whether or not the token has been refreshed */
+	public async refreshToken(): Promise<boolean> {
+		if (!this.refresh_token) {
+			this.log(true, "Ignored an attempt at refreshing the access token despite not having a refresh token!")
+			return false
+		}
+
+		const old_token = this.access_token
+		try {
+			await this.getAndSetToken(
+			{client_id: this.client.id, client_secret: this.client.secret, grant_type: "refresh_token", refresh_token: this.refresh_token}, this)
+			if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
+		} catch(e) {
+			this.log(true, "Failed to refresh the token :(", e)
+		}
+
+		return old_token !== this.access_token
 	}
 
 
@@ -203,7 +328,7 @@ export class API {
 		delay: number
 		/** How many retries maximum before throwing an {@link APIError} (defaults to **4**) */
 		maximum_amount: number
-		/** Should it retry a request upon successfully refreshing the token due to {@link API.refresh_on_401} being `true`? (defaults to **true**) */
+		/** Should it retry a request upon successfully refreshing the token due to {@link API.refresh_token_on_401} being `true`? (defaults to **true**) */
 		on_automatic_refresh: boolean
 		/** Should it retry a request if that request failed because it has been aborted by the {@link API.timeout}? (defaults to **false**) */
 		on_timeout: boolean
@@ -237,6 +362,7 @@ export class API {
 	 * The normal way to create an API instance! Make sure to `await` it
 	 * @param client The ID and the secret of your client, can be found on https://osu.ppy.sh/home/account/edit#new-oauth-application
 	 * @param user If the instance is supposed to represent a user, use their Authorization Code and the Application Callback URL of your application!
+	 * @param settings Additional settings you'd like to specify now rather than later, check out the Accessors at https://osu-v2.taevas.xyz/classes/API.html
 	 * @returns A promise with an API instance
 	 */
 	public static async createAsync(
@@ -250,16 +376,11 @@ export class API {
 			/** The code that appeared as a GET argument when they got redirected to the Application Callback URL (`redirect_uri`) */
 			code: string
 		},
-		verbose?: "none" | "errors" | "all",
-		server?: string,
-		/** @remarks In **seconds** */
-		timeout?: number
+		settings?: Partial<API>
 	): Promise<API> {
 		const new_api = new API({
 			client,
-			verbose,
-			server,
-			timeout
+			...settings
 		})
 
 		return user ?
@@ -306,110 +427,6 @@ export class API {
 		if (this.verbose === "all" || (this.verbose === "errors" && is_error === true)) {
 			console.log("osu!api v2 ->", ...to_log)
 		}
-	}
-
-	/** Add, remove, change the timeout used for refreshing the token automatically whenever certain properties change */
-	private updateRefreshTimeout() {
-		if (this.refresh_token && this.expires && this.refresh_on_expires) {
-			const now = new Date()
-			const ms = this.expires.getTime() - now.getTime()
-
-			// Let's say that we used a refresh token *after* the expiration time, our refresh token would naturally get updated
-			// However, if it is updated before the (local) expiration date is updated, then ms should be 0
-			// This should mean that, upon using a refresh token, we would use our new refresh token instantly...
-			// In other words, don't allow timeouts that would mean no timeout; refreshToken() exists for that
-			if (ms <= 0) {
-				return undefined
-			}
-
-			this.refresh_timeout = setTimeout(() => {
-				try {
-					this.refreshToken()
-				} catch {}
-			}, ms)
-		} else if (this._refresh_timeout) {
-			clearTimeout(this._refresh_timeout)
-		}
-	}
-
-	/**
-	 * Set most of an `api`'s properties, like tokens, token_type, scopes, expiration_date  
-	 * @param body An Object with the client id & secret, grant_type, and stuff that depends of the grant_type
-	 * @param api The `api` which will see its properties change
-	 * @returns `api`, just in case, because in theory it should modify the original object
-	 */
-	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "authorization_code", redirect_uri: string, code: string}, api: API):
-	Promise<API>;
-	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "client_credentials", scope: "public"}, api: API): Promise<API>;
-	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "refresh_token", refresh_token: string}, api: API): Promise<API>;
-	private async getAndSetToken(body: {
-		client_id: number,
-		client_secret: string,
-		grant_type: "authorization_code" | "client_credentials" | "refresh_token",
-		redirect_uri?: string,
-		code?: string
-		refresh_token?: string	
-	}, api: API): Promise<API> {
-		const response = await fetch(`${this.server}/${this.routes.token_obtention}`, {
-			method: "post",
-			headers: {
-				"Accept": "application/json",
-				"Content-Type": "application/json",
-				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)"
-			},
-			body: JSON.stringify(body),
-			signal: this.timeout > 0 ? AbortSignal.timeout(this.timeout * 1000) : undefined
-		})
-		.catch((e) => {
-			throw new APIError("Failed to fetch a token", this.server, "post", this.routes.token_obtention, body, undefined, e)
-		})
-
-		const json: any = await response.json()
-		if (!json.access_token) {
-			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-			throw new APIError("No token obtained", this.server, "post", this.routes.token_obtention, body, response.status)
-		}
-		api.token_type = json.token_type
-		if (json.refresh_token) {api.refresh_token = json.refresh_token}
-
-		const token = json.access_token
-		api.access_token = token
-
-		const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
-		api.scopes = token_payload.scopes
-		if (token_payload.sub && token_payload.sub.length) {api.user = Number(token_payload.sub)}
-	
-		const expiration_date = new Date()
-		expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
-		api.expires = expiration_date
-
-		return api
-	}
-
-	/** @returns Whether or not the token has been refreshed */
-	public async refreshToken(): Promise<boolean> {
-		if (!this.refresh_token) {
-			this.log(true, "Ignored an attempt at refreshing the access token despite not having a refresh token!")
-			return false
-		}
-
-		const old_token = this.access_token
-		try {
-			await this.getAndSetToken(
-			{client_id: this.client.id, client_secret: this.client.secret, grant_type: "refresh_token", refresh_token: this.refresh_token}, this)
-			if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
-		} catch(e) {
-			this.log(true, "Failed to refresh the token :(", e)
-		}
-
-		return old_token !== this.access_token
-	}
-
-	/** Revoke your current token! Revokes the refresh token as well */
-	public async revokeToken(): Promise<true> {
-		// Note that unlike when getting a token, we actually need to use the normal route to revoke a token for some reason
-		await this.request("delete", "oauth/tokens/current")
-		return true
 	}
 
 	/**
@@ -460,7 +477,7 @@ export class API {
 				...settings?.headers // written that way, custom headers with (for example) only a user-agent would only overwrite the default user-agent
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
-			signal: anySignal(signals)
+			signal: anySignal(signals) // node20, in May2025: AbortSignal.any(signals)
 		})
 		.catch((error) => {
 			if (error.name === "TimeoutError" && this.retry.on_timeout) to_retry = true
@@ -479,7 +496,7 @@ export class API {
 				}
 
 				if (response.status === 401) {
-					if (this.refresh_on_401 && this.refresh_token && !info.just_refreshed) {
+					if (this.refresh_token_on_401 && this.refresh_token && !info.just_refreshed) {
 						this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
 						
 						if (await this.refreshToken() && this.retry.on_automatic_refresh) {
@@ -816,11 +833,11 @@ export class ChildAPI extends API {
 	/** @hidden @deprecated use API equivalent */
 	get expires() {return this.original.expires}
 	/** @hidden @deprecated use API equivalent */
-	get refresh_on_401() {return this.original.refresh_on_401}
+	get refresh_token_on_401() {return this.original.refresh_token_on_401}
 	/** @hidden @deprecated use API equivalent */
-	get refresh_on_expires() {return this.original.refresh_on_expires}
+	get refresh_token_on_expires() {return this.original.refresh_token_on_expires}
 	/** @hidden @deprecated use API equivalent */
-	get refresh_timeout() {return this.original.refresh_timeout}
+	get refresh_token_timer() {return this.original.refresh_token_timer}
 	/** @hidden @deprecated use API equivalent */
 	get refresh_token() {return this.original.refresh_token}
 	/** @hidden @deprecated use API equivalent */
