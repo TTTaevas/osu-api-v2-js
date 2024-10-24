@@ -251,7 +251,7 @@ It was automatically made for the sole purpose of testing [url=https://github.co
 	if (topic_test.response) {
 		const topic = topic_test.response as {topic: osu.Forum.Topic, post: osu.Forum.Post}
 		tests.push(new Test(api.editForumTopicTitle, [topic.topic, "osu-api-v2-js test post!"], "Forum.Topic", {title: "osu-api-v2-js test post!"}))
-		tests.push(new Test(api.editForumPost, [topic.post, topic.post.body.raw + "<3"], "Forum.Post", 
+		tests.push(new Test(api.editForumPost, [topic.post, topic.post.body.raw + " <3"], "Forum.Post", 
 			[(r: AR<typeof api.editForumPost>) => r.body.raw === topic.post.body.raw + " <3"]))
 	} else {
 		console.warn("⚠️ Skipping forum tests, unable to create a forum post")
@@ -308,8 +308,7 @@ const test = async (): Promise<void> => {
 	const scopes: osu.Scope[] = ["public", "chat.read", "chat.write", "chat.write_manage", "forum.write", "friends.read", "identify"]
 	const url = osu.generateAuthorizationURL(id, redirect_uri, scopes, server)
 	const code = await getCode(url)
-	api = await osu.API.createAsync({id, secret}, {code, redirect_uri}, {verbose: "all", timeout: 30, server})
-	api.retry.on_timeout = true
+	api = await osu.API.createAsync({id, secret}, {code, redirect_uri}, {verbose: "all", timeout: 30, server, retry_on_timeout: true})
 
 	const tests = [
 		testChat,

@@ -1,5 +1,3 @@
-import { WebSocket } from "ws"
-
 import { User } from "./User.js"
 import { Beatmap } from "./Beatmap.js"
 import { Beatmapset } from "./Beatmapset.js"
@@ -18,6 +16,7 @@ import { Home } from "./Home.js"
 import { adaptParametersForGETRequests, anySignal, correctType } from "./misc.js"
 import { Chat } from "./Chat.js"
 import { Comment } from "./Comment.js"
+import { WebSocket } from "./WebSocket.js"
 
 
 export { User } from "./User.js"
@@ -36,8 +35,8 @@ export { WikiPage } from "./WikiPage.js"
 export { NewsPost } from "./NewsPost.js"
 export { Home } from "./Home.js"
 export { Chat } from "./Chat.js"
-export { WebSocket } from "./WebSocket.js"
 export { Comment } from "./Comment.js"
+export { WebSocket } from "./WebSocket.js"
 
 
 export enum Ruleset {
@@ -103,6 +102,132 @@ export class APIError {
 
 /** You can create an API instance without directly providing an access_token by using {@link API.createAsync}! */
 export class API {
+	// CLIENT CREATION
+
+	/**
+	 * **Please use {@link API.createAsync} instead of the default constructor** if you don't have at least an {@link API.access_token}!
+	 * An API object without an `access_token` is pretty much useless!
+	 */
+	constructor(properties: Partial<API>) {
+		// delete every property that is `undefined` so the class defaults aren't overwritten by `undefined`
+		// for example, someone using `createAsync()` is extremely likely to leave `server` as `undefined`, which would call the constructor with that
+		Object.keys(properties)
+			.forEach(key => properties[key as keyof API] === undefined ? delete properties[key as keyof API] : {})
+		Object.assign(this, properties)
+	}
+
+	/**
+	 * The normal way to create an API instance! Make sure to `await` it
+	 * @param client The ID and the secret of your client, can be found on https://osu.ppy.sh/home/account/edit#new-oauth-application
+	 * @param user If the instance is supposed to represent a user, use their Authorization Code and the Application Callback URL of your application!
+	 * @param settings Additional settings you'd like to specify now rather than later, check out the Accessors at https://osu-v2.taevas.xyz/classes/API.html
+	 * @returns A promise with an API instance
+	 */
+	public static async createAsync(
+		client: {
+			id: number,
+			secret: string
+		},
+		user?: {
+			/** The Application Callback URL; Where the User has been redirected to after saying "okay" to your application doing stuff */
+			redirect_uri: string,
+			/** The code that appeared as a GET argument when they got redirected to the Application Callback URL (`redirect_uri`) */
+			code: string
+		},
+		settings?: Partial<API>
+	): Promise<API> {
+		const new_api = new API({
+			client,
+			...settings
+		})
+
+		return user ?
+		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "authorization_code",
+		redirect_uri: user.redirect_uri, code: user.code}, new_api) :
+		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "client_credentials", scope: "public"}, new_api)
+	}
+
+
+	// CLIENT INFO
+
+	private _client: {
+		id: number
+		secret: string
+	} = {id: 0, secret: ""}
+	/** The details of your client, which you've got from https://osu.ppy.sh/home/account/edit#oauth */
+	get client() {return this._client}
+	set client(client) {this._client = client}
+
+	private _server: string = "https://osu.ppy.sh"
+	/** The base url of the server where the requests should land (defaults to **https://osu.ppy.sh**) */
+	get server() {return this._server}
+	set server(server) {this._server = server}
+
+	private _routes: {
+		/** Used by practically every method to interact with the {@link API.server} */
+		normal: string
+		/** Used for getting an {@link API.access_token} and using your {@link API.refresh_token} */
+		token_obtention: string
+	} = {normal: "api/v2", token_obtention: "oauth/token"}
+	/** What follows the {@link API.server} and preceeds the individual endpoints used by each request */
+	get routes() {return this._routes}
+	set routes(routes) {this._routes = routes}
+
+	private _user?: User["id"]
+	/** The osu! user id of the user who went through the Authorization Code Grant */
+	get user() {return this._user}
+	set user(user) {this._user = user}
+
+	private _scopes?: Scope[]
+	/** The {@link Scope}s your application has, assuming it acts as a user */
+	get scopes() {return this._scopes}
+	set scopes(scopes) {this._scopes = scopes}
+
+
+	// CLIENT CONFIGURATION
+
+	private _verbose?: "none" | "errors" | "all" = "none"
+	/** Which events should be logged (defaults to **none**) */
+	get verbose() {return this._verbose}
+	set verbose(verbose) {this._verbose = verbose}
+
+	private _timeout: number = 20
+	/**
+	 * The maximum **amount of seconds** requests should take before returning an answer (defaults to **20**)
+	 * @remarks 0 means no maximum, no timeout
+	 */
+	get timeout() {return this._timeout}
+	set timeout(timeout) {this._timeout = timeout}
+
+	private _retry_delay: number = 2
+	/** In seconds, how long should it wait until retrying? (defaults to **2**) */
+	get retry_delay() {return this._retry_delay}
+	set retry_delay(retry_delay) {this._retry_delay = retry_delay}
+
+	private _retry_maximum_amount: number = 4
+	/** 
+	 * How many retries maximum before throwing an {@link APIError} (defaults to **4**)
+	 * @remarks Pro tip: Set that to 0 to **completely** disable retries!
+	 */
+	get retry_maximum_amount() {return this._retry_maximum_amount}
+	set retry_maximum_amount(retry_maximum_amount) {this._retry_maximum_amount = retry_maximum_amount}
+
+	private _retry_on_automatic_token_refresh: boolean = true
+	/** Should it retry a request upon successfully refreshing the token due to {@link API.refresh_token_on_401} being `true`? (defaults to **true**) */
+	get retry_on_automatic_token_refresh() {return this._retry_on_automatic_token_refresh}
+	set retry_on_automatic_token_refresh(retry_on_automatic_token_refresh) {this._retry_on_automatic_token_refresh = retry_on_automatic_token_refresh}
+
+	private _retry_on_status_codes: number[] = [429]
+	/** Upon failing a request and receiving a response, because of which received status code should the request be retried? (defaults to **[429]**) */
+	get retry_on_status_codes() {return this._retry_on_status_codes}
+	set retry_on_status_codes(retry_on_status_codes) {this._retry_on_status_codes = retry_on_status_codes}
+
+	private _retry_on_timeout: boolean = false
+	/** Should it retry a request if that request failed because it has been aborted by the {@link API.timeout}? (defaults to **false**) */
+	get retry_on_timeout() {return this._retry_on_timeout}
+	set retry_on_timeout(retry_on_timeout) {this._retry_on_timeout = retry_on_timeout}
+
+
 	// ACCESS TOKEN STUFF
 
 	private _access_token: string = ""
@@ -270,123 +395,17 @@ export class API {
 	}
 
 
-	// CLIENT INFO
-
-	private _client: {
-		id: number
-		secret: string
-	} = {id: 0, secret: ""}
-	/** The details of your client, which you've got from https://osu.ppy.sh/home/account/edit#oauth */
-	get client() {return this._client}
-	set client(client) {this._client = client}
-
-	private _server: string = "https://osu.ppy.sh"
-	/** The base url of the server where the requests should land (defaults to **https://osu.ppy.sh**) */
-	get server() {return this._server}
-	set server(server) {this._server = server}
-
-	private _routes: {
-		/** Used by practically every method to interact with the {@link API.server} */
-		normal: string
-		/** Used for getting an {@link API.access_token} and using your {@link API.refresh_token} */
-		token_obtention: string
-	} = {normal: "api/v2", token_obtention: "oauth/token"}
-	/** What follows the {@link API.server} and preceeds the individual endpoints used by each request */
-	get routes() {return this._routes}
-	set routes(routes) {this._routes = routes}
-
-	private _user?: User["id"]
-	/** The osu! user id of the user who went through the Authorization Code Grant */
-	get user() {return this._user}
-	set user(user) {this._user = user}
-
-	private _scopes?: Scope[]
-	/** The {@link Scope}s your application has, assuming it acts as a user */
-	get scopes() {return this._scopes}
-	set scopes(scopes) {this._scopes = scopes}
-
-
-	// CLIENT CONFIGURATION
-
-	private _verbose?: "none" | "errors" | "all" = "none"
-	/** Which events should be logged (defaults to **none**) */
-	get verbose() {return this._verbose}
-	set verbose(verbose) {this._verbose = verbose}
-
-	private _timeout: number = 20
-	/**
-	 * The maximum **amount of seconds** requests should take before returning an answer (defaults to **20**)
-	 * @remarks 0 means no maximum, no timeout
-	 */
-	get timeout() {return this._timeout}
-	set timeout(timeout) {this._timeout = timeout}
-
-	private _retry: {
-		/** If true, doesn't retry under any circumstances (defaults to **false**) */
-		disabled: boolean
-		/** In seconds, how long should it wait until retrying? (defaults to **2**) */
-		delay: number
-		/** How many retries maximum before throwing an {@link APIError} (defaults to **4**) */
-		maximum_amount: number
-		/** Should it retry a request upon successfully refreshing the token due to {@link API.refresh_token_on_401} being `true`? (defaults to **true**) */
-		on_automatic_refresh: boolean
-		/** Should it retry a request if that request failed because it has been aborted by the {@link API.timeout}? (defaults to **false**) */
-		on_timeout: boolean
-		/** Upon failing a request and receiving a response, because of which received status code should the request be retried? (defaults to **[429]**) */
-		on_status_codes: number[]
-	} = {
-		disabled: false,
-		delay: 2,
-		maximum_amount: 4,
-		on_automatic_refresh: true,
-		on_timeout: false,
-		on_status_codes: [429]
-	}
-	/** Configure how this instance should behave when it comes to automatically retrying a request */
-	get retry() {return this._retry}
-	set retry(retry) {this._retry = retry}
-	
+	// OTHER METHODS
 
 	/**
-	 * **Please use {@link API.createAsync} instead of the default constructor** if you don't have at least an {@link API.access_token}!
-	 * An API object without an `access_token` is pretty much useless!
+	 * Use this instead of `console.log` to log any information
+	 * @param is_error Is the logging happening because of an error?
+	 * @param to_log Whatever you would put between the parentheses of `console.log()`
 	 */
-	constructor(properties: Partial<API>) {
-		// delete every property that is `undefined` so the class defaults aren't overwritten by `undefined`
-		// for example, someone using `createAsync()` is extremely likely to leave `server` as `undefined`, which would call the constructor with that
-		Object.keys(properties).forEach(key => (properties as {[index: string]: any})[key] === undefined ? delete (properties as {[index: string]: any})[key] : {})
-		Object.assign(this, properties)
-	}
-
-	/**
-	 * The normal way to create an API instance! Make sure to `await` it
-	 * @param client The ID and the secret of your client, can be found on https://osu.ppy.sh/home/account/edit#new-oauth-application
-	 * @param user If the instance is supposed to represent a user, use their Authorization Code and the Application Callback URL of your application!
-	 * @param settings Additional settings you'd like to specify now rather than later, check out the Accessors at https://osu-v2.taevas.xyz/classes/API.html
-	 * @returns A promise with an API instance
-	 */
-	public static async createAsync(
-		client: {
-			id: number,
-			secret: string
-		},
-		user?: {
-			/** The Application Callback URL; Where the User has been redirected to after saying "okay" to your application doing stuff */
-			redirect_uri: string,
-			/** The code that appeared as a GET argument when they got redirected to the Application Callback URL (`redirect_uri`) */
-			code: string
-		},
-		settings?: Partial<API>
-	): Promise<API> {
-		const new_api = new API({
-			client,
-			...settings
-		})
-
-		return user ?
-		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "authorization_code",
-		redirect_uri: user.redirect_uri, code: user.code}, new_api) :
-		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "client_credentials", scope: "public"}, new_api)
+	private log(is_error: boolean, ...to_log: any[]) {
+		if (this.verbose === "all" || (this.verbose === "errors" && is_error === true)) {
+			console.log("osu!api v2 ->", ...to_log)
+		}
 	}
 
 	/**
@@ -401,32 +420,6 @@ export class API {
 	 */
 	public withSettings(additional_fetch_settings: ChildAPI["additional_fetch_settings"]): ChildAPI {
 		return new ChildAPI(this, additional_fetch_settings)
-	}
-
-	/** 
-	 * Get a websocket to get WebSocket events from!
-	 * @param server Where the "notification websocket/server" is
-	 * (defaults to **the {@link API.server}'s protocol and a maximum of 1 subdomain being replaced by "wss://notify."** (so usually `wss://notify.ppy.sh`))
-	*/
-	public generateWebSocket(server: string = `${this.server.replace(/^\w*:\/\/(?:[A-Za-z0-9]+[.](?=[A-Za-z0-9]+[.]([A-Za-z0-9]+)$))?/g, "wss://notify.")}`):
-	WebSocket {
-		return new WebSocket(server, [], {
-			headers: {
-				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
-				"Authorization": `${this.token_type} ${this.access_token}`
-			}
-		})
-	}
-
-	/**
-	 * Use this instead of `console.log` to log any information
-	 * @param is_error Is the logging happening because of an error?
-	 * @param to_log Whatever you would put between the parentheses of `console.log()`
-	 */
-	private log(is_error: boolean, ...to_log: any[]) {
-		if (this.verbose === "all" || (this.verbose === "errors" && is_error === true)) {
-			console.log("osu!api v2 ->", ...to_log)
-		}
 	}
 
 	/**
@@ -480,7 +473,7 @@ export class API {
 			signal: anySignal(signals) // node20, in May2025: AbortSignal.any(signals)
 		})
 		.catch((error) => {
-			if (error.name === "TimeoutError" && this.retry.on_timeout) to_retry = true
+			if (error.name === "TimeoutError" && this.retry_on_timeout) to_retry = true
 			this.log(true, error.message)
 			error_object = error
 			error_message = `${error.name} (${error.message ?? error.errno ?? error.type})`
@@ -490,16 +483,13 @@ export class API {
 			if (response) {
 				error_code = response.status
 				error_message = response.statusText
-
-				if (this.retry.on_status_codes.includes(response.status)) {
-					to_retry = true
-				}
-
+				if (this.retry_on_status_codes.includes(response.status)) to_retry = true
+				
 				if (response.status === 401) {
 					if (this.refresh_token_on_401 && this.refresh_token && !info.just_refreshed) {
 						this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
 						
-						if (await this.refreshToken() && this.retry.on_automatic_refresh) {
+						if (await this.refreshToken() && this.retry_on_automatic_token_refresh) {
 							to_retry = true
 							info.just_refreshed = true
 						}
@@ -522,9 +512,9 @@ export class API {
 			 * However, instantly trying the request again even though it failed (or was made to failed) is usually not desirable
 			 * So we wait a bit to make our request, repeat the process a few times if needed
 			*/
-			if (to_retry === true && this.retry.disabled === false && info.number_try <= this.retry.maximum_amount) {
-				this.log(true, `Will request again in ${this.retry.delay} seconds...`, `(going for retry #${info.number_try}/${this.retry.maximum_amount})`)
-				await new Promise(res => setTimeout(res, this.retry.delay * 1000))
+			if (to_retry === true && info.number_try <= this.retry_maximum_amount) {
+				this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(going for retry #${info.number_try}/${this.retry_maximum_amount})`)
+				await new Promise(res => setTimeout(res, this.retry_delay * 1000))
 				return await this.request(method, endpoint, parameters, settings, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
@@ -753,6 +743,12 @@ export class API {
 	readonly getSpotlightRanking = Ranking.getSpotlight
 
 
+	// SPOTLIGHTS STUFF
+
+	/** {@inheritDoc Spotlight.getAll} @group Spotlights Functions */
+	readonly getSpotlights = Spotlight.getAll
+
+
 	// USER STUFF
 
 	/** {@inheritDoc User.getResourceOwner} @group User Functions */
@@ -794,8 +790,8 @@ export class API {
 	
 	// OTHER STUFF
 
-	/** {@inheritDoc Spotlight.getAll} @group Other Functions */
-	readonly getSpotlights = Spotlight.getAll
+	/** {@inheritDoc WebSocket.generate} @group Other Functions */
+	readonly generateWebSocket = WebSocket.generate
 
 	/** {@inheritDoc Score.getReplay} @group Other Functions */
 	readonly getReplay = Score.getReplay
@@ -841,7 +837,15 @@ export class ChildAPI extends API {
 	/** @hidden @deprecated use API equivalent */
 	get refresh_token() {return this.original.refresh_token}
 	/** @hidden @deprecated use API equivalent */
-	get retry() {return this.original.retry}
+	get retry_delay() {return this.original.retry_delay}
+	/** @hidden @deprecated use API equivalent */
+	get retry_maximum_amount() {return this.original.retry_maximum_amount}
+	/** @hidden @deprecated use API equivalent */
+	get retry_on_automatic_token_refresh() {return this.original.retry_on_automatic_token_refresh}
+	/** @hidden @deprecated use API equivalent */
+	get retry_on_status_codes() {return this.original.retry_on_status_codes}
+	/** @hidden @deprecated use API equivalent */
+	get retry_on_timeout() {return this.original.retry_on_timeout}
 	/** @hidden @deprecated use API equivalent */
 	get routes() {return this.original.routes}
 	/** @hidden @deprecated use API equivalent */
@@ -856,8 +860,6 @@ export class ChildAPI extends API {
 	get user() {return this.original.user}
 	/** @hidden @deprecated use API equivalent */
 	get verbose() {return this.original.verbose}
-	/** @hidden @deprecated use API equivalent */
-	generateWebSocket = () => {return this.original.generateWebSocket()}
 	/** @hidden @deprecated use API equivalent */
 	refreshToken = async () => {return await this.original.refreshToken()}
 	/** @hidden @deprecated use API equivalent */

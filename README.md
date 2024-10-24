@@ -97,7 +97,7 @@ async function readChat() {
     // Somehow get the code so the application can read the messages as your osu! user
 	const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "chat.read"]) // "chat.read" is 100% needed in our case
 	const code = prompt(`Paste the "code" in the URL you're redicted to by accessing: ${url}\n\n`)
-	const api = await osu.API.createAsync({id, secret}, {code, redirect_uri}, "errors")
+	const api = await osu.API.createAsync({id, secret}, {code, redirect_uri}, {verbose: "errors"})
 
     // Get a WebSocket object to interact with and get messages from
 	const socket = api.generateWebSocket()

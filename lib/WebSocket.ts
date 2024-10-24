@@ -1,4 +1,5 @@
-import { Chat, User } from "./index.js"
+import { WebSocket as WebSocketType } from "ws"
+import { API, Chat, User } from "./index.js"
 
 /** Everything here is great to use with the WebSocket you can get with {@link API.generateWebSocket}! */
 export namespace WebSocket {
@@ -33,5 +34,19 @@ export namespace WebSocket {
 
 		/** That's the type of `JSON.parse(m.toString())` where `m` is a WebSocket's `MessageEvent`! */
 		export type Any = ChatChannelJoin | ChatChannelLeave | ChatMessageNew
+	}
+
+	/** 
+	 * Get a websocket to get WebSocket events from!
+	 * @param server The "notification websocket/server" URL (defaults to **wss://notify.ppy.sh**)
+	*/
+	export function generate(this: API, server = "wss://notify.ppy.sh"): WebSocketType {
+		console.log("type:", this.token_type)
+		return new WebSocketType(server, [], {
+			headers: {
+				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
+				"Authorization": `${this.token_type} ${this.access_token}`
+			}
+		})
 	}
 }
