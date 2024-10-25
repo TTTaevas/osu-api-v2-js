@@ -743,6 +743,12 @@ export class API {
 	readonly getSpotlightRanking = Ranking.getSpotlight
 
 
+	// SCORE STUFF
+
+	/** {@inheritDoc Score.getReplay} @group Score Functions */
+	readonly getReplay = Score.getReplay
+
+
 	// SPOTLIGHTS STUFF
 
 	/** {@inheritDoc Spotlight.getAll} @group Spotlights Functions */
@@ -782,19 +788,17 @@ export class API {
 	readonly getFriends = User.getFriends
 
 
+	// WEBSOCKET STUFF
+
+	/** {@inheritDoc WebSocket.generate} @group WebSocket Functions */
+	readonly generateWebSocket = WebSocket.generate
+
+
 	// WIKI STUFF
 
 	/** {@inheritDoc WikiPage.getOne} @group WikiPage Functions */
 	readonly getWikiPage = WikiPage.getOne
 
-	
-	// OTHER STUFF
-
-	/** {@inheritDoc WebSocket.generate} @group Other Functions */
-	readonly generateWebSocket = WebSocket.generate
-
-	/** {@inheritDoc Score.getReplay} @group Other Functions */
-	readonly getReplay = Score.getReplay
 
 	/**
 	 * Get the backgrounds made and selected for this season or for last season!

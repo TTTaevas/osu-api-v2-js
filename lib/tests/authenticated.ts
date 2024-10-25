@@ -40,8 +40,10 @@ async function getCode(url: string): Promise<string> {
 	const host = redirect_uri.substring(redirect_uri.indexOf("/") + 2, redirect_uri.lastIndexOf(":"))
 	const port = Number(redirect_uri.substring(redirect_uri.lastIndexOf(":") + 1).split("/")[0])
 	httpserver.listen({host, port})
+
 	console.log("Waiting for code...")
-	exec(`xdg-open "${url}"`)
+	const command = (process.platform == "darwin" ? "open" : process.platform == "win32" ? "start" : "xdg-open")
+	exec(`${command} "${url}"`)
 
 	const code: string = await new Promise((resolve) => {
 		httpserver.on("request", (request, response) => {
