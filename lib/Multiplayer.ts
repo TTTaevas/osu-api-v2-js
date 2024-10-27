@@ -1,4 +1,4 @@
-import { API, Beatmap, Chat, Mod, Ruleset, Score, User } from "./index.js"
+import { API, Beatmap, Chat, Mod, Ruleset, Score as ScoreImport, User } from "./index.js"
 import { getId } from "./misc.js"
 
 export namespace Multiplayer {
@@ -57,19 +57,9 @@ export namespace Multiplayer {
 		}
 
 		export namespace PlaylistItem {
-			/** @obtainableFrom {@link API.getPlaylistItemScores} */
-			export interface Scores {
-				params: {
-					limit: number
-					sort: string
-				}
-				scores: Score.Multiplayer[]
-				/** How many scores there are across all pages, not necessarily `scores.length` */
-				total: number
-				/** @remarks Will be null if not an authorized user or if the authorized user has no score */
-				user_score: Score.Multiplayer | null
-				/** @remarks Will be null if there is no next page */
-				cursor_string: string | null
+			export interface Score extends ScoreImport.WithUser {
+				playlist_item_id: PlaylistItem["id"]
+				room_id: Room["id"]
 			}
 
 			/**
@@ -82,7 +72,16 @@ export namespace Multiplayer {
 			 * https://github.com/ppy/osu-web/issues/10725
 			 */
 			export async function getScores(this: API, item: {id: number, room_id: number} | Multiplayer.Room.PlaylistItem, limit: number = 50,
-			sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<Multiplayer.Room.PlaylistItem.Scores> {
+			sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<{
+				params: {limit: number, sort: string}
+				scores: Score[]
+				/** How many scores there are across all pages, not necessarily `scores.length` */
+				total: number
+				/** @remarks Will be null if not an authorized user or if the authorized user has no score */
+				user_score: Score | null
+				/** @remarks Will be null if there is no next page */
+				cursor_string: string | null
+			}> {
 				return await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
 			}
 		}
@@ -150,6 +149,15 @@ export namespace Multiplayer {
 	}
 
 	export namespace Match {
+		export interface Score extends ScoreImport.OldFormat {
+			created_at: Date
+			match: {
+				slot: number
+				team: "none" | "red" | "blue"
+				pass: boolean
+			}
+		}
+
 		export interface Event {
 			id: number
 			detail: {
@@ -171,7 +179,7 @@ export namespace Multiplayer {
 				team_type: string
 				mods: string[]
 				beatmap: Beatmap.WithBeatmapset
-				scores: Score.WithMatch[]
+				scores: Score[]
 			}
 		}
 

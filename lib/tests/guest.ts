@@ -172,13 +172,13 @@ const testBeatmap = () => [
 	new Test(api.searchBeatmapsets, [{categories: "Any"}], {beatmapsets: "Beatmapset.Extended.WithBeatmapPacktags"},
 		[(r: AR<typeof api.searchBeatmapsets>) => r.total >= 10000]),
 	
-	new Test(api.getBeatmapUserScore, [176960, 7276846, {mods: ["NM"]}], "Beatmap.UserScore",
+	new Test(api.getBeatmapUserScore, [176960, 7276846, {mods: ["NM"]}], {score: "Score.WithUserBeatmap"},
 		[(r: AR<typeof api.getBeatmapUserScore>) => r.score.accuracy < 0.99]),
 	new Test(api.getBeatmapUserScores, [203993, 7276846, {ruleset: osu.Ruleset.fruits}], "Score",
 		[(r: AR<typeof api.getBeatmapUserScores>) => r.length === 1]),
 	new Test(api.getBeatmapScores, [129891, {legacy_only: true}], "Score.WithUser",
-		[(r: AR<typeof api.getBeatmapScores>) => r[0].score >= 132408001]),
-	new Test(api.getBeatmapSoloScores, [129891], "Score.Solo",
+		[(r: AR<typeof api.getBeatmapScores>) => r[0].legacy_total_score >= 132408001]),
+	new Test(api.getBeatmapSoloScores, [129891], "Score.WithUser",
 		[(r: AR<typeof api.getBeatmapSoloScores>) => r[0].total_score >= 1073232]),
 ]
 
@@ -269,20 +269,29 @@ const testHome = () => [
 const testMultiplayer = () => [
 	// PLAYLIST
 	new Test(api.getRoom, [588230], "Multiplayer.Room", {participant_count: 27}),
-	new Test(api.getPlaylistItemScores, [{id: 5371540, room_id: 588230}], "Multiplayer.Room.PlaylistItem.Scores",
+	new Test(api.getPlaylistItemScores, [{id: 5371540, room_id: 588230}], {scores: "Multiplayer.Room.PlaylistItem.Score"},
 		[(r: AR<typeof api.getPlaylistItemScores>) => r.scores.length >= 9]),
 
 	// REALTIME
 	new Test(api.getRoom, [591993], "Multiplayer.Room",
 		[(r: AR<typeof api.getRoom>) => r.recent_participants.length === 5]),
-	new Test(api.getPlaylistItemScores, [{id: 5421279, room_id: 591993}], "Multiplayer.Room.PlaylistItem.Scores",
+	new Test(api.getPlaylistItemScores, [{id: 5421279, room_id: 591993}], {scores: "Multiplayer.Room.PlaylistItem.Score"},
 		[(r: AR<typeof api.getPlaylistItemScores>) => r.scores.length > 0]),
 
 	// NON-LAZER
-	new Test(api.getMatch, [62006076, {limit: 0}], "Multiplayer.Match",
-		[(r: AR<typeof api.getMatch>) => r.match.name === "CWC2020: (Italy) vs (Indonesia)"]),
 	new Test(api.getMatches, [{limit: 2}], "Multiplayer.Match.Info",
-		[(r: AR<typeof api.getMatches>) => r[0].id > 111250329])
+		[(r: AR<typeof api.getMatches>) => r[0].id > 111250329]),
+	
+	// NON-LAZER MATCH WITHOUT TEAMS
+	new Test(api.getMatch, [75706987, {limit: 15}], "Multiplayer.Match",
+		[(r: AR<typeof api.getMatch>) => r.match.name === "KC: (Taevas) vs (Stipoki)",
+		(r: AR<typeof api.getMatch>) => r.events.length === 15]),
+	
+	// NON-LAZER MATCH WITH TEAMS
+	new Test(api.getMatch, [62006076, {limit: 15}], "Multiplayer.Match",
+		[(r: AR<typeof api.getMatch>) => r.match.name === "CWC2020: (Italy) vs (Indonesia)",
+		(r: AR<typeof api.getMatch>) => r.events.length === 15])
+	
 ]
 
 const testNews = () => [
@@ -301,6 +310,11 @@ const testRanking = () => [
 		[(r: AR<typeof api.getCountryRanking>) => r.ranking[0].code === "US"]),
 	new Test(api.getSpotlightRanking, [osu.Ruleset.taiko, 48], "Ranking.Spotlight",
 		[(r: AR<typeof api.getSpotlightRanking>) => r.ranking[0].hit_accuracy === 97.85])
+]
+
+const testSpotlights = () => [
+	new Test(api.getSpotlights, [], "Spotlight",
+		[(r: AR<typeof api.getSpotlights>) => r.length >= 132])
 ]
 
 const testUser = () => [
@@ -332,8 +346,6 @@ const testWiki = () => [
 ]
 
 const testOther = () => [
-	new Test(api.getSpotlights, [], "Spotlight",
-		[(r: AR<typeof api.getSpotlights>) => r.length >= 132]),
 	new Test(api.getSeasonalBackgrounds, [], undefined, [
 		(r: AR<typeof api.getSeasonalBackgrounds>) => r.ends_at > new Date("2024-01-01"),
 		(r: AR<typeof api.getSeasonalBackgrounds>) => r.backgrounds.length > 0
@@ -357,6 +369,7 @@ const test = async (id: string, secret: string): Promise<void> => {
 		testMultiplayer,
 		testNews,
 		testRanking,
+		testSpotlights,
 		testUser,
 		testWiki,
 		testOther,

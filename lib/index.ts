@@ -457,7 +457,7 @@ export class API {
 				return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
 			}).join("&"))
 		}
-
+		
 		const response = await fetch(url, {
 			method,
 			...settings, // has priority over what's above, but not over what's lower
@@ -467,6 +467,7 @@ export class API {
 				"Content-Type": "application/json",
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`,
+				"x-api-version": "20241025",
 				...settings?.headers // written that way, custom headers with (for example) only a user-agent would only overwrite the default user-agent
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
@@ -574,11 +575,11 @@ export class API {
 	/** {@inheritDoc Beatmap.getSoloScores} @group Beatmap Functions */
 	readonly getBeatmapSoloScores = Beatmap.getSoloScores
 
-	/** {@inheritDoc Beatmap.UserScore.getOne} @group Beatmap Functions */
-	readonly getBeatmapUserScore = Beatmap.UserScore.getOne
+	/** {@inheritDoc Beatmap.getUserScore} @group Beatmap Functions */
+	readonly getBeatmapUserScore = Beatmap.getUserScore
 
-	/** {@inheritDoc Beatmap.UserScore.getMultiple} @group Beatmap Functions */
-	readonly getBeatmapUserScores = Beatmap.UserScore.getMultiple
+	/** {@inheritDoc Beatmap.getUserScores} @group Beatmap Functions */
+	readonly getBeatmapUserScores = Beatmap.getUserScores
 
 
 	// BEATMAPSET STUFF

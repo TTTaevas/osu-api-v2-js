@@ -92,6 +92,13 @@ export namespace User {
 	}
 
 	/** @obtainableFrom {@link API.getFriends} */
+	export interface Friend {
+		target_id: User["id"]
+		relation_type: "friend" | "block"
+		mutual: boolean
+		target: WithCountryCoverGroupsStatisticsSupport
+	}
+
 	export interface WithCountryCoverGroupsStatisticsSupport extends WithCountryCover, WithGroups {
 		statistics: Statistics
 		support_level: number
@@ -99,11 +106,6 @@ export namespace User {
 
 	/** @obtainableFrom {@link API.getUser} */
 	export interface Extended extends WithCountryCoverGroupsStatisticsSupport, WithKudosu {
-		/**
-		 * @deprecated Please use `cover` instead!
-		 * @privateRemarks When there's no cover, like on the dev server, this is null; keeping it non-null for convenience
-		 */
-		cover_url: string
 		discord: string | null
 		has_supported: boolean
 		interests: string | null
@@ -367,8 +369,9 @@ export namespace User {
 	/**
 	 * Get user data of each friend of the authorized user
 	 * @scope {@link Scope"friends.read"}
+	 * @remarks The Statistics will be of the authorized user's favourite gamemode, not the friend's!
 	 */
-	export async function getFriends(this: API): Promise<User.WithCountryCoverGroupsStatisticsSupport[]> {
+	export async function getFriends(this: API): Promise<User.Friend[]> {
 		return await this.request("get", "friends")
 	}
 }

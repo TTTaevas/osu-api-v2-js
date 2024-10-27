@@ -1,27 +1,51 @@
-import { API, Beatmap, Beatmapset, Changelog, Mod, Multiplayer as MultiplayerImport, Ruleset, User } from "./index.js"
+import { API, Beatmap, Beatmapset, Changelog, Mod, Ruleset, User } from "./index.js"
 import { getId } from "./misc.js"
 
-interface Bare {
-	/** In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero) */
+/** Common to older and newer formats */
+interface Basic {
+	/** In a format where `96.40%` would be `0.9640` **(and maybe some numbers afterwards)** */
 	accuracy: number
+	best_id: number | null
+	/** Would be null if ScoreV2 on stable, for example */
 	id: number | null
 	max_combo: number
 	mods: Mod[] | string[]
 	passed: boolean
 	/** Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%) */
 	rank: string
-	/** The ID of the user who made the score */
 	user_id: User["id"]
+	/** @remarks Is null when Beatmap is Loved (for example) */
 	pp: number | null
-	/** Can this score's replay be downloaded from the website? */
 	replay: boolean
+	/** Score format */
 	type: string
 }
 
-export interface Score extends Bare {
-	best_id: number | null
-	/** @remarks Is null when Beatmap is Loved (for example) */
-	pp: number | null
+export interface Score extends Basic {
+	classic_total_score: number
+	preserve: boolean
+	ranked: boolean
+	maximum_statistics: Score.Statistics
+	mods: Mod[]
+	statistics: Score.Statistics
+	beatmap_id: Beatmap["id"]
+	id: number
+	/** @remarks Is null if the score has not been set on lazer */
+	build_id: Changelog.Build["id"] | null
+	ended_at: Date
+	has_replay: boolean
+	is_perfect_combo: boolean
+	legacy_perfect: boolean
+	/** @remarks Is null if the score has been set on lazer */
+	legacy_score_id: number | null
+	legacy_total_score: number
+	ruleset_id: Ruleset
+	started_at: Date | null
+	total_score: number
+	type: "solo_score"
+	current_user_attributes: {
+		pin: boolean | null
+	}
 }
 
 export namespace Score {
@@ -38,62 +62,37 @@ export namespace Score {
 		small_tick_miss?: number
 		large_bonus?: number
 		small_bonus?: number
-		/** Exclusively for the `maximum_statistics` of solo-scores that were not set on lazer */
 		legacy_combo_increase?: number
 	}
 
-	export interface Multiplayer extends Bare {
-		/** In a format where `96.40%` would be `0.9640` **(and no number afterwards)** */
-		accuracy: number
-		beatmap_id: Beatmap["id"]
-		ended_at: Date
-		maximum_statistics: Statistics
-		mods: Mod[]
-		ruleset_id: Ruleset
-		started_at: Date
-		statistics: Statistics
-		total_score: number
-		playlist_item_id: MultiplayerImport.Room.PlaylistItem["id"]
-		room_id: MultiplayerImport.Room["id"]
-		id: number
+	/** @obtainableFrom {@link API.getUserScores} */
+	export interface WithUserBeatmapBeatmapset extends Score {
+		beatmap: Beatmap.Extended
+		beatmapset: Beatmapset
+		user: User
+		/** @remarks Only if `type` is set to `best` on {@link API.getUserScores} */
+		weight?: {
+			percentage: number
+			pp: number
+		}
+	}
+
+	export interface WithUser extends Score {
 		user: User.WithCountryCover
 	}
 
-	/**
-	 * Scores called "solo-scores" are more relevant to lazer stuff, it's the opposite of legacy
-	 * @obtainableFrom {@link API.getBeatmapSoloScores}
-	 */
-	export interface Solo extends Score {
-		ranked: boolean
-		preserve: boolean
-		mods: Mod[]
-		statistics: Statistics
-		beatmap_id: Beatmap["id"]
-		/** @remarks Is null if the score has not been set on lazer */
-		build_id: Changelog.Build["id"] | null
-		ended_at: Date
-		has_replay: boolean
-		is_perfect_combo: boolean
-		legacy_perfect: boolean
-		legacy_score_id: number | null
-		legacy_total_score: number
-		started_at: Date | null
-		total_score: number
+	export interface WithUserBeatmap extends WithUser {
 		user: User.WithCountryCover
-		maximum_statistics?: Statistics
+		beatmap: Beatmap.Extended
 	}
 	
-	/**
-	 * The version of Score without lazer-related stuff, used almost everywhere!
-	 * @obtainableFrom {@link API.getBeatmapUserScores}
-	 */
-	export interface Legacy extends Score {
+	/** The old version of scores, barely still used */
+	export interface OldFormat extends Basic {
 		mode: keyof typeof Ruleset
 		mode_int: Ruleset
 		mods: string[]
 		score: number
 		perfect: boolean
-		created_at: Date
 		statistics: {
 			/** @remarks Is null if the score's gamemode is Taiko */
 			count_50: number | null
@@ -105,41 +104,13 @@ export namespace Score {
 		}
 	}
 
-	export interface WithMatch extends Legacy {
-		match: {
-			slot: number
-			team: string
-			pass: boolean
-		}
-	}
-
-	/** @obtainableFrom {@link API.getBeatmapScores} */
-	export interface WithUser extends Legacy {
-		user: User.WithCountryCover
-	}
-
-	export interface WithUserBeatmap extends Legacy {
-		user: User
-		beatmap: Beatmap.Extended
-	}
-
-	/** @obtainableFrom {@link API.getUserScores} */
-	export interface WithUserBeatmapBeatmapset extends WithUserBeatmap {
-		beatmapset: Beatmapset
-		/** @remarks Only if `type` is set to `best` on {@link API.getUserScores} */
-		weight?: {
-			percentage: number
-			pp: number
-		}
-	}
-
 	/**
 	 * Get the replay for a score!
 	 * @scope {@link Scope"public"}
 	 * @param score The score that has created the replay
 	 * @returns The correctly encoded content of what would be a replay file (you can just fs.writeFileSync with it!)
 	 */
-	export async function getReplay(this: API, score: Exclude<Score["id"], null> | Score): Promise<string> {
+	export async function getReplay(this: API, score: Score["id"] | Score): Promise<string> {
 		return await this.request("get", `scores/${getId(score)}/download`)
 	}
 }
