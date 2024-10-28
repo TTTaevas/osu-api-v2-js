@@ -12,6 +12,7 @@ import util from "util"
 // A basic example would be WikiPage's available_locales, which could've been WikiPage["locale"]
 import tsj from "ts-json-schema-generator"
 import ajv from "ajv"
+import { AR, fixDate, getCurrentDateString } from "./exports.js"
 
 
 let api: osu.API
@@ -26,23 +27,6 @@ async function attempt<T extends (...args: any[]) => any>(fun: T, ...args: Param
 		console.error("❌ from attempt:\n", util.inspect(err, {colors: true, compact: true, depth: 100}), "\n\n")
 		return false
 	}
-}
-
-// ajv will not work properly if type is not changed from string to object where format is date-time
-function fixDate(arg: any) {
-	if (typeof arg === "object" && arg !== null) {
-		if (arg["format"] && arg["format"] === "date-time" && arg["type"] && arg["type"] === "string") {
-			arg["type"] = "object"
-		}
-
-		const keys = Object.keys(arg)
-		const value = Object.values(arg)
-		for (let i = 0; i < keys.length; i++) {
-			arg[keys[i]] = fixDate(value[i])
-		}
-	}
-
-	return arg
 }
 
 function validate(object: unknown, schemaName: string): boolean {
@@ -71,8 +55,6 @@ function validate(object: unknown, schemaName: string): boolean {
 		return false
 	}
 }
-
-type AR<T extends (...args: any) => any> = Awaited<ReturnType<T>>;
 
 class Test<
 	F extends (...args: any[]) => Promise<T>,
@@ -353,6 +335,7 @@ const testOther = () => [
 
 const test = async (id: number, secret: string): Promise<void> => {
 	api = await osu.API.createAsync(id, secret, undefined, {verbose: "all", timeout: 30, retry_on_timeout: true})
+	// api = api.withSettings({headers: {"x-api-version": getCurrentDateString()}})
 
 	const tests = [
 		testBeatmapPack,

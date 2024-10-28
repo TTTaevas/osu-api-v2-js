@@ -13,6 +13,8 @@ import ajv from "ajv"
 
 import { exec } from "child_process"
 import http from "http"
+import { AR, fixDate, getCurrentDateString } from "./exports.js"
+
 
 if (process.env.REDIRECT_URI === undefined) {throw new Error("❌ The SECRET has not been defined in the environment variables!")}
 const generator = tsj.createGenerator({path: "lib/index.ts", additionalProperties: true})
@@ -69,23 +71,6 @@ async function attempt<T extends (...args: any[]) => any>(fun: T, ...args: Param
 	}
 }
 
-// ajv will not work properly if type is not changed from string to object where format is date-time
-function fixDate(x: any) {
-	if (typeof x === "object" && x !== null) {
-		if (x["format"] && x["format"] === "date-time" && x["type"] && x["type"] === "string") {
-			x["type"] = "object"
-		}
-
-		const k = Object.keys(x)
-		const v = Object.values(x)
-		for (let i = 0; i < k.length; i++) {
-			x[k[i]] = fixDate(v[i])
-		}
-	}
-
-	return x
-}
-
 function validate(object: unknown, schemaName: string): boolean {
 	try {
 		const schema = fixDate(generator.createSchema(schemaName))
@@ -129,8 +114,6 @@ function validate(object: unknown, schemaName: string): boolean {
 		return false
 	}
 }
-
-type AR<T extends (...args: any) => any> = Awaited<ReturnType<T>>;
 
 class Test<
 	F extends (...args: any[]) => Promise<T>,
@@ -312,6 +295,7 @@ const test = async (): Promise<void> => {
 	const url = osu.generateAuthorizationURL(id, redirect_uri, scopes, server)
 	const code = await getCode(url)
 	api = await osu.API.createAsync(id, secret, {code, redirect_uri}, {verbose: "all", timeout: 30, server, retry_on_timeout: true})
+	// api = api.withSettings({headers: {"x-api-version": getCurrentDateString()}})
 
 	const tests = [
 		testChat,

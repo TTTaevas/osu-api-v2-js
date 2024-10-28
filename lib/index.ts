@@ -302,11 +302,13 @@ export class API {
 		return api
 	}
 
-	/** Revoke your current token! Revokes the refresh token as well */
-	public async revokeToken(): Promise<true> {
+	/** 
+	 * Revoke your current token! This revokes the refresh token as well
+	 * @remarks Uses {@link API.route_api} instead of {@link API.route_token}, as normally expected by the server
+	 */
+	public async revokeToken(): Promise<void> {
 		// Note that unlike when getting a token, we actually need to use the normal route to revoke a token for some reason
-		await this.request("delete", "oauth/tokens/current")
-		return true
+		return await this.request("delete", "oauth/tokens/current")
 	}
 
 
@@ -314,7 +316,7 @@ export class API {
 
 	private _refresh_token?: string
 	/**
-	 * Valid for an unknown amount of time, allows you to get a new token without going through the Authorization Code Grant again!
+	 * Valid for an unknown amount of time, it allows you to get a new token without going through the Authorization Code Grant again!
 	 * Use {@link API.refreshToken} to do that
 	 */
 	get refresh_token() {return this._refresh_token}
@@ -432,7 +434,7 @@ export class API {
 	 * @returns A Promise with the API's response
 	 */
 	public async request(method: "get" | "post" | "put" | "delete", endpoint: string, parameters: {[k: string]: any} = {},
-	settings?: ChildAPI["additional_fetch_settings"],info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}):
+	settings?: ChildAPI["additional_fetch_settings"], info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}):
 	Promise<any> {
 		let to_retry = false
 		let error_object: Error | undefined
@@ -467,7 +469,7 @@ export class API {
 				"Content-Type": "application/json",
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`,
-				"x-api-version": "20241027",
+				"x-api-version": "20241028",
 				...settings?.headers // written that way, custom headers with (for example) only a user-agent would only overwrite the default user-agent
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
@@ -812,7 +814,7 @@ export class API {
 }
 
 /**
- * Created with {@link API.withSettings}, this special version of the {@link API} specifies additional settings to every request!
+ * Created with {@link API.withSettings}, this special version of the {@link API} specifies additional fetch settings to every request!
  * @remarks This **is not** to be used for any purpose other than calling methods; The original {@link ChildAPI.original} handles tokens & configuration
  */
 export class ChildAPI extends API {
