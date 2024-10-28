@@ -6,8 +6,8 @@ export namespace Multiplayer {
 	export interface Room {
 		id: number
 		name: string
-		category: string
-		type: string
+		category: "normal" | "spotlight" | "daily_challenge"
+		type: "head_to_head" | "team_versus" | "playlists"
 		user_id: User["id"]
 		starts_at: Date
 		ends_at: Date | null
@@ -16,11 +16,18 @@ export namespace Multiplayer {
 		channel_id: Chat.Channel["channel_id"]
 		active: boolean
 		has_password: boolean
-		queue_mode: string
+		queue_mode: "all_players" | "all_players_round_robin" | "host_only"
 		auto_skip: boolean
 		host: User.WithCountry
-		playlist: Room.PlaylistItem[]
 		recent_participants: User[]
+		current_playlist_item?: Room.PlaylistItem.WithBeatmap | null
+		playlist?: Room.PlaylistItem.WithComplexBeatmap[]
+		playlist_item_stats?: {
+			count_active: number
+			count_total: number
+			ruleset_ids: Ruleset[]
+		}
+		difficulty_range?: {min: Beatmap["difficulty_rating"], max: Beatmap["difficulty_rating"]}
 		/** Only exists if the authorized user has played */
 		current_user_score?: {
 			/** In a format where `96.40%` would be `0.9640` (with some numbers after the zero) */
@@ -53,10 +60,17 @@ export namespace Multiplayer {
 			playlist_order: number | null
 			/** @remarks Should be null if the room isn't the realtime multiplayer kind */
 			played_at: Date | null
-			beatmap: Beatmap.WithBeatmapsetChecksumMaxcombo
 		}
 
 		export namespace PlaylistItem {
+			export interface WithBeatmap extends PlaylistItem {
+				beatmap: Beatmap.WithBeatmapset
+			}
+
+			export interface WithComplexBeatmap extends PlaylistItem {
+				beatmap: Beatmap.WithBeatmapsetChecksumMaxcombo
+			}
+
 			export interface Score extends ScoreImport.WithUser {
 				playlist_item_id: PlaylistItem["id"]
 				room_id: Room["id"]

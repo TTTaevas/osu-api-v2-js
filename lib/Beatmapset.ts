@@ -392,13 +392,13 @@ export namespace Beatmapset {
 		}
 
 		/** @group Kudosu Change */
-		export interface KudosuGain extends WithUserid, WithOptionalBeatmapset, WithDiscussion {
+		export interface KudosuGain extends WithUserid, WithOptionalBeatmapset, WithOptionalDiscussion {
 			type: "kudosu_gain"
 			comment: Comment.WithDiscussionidPostidNewvotevotes
 		}
 
 		/** @group Kudosu Change */
-		export interface KudosuLost extends WithUserid, WithOptionalBeatmapset, WithDiscussion {
+		export interface KudosuLost extends WithUserid, WithOptionalBeatmapset, WithOptionalDiscussion {
 			type: "kudosu_lost"
 			comment: Comment.WithDiscussionidPostidNewvotevotes
 		}

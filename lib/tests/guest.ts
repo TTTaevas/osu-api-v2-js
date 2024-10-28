@@ -13,8 +13,6 @@ import util from "util"
 import tsj from "ts-json-schema-generator"
 import ajv from "ajv"
 
-if (process.env.ID === undefined) {throw new Error("❌ The ID has not been defined in the environment variables!")}
-if (process.env.SECRET === undefined) {throw new Error("❌ The SECRET has not been defined in the environment variables!")}
 
 let api: osu.API
 const generator = tsj.createGenerator({path: "lib/index.ts", additionalProperties: true})
@@ -353,8 +351,8 @@ const testOther = () => [
 ]
 
 
-const test = async (id: string, secret: string): Promise<void> => {
-	api = await osu.API.createAsync({id: Number(id), secret}, undefined, {verbose: "all", timeout: 30, retry_on_timeout: true})
+const test = async (id: number, secret: string): Promise<void> => {
+	api = await osu.API.createAsync(id, secret, undefined, {verbose: "all", timeout: 30, retry_on_timeout: true})
 
 	const tests = [
 		testBeatmapPack,
@@ -402,4 +400,6 @@ const test = async (id: string, secret: string): Promise<void> => {
 	}
 }
 
-test(process.env.ID, process.env.SECRET)
+if (process.env.ID === undefined) {throw new Error("❌ The ID has not been defined in the environment variables!")}
+if (process.env.SECRET === undefined) {throw new Error("❌ The SECRET has not been defined in the environment variables!")}
+test(Number(process.env.ID), process.env.SECRET)

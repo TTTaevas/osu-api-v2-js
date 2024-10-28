@@ -266,25 +266,25 @@ const testMultiplayer = async () => {
 	// PLAYLIST
 	const playlist_test = new Test(api.getRooms, ["playlists", "all"], "Multiplayer.Room")
 	await playlist_test.try()
+	tests.push(playlist_test)
 
 	if (playlist_test.response) {
 		const room = (playlist_test.response as osu.Multiplayer.Room[])[0]
 		tests.push(new Test(api.getRoomLeaderboard, [room], {leaderboard: "Multiplayer.Room.Leader"}))
 	} else {
 		console.warn("⚠️ Skipping multiplayer playlist tests, unable to get rooms")
-		tests.push(playlist_test)
 	}
 
 	// REALTIME
 	const realtime_test = new Test(api.getRooms, ["realtime", "all"], "Multiplayer.Room")
 	await realtime_test.try()
+	tests.push(realtime_test)
 
 	if (realtime_test.response) {
 		const room = (realtime_test.response as osu.Multiplayer.Room[])[0]
 		tests.push(new Test(api.getRoomLeaderboard, [room], {leaderboard: "Multiplayer.Room.Leader"}))
 	} else {
 		console.warn("⚠️ Skipping multiplayer realtime tests, unable to get rooms")
-		tests.push(realtime_test)
 	}
 
 	return tests
@@ -303,14 +303,15 @@ const testScore = () => {
 
 const testUser = () => [
 	new Test(api.getResourceOwner, [], "User.Extended.WithStatisticsrulesets"),
-	new Test(api.getFriends, [], "User.WithCountryCoverGroupsStatisticsSupport")
+	new Test(api.getFriends, [], undefined,
+		[(r: AR<typeof api.getFriends>) => validate(r[0].target, "User.WithCountryCoverGroupsStatisticsSupport")])
 ]
 
 const test = async (): Promise<void> => {
 	const scopes: osu.Scope[] = ["public", "chat.read", "chat.write", "chat.write_manage", "forum.write", "friends.read", "identify"]
 	const url = osu.generateAuthorizationURL(id, redirect_uri, scopes, server)
 	const code = await getCode(url)
-	api = await osu.API.createAsync({id, secret}, {code, redirect_uri}, {verbose: "all", timeout: 30, server, retry_on_timeout: true})
+	api = await osu.API.createAsync(id, secret, {code, redirect_uri}, {verbose: "all", timeout: 30, server, retry_on_timeout: true})
 
 	const tests = [
 		testChat,

@@ -124,10 +124,8 @@ export class API {
 	 * @returns A promise with an API instance
 	 */
 	public static async createAsync(
-		client: {
-			id: number,
-			secret: string
-		},
+		client_id: API["client_id"],
+		client_secret: API["client_secret"],
 		user?: {
 			/** The Application Callback URL; Where the User has been redirected to after saying "okay" to your application doing stuff */
 			redirect_uri: string,
@@ -137,41 +135,43 @@ export class API {
 		settings?: Partial<API>
 	): Promise<API> {
 		const new_api = new API({
-			client,
+			client_id,
+			client_secret,
 			...settings
 		})
 
 		return user ?
-		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "authorization_code",
-		redirect_uri: user.redirect_uri, code: user.code}, new_api) :
-		await new_api.getAndSetToken({client_id: client.id, client_secret: client.secret, grant_type: "client_credentials", scope: "public"}, new_api)
+		await new_api.getAndSetToken({client_id, client_secret, grant_type: "authorization_code", redirect_uri: user.redirect_uri, code: user.code}, new_api) :
+		await new_api.getAndSetToken({client_id, client_secret, grant_type: "client_credentials", scope: "public"}, new_api)
 	}
 
 
 	// CLIENT INFO
 
-	private _client: {
-		id: number
-		secret: string
-	} = {id: 0, secret: ""}
-	/** The details of your client, which you've got from https://osu.ppy.sh/home/account/edit#oauth */
-	get client() {return this._client}
-	set client(client) {this._client = client}
+	private _client_id: number = 0
+	/** The ID of your client, which you can get on https://osu.ppy.sh/home/account/edit#oauth */
+	get client_id() {return this._client_id}
+	set client_id(client_id) {this._client_id = client_id}
+
+	private _client_secret: string = ""
+	/** The Secret of your client, which you can get or reset on https://osu.ppy.sh/home/account/edit#oauth */
+	get client_secret() {return this._client_secret}
+	set client_secret(client_secret) {this._client_secret = client_secret}
 
 	private _server: string = "https://osu.ppy.sh"
 	/** The base url of the server where the requests should land (defaults to **https://osu.ppy.sh**) */
 	get server() {return this._server}
 	set server(server) {this._server = server}
 
-	private _routes: {
-		/** Used by practically every method to interact with the {@link API.server} */
-		normal: string
-		/** Used for getting an {@link API.access_token} and using your {@link API.refresh_token} */
-		token_obtention: string
-	} = {normal: "api/v2", token_obtention: "oauth/token"}
-	/** What follows the {@link API.server} and preceeds the individual endpoints used by each request */
-	get routes() {return this._routes}
-	set routes(routes) {this._routes = routes}
+	private _route_api: string = "api/v2"
+	/** Used by practically every method to interact with the {@link API.server} (defaults to **api/v2**) */
+	get route_api() {return this._route_api}
+	set route_api(route_api) {this._route_api = route_api}
+
+	private _route_token: string = "oauth/token"
+	/** Used for getting an {@link API.access_token} and using your {@link API.refresh_token} (defaults to **oauth/token**) */
+	get route_token() {return this._route_token}
+	set route_token(route_token) {this._route_token = route_token}
 
 	private _user?: User["id"]
 	/** The osu! user id of the user who went through the Authorization Code Grant */
@@ -266,7 +266,7 @@ export class API {
 		code?: string
 		refresh_token?: string	
 	}, api: API): Promise<API> {
-		const response = await fetch(`${this.server}/${this.routes.token_obtention}`, {
+		const response = await fetch(`${this.server}/${this.route_token}`, {
 			method: "post",
 			headers: {
 				"Accept": "application/json",
@@ -277,13 +277,13 @@ export class API {
 			signal: this.timeout > 0 ? AbortSignal.timeout(this.timeout * 1000) : undefined
 		})
 		.catch((e) => {
-			throw new APIError("Failed to fetch a token", this.server, "post", this.routes.token_obtention, body, undefined, e)
+			throw new APIError("Failed to fetch a token", this.server, "post", this.route_token, body, undefined, e)
 		})
 
 		const json: any = await response.json()
 		if (!json.access_token) {
 			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-			throw new APIError("No token obtained", this.server, "post", this.routes.token_obtention, body, response.status)
+			throw new APIError("No token obtained", this.server, "post", this.route_token, body, response.status)
 		}
 		api.token_type = json.token_type
 		if (json.refresh_token) {api.refresh_token = json.refresh_token}
@@ -385,7 +385,7 @@ export class API {
 		const old_token = this.access_token
 		try {
 			await this.getAndSetToken(
-			{client_id: this.client.id, client_secret: this.client.secret, grant_type: "refresh_token", refresh_token: this.refresh_token}, this)
+			{client_id: this.client_id, client_secret: this.client_secret, grant_type: "refresh_token", refresh_token: this.refresh_token}, this)
 			if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
 		} catch(e) {
 			this.log(true, "Failed to refresh the token :(", e)
@@ -443,8 +443,8 @@ export class API {
 		if (settings?.signal) signals.push(settings.signal)
 		if (this.timeout > 0) signals.push(AbortSignal.timeout(this.timeout * 1000))
 		
-		const second_slash = this.routes.normal.length ? "/" : "" // if the server **is** the route, don't have `//` between the server and the endpoint
-		let url = `${this.server}/${this.routes.normal}${second_slash}${endpoint}`
+		const second_slash = this.route_api.length ? "/" : "" // if the server **is** the route, don't have `//` between the server and the endpoint
+		let url = `${this.server}/${this.route_api}${second_slash}${endpoint}`
 
 		if (method === "get" && parameters) {
 			// For GET requests specifically, requests need to be shaped in very particular ways
@@ -467,7 +467,7 @@ export class API {
 				"Content-Type": "application/json",
 				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`,
-				"x-api-version": "20241025",
+				"x-api-version": "20241027",
 				...settings?.headers // written that way, custom headers with (for example) only a user-agent would only overwrite the default user-agent
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
@@ -519,7 +519,7 @@ export class API {
 				return await this.request(method, endpoint, parameters, settings, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
-			throw new APIError(error_message, `${this.server}/${this.routes.normal}`, method, endpoint, parameters, error_code, error_object)
+			throw new APIError(error_message, `${this.server}/${this.route_api}`, method, endpoint, parameters, error_code, error_object)
 		}
 
 		this.log(false, response.statusText, response.status, {method, endpoint, parameters})
@@ -830,7 +830,9 @@ export class ChildAPI extends API {
 	/** @hidden @deprecated use API equivalent */
 	get access_token() {return this.original.access_token}
 	/** @hidden @deprecated use API equivalent */
-	get client() {return this.original.client}
+	get client_id() {return this.original.client_id}
+	/** @hidden @deprecated use API equivalent */
+	get client_secret() {return this.original.client_secret}
 	/** @hidden @deprecated use API equivalent */
 	get expires() {return this.original.expires}
 	/** @hidden @deprecated use API equivalent */
@@ -852,7 +854,9 @@ export class ChildAPI extends API {
 	/** @hidden @deprecated use API equivalent */
 	get retry_on_timeout() {return this.original.retry_on_timeout}
 	/** @hidden @deprecated use API equivalent */
-	get routes() {return this.original.routes}
+	get route_api() {return this.original.route_api}
+	/** @hidden @deprecated use API equivalent */
+	get route_token() {return this.original.route_token}
 	/** @hidden @deprecated use API equivalent */
 	get scopes() {return this.original.scopes}
 	/** @hidden @deprecated use API equivalent */

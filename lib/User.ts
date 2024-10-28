@@ -91,14 +91,6 @@ export namespace User {
 		}[]
 	}
 
-	/** @obtainableFrom {@link API.getFriends} */
-	export interface Friend {
-		target_id: User["id"]
-		relation_type: "friend" | "block"
-		mutual: boolean
-		target: WithCountryCoverGroupsStatisticsSupport
-	}
-
 	export interface WithCountryCoverGroupsStatisticsSupport extends WithCountryCover, WithGroups {
 		statistics: Statistics
 		support_level: number
@@ -250,6 +242,14 @@ export namespace User {
 		}
 	}
 
+	/** @obtainableFrom {@link API.getFriends} */
+	export interface Relation {
+		target_id: User["id"]
+		relation_type: "friend" | "block"
+		mutual: boolean
+		target: WithCountryCoverGroupsStatisticsSupport
+	}
+
 	/** @obtainableFrom {@link API.getUserKudosu} */
 	export interface KudosuHistory {
 		id: number
@@ -371,7 +371,7 @@ export namespace User {
 	 * @scope {@link Scope"friends.read"}
 	 * @remarks The Statistics will be of the authorized user's favourite gamemode, not the friend's!
 	 */
-	export async function getFriends(this: API): Promise<User.Friend[]> {
+	export async function getFriends(this: API): Promise<User.Relation[]> {
 		return await this.request("get", "friends")
 	}
 }

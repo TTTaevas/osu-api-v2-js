@@ -32,16 +32,16 @@ async function logUserTopPlayBeatmap(username: string) {
     // It's more convenient to use `osu.API.createAsync()` instead of `new osu.API()` as it doesn't require you to directly provide an access_token!
     // In a proper application, you'd use this function as soon as the app starts so you can use that object everywhere
     // (or if it acts as a user, you'd use this function at the end of the authorization flow)
-    const api = await osu.API.createAsync({id: "<client_id>", secret: "<client_secret>"})
+    const api = await osu.API.createAsync("<client_id>", "<client_secret>") // with id as a number
 
     const user = await api.getUser(username) // We need to get the id of the user in order to request what we want
     const score = (await api.getUserScores(user, "best", osu.Ruleset.osu, {lazer: false}, {limit: 1}))[0] // Specifying the Ruleset is optional
     const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(score.beatmap, score.mods) // Specifying the mods so the SR is adapted to them
 
     const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`
-    const y = `+${score.mods.toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
+    const y = `+${score.mods.map((m) => m.acronym).toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
     console.log(`${username}'s top play is on: ${x} ${y}`)
-    // Doomsday fanboy's top play is on: Yamajet feat. Hiura Masako - Sunglow [Harmony] +DT (8.72*)
+    // Doomsday fanboy's top play is on: Erio o Kamattechan - os-Uchuujin(Asterisk Makina Remix) [Mattress Actress] +DT,CL (8.85*)
 }
 
 logUserTopPlayBeatmap("Doomsday fanboy")
@@ -68,7 +68,7 @@ When a user authorizes your application, they get redirected to your `Applicatio
 
 With this code, you're able to create your `api` object:
 ```typescript
-const api = await osu.API.createAsync({id: "<client_id>", secret: "<client_secret>"}, {code: "<code>", redirect_uri: "<application_callback_url>"})
+const api = await osu.API.createAsync("<client_id>", "<client_secret>", {code: "<code>", redirect_uri: "<application_callback_url>"})
 ```
 
 #### The part where you make it so your application works without the user saying okay every 2 minutes
@@ -125,7 +125,7 @@ async function readChat() {
     // Somehow get the code so the application can read the messages as your osu! user
 	const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "chat.read"]) // "chat.read" is 100% needed in our case
 	const code = await getCode(url)
-	const api = await osu.API.createAsync({id, secret}, {code, redirect_uri}, {verbose: "errors"})
+	const api = await osu.API.createAsync(id, secret, {code, redirect_uri}, {verbose: "errors"})
 
     // Get a WebSocket object to interact with and get messages from
 	const socket = api.generateWebSocket()
