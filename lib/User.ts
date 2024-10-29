@@ -32,6 +32,7 @@ export namespace User {
 		offset?: number
 	}
 
+	/** @obtainableFrom {@link API.getUserRanking} */
 	export interface WithKudosu extends User {
 		kudosu: {
 			available: number

@@ -100,6 +100,7 @@ export namespace Beatmapset {
 		Other			= 14
 	}
 
+	/** @obtainableFrom {@link API.getBeatmapsetEvents} */
 	export interface Event {
 		id: number
 		/** 
@@ -478,12 +479,17 @@ export namespace Beatmapset {
 			beatmaps: Beatmap.Extended[]
 		}
 
+		/** @obtainableFrom {@link API.searchBeatmapsets} */
 		export interface WithBeatmapPacktags extends Extended {
 			beatmaps: Beatmap.Extended.WithMaxcombo[]
 			pack_tags: string[]
 		}
 
-		/** @obtainableFrom {@link API.getBeatmapset} */
+		/** 
+		 * @obtainableFrom
+		 * {@link API.getBeatmapset} /
+		 * {@link API.lookupBeatmapset}
+		 */
 		export interface Plus extends Extended, WithUserHype {
 			/** The different beatmaps/difficulties this beatmapset has */
 			beatmaps: Beatmap.Extended.WithFailtimes[]
@@ -537,10 +543,12 @@ export namespace Beatmapset {
 	}
 
 	export namespace Discussion {
+		/** @obtainableFrom {@link API.getBeatmapsetDiscussions} */
 		export interface WithStartingpost extends Discussion {
 			starting_post: Post
 		}
 
+		/** @obtainableFrom {@link API.getBeatmapsetDiscussionPosts} */
 		export interface Post {
 			beatmapset_discussion_id: Discussion["id"]
 			created_at: Date
@@ -573,6 +581,7 @@ export namespace Beatmapset {
 			}
 		}
 
+		/** @obtainableFrom {@link API.getBeatmapsetDiscussionVotes} */
 		export interface Vote {
 			beatmapset_discussion_id: Discussion["id"]
 			created_at: Date

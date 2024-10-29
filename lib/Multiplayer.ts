@@ -2,7 +2,11 @@ import { API, Beatmap, Chat, Mod, Ruleset, Score as ScoreImport, User } from "./
 import { getId } from "./misc.js"
 
 export namespace Multiplayer {
-	/** @obtainableFrom {@link API.getRoom} */
+	/**
+	 * @obtainableFrom
+	 * {@link API.getRoom} /
+	 * {@link API.getRooms}
+	 */
 	export interface Room {
 		id: number
 		name: string
@@ -71,6 +75,7 @@ export namespace Multiplayer {
 				beatmap: Beatmap.WithBeatmapsetChecksumMaxcombo
 			}
 
+			/** @obtainableFrom {@link API.getPlaylistItemScores} */
 			export interface Score extends ScoreImport.WithUser {
 				playlist_item_id: PlaylistItem["id"]
 				room_id: Room["id"]
@@ -113,6 +118,7 @@ export namespace Multiplayer {
 		}
 
 		export namespace Leader {
+			/** @obtainableFrom {@link API.getRoomLeaderboard} */
 			export interface WithPosition extends Leader {
 				position: number
 			}

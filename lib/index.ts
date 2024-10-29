@@ -118,7 +118,8 @@ export class API {
 
 	/**
 	 * The normal way to create an API instance! Make sure to `await` it
-	 * @param client The ID and the secret of your client, can be found on https://osu.ppy.sh/home/account/edit#new-oauth-application
+	 * @param client_id The ID of your client, which you can get on https://osu.ppy.sh/home/account/edit#oauth
+	 * @param client_secret The Secret of your client, which you can get or reset on https://osu.ppy.sh/home/account/edit#oauth
 	 * @param user If the instance is supposed to represent a user, use their Authorization Code and the Application Callback URL of your application!
 	 * @param settings Additional settings you'd like to specify now rather than later, check out the Accessors at https://osu-v2.taevas.xyz/classes/API.html
 	 * @returns A promise with an API instance
@@ -706,19 +707,19 @@ export class API {
 	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
 	readonly getRoom = Multiplayer.Room.getOne
 
-	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Room.getMultiple} @group Multiplayer Functions */
 	readonly getRooms = Multiplayer.Room.getMultiple
 
-	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Room.Leader.getMultiple} @group Multiplayer Functions */
 	readonly getRoomLeaderboard = Multiplayer.Room.Leader.getMultiple
 
-	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Room.PlaylistItem.getScores} @group Multiplayer Functions */
 	readonly getPlaylistItemScores = Multiplayer.Room.PlaylistItem.getScores
 
-	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Match.getOne} @group Multiplayer Functions */
 	readonly getMatch = Multiplayer.Match.getOne
 
-	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Match.getMultiple} @group Multiplayer Functions */
 	readonly getMatches = Multiplayer.Match.getMultiple
 
 

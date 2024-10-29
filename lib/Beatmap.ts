@@ -82,7 +82,11 @@ export namespace Beatmap {
 		/** @obtainableFrom {@link API.getBeatmaps} */
 		export interface WithFailtimesMaxcombo extends WithFailtimes, WithMaxcombo {}
 
-		/** @obtainableFrom {@link API.getBeatmap} */
+		/**
+		 * @obtainableFrom
+		 * {@link API.getBeatmap} /
+		 * {@link API.lookupBeatmap}
+		 */
 		export interface WithFailtimesBeatmapset extends WithFailtimesMaxcombo {
 			beatmapset: Beatmapset.Extended
 		}
@@ -129,7 +133,7 @@ export namespace Beatmap {
 		 * @param legacy_only Should lazer scores be excluded from the pack's `user_completion_data`? (defaults to **false**)
 		 * @remarks Currently in https://osu.ppy.sh/beatmaps/packs, when hovering a pack, its URL with its tag should be preview by your browser
 		 */
-		export async function getOne(this: API, pack: Pack["tag"] | Pack, legacy_only: boolean = false): Promise<Pack> {
+		export async function getOne(this: API, pack: Pack["tag"] | Pack, legacy_only: boolean = false): Promise<Pack.WithBeatmapset> {
 			const tag = typeof pack === "string" ? pack : pack.tag
 			return await this.request("get", `beatmaps/packs/${tag}`, {legacy_only})
 		}
@@ -305,6 +309,8 @@ export namespace Beatmap {
 	}
 
 	/**
+	 * **You may want to use `getScores` instead, nowadays it *seems* to do just about the same thing**
+	 * 
 	 * Get the top scores of a beatmap, in the "solo score" format lazer brought with it!
 	 * More info on GitHub if needed https://github.com/ppy/osu-infrastructure/blob/master/score-submission.md
 	 * @param beatmap The Beatmap in question

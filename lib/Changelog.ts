@@ -62,7 +62,11 @@ export namespace Changelog {
 		/** @obtainableFrom {@link API.getChangelogBuilds} */
 		export interface WithUpdatestreamsChangelogentries extends WithUpdatestreams, WithChangelogentries {}
 
-		/** @obtainableFrom {@link API.getChangelogBuild} */
+		/**
+		 * @obtainableFrom
+		 * {@link API.getChangelogBuild} /
+		 * {@link API.lookupChangelogBuild}
+		 */
 		export interface WithChangelogentriesVersions extends WithChangelogentries {
 			versions: {
 				next: WithUpdatestreams | null
@@ -111,7 +115,6 @@ export namespace Changelog {
 		}
 	}
 
-	/** @obtainableFrom {@link Changelog.Build.WithUpdatestreams} */
 	export interface UpdateStream {
 		id: number
 		/** Stable would be `stable40`, Lazer would be `lazer` */

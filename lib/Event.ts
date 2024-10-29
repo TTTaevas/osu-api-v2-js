@@ -1,5 +1,6 @@
 import { API, User as UserImport, Ruleset } from "./index.js"
 
+/** @obtainableFrom {@link API.getEvents} */
 export interface Event {
 	created_at: Date
 	id: number
@@ -127,7 +128,10 @@ export namespace Event {
 		}
 	}
 
-	/** This includes everything in this namespace, except `BeatmapPlaycount` */
+	/**
+	 * This includes everything in this namespace, except `BeatmapPlaycount`
+	 * @obtainableFrom {@link API.getUserRecentActivity}
+	 */
 	export type AnyRecentActivity = Achievement | BeatmapsetApprove | BeatmapsetDelete | BeatmapsetRevive | BeatmapsetUpdate | BeatmapsetUpload | Rank | RankLost |
 	UserSupportAgain | UserSupportFirst | UserSupportGift | UsernameChange
 	export type Any = AnyRecentActivity | BeatmapPlaycount

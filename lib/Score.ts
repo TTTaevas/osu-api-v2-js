@@ -21,6 +21,7 @@ interface Basic {
 	type: string
 }
 
+/** @obtainableFrom {@link API.getBeatmapUserScores} */
 export interface Score extends Basic {
 	classic_total_score: number
 	preserve: boolean
@@ -77,10 +78,16 @@ export namespace Score {
 		}
 	}
 
+	/**
+	 * @obtainableFrom
+	 * {@link API.getBeatmapScores} /
+	 * {@link API.getBeatmapSoloScores}
+	 */
 	export interface WithUser extends Score {
 		user: User.WithCountryCover
 	}
 
+	/** @obtainableFrom {@link API.getBeatmapUserScore} */
 	export interface WithUserBeatmap extends WithUser {
 		user: User.WithCountryCover
 		beatmap: Beatmap.Extended
