@@ -234,40 +234,34 @@ export namespace Beatmap {
 		}
 	}
 
-	/** @obtainableFrom {@link API.getBeatmapUserScore} */
-	export interface UserScore {
-		/** Value depends on the requested mode and mods! */
-		position: number
-		/** The score itself */
-		score: Score.WithUserBeatmap
-	}
-
-	export namespace UserScore {
-		/**
+	/**
 		 * Get the score on a beatmap made by a specific user (with specific mods and on a specific ruleset if needed)
 		 * @param beatmap The Beatmap the score was made on
 		 * @param user The User who made the score
 		 * @param config Specify the score's ruleset, the score's mods, prevent a lazer score from being returned **(`type` should not be supported)**
 		 * @returns An Object with the position of the score according to the specified Mods and Ruleset, and with the score itself
 		 */
-		export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Config): Promise<UserScore> {
-			const mode = config?.ruleset !== undefined ? Ruleset[config.ruleset] : undefined
-			return await this.request("get", `beatmaps/${getId(beatmap)}/scores/users/${getId(user)}`,
-			{legacy_only: config?.legacy_only, mode, mods: config?.mods, type: config?.type})
-		}
+	export async function getUserScore(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Config): Promise<{
+		/** Value depends on the requested mode and mods! */
+		position: number,
+		score: Score.WithUserBeatmap
+	}> {
+		const mode = config?.ruleset !== undefined ? Ruleset[config.ruleset] : undefined
+		return await this.request("get", `beatmaps/${getId(beatmap)}/scores/users/${getId(user)}`,
+		{legacy_only: config?.legacy_only, mode, mods: config?.mods, type: config?.type})
+	}
 
-		/**
-		 * Get the scores on a beatmap made by a specific user (with the possibility to specify if the scores are on a convert)
-		 * @param beatmap The Beatmap the scores were made on
-		 * @param user The User who made the scores
-		 * @param config Specify the score's ruleset, prevent a lazer score from being returned **(`mods` and `type` should not be supported)**
-		 */
-		export async function getMultiple(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Config): Promise<Score.Legacy[]> {
-			const mode = config?.ruleset !== undefined ? Ruleset[config.ruleset] : undefined
-			const response = await this.request("get", `beatmaps/${getId(beatmap)}/scores/users/${getId(user)}/all`,
-			{legacy_only: config?.legacy_only, mode, mods: config?.mods, type: config?.type})
-			return response.scores // It's the only property
-		}
+	/**
+	 * Get the scores on a beatmap made by a specific user (with the possibility to specify if the scores are on a convert)
+	 * @param beatmap The Beatmap the scores were made on
+	 * @param user The User who made the scores
+	 * @param config Specify the score's ruleset, prevent a lazer score from being returned **(`mods` and `type` should not be supported)**
+	 */
+	export async function getUserScores(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Config): Promise<Score[]> {
+		const mode = config?.ruleset !== undefined ? Ruleset[config.ruleset] : undefined
+		const response = await this.request("get", `beatmaps/${getId(beatmap)}/scores/users/${getId(user)}/all`,
+		{legacy_only: config?.legacy_only, mode, mods: config?.mods, type: config?.type})
+		return response.scores // It's the only property
 	}
 	
 	/** 
@@ -317,7 +311,7 @@ export namespace Beatmap {
 	 * @param config Specify the score's ruleset, mods, type **(`legacy_only` should not be supported)**
 	 * @remarks Please check if `mods` and `type` seem to be supported or not by the API: https://osu.ppy.sh/docs/index.html#get-beatmap-scores-non-legacy
 	 */
-	export async function getSoloScores(this: API, beatmap: Beatmap["id"] | Beatmap, config?: Config): Promise<Score.Solo[]> {
+	export async function getSoloScores(this: API, beatmap: Beatmap["id"] | Beatmap, config?: Config): Promise<Score.WithUser[]> {
 		const mode = config?.ruleset !== undefined ? Ruleset[config.ruleset] : undefined
 		const response = await this.request("get", `beatmaps/${getId(beatmap)}/solo-scores`,
 		{legacy_only: config?.legacy_only, mode, mods: config?.mods, type: config?.type})

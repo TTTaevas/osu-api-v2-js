@@ -1,58 +1,3 @@
-import { API } from "./index.js"
-
-
-// EXPORTED FOR PACKAGE USERS
-
-/**
- * Scopes determine what the API instance can do as a user!
- * https://osu.ppy.sh/docs/index.html#scopes
- * @remarks "identify" is always implicity provided, **"public" is implicitly needed for almost everything!!**
- * The need for the "public" scope is only made explicit when the function can't be used unless the application acts as as a user (non-guest)
- */
-export type Scope = "chat.read" | "chat.write" | "chat.write_manage" | "delegate" | "forum.write" | "friends.read" | "identify" | "public"
-
-export type Mod = {
-	acronym: string
-	settings?: {[k: string]: any}
-}
-
-export enum Ruleset {
-	osu 	= 0,
-	taiko 	= 1,
-	fruits	= 2,
-	mania 	= 3
-}
-
-/** @obtainableFrom {@link API.getSpotlights} */
-export interface Spotlight {
-	id: number
-	name: string
-	start_date: Date
-	end_date: Date
-	type: string
-	/** Pretty sure this is only `true` when the spotlight has different beatmaps for each ruleset */
-	mode_specific: boolean
-}
-
-export namespace Spotlight {
-	export interface WithParticipantcount extends Spotlight {
-		participant_count: number
-	}
-
-	/**
-	 * Get ALL legacy spotlights! (2009-2020, somewhat known as charts/ranking charts, available @ https://osu.ppy.sh/rankings/osu/charts)
-	 * @remarks The data for newer spotlights (2020-, somewhat known as seasons) can be obtained through `getRoom()`
-	 * but you can't really get the id of those newer spotlights without going through the website's URLs (https://osu.ppy.sh/seasons/latest) as far as I know :(
-	 */
-	export async function getAll(this: API): Promise<Spotlight[]> {
-		const response = await this.request("get", "spotlights")
-		return response.spotlights // It's the only property
-	}
-}
-
-
-// PRIVATE TO PACKAGE USERS
-
 /**
  * When using `fetch()` for a GET request, you can't just give the parameters the same way you'd give them for a POST request!
  * @param parameters The parameters as they'd be for a POST request (prior to using `JSON.stringify`)
@@ -112,7 +57,8 @@ export function correctType(x: any, force_string?: boolean): any {
 	// those MUST be strings; turn the server's numbers into strings and keep the server's strings as strings
 	const bannedProperties = [
 		"name", "artist", "artist_unicode", "title", "title_unicode", "tags", "username", "location", "interests", "occupation", "twitter",
-		"discord", "version", "display_version", "author", "raw", "bbcode", "message", "creator", "source"
+		"discord", "version", "display_version", "author", "raw", "bbcode", "message", "creator", "source", "new_user_username", "source_user_username",
+		"previousUsername", "previous_usernames"
 	]
 	if (force_string && typeof x !== "object") {
 		return String(x)
@@ -141,8 +87,10 @@ export function correctType(x: any, force_string?: boolean): any {
 
 /**
  * This is an alternative to `AbortSignal.any` that is friendly to older versions of Node.js, it was provided by the kind https://github.com/baileyherbert
+ * https://github.com/TTTaevas/osu-api-v2-js/issues/33#issuecomment-2062026279
  * @param signals The multiple signals you'd want `fetch()` to take
  * @returns A signal that's aborted when any of the `signals` is aborted
+ * @remarks Will be safe to remove with Node 20
  */
 export function anySignal(signals: AbortSignal[]) {
 	const controller = new AbortController()

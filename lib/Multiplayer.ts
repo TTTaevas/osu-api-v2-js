@@ -1,4 +1,4 @@
-import { API, Beatmap, Chat, Mod, Ruleset, Score, User } from "./index.js"
+import { API, Beatmap, Chat, Mod, Ruleset, Score as ScoreImport, User } from "./index.js"
 import { getId } from "./misc.js"
 
 export namespace Multiplayer {
@@ -6,8 +6,8 @@ export namespace Multiplayer {
 	export interface Room {
 		id: number
 		name: string
-		category: string
-		type: string
+		category: "normal" | "spotlight" | "daily_challenge"
+		type: "head_to_head" | "team_versus" | "playlists"
 		user_id: User["id"]
 		starts_at: Date
 		ends_at: Date | null
@@ -16,11 +16,18 @@ export namespace Multiplayer {
 		channel_id: Chat.Channel["channel_id"]
 		active: boolean
 		has_password: boolean
-		queue_mode: string
+		queue_mode: "all_players" | "all_players_round_robin" | "host_only"
 		auto_skip: boolean
 		host: User.WithCountry
-		playlist: Room.PlaylistItem[]
 		recent_participants: User[]
+		current_playlist_item?: Room.PlaylistItem.WithBeatmap | null
+		playlist?: Room.PlaylistItem.WithComplexBeatmap[]
+		playlist_item_stats?: {
+			count_active: number
+			count_total: number
+			ruleset_ids: Ruleset[]
+		}
+		difficulty_range?: {min: Beatmap["difficulty_rating"], max: Beatmap["difficulty_rating"]}
 		/** Only exists if the authorized user has played */
 		current_user_score?: {
 			/** In a format where `96.40%` would be `0.9640` (with some numbers after the zero) */
@@ -53,23 +60,20 @@ export namespace Multiplayer {
 			playlist_order: number | null
 			/** @remarks Should be null if the room isn't the realtime multiplayer kind */
 			played_at: Date | null
-			beatmap: Beatmap.WithBeatmapsetChecksumMaxcombo
 		}
 
 		export namespace PlaylistItem {
-			/** @obtainableFrom {@link API.getPlaylistItemScores} */
-			export interface Scores {
-				params: {
-					limit: number
-					sort: string
-				}
-				scores: Score.Multiplayer[]
-				/** How many scores there are across all pages, not necessarily `scores.length` */
-				total: number
-				/** @remarks Will be null if not an authorized user or if the authorized user has no score */
-				user_score: Score.Multiplayer | null
-				/** @remarks Will be null if there is no next page */
-				cursor_string: string | null
+			export interface WithBeatmap extends PlaylistItem {
+				beatmap: Beatmap.WithBeatmapset
+			}
+
+			export interface WithComplexBeatmap extends PlaylistItem {
+				beatmap: Beatmap.WithBeatmapsetChecksumMaxcombo
+			}
+
+			export interface Score extends ScoreImport.WithUser {
+				playlist_item_id: PlaylistItem["id"]
+				room_id: Room["id"]
 			}
 
 			/**
@@ -82,7 +86,16 @@ export namespace Multiplayer {
 			 * https://github.com/ppy/osu-web/issues/10725
 			 */
 			export async function getScores(this: API, item: {id: number, room_id: number} | Multiplayer.Room.PlaylistItem, limit: number = 50,
-			sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<Multiplayer.Room.PlaylistItem.Scores> {
+			sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<{
+				params: {limit: number, sort: string}
+				scores: Score[]
+				/** How many scores there are across all pages, not necessarily `scores.length` */
+				total: number
+				/** @remarks Will be null if not an authorized user or if the authorized user has no score */
+				user_score: Score | null
+				/** @remarks Will be null if there is no next page */
+				cursor_string: string | null
+			}> {
 				return await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
 			}
 		}
@@ -150,6 +163,15 @@ export namespace Multiplayer {
 	}
 
 	export namespace Match {
+		export interface Score extends ScoreImport.OldFormat {
+			created_at: Date
+			match: {
+				slot: number
+				team: "none" | "red" | "blue"
+				pass: boolean
+			}
+		}
+
 		export interface Event {
 			id: number
 			detail: {
@@ -171,7 +193,7 @@ export namespace Multiplayer {
 				team_type: string
 				mods: string[]
 				beatmap: Beatmap.WithBeatmapset
-				scores: Score.WithMatch[]
+				scores: Score[]
 			}
 		}
 

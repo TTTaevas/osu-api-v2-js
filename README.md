@@ -6,7 +6,7 @@ You can find this package's documentation on [osu-v2.taevas.xyz](https://osu-v2.
 
 ## How to install and get started
 
-Before installing, if using Node.js, check if you're running version 16 or above:
+Before installing, if using Node.js, check if you're running version 18 or above:
 
 ```bash
 node -v # displays your version of node.js
@@ -32,16 +32,16 @@ async function logUserTopPlayBeatmap(username: string) {
     // It's more convenient to use `osu.API.createAsync()` instead of `new osu.API()` as it doesn't require you to directly provide an access_token!
     // In a proper application, you'd use this function as soon as the app starts so you can use that object everywhere
     // (or if it acts as a user, you'd use this function at the end of the authorization flow)
-    const api = await osu.API.createAsync({id: "<client_id>", secret: "<client_secret>"})
+    const api = await osu.API.createAsync("<client_id>", "<client_secret>") // with id as a number
 
     const user = await api.getUser(username) // We need to get the id of the user in order to request what we want
     const score = (await api.getUserScores(user, "best", osu.Ruleset.osu, {lazer: false}, {limit: 1}))[0] // Specifying the Ruleset is optional
     const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(score.beatmap, score.mods) // Specifying the mods so the SR is adapted to them
 
     const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`
-    const y = `+${score.mods.toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
+    const y = `+${score.mods.map((m) => m.acronym).toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
     console.log(`${username}'s top play is on: ${x} ${y}`)
-    // Doomsday fanboy's top play is on: Yamajet feat. Hiura Masako - Sunglow [Harmony] +DT (8.72*)
+    // Doomsday fanboy's top play is on: Erio o Kamattechan - os-Uchuujin(Asterisk Makina Remix) [Mattress Actress] +DT,CL (8.85*)
 }
 
 logUserTopPlayBeatmap("Doomsday fanboy")
@@ -68,7 +68,7 @@ When a user authorizes your application, they get redirected to your `Applicatio
 
 With this code, you're able to create your `api` object:
 ```typescript
-const api = await osu.API.createAsync({id: "<client_id>", secret: "<client_secret>"}, {code: "<code>", redirect_uri: "<application_callback_url>"})
+const api = await osu.API.createAsync("<client_id>", "<client_secret>", {code: "<code>", redirect_uri: "<application_callback_url>"})
 ```
 
 #### The part where you make it so your application works without the user saying okay every 2 minutes
@@ -85,19 +85,47 @@ Your `refresh_token` can actually also expire at a (purposefully) unknown time, 
 ```typescript
 // TypeScript
 import * as osu from "osu-api-v2-js"
-import promptSync from "prompt-sync"
+import * as http from "http"
+import { exec } from "child_process"
 
-const prompt = promptSync({sigint: true})
-
-const id = "<client_id>"
+// This should be from an application registered on https://osu.ppy.sh/home/account/edit#oauth
+const id = "<client_id>" // as a number
 const secret = "<client_secret>"
-const redirect_uri = "<application_callback_url>"
+const redirect_uri = "<application_callback_url>" // assuming localhost with any port for convenience
+
+// Because we need to act as an authenticated user, we need to go through the authorization procedure
+// This function largely takes care of it by itself
+async function getCode(authorization_url: string): Promise<string> {
+	// Open a temporary server to receive the code when the browser is sent to the redirect_uri after confirming authorization
+	const httpserver = http.createServer()
+	const host = redirect_uri.substring(redirect_uri.indexOf("/") + 2, redirect_uri.lastIndexOf(":"))
+	const port = Number(redirect_uri.substring(redirect_uri.lastIndexOf(":") + 1).split("/")[0])
+	httpserver.listen({host, port})
+
+	// Open the browser to the page on osu!web where you click a button to say you authorize your application
+	console.log("Waiting for code...")
+	const command = (process.platform == "darwin" ? "open" : process.platform == "win32" ? "start" : "xdg-open")
+	exec(`${command} "${authorization_url}"`)
+
+	// Check the URL for a `code` GET parameter, get it if it's there
+	const code: string = await new Promise((resolve) => {
+		httpserver.on("request", (request, response) => {
+			if (request.url) {
+				console.log("Received code!")
+				response.end("Worked! You may now close this tab.", "utf-8")
+				httpserver.close() // Close the temporary server as it is no longer needed
+				resolve(request.url.substring(request.url.indexOf("code=") + 5))
+			}
+		})
+	})
+	return code
+}
 
 async function readChat() {
     // Somehow get the code so the application can read the messages as your osu! user
 	const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "chat.read"]) // "chat.read" is 100% needed in our case
-	const code = prompt(`Paste the "code" in the URL you're redicted to by accessing: ${url}\n\n`)
-	const api = await osu.API.createAsync({id, secret}, {code, redirect_uri}, "errors")
+	const code = await getCode(url)
+	const api = await osu.API.createAsync(id, secret, {code, redirect_uri}, {verbose: "errors"})
 
     // Get a WebSocket object to interact with and get messages from
 	const socket = api.generateWebSocket()
@@ -110,11 +138,14 @@ async function readChat() {
 	})
 
     // Listen for chat messages (and other stuff)
-	socket.on("message", (m: MessageEvent) => { // Mind you, "message" doesn't mean "chat message" here, it's more like a raw event
-		const event: osu.WebSocket.Event.Any = JSON.parse(m.toString())
-		if (event.event === "chat.message.new") { // Filter out things that aren't new chat messages and get type safety
-			const message = event.data.messages.map((message) => message.content).join(" | ")
-			const user = event.data.users.map((user) => user.username).join(" | ")
+	socket.on("message", (m) => { // Mind you, "message" doesn't mean "chat message" here, it's more like a raw event
+		const parsed: osu.WebSocket.Event.Any = JSON.parse(m.toString())
+
+		if (!parsed.event) { // Should only mean we've gotten an error message
+			throw new Error((parsed as osu.WebSocket.Event.Error).error) // Assertion in case of false positive TS2339 error at build time
+		} else if (parsed.event === "chat.message.new") { // Filter out things that aren't new chat messages and get type safety
+			const message = parsed.data.messages.map((message) => message.content).join(" | ")
+			const user = parsed.data.users.map((user) => user.username).join(" | ")
 			console.log(`${user}: ${message}`)
 		}
 	})
