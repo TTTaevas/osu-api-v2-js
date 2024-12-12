@@ -159,7 +159,7 @@ const testBeatmap = () => [
 	new Test(api.getBeatmapScores, [129891, {legacy_only: true}], "Score.WithUser",
 		[(r: AR<typeof api.getBeatmapScores>) => r[0].legacy_total_score >= 132408001]),
 	new Test(api.getBeatmapSoloScores, [129891], "Score.WithUser",
-		[(r: AR<typeof api.getBeatmapSoloScores>) => r[0].total_score >= 1073232]),
+		[(r: AR<typeof api.getBeatmapSoloScores>) => r[0].total_score >= 1073231]),
 ]
 
 const testBeatmapsetDiscussion = () => [

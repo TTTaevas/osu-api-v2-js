@@ -287,7 +287,7 @@ export namespace Beatmapset {
 		}
 
 		/** @group Beatmapset Status Change */
-		export interface Disqualify extends WithUserid, WithOptionalBeatmapset, WithDiscussion {
+		export interface Disqualify extends WithUserid, WithOptionalBeatmapset, WithOptionalDiscussion {
 			type: "disqualify"
 			comment: Comment.WithDiscussionidPostidNominatorsids
 		}
@@ -299,7 +299,7 @@ export namespace Beatmapset {
 		}
 
 		/** @group Beatmapset Status Change */
-		export interface NominationResetReceived extends WithUserid, WithOptionalBeatmapset, WithDiscussion {
+		export interface NominationResetReceived extends WithUserid, WithOptionalBeatmapset, WithOptionalDiscussion {
 			type: "nomination_reset_received"
 			comment: Comment.WithDiscussionidPostidSourceuseridSourceuserusername
 		}
