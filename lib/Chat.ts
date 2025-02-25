@@ -18,7 +18,7 @@ export namespace Chat {
 		name: string
 		description: string | null
 		icon: string | null
-		type: "PUBLIC" | "PRIVATE" | "MULTIPLAYER" | "SPECTATOR" | "TEMPORARY" | "PRIVATE" | "PM" | "GROUP" | "ANNOUNCE"
+		type: "PUBLIC" | "PRIVATE" | "MULTIPLAYER" | "SPECTATOR" | "TEMPORARY" | "PM" | "GROUP" | "ANNOUNCE"
 		moderated: boolean
 		uuid: string | null
 	}

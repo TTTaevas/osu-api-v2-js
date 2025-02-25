@@ -4,6 +4,7 @@
 .gitignore
 lib/
 docs/
+docs_plugins/
 tests/
 package-lock.json
 tsconfig.json

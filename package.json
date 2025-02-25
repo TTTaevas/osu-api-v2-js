@@ -1,6 +1,6 @@
 {
   "name": "osu-api-v2-js",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Package to easily access the new api of osu!",
   "type": "module",
   "main": "dist/index.js",
@@ -10,7 +10,7 @@
     "build": "tsc",
     "test": "npm run build && node ./dist/tests/guest.js",
     "test-authenticated": "npm run build && node ./dist/tests/authenticated.js",
-    "doc": "npx typedoc lib/index.ts --cname osu-v2.taevas.xyz"
+    "doc": "npx typedoc lib/index.ts --cname osu-v2.taevas.xyz --plugin ./docs_plugins/visitors.ts"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -32,13 +32,13 @@
   ],
   "license": "Unlicense",
   "devDependencies": {
-    "@types/node": "^20.8.10",
+    "@types/node": "^22.13.5",
     "@types/ws": "^8.5.10",
     "ajv": "^8.17.1",
     "dotenv": "^16.4.5",
     "ts-json-schema-generator": "^2.3.0",
-    "typedoc": "^0.26.10",
-    "typescript": "~5.3.2"
+    "typedoc": "^0.27.9",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
     "ws": "^8.17.1"
