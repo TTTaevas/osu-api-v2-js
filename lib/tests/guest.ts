@@ -133,8 +133,8 @@ const testBeatmapPack = () => [
 ]
 
 const testBeatmap = () => [
-	new Test(api.lookupBeatmap, [{id: 388463}], "Beatmap.Extended.WithFailtimesBeatmapset", {id: 388463}),
-	new Test(api.getBeatmap, [388463], "Beatmap.Extended.WithFailtimesBeatmapset",
+	new Test(api.lookupBeatmap, [{id: 388463}], "Beatmap.Extended.WithFailtimesOwnersBeatmapset", {id: 388463}),
+	new Test(api.getBeatmap, [388463], "Beatmap.Extended.WithFailtimesOwnersBeatmapset",
 		[(r: AR<typeof api.getBeatmap>) => r.beatmapset.title_unicode === "夜啼く兎は夢を見る"]),
 	new Test(api.getBeatmaps, [[388463, 4089655]], "Beatmap.Extended",
 		[(r: AR<typeof api.getBeatmaps>) => r.length === 2]),
@@ -299,9 +299,9 @@ const testSpotlights = () => [
 
 const testUser = () => [
 	new Test(api.getUser, [7276846], "User.Extended", {id: 7276846}),
-	new Test(api.lookupUsers, [[7276846, 2]], "User.WithCountryCoverGroups",
+	new Test(api.lookupUsers, [[7276846, 2]], "User.WithCountryCoverGroupsTeam",
 		[(r: AR<typeof api.lookupUsers>) => r.length === 2]),
-	new Test(api.getUsers, [[7276846, 2]], "User.WithCountryCoverGroupsStatisticsrulesets",
+	new Test(api.getUsers, [[7276846, 2]], "User.WithCountryCoverGroupsTeamStatisticsrulesets",
 		[(r: AR<typeof api.getUsers>) => r.length === 2]),
 
 	new Test(api.getUserScores, [7276846, "best", undefined, {fails: false, lazer: true}, {limit: 5}], "Score.WithUserBeatmapBeatmapset",
@@ -327,14 +327,14 @@ const testWiki = () => [
 
 const testOther = () => [
 	new Test(api.getSeasonalBackgrounds, [], undefined, [
-		(r: AR<typeof api.getSeasonalBackgrounds>) => r.ends_at > new Date("2024-01-01"),
+		(r: AR<typeof api.getSeasonalBackgrounds>) => r.ends_at > new Date("2025-01-01"),
 		(r: AR<typeof api.getSeasonalBackgrounds>) => r.backgrounds.length > 0
 	])
 ]
 
 
 const test = async (id: number, secret: string): Promise<void> => {
-	api = await osu.API.createAsync(id, secret, undefined, {verbose: "all", timeout: 30, retry_on_timeout: true})
+	api = await osu.API.createAsync(id, secret, undefined, {server: "https://osu.ppy.sh", verbose: "all", timeout: 30, retry_on_timeout: true})
 	// api = api.withSettings({headers: {"x-api-version": getCurrentDateString()}})
 
 	const tests = [

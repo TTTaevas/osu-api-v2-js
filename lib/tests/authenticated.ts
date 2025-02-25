@@ -287,7 +287,7 @@ const testScore = () => {
 const testUser = () => [
 	new Test(api.getResourceOwner, [], "User.Extended.WithStatisticsrulesets"),
 	new Test(api.getFriends, [], undefined,
-		[(r: AR<typeof api.getFriends>) => validate(r[0].target, "User.WithCountryCoverGroupsStatisticsSupport")])
+		[(r: AR<typeof api.getFriends>) => validate(r[0].target, "User.WithCountryCoverGroupsTeamStatisticsSupport")])
 ]
 
 const test = async (): Promise<void> => {

@@ -192,6 +192,10 @@ export namespace Beatmapset {
 			user_id: User["id"]
 		}
 
+		interface WithOptionalUserid extends Event {
+			user_id?: User["id"]
+		}
+
 		/** A Beatmapset can only be optional as events may relate to Beatmapsets that have been made private or were deleted */
 		interface WithOptionalBeatmapset extends Event {
 			beatmapset?: Beatmapset.WithUserHype
@@ -236,7 +240,7 @@ export namespace Beatmapset {
 		}
 
 		/** @group Beatmap Change */
-		export interface TagsEdit extends WithUserid, WithOptionalBeatmapset, WithOptionalDiscussion {
+		export interface TagsEdit extends WithOptionalUserid, WithOptionalBeatmapset, WithOptionalDiscussion {
 			type: "tags_edit"
 			comment: Comment.WithDiscussionidPostidOldtagsNewtags
 		}
@@ -492,9 +496,9 @@ export namespace Beatmapset {
 		 */
 		export interface Plus extends Extended, WithUserHype {
 			/** The different beatmaps/difficulties this beatmapset has */
-			beatmaps: Beatmap.Extended.WithFailtimes[]
+			beatmaps: Beatmap.Extended.WithFailtimesOwners[]
 			/** The different beatmaps made for osu!, but converted to the other Rulesets */
-			converts: Beatmap.Extended.WithFailtimes[]
+			converts: Beatmap.Extended.WithFailtimesOwners[]
 			current_nominations: {
 				beatmapset_id: Beatmapset["id"]
 				rulesets: Ruleset[] | null

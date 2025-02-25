@@ -89,7 +89,7 @@ export namespace Score {
 
 	/** @obtainableFrom {@link API.getBeatmapUserScore} */
 	export interface WithUserBeatmap extends WithUser {
-		user: User.WithCountryCover
+		user: User.WithCountryCoverTeam
 		beatmap: Beatmap.Extended
 	}
 	

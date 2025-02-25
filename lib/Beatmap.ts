@@ -68,11 +68,16 @@ export namespace Beatmap {
 	}
 
 	export namespace Extended {
-		export interface WithFailtimes extends Extended {
+		export interface WithFailtimesOwners extends Extended {
 			failtimes: {
 				exit: number[]
 				fail: number[]
 			}
+			owners: Array<{
+				id: User["id"]
+				/** @remarks Users that are no longer visible will have the username set to `[deleted user]` **/
+				username: User["username"]
+			}>
 		}
 
 		export interface WithMaxcombo extends Extended {
@@ -80,14 +85,14 @@ export namespace Beatmap {
 		}
 
 		/** @obtainableFrom {@link API.getBeatmaps} */
-		export interface WithFailtimesMaxcombo extends WithFailtimes, WithMaxcombo {}
+		export interface WithFailtimesOwnersMaxcombo extends WithFailtimesOwners, WithMaxcombo {}
 
 		/**
 		 * @obtainableFrom
 		 * {@link API.getBeatmap} /
 		 * {@link API.lookupBeatmap}
 		 */
-		export interface WithFailtimesBeatmapset extends WithFailtimesMaxcombo {
+		export interface WithFailtimesOwnersBeatmapset extends WithFailtimesOwnersMaxcombo {
 			beatmapset: Beatmapset.Extended
 		}
 	}
@@ -273,7 +278,7 @@ export namespace Beatmap {
 	 * @param query What to specify in order to find the right beatmap
 	*/
 	export async function lookup(this: API, query: {checksum?: Beatmap.WithChecksum["checksum"], filename?: string, id?: Beatmap["id"]}):
-	Promise<Extended.WithFailtimesBeatmapset> {
+	Promise<Extended.WithFailtimesOwnersBeatmapset> {
 		return await this.request("get", `beatmaps/lookup`, {checksum: query.checksum, filename: query.filename, id: query.id ? String(query.id) : undefined})
 	}
 
@@ -281,7 +286,7 @@ export namespace Beatmap {
 	 * Get extensive beatmap data about whichever beatmap you want!
 	 * @param beatmap The beatmap or the id of the beatmap you're trying to get
 	 */
-	export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Extended.WithFailtimesBeatmapset> {
+	export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Extended.WithFailtimesOwnersBeatmapset> {
 		return await this.request("get", `beatmaps/${getId(beatmap)}`)
 	}
 
@@ -289,7 +294,7 @@ export namespace Beatmap {
 	 * Get extensive beatmap data for up to 50 beatmaps at once!
 	 * @param beatmaps An array of beatmaps or of objects that have the id of the beatmaps you're trying to get
 	 */
-	export async function getMultiple(this: API, beatmaps: Array<Beatmap["id"] | Beatmap>): Promise<Extended.WithFailtimesMaxcombo[]> {
+	export async function getMultiple(this: API, beatmaps: Array<Beatmap["id"] | Beatmap>): Promise<Extended.WithFailtimesOwnersMaxcombo[]> {
 		const ids = beatmaps.map((beatmap) => getId(beatmap))
 		const response = await this.request("get", "beatmaps", {ids})
 		return response.beatmaps // It's the only property

@@ -49,8 +49,8 @@ export namespace User {
 			identifier: string
 			is_probationary: boolean
 			name: string
-			playmodes: (keyof typeof Ruleset)[] | null
 			short_name: string
+			playmodes: (keyof typeof Ruleset)[] | null
 		}[]
 	}
 
@@ -71,11 +71,21 @@ export namespace User {
 		}
 	}
 
+	/** @obtainableFrom {@link API.getBeatmapUserScore} */
+	export interface WithCountryCoverTeam extends WithCountryCover {
+		team: {
+			flag_url: string
+			id: number
+			name: string
+			short_name: string
+		} | null
+	}
+
 	/** @obtainableFrom {@link API.lookupUsers} */
-	export interface WithCountryCoverGroups extends WithCountryCover, WithGroups {}
+	export interface WithCountryCoverGroupsTeam extends WithCountryCoverTeam, WithGroups {}
 
 	/** @obtainableFrom {@link API.getUsers} */
-	export interface WithCountryCoverGroupsStatisticsrulesets extends WithCountryCoverGroups {
+	export interface WithCountryCoverGroupsTeamStatisticsrulesets extends WithCountryCoverGroupsTeam {
 		statistics_rulesets: {
 			osu?: Statistics
 			taiko?: Statistics
@@ -92,13 +102,13 @@ export namespace User {
 		}[]
 	}
 
-	export interface WithCountryCoverGroupsStatisticsSupport extends WithCountryCover, WithGroups {
+	export interface WithCountryCoverGroupsTeamStatisticsSupport extends WithCountryCover, WithGroups {
 		statistics: Statistics
 		support_level: number
 	}
 
 	/** @obtainableFrom {@link API.getUser} */
-	export interface Extended extends WithCountryCoverGroupsStatisticsSupport, WithKudosu {
+	export interface Extended extends WithCountryCoverGroupsTeamStatisticsSupport, WithKudosu {
 		discord: string | null
 		has_supported: boolean
 		interests: string | null
@@ -194,7 +204,7 @@ export namespace User {
 
 	export namespace Extended {
 		/** @obtainableFrom {@link API.getResourceOwner} */
-		export interface WithStatisticsrulesets extends Extended, User.WithCountryCoverGroupsStatisticsrulesets {
+		export interface WithStatisticsrulesets extends Extended, User.WithCountryCoverGroupsTeamStatisticsrulesets {
 			is_restricted: boolean
 			session_verified: boolean
 		}
@@ -248,7 +258,7 @@ export namespace User {
 		target_id: User["id"]
 		relation_type: "friend" | "block"
 		mutual: boolean
-		target: WithCountryCoverGroupsStatisticsSupport
+		target: WithCountryCoverGroupsTeamStatisticsSupport
 	}
 
 	/** @obtainableFrom {@link API.getUserKudosu} */
@@ -296,7 +306,7 @@ export namespace User {
 	 * Lookup user data for up to 50 users at once!
 	 * @param users An array containing user ids or/and `User` objects!
 	 */
-	export async function lookupMultiple(this: API, users: Array<User["id"] | User>): Promise<User.WithCountryCoverGroups[]> {
+	export async function lookupMultiple(this: API, users: Array<User["id"] | User>): Promise<User.WithCountryCoverGroupsTeam[]> {
 		const ids = users.map((user) => getId(user))
 		const response = await this.request("get", "users/lookup", {ids})
 		return response.users // It's the only property
@@ -308,7 +318,7 @@ export namespace User {
 	 * @param include_variant_statistics Should the response include `variants`, useful to get stats specific to mania 4k/7k for example? (defaults to **false**)
 	 */
 	export async function getMultiple(this: API, users: Array<User["id"] | User>, include_variant_statistics: boolean = false):
-	Promise<User.WithCountryCoverGroupsStatisticsrulesets[]> {
+	Promise<User.WithCountryCoverGroupsTeamStatisticsrulesets[]> {
 		const ids = users.map((user) => getId(user))
 		const response = await this.request("get", "users", {ids, include_variant_statistics})
 		return response.users // It's the only property
