@@ -1,4 +1,38 @@
+import ajv from "ajv"
+import tsj from "ts-json-schema-generator"
+import util from "util"
+
 export type AR<T extends (...args: any) => any> = Awaited<ReturnType<T>>;
+export type Test = Promise<true>;
+
+const generator = tsj.createGenerator({path: "lib/index.ts", additionalProperties: true})
+
+export function validate(object: unknown, schemaName: string): boolean {
+	try {
+		const schema = fixDate(generator.createSchema(schemaName))
+		const ajv_const = new ajv.default({strict: false})
+		ajv_const.addFormat("date-time", true)
+		const validator = ajv_const.compile(schema)
+
+		if (Array.isArray(object)) {
+			for (let i = 0; i < object.length; i++) {
+				const result = validator(object[i])
+				if (validator.errors) console.error("❌ from validator:\n", validator.errors, "\n...for the following object:\n",
+					util.inspect(object[i], {colors: true, compact: true, depth: 100}), "\n\n")
+				if (!result) return false
+			}
+			return true
+		} else {
+			const result = validator(object)
+			if (validator.errors) console.error("❌ from validator:\n", validator.errors, "\n...for the following object:\n",
+				util.inspect(object, {colors: true, compact: true, depth: 100}), "\n\n")
+			return result
+		}
+	} catch(err) {
+		console.log(err)
+		return false
+	}
+}
 
 /** ajv will not work properly if type is not changed from string to object where format is date-time */
 export function fixDate(arg: any) {

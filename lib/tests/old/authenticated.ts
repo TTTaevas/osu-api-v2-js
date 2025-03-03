@@ -4,7 +4,7 @@
  * https://osu.ppy.sh/docs/#authorization-code-grant
  */
 
-import * as osu from "../index.js"
+import * as osu from "../../index.js"
 import "dotenv/config"
 import util from "util"
 
@@ -13,7 +13,7 @@ import ajv from "ajv"
 
 import { exec } from "child_process"
 import http from "http"
-import { AR, fixDate, getCurrentDateString } from "./exports.js"
+import { AR, fixDate, getCurrentDateString } from "../exports.js"
 
 
 if (process.env.REDIRECT_URI === undefined) {throw new Error("❌ The SECRET has not been defined in the environment variables!")}

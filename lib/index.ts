@@ -542,272 +542,272 @@ export class API {
 	
 	// BEATMAP STUFF
 
-	/** {@inheritDoc Beatmap.lookup} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.lookup} @group Beatmap Methods */
 	readonly lookupBeatmap = Beatmap.lookup
 
-	/** {@inheritDoc Beatmap.getOne} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.getOne} @group Beatmap Methods */
 	readonly getBeatmap = Beatmap.getOne
 
-	/** {@inheritDoc Beatmap.getMultiple} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.getMultiple} @group Beatmap Methods */
 	readonly getBeatmaps = Beatmap.getMultiple
 
-	/** {@inheritDoc Beatmap.DifficultyAttributes.get} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.DifficultyAttributes.get} @group Beatmap Methods */
 	readonly getBeatmapDifficultyAttributes = Beatmap.DifficultyAttributes.get
 
-	/** {@inheritDoc Beatmap.DifficultyAttributes.getOsu} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.DifficultyAttributes.getOsu} @group Beatmap Methods */
 	readonly getBeatmapDifficultyAttributesOsu = Beatmap.DifficultyAttributes.getOsu
 
-	/** {@inheritDoc Beatmap.DifficultyAttributes.getTaiko} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.DifficultyAttributes.getTaiko} @group Beatmap Methods */
 	readonly getBeatmapDifficultyAttributesTaiko = Beatmap.DifficultyAttributes.getTaiko
 
-	/** {@inheritDoc Beatmap.DifficultyAttributes.getFruits} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.DifficultyAttributes.getFruits} @group Beatmap Methods */
 	readonly getBeatmapDifficultyAttributesFruits = Beatmap.DifficultyAttributes.getFruits
 
-	/** {@inheritDoc Beatmap.DifficultyAttributes.getMania} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.DifficultyAttributes.getMania} @group Beatmap Methods */
 	readonly getBeatmapDifficultyAttributesMania = Beatmap.DifficultyAttributes.getMania
 
-	/** {@inheritDoc Beatmap.Pack.getOne} @group Beatmap Functions */
-	readonly getBeatmapPack = Beatmap.Pack.getOne
-
-	/** {@inheritDoc Beatmap.Pack.getMultiple} @group Beatmap Functions */
-	readonly getBeatmapPacks = Beatmap.Pack.getMultiple
-
-	/** {@inheritDoc Beatmap.getScores} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.getScores} @group Beatmap Methods */
 	readonly getBeatmapScores = Beatmap.getScores
 
-	/** {@inheritDoc Beatmap.getSoloScores} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.getSoloScores} @group Beatmap Methods */
 	readonly getBeatmapSoloScores = Beatmap.getSoloScores
 
-	/** {@inheritDoc Beatmap.getUserScore} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.getUserScore} @group Beatmap Methods */
 	readonly getBeatmapUserScore = Beatmap.getUserScore
 
-	/** {@inheritDoc Beatmap.getUserScores} @group Beatmap Functions */
+	/** {@inheritDoc Beatmap.getUserScores} @group Beatmap Methods */
 	readonly getBeatmapUserScores = Beatmap.getUserScores
+
+	/** {@inheritDoc Beatmap.Pack.getOne} @group Beatmap Methods */
+	readonly getBeatmapPack = Beatmap.Pack.getOne
+
+	/** {@inheritDoc Beatmap.Pack.getMultiple} @group Beatmap Methods */
+	readonly getBeatmapPacks = Beatmap.Pack.getMultiple
 
 
 	// BEATMAPSET STUFF
 
-	/** {@inheritDoc Beatmapset.search} @group Beatmapset Functions */
+	/** {@inheritDoc Beatmapset.search} @group Beatmapset Methods */
 	readonly searchBeatmapsets = Beatmapset.search
 
-	/** {@inheritDoc Beatmapset.lookup} @group Beatmapset Functions */
+	/** {@inheritDoc Beatmapset.lookup} @group Beatmapset Methods */
 	readonly lookupBeatmapset = Beatmapset.lookup
 
-	/** {@inheritDoc Beatmapset.getOne} @group Beatmapset Functions */
+	/** {@inheritDoc Beatmapset.getOne} @group Beatmapset Methods */
 	readonly getBeatmapset = Beatmapset.getOne
 
-	/** {@inheritDoc Beatmapset.Discussion.getMultiple} @group Beatmapset Functions */
+	/** {@inheritDoc Beatmapset.Discussion.getMultiple} @group Beatmapset Methods */
 	readonly getBeatmapsetDiscussions = Beatmapset.Discussion.getMultiple
 
-	/** {@inheritDoc Beatmapset.Discussion.Post.getMultiple} @group Beatmapset Functions */
+	/** {@inheritDoc Beatmapset.Discussion.Post.getMultiple} @group Beatmapset Methods */
 	readonly getBeatmapsetDiscussionPosts = Beatmapset.Discussion.Post.getMultiple
 
-	/** {@inheritDoc Beatmapset.Discussion.Vote.getMultiple} @group Beatmapset Functions */
+	/** {@inheritDoc Beatmapset.Discussion.Vote.getMultiple} @group Beatmapset Methods */
 	readonly getBeatmapsetDiscussionVotes = Beatmapset.Discussion.Vote.getMultiple
 
-	/** {@inheritDoc Beatmapset.Event.getMultiple} @group Beatmapset Functions */
+	/** {@inheritDoc Beatmapset.Event.getMultiple} @group Beatmapset Methods */
 	readonly getBeatmapsetEvents = Beatmapset.Event.getMultiple
 
 
 	// CHANGELOG STUFF
 	
-	/** {@inheritDoc Changelog.Build.lookup} @group Changelog Functions */
+	/** {@inheritDoc Changelog.Build.lookup} @group Changelog Methods */
 	readonly lookupChangelogBuild = Changelog.Build.lookup
 
-	/** {@inheritDoc Changelog.Build.getOne} @group Changelog Functions */
+	/** {@inheritDoc Changelog.Build.getOne} @group Changelog Methods */
 	readonly getChangelogBuild = Changelog.Build.getOne
 
-	/** {@inheritDoc Changelog.Build.getMultiple} @group Changelog Functions */
+	/** {@inheritDoc Changelog.Build.getMultiple} @group Changelog Methods */
 	readonly getChangelogBuilds = Changelog.Build.getMultiple
 
-	/** {@inheritDoc Changelog.UpdateStream.getAll} @group Changelog Functions */
+	/** {@inheritDoc Changelog.UpdateStream.getAll} @group Changelog Methods */
 	readonly getChangelogStreams = Changelog.UpdateStream.getAll
 
 
 	// CHAT STUFF
 
-	/** {@inheritDoc Chat.keepAlive} @group Chat Functions */
+	/** {@inheritDoc Chat.keepAlive} @group Chat Methods */
 	readonly keepChatAlive = Chat.keepAlive
 
-	/** {@inheritDoc Chat.Message.getMultiple} @group Chat Functions */
+	/** {@inheritDoc Chat.Message.getMultiple} @group Chat Methods */
 	readonly getChatMessages = Chat.Message.getMultiple
 
-	/** {@inheritDoc Chat.Message.send} @group Chat Functions */
+	/** {@inheritDoc Chat.Message.send} @group Chat Methods */
 	readonly sendChatMessage = Chat.Message.send
 
-	/** {@inheritDoc Chat.Message.sendPrivate} @group Chat Functions */
+	/** {@inheritDoc Chat.Message.sendPrivate} @group Chat Methods */
 	readonly sendChatPrivateMessage = Chat.Message.sendPrivate
 
-	/** {@inheritDoc Chat.Channel.getOne} @group Chat Functions */
+	/** {@inheritDoc Chat.Channel.getOne} @group Chat Methods */
 	readonly getChatChannel = Chat.Channel.getOne
 
-	/** {@inheritDoc Chat.Channel.getAll} @group Chat Functions */
+	/** {@inheritDoc Chat.Channel.getAll} @group Chat Methods */
 	readonly getChatChannels = Chat.Channel.getAll
 
-	/** {@inheritDoc Chat.Channel.markAsRead} @group Chat Functions */
+	/** {@inheritDoc Chat.Channel.markAsRead} @group Chat Methods */
 	readonly markChatChannelAsRead = Chat.Channel.markAsRead
 
-	/** {@inheritDoc Chat.Channel.createPrivate} @group Chat Functions */
+	/** {@inheritDoc Chat.Channel.createPrivate} @group Chat Methods */
 	readonly createChatPrivateChannel = Chat.Channel.createPrivate
 
-	/** {@inheritDoc Chat.Channel.createAnnouncement} @group Chat Functions */
+	/** {@inheritDoc Chat.Channel.createAnnouncement} @group Chat Methods */
 	readonly createChatAnnouncementChannel = Chat.Channel.createAnnouncement
 
-	/** {@inheritDoc Chat.Channel.joinOne} @group Chat Functions */
+	/** {@inheritDoc Chat.Channel.joinOne} @group Chat Methods */
 	readonly joinChatChannel = Chat.Channel.joinOne
 
-	/** {@inheritDoc Chat.Channel.leaveOne} @group Chat Functions */
+	/** {@inheritDoc Chat.Channel.leaveOne} @group Chat Methods */
 	readonly leaveChatChannel = Chat.Channel.leaveOne
 
 
 	// COMMENT STUFF
 
-	/** {@inheritDoc Comment.getOne} @group Comment Functions */
+	/** {@inheritDoc Comment.getOne} @group Comment Methods */
 	readonly getComment = Comment.getOne
 
-	/** {@inheritDoc Comment.getMultiple} @group Comment Functions */
+	/** {@inheritDoc Comment.getMultiple} @group Comment Methods */
 	readonly getComments = Comment.getMultiple
 
 
 	// EVENT STUFF
 
-	/** {@inheritDoc Event.getMultiple} @group Event Functions */
+	/** {@inheritDoc Event.getMultiple} @group Event Methods */
 	readonly getEvents = Event.getMultiple
 
 
 	// FORUM STUFF
 
-	/** {@inheritDoc Forum.Topic.create} @group Forum Functions */
+	/** {@inheritDoc Forum.Topic.create} @group Forum Methods */
 	readonly createForumTopic = Forum.Topic.create
 
-	/** {@inheritDoc Forum.Topic.reply} @group Forum Functions */
+	/** {@inheritDoc Forum.Topic.reply} @group Forum Methods */
 	readonly replyForumTopic = Forum.Topic.reply
 
-	/** {@inheritDoc Forum.Topic.editTitle} @group Forum Functions */
+	/** {@inheritDoc Forum.Topic.editTitle} @group Forum Methods */
 	readonly editForumTopicTitle = Forum.Topic.editTitle
 
-	/** {@inheritDoc Forum.Post.edit} @group Forum Functions */
+	/** {@inheritDoc Forum.Post.edit} @group Forum Methods */
 	readonly editForumPost = Forum.Post.edit
 
-	/** {@inheritDoc Forum.getTopicAndPosts} @group Forum Functions */
+	/** {@inheritDoc Forum.getTopicAndPosts} @group Forum Methods */
 	readonly getForumTopicAndPosts = Forum.getTopicAndPosts
 
 
 	// HOME STUFF
 
-	/** {@inheritDoc Home.Search.getUsers} @group Home Functions */
+	/** {@inheritDoc Home.Search.getUsers} @group Home Methods */
 	readonly searchUser = Home.Search.getUsers
 
-	/** {@inheritDoc Home.Search.getWikiPages} @group Home Functions */
+	/** {@inheritDoc Home.Search.getWikiPages} @group Home Methods */
 	readonly searchWiki = Home.Search.getWikiPages
 
 
 	// MULTIPLAYER STUFF
 
-	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Methods */
 	readonly getRoom = Multiplayer.Room.getOne
 
-	/** {@inheritDoc Multiplayer.Room.getMultiple} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Room.getMultiple} @group Multiplayer Methods */
 	readonly getRooms = Multiplayer.Room.getMultiple
 
-	/** {@inheritDoc Multiplayer.Room.Leader.getMultiple} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Room.Leader.getMultiple} @group Multiplayer Methods */
 	readonly getRoomLeaderboard = Multiplayer.Room.Leader.getMultiple
 
-	/** {@inheritDoc Multiplayer.Room.PlaylistItem.getScores} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Room.PlaylistItem.getScores} @group Multiplayer Methods */
 	readonly getPlaylistItemScores = Multiplayer.Room.PlaylistItem.getScores
 
-	/** {@inheritDoc Multiplayer.Match.getOne} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Match.getOne} @group Multiplayer Methods */
 	readonly getMatch = Multiplayer.Match.getOne
 
-	/** {@inheritDoc Multiplayer.Match.getMultiple} @group Multiplayer Functions */
+	/** {@inheritDoc Multiplayer.Match.getMultiple} @group Multiplayer Methods */
 	readonly getMatches = Multiplayer.Match.getMultiple
 
 
 	// NEWS STUFF
 
-	/** {@inheritDoc NewsPost.getOne} @group NewsPost Functions */
+	/** {@inheritDoc NewsPost.getOne} @group NewsPost Methods */
 	readonly getNewsPost = NewsPost.getOne
 
-	/** {@inheritDoc NewsPost.getMultiple} @group NewsPost Functions */
+	/** {@inheritDoc NewsPost.getMultiple} @group NewsPost Methods */
 	readonly getNewsPosts = NewsPost.getMultiple
 
 
 	// RANKING STUFF
 
-	/** {@inheritDoc Ranking.getUser} @group Ranking Functions */
+	/** {@inheritDoc Ranking.getUser} @group Ranking Methods */
 	readonly getUserRanking = Ranking.getUser
 
-	/** {@inheritDoc Ranking.getCountry} @group Ranking Functions */
+	/** {@inheritDoc Ranking.getCountry} @group Ranking Methods */
 	readonly getCountryRanking = Ranking.getCountry
 
-	/** {@inheritDoc Ranking.getKudosu} @group Ranking Functions */
+	/** {@inheritDoc Ranking.getKudosu} @group Ranking Methods */
 	readonly getKudosuRanking = Ranking.getKudosu
 
-	/** {@inheritDoc Ranking.getSpotlight} @group Ranking Functions */
+	/** {@inheritDoc Ranking.getSpotlight} @group Ranking Methods */
 	readonly getSpotlightRanking = Ranking.getSpotlight
 
 
 	// SCORE STUFF
 
-	/** {@inheritDoc Score.getReplay} @group Score Functions */
+	/** {@inheritDoc Score.getReplay} @group Score Methods */
 	readonly getReplay = Score.getReplay
 
 
 	// SPOTLIGHTS STUFF
 
-	/** {@inheritDoc Spotlight.getAll} @group Spotlights Functions */
+	/** {@inheritDoc Spotlight.getAll} @group Spotlights Methods */
 	readonly getSpotlights = Spotlight.getAll
 
 
 	// USER STUFF
 
-	/** {@inheritDoc User.getResourceOwner} @group User Functions */
+	/** {@inheritDoc User.getResourceOwner} @group User Methods */
 	readonly getResourceOwner = User.getResourceOwner
 
-	/** {@inheritDoc User.getOne} @group User Functions */
+	/** {@inheritDoc User.getOne} @group User Methods */
 	readonly getUser = User.getOne
 
-	/** {@inheritDoc User.lookupMultiple} @group User Functions */
+	/** {@inheritDoc User.lookupMultiple} @group User Methods */
 	readonly lookupUsers = User.lookupMultiple
 
-	/** {@inheritDoc User.getMultiple} @group User Functions */
+	/** {@inheritDoc User.getMultiple} @group User Methods */
 	readonly getUsers = User.getMultiple
 
-	/** {@inheritDoc User.getScores} @group User Functions */
+	/** {@inheritDoc User.getScores} @group User Methods */
 	readonly getUserScores = User.getScores
 
-	/** {@inheritDoc User.getBeatmaps} @group User Functions */
+	/** {@inheritDoc User.getBeatmaps} @group User Methods */
 	readonly getUserBeatmaps = User.getBeatmaps
 
-	/** {@inheritDoc User.getMostPlayed} @group User Functions */
+	/** {@inheritDoc User.getMostPlayed} @group User Methods */
 	readonly getUserMostPlayed = User.getMostPlayed
 
-	/** {@inheritDoc User.getRecentActivity} @group User Functions */
+	/** {@inheritDoc User.getRecentActivity} @group User Methods */
 	readonly getUserRecentActivity = User.getRecentActivity
 
-	/** {@inheritDoc User.getKudosu} @group User Functions */
+	/** {@inheritDoc User.getKudosu} @group User Methods */
 	readonly getUserKudosu = User.getKudosu
 
-	/** {@inheritDoc User.getFriends} @group User Functions */
+	/** {@inheritDoc User.getFriends} @group User Methods */
 	readonly getFriends = User.getFriends
 
 
 	// WEBSOCKET STUFF
 
-	/** {@inheritDoc WebSocket.generate} @group WebSocket Functions */
+	/** {@inheritDoc WebSocket.generate} @group WebSocket Methods */
 	readonly generateWebSocket = WebSocket.generate
 
 
 	// WIKI STUFF
 
-	/** {@inheritDoc WikiPage.getOne} @group WikiPage Functions */
+	/** {@inheritDoc WikiPage.getOne} @group WikiPage Methods */
 	readonly getWikiPage = WikiPage.getOne
 
 
 	/**
 	 * Get the backgrounds made and selected for this season or for last season!
 	 * @returns When the season ended, and for each background, its URL and its artist
-	 * @group Other Functions
+	 * @group Other Methods
 	 */
 	async getSeasonalBackgrounds(): Promise<{ends_at: Date, backgrounds: {url: string, user: User}[]}> {
 		return await this.request("get", "seasonal-backgrounds")
