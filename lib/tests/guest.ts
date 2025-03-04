@@ -4,6 +4,11 @@ import { API } from "../index.js"
 import * as Beatmap from "./beatmap.test.js"
 import * as Beatmapset from "./beatmapset.test.js"
 import * as Changelog from "./changelog.test.js"
+import * as Comment from "./comment.test.js"
+import * as Event from "./event.test.js"
+import * as Forum from "./forum.test.js"
+import * as Home from "./home.test.js"
+import * as Multiplayer from "./multiplayer.test.js"
 
 const test = async (id: number, secret: string): Promise<void> => {
 	const api = await API.createAsync(id, secret, undefined, {server: "https://osu.ppy.sh"})
@@ -13,6 +18,11 @@ const test = async (id: number, secret: string): Promise<void> => {
 		Beatmap.testBeatmap,
 		Beatmapset.testBeatmapset,
 		Changelog.testChangelog,
+		Comment.testComment,
+		Event.testEvent,
+		Forum.testForum,
+		Home.testHome,
+		Multiplayer.testMultiplayer,
 	]
 
 	const results: {test_name: string, passed: boolean}[] = []
