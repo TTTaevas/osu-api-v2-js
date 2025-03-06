@@ -8,7 +8,7 @@ const searchUser = async(): Test => {
 	const response = await api.searchUser("Tae", 2)
 	expect(response.total).to.be.greaterThan(20)
 	expect(response.data).to.have.lengthOf(20)
-	expect(validate(response.data, "User"))
+	expect(validate(response.data, "User")).to.be.true
 	return true
 }
 
@@ -16,7 +16,7 @@ const searchWiki = async(): Test => {
 	const response = await api.searchWiki("Beat", 2)
 	expect(response.total).to.be.greaterThan(50)
 	expect(response.data).to.have.lengthOf(50)
-	expect(validate(response.data, "WikiPage"))
+	expect(validate(response.data, "WikiPage")).to.be.true
 	return true
 }
 

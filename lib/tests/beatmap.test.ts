@@ -30,6 +30,7 @@ const getBeatmaps = async(): Test => {
 
 const getBeatmapDifficultyAttributesOsu = async(): Test => {
 	const attributes = await api.getBeatmapDifficultyAttributesOsu(125660, ["DT"])
+	console.log(attributes)
 	expect(attributes.approach_rate.toFixed(2)).to.equal("9.67")
 	expect(validate(attributes, "Beatmap.DifficultyAttributes.Osu"))
 	return true

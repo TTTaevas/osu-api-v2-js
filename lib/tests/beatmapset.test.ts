@@ -50,9 +50,9 @@ const getBeatmapsetDiscussionPosts = async(): Test => {
 
 const getBeatmapsetDiscussionVotes = async(): Test => {
 	const response = await api.getBeatmapsetDiscussionVotes({vote_receiver: 7276846})
-	expect(validate(response.users, "User.WithGroups"))
-	expect(validate(response.discussions, "Beatmapset.Discussion"))
-	expect(validate(response.votes, "Beatmapset.Discussion.Vote"))
+	expect(validate(response.users, "User.WithGroups")).to.be.true
+	expect(validate(response.discussions, "Beatmapset.Discussion")).to.be.true
+	expect(validate(response.votes, "Beatmapset.Discussion.Vote")).to.be.true
 	return true
 }
 
@@ -76,8 +76,8 @@ const getBeatmapsetEvents = async(): Test => {
 		console.log("|", schema)
 
 		const response = await api.getBeatmapsetEvents(undefined, [available_events[i]])
-		expect(validate(response.users, "User.WithGroups"))
-		expect(validate(response.events, schema))
+		expect(validate(response.users, "User.WithGroups")).to.be.true
+		expect(validate(response.events, schema)).to.be.true
 	}
 
 	return true

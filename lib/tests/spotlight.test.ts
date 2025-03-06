@@ -4,19 +4,18 @@ import { validate, Test } from "./exports.js"
 
 let api: API = new API({retry_on_timeout: true})
 
-const getEvents = async(): Test => {
-	const response = await api.getEvents()
-	expect(response.cursor_string).to.be.a("string")
-	expect(response.events).to.have.lengthOf(50)
-	expect(validate(response.events, "Event.Any")).to.be.true
+const getSpotlights = async(): Test => {
+	const spotlights = await api.getSpotlights()
+	expect(spotlights).to.have.length.greaterThanOrEqual(132)
+	expect(validate(spotlights, "Spotlight")).to.be.true
 	return true
 }
 
 export const tests = [
-	getEvents,
+	getSpotlights,
 ]
 
-export async function testEvent(token: API["_access_token"]) {
+export async function testSpotlight(token: API["_access_token"]) {
 	api.access_token = token
 	for (let i = 0; i < tests.length; i++) {
 		try {

@@ -9,6 +9,12 @@ import * as Event from "./event.test.js"
 import * as Forum from "./forum.test.js"
 import * as Home from "./home.test.js"
 import * as Multiplayer from "./multiplayer.test.js"
+import * as News from "./news.test.js"
+import * as Ranking from "./ranking.test.js"
+import * as Spotlight from "./spotlight.test.js"
+import * as User from "./user.test.js"
+import * as Wiki from "./wiki.test.js"
+import * as Uncategorized from "./uncategorized.test.js"
 
 const test = async (id: number, secret: string): Promise<void> => {
 	const api = await API.createAsync(id, secret, undefined, {server: "https://osu.ppy.sh"})
@@ -23,6 +29,12 @@ const test = async (id: number, secret: string): Promise<void> => {
 		Forum.testForum,
 		Home.testHome,
 		Multiplayer.testMultiplayer,
+		News.testNews,
+		Ranking.testRanking,
+		Spotlight.testSpotlight,
+		User.testUser,
+		Wiki.testWiki,
+		Uncategorized.testUncategorized,
 	]
 
 	const results: {test_name: string, passed: boolean}[] = []

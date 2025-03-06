@@ -753,9 +753,9 @@ export class API {
 	readonly getReplay = Score.getReplay
 
 
-	// SPOTLIGHTS STUFF
+	// SPOTLIGHT STUFF
 
-	/** {@inheritDoc Spotlight.getAll} @group Spotlights Methods */
+	/** {@inheritDoc Spotlight.getAll} @group Spotlight Methods */
 	readonly getSpotlights = Spotlight.getAll
 
 
@@ -767,11 +767,11 @@ export class API {
 	/** {@inheritDoc User.getOne} @group User Methods */
 	readonly getUser = User.getOne
 
-	/** {@inheritDoc User.lookupMultiple} @group User Methods */
-	readonly lookupUsers = User.lookupMultiple
-
 	/** {@inheritDoc User.getMultiple} @group User Methods */
 	readonly getUsers = User.getMultiple
+
+	/** {@inheritDoc User.lookupMultiple} @group User Methods */
+	readonly lookupUsers = User.lookupMultiple
 
 	/** {@inheritDoc User.getScores} @group User Methods */
 	readonly getUserScores = User.getScores
