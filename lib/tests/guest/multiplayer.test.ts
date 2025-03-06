@@ -1,10 +1,8 @@
-import { API } from "../index.js"
+import { API } from "../../index.js"
 import { expect } from "chai"
-import { validate, Test } from "./exports.js"
+import { validate, Test } from "../exports.js"
 
-let api: API = new API({retry_on_timeout: true})
-
-const getRoom = async(): Test => {
+const getRoom: Test = async(api: API) => {
 	console.log("|", "Playlist")
 	const room_playlist = await api.getRoom(588230)
 	expect(room_playlist.id).to.equal(588230)
@@ -20,7 +18,7 @@ const getRoom = async(): Test => {
 	return true
 }
 
-const getPlaylistItemScores = async(): Test => {
+const getPlaylistItemScores: Test = async(api: API) => {
 	console.log("|", "Playlist")
 	const response_playlist = await api.getPlaylistItemScores({id: 5371540, room_id: 588230})
 	expect(response_playlist.cursor_string).to.be.null
@@ -48,7 +46,7 @@ const getPlaylistItemScores = async(): Test => {
 	return true
 }
 
-const getMatch = async(): Test => {
+const getMatch: Test = async(api: API) => {
 	console.log("|", "Without teams")
 	const response_noteams = await api.getMatch(75706987, {limit: 15})
 	expect(response_noteams.match.id).to.equal(75706987)
@@ -70,7 +68,7 @@ const getMatch = async(): Test => {
 	return true
 }
 
-const getMatches = async(): Test => {
+const getMatches: Test = async(api: API) => {
 	const matches = await api.getMatches({limit: 2})
 	expect(matches).to.have.lengthOf(2)
 	matches.forEach((match) => expect(match.id).to.be.greaterThan(111250329))
@@ -84,17 +82,3 @@ export const tests = [
 	getMatch,
 	getMatches,
 ]
-
-export async function testMultiplayer(token: API["_access_token"]) {
-	api.access_token = token
-	for (let i = 0; i < tests.length; i++) {
-		try {
-			console.log(tests[i].name)
-			await tests[i]()
-		} catch(e) {
-			console.error(e)
-			return false
-		}
-	}
-	return true
-}

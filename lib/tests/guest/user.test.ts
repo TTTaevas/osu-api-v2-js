@@ -1,17 +1,15 @@
-import { API, Ruleset } from "../index.js"
+import { API, Ruleset } from "../../index.js"
 import { expect } from "chai"
-import { validate, Test } from "./exports.js"
+import { validate, Test } from "../exports.js"
 
-let api: API = new API({retry_on_timeout: true})
-
-const getUser = async(): Test => {
+const getUser: Test = async(api: API) => {
 	const user = await api.getUser(7276846)
 	expect(user.id).to.equal(7276846)
 	expect(validate(user, "User.Extended")).to.be.true
 	return true
 }
 
-const getUsers = async(): Test => {
+const getUsers: Test = async(api: API) => {
 	const users = await api.getUsers([7276846, 2])
 	expect(users).to.have.lengthOf(2)
 	expect(users.at(0)?.id).to.equal(2)
@@ -20,7 +18,7 @@ const getUsers = async(): Test => {
 	return true
 }
 
-const lookupUsers = async(): Test => {
+const lookupUsers: Test = async(api: API) => {
 	const users = await api.lookupUsers([7276846, 2])
 	expect(users).to.have.lengthOf(2)
 	expect(users.at(0)?.id).to.equal(2)
@@ -29,7 +27,7 @@ const lookupUsers = async(): Test => {
 	return true
 }
 
-const getUserScores = async(): Test => {
+const getUserScores: Test = async(api: API) => {
 	console.log("| best")
 	const scores_best = await api.getUserScores(7276846, "best", undefined, {fails: false, lazer: true}, {limit: 5})
 	expect(scores_best).to.have.lengthOf(5)
@@ -57,7 +55,7 @@ const getUserScores = async(): Test => {
 	return true
 }
 
-const getUserBeatmaps = async(): Test => {
+const getUserBeatmaps: Test = async(api: API) => {
 	const beatmapsets = await api.getUserBeatmaps(7276846, "guest")
 	expect(beatmapsets).to.have.length.greaterThanOrEqual(1)
 	expect(beatmapsets.at(-1)?.id).to.equal(887302)
@@ -67,7 +65,7 @@ const getUserBeatmaps = async(): Test => {
 	return true
 }
 
-const getUserMostPlayed = async(): Test => {
+const getUserMostPlayed: Test = async(api: API) => {
 	const playcounts = await api.getUserMostPlayed(7276846)
 	expect(playcounts).to.have.lengthOf(5)
 	expect(playcounts.at(0)?.beatmap_id).to.equal(633993)
@@ -79,14 +77,14 @@ const getUserMostPlayed = async(): Test => {
 	return true
 }
 
-const getUserRecentActivity = async(): Test => {
+const getUserRecentActivity: Test = async(api: API) => {
 	const events = await api.getUserRecentActivity(7562902, {limit: 25})
 	expect(events).to.have.lengthOf(25)
 	expect(validate(events, "Event.AnyRecentActivity")).to.be.true
 	return true
 }
 
-const getUserKudosu = async(): Test => {
+const getUserKudosu: Test = async(api: API) => {
 	const events = await api.getUserKudosu(7276846, {limit: 5})
 	expect(events).to.have.lengthOf(5)
 	expect(validate(events, "User.KudosuHistory")).to.be.true
@@ -103,17 +101,3 @@ export const tests = [
 	getUserRecentActivity,
 	getUserKudosu,
 ]
-
-export async function testUser(token: API["_access_token"]) {
-	api.access_token = token
-	for (let i = 0; i < tests.length; i++) {
-		try {
-			console.log(tests[i].name)
-			await tests[i]()
-		} catch(e) {
-			console.error(e)
-			return false
-		}
-	}
-	return true
-}

@@ -1,10 +1,8 @@
-import { API, Ruleset } from "../index.js"
+import { API, Ruleset } from "../../index.js"
 import { expect } from "chai"
-import { validate, Test } from "./exports.js"
+import { validate, Test } from "../exports.js"
 
-let api: API = new API({retry_on_timeout: true})
-
-const lookupBeatmap = async(): Test => {
+const lookupBeatmap: Test = async(api: API) => {
 	const beatmap = await api.lookupBeatmap({id: 388463})
 	expect(beatmap.id).to.equal(388463)
 	expect(beatmap.beatmapset.title_unicode).to.equal("夜啼く兎は夢を見る")
@@ -12,7 +10,7 @@ const lookupBeatmap = async(): Test => {
 	return true
 }
 
-const getBeatmap = async(): Test => {
+const getBeatmap: Test = async(api: API) => {
 	const beatmap = await api.getBeatmap(388463)
 	expect(beatmap.id).to.equal(388463)
 	expect(beatmap.beatmapset.title_unicode).to.equal("夜啼く兎は夢を見る")
@@ -20,7 +18,7 @@ const getBeatmap = async(): Test => {
 	return true
 }
 
-const getBeatmaps = async(): Test => {
+const getBeatmaps: Test = async(api: API) => {
 	const ids = [388463, 4089655]
 	const beatmaps = await api.getBeatmaps(ids)
 	ids.forEach((id, index) => expect(beatmaps[index].id).to.equal(id))
@@ -28,7 +26,7 @@ const getBeatmaps = async(): Test => {
 	return true
 }
 
-const getBeatmapDifficultyAttributesOsu = async(): Test => {
+const getBeatmapDifficultyAttributesOsu: Test = async(api: API) => {
 	const attributes = await api.getBeatmapDifficultyAttributesOsu(125660, ["DT"])
 	console.log(attributes)
 	expect(attributes.approach_rate.toFixed(2)).to.equal("9.67")
@@ -36,28 +34,28 @@ const getBeatmapDifficultyAttributesOsu = async(): Test => {
 	return true
 }
 
-const getBeatmapDifficultyAttributesTaiko = async(): Test => {
+const getBeatmapDifficultyAttributesTaiko: Test = async(api: API) => {
 	const attributes = await api.getBeatmapDifficultyAttributesTaiko(388463, ["DT"])
 	expect(attributes.great_hit_window).to.be.lessThan(35)
 	expect(validate(attributes, "Beatmap.DifficultyAttributes.Taiko"))
 	return true
 }
 
-const getBeatmapDifficultyAttributesFruits = async(): Test => {
+const getBeatmapDifficultyAttributesFruits: Test = async(api: API) => {
 	const attributes = await api.getBeatmapDifficultyAttributesFruits(705339, ["DT"])
 	expect(attributes.approach_rate.toFixed(2)).to.equal("10.33")
 	expect(validate(attributes, "Beatmap.DifficultyAttributes.Fruits"))
 	return true
 }
 
-const getBeatmapDifficultyAttributesMania = async(): Test => {
+const getBeatmapDifficultyAttributesMania: Test = async(api: API) => {
 	const attributes = await api.getBeatmapDifficultyAttributesMania(3980252, ["DT"])
 	expect(attributes.great_hit_window).to.equal(40)
 	expect(validate(attributes, "Beatmap.DifficultyAttributes.Mania"))
 	return true
 }
 
-const getBeatmapScores = async(): Test => {
+const getBeatmapScores: Test = async(api: API) => {
 	const scores = await api.getBeatmapScores(129891, {legacy_only: true})
 	scores.forEach((score) => expect(score.beatmap_id).to.equal(129891))
 	expect(scores.at(0)?.legacy_total_score).to.equal(132408001)
@@ -65,7 +63,7 @@ const getBeatmapScores = async(): Test => {
 	return true
 }
 
-const getBeatmapSoloScores = async(): Test => {
+const getBeatmapSoloScores: Test = async(api: API) => {
 	const scores = await api.getBeatmapSoloScores(129891)
 	scores.forEach((score) => expect(score.beatmap_id).to.equal(129891))
 	expect(scores.at(0)?.total_score).to.be.greaterThanOrEqual(1073231)
@@ -73,7 +71,7 @@ const getBeatmapSoloScores = async(): Test => {
 	return true
 }
 
-const getBeatmapUserScore = async(): Test => {
+const getBeatmapUserScore: Test = async(api: API) => {
 	const score = await api.getBeatmapUserScore(176960, 7276846, {mods: ["NM"]})
 	expect(score.position).to.be.a("number")
 	expect(score.score.accuracy).to.be.lessThanOrEqual(0.99)
@@ -81,21 +79,21 @@ const getBeatmapUserScore = async(): Test => {
 	return true
 }
 
-const getBeatmapUserScores = async(): Test => {
+const getBeatmapUserScores: Test = async(api: API) => {
 	const scores = await api.getBeatmapUserScores(203993, 7276846, {ruleset: Ruleset.fruits})
 	expect(scores).to.have.lengthOf(1)
 	expect(validate(scores, "Score"))
 	return true
 }
 
-const getBeatmapPack = async(): Test => {
+const getBeatmapPack: Test = async(api: API) => {
 	const pack = await api.getBeatmapPack("P217")
 	expect(pack.tag).to.equal("P217")
 	expect(validate(pack, "Beatmap.Pack.WithBeatmapset")).to.be.true
 	return true
 }
 
-const getBeatmapPacks = async(): Test => {
+const getBeatmapPacks: Test = async(api: API) => {
 	const packs = await api.getBeatmapPacks("tournament")
 	expect(packs.beatmap_packs).to.have.lengthOf(100)
 	expect(packs.cursor_string).to.be.a("string")
@@ -118,17 +116,3 @@ export const tests = [
 	getBeatmapPack,
 	getBeatmapPacks,
 ]
-
-export async function testBeatmap(token: API["_access_token"]) {
-	api.access_token = token
-	for (let i = 0; i < tests.length; i++) {
-		try {
-			console.log(tests[i].name)
-			await tests[i]()
-		} catch(e) {
-			console.error(e)
-			return false
-		}
-	}
-	return true
-}

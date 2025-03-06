@@ -1,10 +1,8 @@
-import { API } from "../index.js"
+import { API } from "../../index.js"
 import { expect } from "chai"
-import { validate, Test } from "./exports.js"
+import { validate, Test } from "../exports.js"
 
-let api: API = new API({retry_on_timeout: true})
-
-const lookupChangelogBuild = async(): Test => {
+const lookupChangelogBuild: Test = async(api: API) => {
 	const build = await api.lookupChangelogBuild(7156)
 	expect(build.id).to.equal(7156)
 	expect(build.display_version).to.equal("2023.1008.1")
@@ -13,7 +11,7 @@ const lookupChangelogBuild = async(): Test => {
 	return true
 }
 
-const getChangelogBuild = async(): Test => {
+const getChangelogBuild: Test = async(api: API) => {
 	const build = await api.getChangelogBuild("lazer", "2023.1008.1")
 	expect(build.display_version).to.equal("2023.1008.1")
 	expect(build.id).to.equal(7156)
@@ -22,7 +20,7 @@ const getChangelogBuild = async(): Test => {
 	return true
 }
 
-const getChangelogBuilds = async(): Test => {
+const getChangelogBuilds: Test = async(api: API) => {
 	const builds = await api.getChangelogBuilds(undefined, {from: "2023.1031.0", to: 7184}, ["markdown"])
 	expect(builds).to.have.lengthOf(4)
 	builds.forEach((build) => expect(build.created_at).to.be.lessThan(new Date("2024")))
@@ -32,7 +30,7 @@ const getChangelogBuilds = async(): Test => {
 	return true
 }
 
-const getChangelogStreams = async(): Test => {
+const getChangelogStreams: Test = async(api: API) => {
 	const streams = await api.getChangelogStreams()
 	expect(streams).to.have.length.greaterThan(2)
 	expect(validate(streams, "Changelog.UpdateStream.WithLatestbuildUsercount")).to.be.true
@@ -45,17 +43,3 @@ export const tests = [
 	getChangelogBuilds,
 	getChangelogStreams,
 ]
-
-export async function testChangelog(token: API["_access_token"]) {
-	api.access_token = token
-	for (let i = 0; i < tests.length; i++) {
-		try {
-			console.log(tests[i].name)
-			await tests[i]()
-		} catch(e) {
-			console.error(e)
-			return false
-		}
-	}
-	return true
-}

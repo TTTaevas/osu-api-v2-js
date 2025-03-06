@@ -1,9 +1,10 @@
 import ajv from "ajv"
 import tsj from "ts-json-schema-generator"
 import util from "util"
+import { API } from "../index.js";
 
 export type AR<T extends (...args: any) => any> = Awaited<ReturnType<T>>;
-export type Test = Promise<true>;
+export type Test = (api: API) => Promise<true>;
 
 const generator = tsj.createGenerator({path: "lib/index.ts", additionalProperties: true})
 
