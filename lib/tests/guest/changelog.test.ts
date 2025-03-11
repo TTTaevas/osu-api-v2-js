@@ -1,8 +1,7 @@
-import { API } from "../../index.js"
 import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
-const lookupChangelogBuild: Test = async(api: API) => {
+const lookupChangelogBuild: Test = async(api) => {
 	const build = await api.lookupChangelogBuild(7156)
 	expect(build.id).to.equal(7156)
 	expect(build.display_version).to.equal("2023.1008.1")
@@ -11,7 +10,7 @@ const lookupChangelogBuild: Test = async(api: API) => {
 	return true
 }
 
-const getChangelogBuild: Test = async(api: API) => {
+const getChangelogBuild: Test = async(api) => {
 	const build = await api.getChangelogBuild("lazer", "2023.1008.1")
 	expect(build.display_version).to.equal("2023.1008.1")
 	expect(build.id).to.equal(7156)
@@ -20,7 +19,7 @@ const getChangelogBuild: Test = async(api: API) => {
 	return true
 }
 
-const getChangelogBuilds: Test = async(api: API) => {
+const getChangelogBuilds: Test = async(api) => {
 	const builds = await api.getChangelogBuilds(undefined, {from: "2023.1031.0", to: 7184}, ["markdown"])
 	expect(builds).to.have.lengthOf(4)
 	builds.forEach((build) => expect(build.created_at).to.be.lessThan(new Date("2024")))
@@ -30,7 +29,7 @@ const getChangelogBuilds: Test = async(api: API) => {
 	return true
 }
 
-const getChangelogStreams: Test = async(api: API) => {
+const getChangelogStreams: Test = async(api) => {
 	const streams = await api.getChangelogStreams()
 	expect(streams).to.have.length.greaterThan(2)
 	expect(validate(streams, "Changelog.UpdateStream.WithLatestbuildUsercount")).to.be.true

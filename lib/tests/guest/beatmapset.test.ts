@@ -1,8 +1,8 @@
-import { API, Beatmapset } from "../../index.js"
+import { Beatmapset } from "../../index.js"
 import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
-const searchBeatmapsets: Test = async(api: API) => {
+const searchBeatmapsets: Test = async(api) => {
 	const response = await api.searchBeatmapsets({categories: "Any"})
 	expect(response.error).to.be.null
 	expect(response.recommended_difficulty).to.be.null
@@ -12,14 +12,14 @@ const searchBeatmapsets: Test = async(api: API) => {
 	return true
 }
 
-const lookupBeatmapset: Test = async(api: API) => {
+const lookupBeatmapset: Test = async(api) => {
 	const beatmapset = await api.lookupBeatmapset(388463)
 	expect(beatmapset.id).to.equal(58951)
 	expect(validate(beatmapset, "Beatmapset.Extended.Plus")).to.be.true
 	return true
 }
 
-const getBeatmapset: Test = async(api: API) => {
+const getBeatmapset: Test = async(api) => {
 	const beatmapset = await api.getBeatmapset(1971037)
 	expect(beatmapset.id).to.equal(1971037)
 	expect(beatmapset.submitted_date?.toISOString().substring(0, 10)).to.equal("2023-04-07")
@@ -27,7 +27,7 @@ const getBeatmapset: Test = async(api: API) => {
 	return true
 }
 
-const getBeatmapsetDiscussions: Test = async(api: API) => {
+const getBeatmapsetDiscussions: Test = async(api) => {
 	const response = await api.getBeatmapsetDiscussions({beatmapset: 2119925})
 	expect(response.beatmapsets.at(0)?.id).to.equal(2119925)
 	expect(validate(response.beatmaps, "Beatmap.Extended")).to.be.true
@@ -38,7 +38,7 @@ const getBeatmapsetDiscussions: Test = async(api: API) => {
 	return true
 }
 
-const getBeatmapsetDiscussionPosts: Test = async(api: API) => {
+const getBeatmapsetDiscussionPosts: Test = async(api) => {
 	const response = await api.getBeatmapsetDiscussionPosts({discussion: 4143461})
 	expect(validate(response.beatmapsets, "Beatmapset.WithHype")).to.be.true
 	expect(validate(response.users, "User")).to.be.true
@@ -46,7 +46,7 @@ const getBeatmapsetDiscussionPosts: Test = async(api: API) => {
 	return true
 }
 
-const getBeatmapsetDiscussionVotes: Test = async(api: API) => {
+const getBeatmapsetDiscussionVotes: Test = async(api) => {
 	const response = await api.getBeatmapsetDiscussionVotes({vote_receiver: 7276846})
 	expect(validate(response.users, "User.WithGroups")).to.be.true
 	expect(validate(response.discussions, "Beatmapset.Discussion")).to.be.true
@@ -54,7 +54,7 @@ const getBeatmapsetDiscussionVotes: Test = async(api: API) => {
 	return true
 }
 
-const getBeatmapsetEvents: Test = async(api: API) => {
+const getBeatmapsetEvents: Test = async(api) => {
 	const events: Beatmapset.Event["type"][] = [
 		"nominate", "love", "remove_from_loved", "qualify", "disqualify", "approve", "rank",
 		"kudosu_allow", "kudosu_deny", "kudosu_gain", "kudosu_lost", "kudosu_recalculate",

@@ -10,20 +10,26 @@ export namespace Chat {
 
 	/**
 	 * @obtainableFrom
-	 * {@link API.sendChatPrivateMessage} /
-	 * {@link API.createChatPrivateChannel}
+	 * {@link API.getChatChannels} /
+	 * {@link API.sendChatPrivateMessage}
 	 */
 	export interface Channel {
 		channel_id: number
-		name: string
 		description: string | null
 		icon: string | null
-		type: "PUBLIC" | "PRIVATE" | "MULTIPLAYER" | "SPECTATOR" | "TEMPORARY" | "PM" | "GROUP" | "ANNOUNCE"
+		message_length_limit: number
 		moderated: boolean
+		name: string
+		type: "PUBLIC" | "PRIVATE" | "MULTIPLAYER" | "SPECTATOR" | "TEMPORARY" | "PM" | "GROUP" | "ANNOUNCE"
 		uuid: string | null
 	}
 
 	export namespace Channel {
+		/** @obtainableFrom {@link API.createChatPrivateChannel} */
+		export interface WithRecentmessages extends Channel {
+			recent_messages: Chat.Message[]
+		}
+
 		/**
 		 * @obtainableFrom
 		 * {@link API.sendChatPrivateMessage} /
@@ -85,7 +91,7 @@ export namespace Chat {
 		 * @param user_target The other user able to read and send messages in this channel
 		 * @returns The newly created channel!
 		 */
-		export async function createPrivate(this: API, user_target: User["id"] | User): Promise<Channel> {
+		export async function createPrivate(this: API, user_target: User["id"] | User): Promise<Channel.WithRecentmessages> {
 			return await this.request("post", "chat/channels", {type: "PM", target_id: getId(user_target)})
 		}
 

@@ -1,8 +1,7 @@
-import { API } from "../../index.js"
 import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
-const getEvents: Test = async(api: API) => {
+const getEvents: Test = async(api) => {
 	const response = await api.getEvents()
 	expect(response.cursor_string).to.be.a("string")
 	expect(response.events).to.have.lengthOf(50)

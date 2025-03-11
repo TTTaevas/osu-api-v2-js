@@ -1,8 +1,7 @@
-import { API } from "../../index.js"
 import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
-const getForumTopicAndPosts: Test = async(api: API) => {
+const getForumTopicAndPosts: Test = async(api) => {
 	const response = await api.getForumTopicAndPosts(1848236, {limit: 2})
 	expect(response.cursor_string).to.be.a("string")
 	expect(response.topic.id).to.equal(1848236)

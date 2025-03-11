@@ -63,3 +63,33 @@ export function getCurrentDateString(): string {
 	console.log("Using the following x-api-version:", str)
     return str
 }
+
+export const runTests = async (api: API, domains: Test[][]): Promise<void> => {
+	const errors: unknown[] = []
+
+	for (let i = 0; i < domains.length; i++) {
+		console.log(`\n---- ${i+1}/${domains.length} ----\n`)
+		const tests = domains[i]
+
+		try {
+			for (let e = 0; e < tests.length; e++) {
+				const current_test = tests[e]
+				console.log(current_test.name)
+				await current_test(api)
+			}
+		} catch(err) {
+			console.error(err)
+			errors.push(err)
+		}
+		console.log(`\n---- ${i+1}/${domains.length} ----\n`)
+	}
+	await api.revokeToken()
+
+	if (!errors.length) {
+		console.log("✔️ Looks like the tests went well!")
+	} else {
+		console.log(`❌ ${errors.length} test(s) went wrong, here's some information:\n`)
+		errors.forEach((err, i) => console.error(`̀#${i+1}:`, err, "\n"))
+		throw new Error("❌ Things didn't go as expected...")
+	}
+}

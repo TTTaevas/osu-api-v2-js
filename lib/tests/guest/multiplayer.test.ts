@@ -1,8 +1,7 @@
-import { API } from "../../index.js"
 import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
-const getRoom: Test = async(api: API) => {
+const getRoom: Test = async(api) => {
 	console.log("|", "Playlist")
 	const room_playlist = await api.getRoom(588230)
 	expect(room_playlist.id).to.equal(588230)
@@ -18,7 +17,7 @@ const getRoom: Test = async(api: API) => {
 	return true
 }
 
-const getPlaylistItemScores: Test = async(api: API) => {
+const getPlaylistItemScores: Test = async(api) => {
 	console.log("|", "Playlist")
 	const response_playlist = await api.getPlaylistItemScores({id: 5371540, room_id: 588230})
 	expect(response_playlist.cursor_string).to.be.null
@@ -46,7 +45,7 @@ const getPlaylistItemScores: Test = async(api: API) => {
 	return true
 }
 
-const getMatch: Test = async(api: API) => {
+const getMatch: Test = async(api) => {
 	console.log("|", "Without teams")
 	const response_noteams = await api.getMatch(75706987, {limit: 15})
 	expect(response_noteams.match.id).to.equal(75706987)
@@ -68,7 +67,7 @@ const getMatch: Test = async(api: API) => {
 	return true
 }
 
-const getMatches: Test = async(api: API) => {
+const getMatches: Test = async(api) => {
 	const matches = await api.getMatches({limit: 2})
 	expect(matches).to.have.lengthOf(2)
 	matches.forEach((match) => expect(match.id).to.be.greaterThan(111250329))

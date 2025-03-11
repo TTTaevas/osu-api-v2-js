@@ -1,8 +1,7 @@
-import { API } from "../../index.js"
 import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
-const searchUser: Test = async(api: API) => {
+const searchUser: Test = async(api) => {
 	const response = await api.searchUser("Tae", 2)
 	expect(response.total).to.be.greaterThan(20)
 	expect(response.data).to.have.lengthOf(20)
@@ -10,7 +9,7 @@ const searchUser: Test = async(api: API) => {
 	return true
 }
 
-const searchWiki: Test = async(api: API) => {
+const searchWiki: Test = async(api) => {
 	const response = await api.searchWiki("Beat", 2)
 	expect(response.total).to.be.greaterThan(50)
 	expect(response.data).to.have.lengthOf(50)

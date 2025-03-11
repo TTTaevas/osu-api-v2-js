@@ -1,6 +1,6 @@
 import "dotenv/config"
 import { API } from "../index.js"
-import { Test } from "./exports.js"
+import { runTests, Test } from "./exports.js"
 
 import * as Beatmap from "./guest/beatmap.test.js"
 import * as Beatmapset from "./guest/beatmapset.test.js"
@@ -34,38 +34,12 @@ const domains: Test[][] = [
 	Uncategorized.tests,
 ]
 
-const runTests = async (id: number, secret: string): Promise<void> => {
-	const errors: unknown[] = []
+const startRunningTests = async (id: number, secret: string): Promise<void> => {
 	const api = await API.createAsync(id, secret, undefined, {server: "https://osu.ppy.sh", retry_on_timeout: true})
 	// api = api.withSettings({headers: {"x-api-version": getCurrentDateString()}})
-
-	for (let i = 0; i < domains.length; i++) {
-		console.log(`\n---- ${i+1}/${domains.length} ----\n`)
-		const tests = domains[i]
-
-		try {
-			for (let e = 0; e < tests.length; e++) {
-				const current_test = tests[e]
-				console.log(current_test.name)
-				await current_test(api)
-			}
-		} catch(err) {
-			console.error(err)
-			errors.push(err)
-		}
-		console.log(`\n---- ${i+1}/${domains.length} ----\n`)
-	}
-	await api.revokeToken()
-
-	if (!errors.length) {
-		console.log("✔️ Looks like the tests went well!")
-	} else {
-		console.log(`❌ ${errors.length} test(s) went wrong, here's some information:\n`)
-		errors.forEach((err, i) => console.error(`̀#${i}:`, err, "\n"))
-		throw new Error("❌ Things didn't go as expected...")
-	}
+	await runTests(api, domains)
 }
 
 if (process.env.ID === undefined) {throw new Error("❌ The ID has not been defined in the environment variables!")}
 if (process.env.SECRET === undefined) {throw new Error("❌ The SECRET has not been defined in the environment variables!")}
-runTests(Number(process.env.ID), process.env.SECRET)
+startRunningTests(Number(process.env.ID), process.env.SECRET)

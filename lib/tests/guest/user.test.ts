@@ -1,15 +1,15 @@
-import { API, Ruleset } from "../../index.js"
+import { Ruleset } from "../../index.js"
 import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
-const getUser: Test = async(api: API) => {
+const getUser: Test = async(api) => {
 	const user = await api.getUser(7276846)
 	expect(user.id).to.equal(7276846)
 	expect(validate(user, "User.Extended")).to.be.true
 	return true
 }
 
-const getUsers: Test = async(api: API) => {
+const getUsers: Test = async(api) => {
 	const users = await api.getUsers([7276846, 2])
 	expect(users).to.have.lengthOf(2)
 	expect(users.at(0)?.id).to.equal(2)
@@ -18,7 +18,7 @@ const getUsers: Test = async(api: API) => {
 	return true
 }
 
-const lookupUsers: Test = async(api: API) => {
+const lookupUsers: Test = async(api) => {
 	const users = await api.lookupUsers([7276846, 2])
 	expect(users).to.have.lengthOf(2)
 	expect(users.at(0)?.id).to.equal(2)
@@ -27,7 +27,7 @@ const lookupUsers: Test = async(api: API) => {
 	return true
 }
 
-const getUserScores: Test = async(api: API) => {
+const getUserScores: Test = async(api) => {
 	console.log("| best")
 	const scores_best = await api.getUserScores(7276846, "best", undefined, {fails: false, lazer: true}, {limit: 5})
 	expect(scores_best).to.have.lengthOf(5)
@@ -55,7 +55,7 @@ const getUserScores: Test = async(api: API) => {
 	return true
 }
 
-const getUserBeatmaps: Test = async(api: API) => {
+const getUserBeatmaps: Test = async(api) => {
 	const beatmapsets = await api.getUserBeatmaps(7276846, "guest")
 	expect(beatmapsets).to.have.length.greaterThanOrEqual(1)
 	expect(beatmapsets.at(-1)?.id).to.equal(887302)
@@ -65,7 +65,7 @@ const getUserBeatmaps: Test = async(api: API) => {
 	return true
 }
 
-const getUserMostPlayed: Test = async(api: API) => {
+const getUserMostPlayed: Test = async(api) => {
 	const playcounts = await api.getUserMostPlayed(7276846)
 	expect(playcounts).to.have.lengthOf(5)
 	expect(playcounts.at(0)?.beatmap_id).to.equal(633993)
@@ -77,14 +77,14 @@ const getUserMostPlayed: Test = async(api: API) => {
 	return true
 }
 
-const getUserRecentActivity: Test = async(api: API) => {
+const getUserRecentActivity: Test = async(api) => {
 	const events = await api.getUserRecentActivity(7562902, {limit: 25})
 	expect(events).to.have.lengthOf(25)
 	expect(validate(events, "Event.AnyRecentActivity")).to.be.true
 	return true
 }
 
-const getUserKudosu: Test = async(api: API) => {
+const getUserKudosu: Test = async(api) => {
 	const events = await api.getUserKudosu(7276846, {limit: 5})
 	expect(events).to.have.lengthOf(5)
 	expect(validate(events, "User.KudosuHistory")).to.be.true

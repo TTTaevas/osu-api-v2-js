@@ -1,8 +1,8 @@
-import { API, Ruleset } from "../../index.js"
+import { Ruleset } from "../../index.js"
 import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
-const getUserRanking: Test = async(api: API) => {
+const getUserRanking: Test = async(api) => {
 	const types: ["performance", "score"] = ["performance", "score"]
 	for (let i = 0; i < types.length; i++) {
 		console.log("|", types[i])
@@ -16,7 +16,7 @@ const getUserRanking: Test = async(api: API) => {
 	return true
 }
 
-const getCountryRanking: Test = async(api: API) => {
+const getCountryRanking: Test = async(api) => {
 	const response = await api.getCountryRanking(Ruleset.osu)
 	expect(response.total).to.be.greaterThan(200).and.lessThan(500)
 	expect(response.ranking).to.have.lengthOf(50)
@@ -26,7 +26,7 @@ const getCountryRanking: Test = async(api: API) => {
 	return true
 }
 
-const getKudosuRanking: Test = async(api: API) => {
+const getKudosuRanking: Test = async(api) => {
 	const users = await api.getKudosuRanking()
 	expect(users).to.have.lengthOf(50)
 	expect(users.at(0)?.kudosu.total).to.be.greaterThan(10000)
@@ -34,7 +34,7 @@ const getKudosuRanking: Test = async(api: API) => {
 	return true
 }
 
-const getSpotlightRanking: Test = async(api: API) => {
+const getSpotlightRanking: Test = async(api) => {
 	const response = await api.getSpotlightRanking(Ruleset.taiko, 48)
 	expect(response.beatmapsets).to.have.lengthOf(21)
 	expect(response.ranking).to.have.length.greaterThan(0).and.lessThanOrEqual(40) // what if someone gets banned?
