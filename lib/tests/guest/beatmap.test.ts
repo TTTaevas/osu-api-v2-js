@@ -28,29 +28,28 @@ const getBeatmaps: Test = async(api) => {
 
 const getBeatmapDifficultyAttributesOsu: Test = async(api) => {
 	const attributes = await api.getBeatmapDifficultyAttributesOsu(125660, ["DT"])
-	console.log(attributes)
-	expect(attributes.approach_rate.toFixed(2)).to.equal("9.67")
+	expect(attributes.max_combo).to.equal(1193)
 	expect(validate(attributes, "Beatmap.DifficultyAttributes.Osu"))
 	return true
 }
 
 const getBeatmapDifficultyAttributesTaiko: Test = async(api) => {
 	const attributes = await api.getBeatmapDifficultyAttributesTaiko(388463, ["DT"])
-	expect(attributes.great_hit_window).to.be.lessThan(35)
+	expect(attributes.max_combo).to.equal(876)
 	expect(validate(attributes, "Beatmap.DifficultyAttributes.Taiko"))
 	return true
 }
 
 const getBeatmapDifficultyAttributesFruits: Test = async(api) => {
 	const attributes = await api.getBeatmapDifficultyAttributesFruits(705339, ["DT"])
-	expect(attributes.approach_rate.toFixed(2)).to.equal("10.33")
+	expect(attributes.max_combo).to.equal(1029)
 	expect(validate(attributes, "Beatmap.DifficultyAttributes.Fruits"))
 	return true
 }
 
 const getBeatmapDifficultyAttributesMania: Test = async(api) => {
-	const attributes = await api.getBeatmapDifficultyAttributesMania(3980252, ["DT"])
-	expect(attributes.great_hit_window).to.equal(40)
+	const attributes = await api.getBeatmapDifficultyAttributesMania(473228, ["DT"])
+	expect(attributes.max_combo).to.equal(5614)
 	expect(validate(attributes, "Beatmap.DifficultyAttributes.Mania"))
 	return true
 }

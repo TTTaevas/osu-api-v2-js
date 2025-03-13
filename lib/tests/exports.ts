@@ -8,25 +8,23 @@ export type Test = (api: API) => Promise<true>;
 
 const generator = tsj.createGenerator({path: "lib/index.ts", additionalProperties: true})
 
-export function validate(object: unknown, schemaName: string): boolean {
+export function validate(obj: unknown, schemaName: string): boolean {
 	try {
 		const schema = fixDate(generator.createSchema(schemaName))
 		const ajv_const = new ajv.default({strict: false})
 		ajv_const.addFormat("date-time", true)
 		const validator = ajv_const.compile(schema)
 
-		if (Array.isArray(object)) {
-			for (let i = 0; i < object.length; i++) {
-				const result = validator(object[i])
-				if (validator.errors) console.error("❌ from validator:\n", validator.errors, "\n...for the following object:\n",
-					util.inspect(object[i], {colors: true, compact: true, depth: 100}), "\n\n")
+		if (Array.isArray(obj)) {
+			for (let i = 0; i < obj.length; i++) {
+				const result = validator(obj[i])
+				if (validator.errors) console.error(obj[i], util.inspect(validator.errors, {colors: true, depth: 5}))
 				if (!result) return false
 			}
 			return true
 		} else {
-			const result = validator(object)
-			if (validator.errors) console.error("❌ from validator:\n", validator.errors, "\n...for the following object:\n",
-				util.inspect(object, {colors: true, compact: true, depth: 100}), "\n\n")
+			const result = validator(obj)
+			if (validator.errors) console.error(obj, util.inspect(validator.errors, {colors: true, depth: 5}))
 			return result
 		}
 	} catch(err) {
