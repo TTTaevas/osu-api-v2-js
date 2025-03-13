@@ -380,7 +380,7 @@ export namespace User {
 	/**
 	 * Get user data of each friend of the authorized user
 	 * @scope {@link Scope"friends.read"}
-	 * @remarks The Statistics will be of the authorized user's favourite gamemode, not the friend's!
+	 * @remarks The Statistics will be of the authorized user's favourite ruleset, not the friend's!
 	 */
 	export async function getFriends(this: API): Promise<User.Relation[]> {
 		return await this.request("get", "friends")

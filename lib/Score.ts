@@ -101,7 +101,7 @@ export namespace Score {
 		score: number
 		perfect: boolean
 		statistics: {
-			/** @remarks Is null if the score's gamemode is Taiko */
+			/** @remarks Is null if the score's gamemode/ruleset is Taiko */
 			count_50: number | null
 			count_100: number
 			count_300: number

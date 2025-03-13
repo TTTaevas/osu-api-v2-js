@@ -87,8 +87,7 @@ export namespace Multiplayer {
 			 * @param limit How many scores maximum? Defaults to 50, the maximum the API will return
 			 * @param sort Sort by scores, ascending or descending? Defaults to descending
 			 * @param cursor_string Use a Multiplayer.Scores' `params` and `cursor_string` to get the next page (scores 51 to 100 for example)
-			 * @remarks (2024-03-04) This may not work for rooms from before March 5th 2024, use at your own risk
-			 * https://github.com/ppy/osu-web/issues/10725
+			 * @remarks This will **not work for rooms created before ~March 5th 2024** https://github.com/ppy/osu-web/issues/10725
 			 */
 			export async function getScores(this: API, item: {id: number, room_id: number} | Multiplayer.Room.PlaylistItem, limit: number = 50,
 			sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<{

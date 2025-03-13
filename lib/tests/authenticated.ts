@@ -6,11 +6,19 @@ import { exec } from "child_process"
 import http from "http"
 
 import * as Chat from "./authenticated/chat.test.js"
+import * as Forum from "./authenticated/forum.test.js"
+import * as Multiplayer from "./authenticated/multiplayer.test.js"
+import * as Score from "./authenticated/score.test.js"
+import * as User from "./authenticated/user.test.js"
 
 const server: string = "https://dev.ppy.sh"
 
 const domains: Test[][] = [
-	Chat.tests
+	Chat.tests,
+	Forum.tests,
+	Multiplayer.tests,
+	Score.tests,
+	User.tests,
 ]
 
 async function getCode(url: string, redirect_uri: string): Promise<string> {
@@ -46,7 +54,9 @@ const startRunningTests = async (id: number, secret: string, redirect_uri: strin
 }
 
 if (server === "https://osu.ppy.sh") {
-	console.warn("⚠️ DOING THE TESTS ON THE ACTUAL OSU SERVER")
+	for (let i = 0; i < 5; i++) {
+		console.warn("⚠️ DOING THE TESTS ON THE ACTUAL OSU SERVER")
+	}
 }
 
 const env_id = server === "https://osu.ppy.sh" ? process.env.ID : process.env.DEV_ID
