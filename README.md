@@ -55,6 +55,7 @@ A simple guide on how to do extra fancy stuff
 If your application is meant to act on behalf of a user after they've clicked on a button to say they consent to your application identifying them and reading public data on their behalf and some other stuff maybe, then things will work differently
 
 Let's take it step by step! First, this package comes with `generateAuthorizationURL()`, which will generate for you a link so users can click on it and allow your application to do stuff on their behalf
+
 This function requires you to specify scopes... well, just know that **`identify` is always implicitly specified**, that **`public` is almost always implicitly required**, and that **functions that require other scopes are explicit about it!**
 
 Please note: It is the user who ultimately decides which scopes they allow, so you can't assume they allowed all the scopes you specified...
@@ -76,6 +77,7 @@ const api = await osu.API.createAsync("<client_id>", "<client_secret>", {code: "
 Congrats on making your `api` object! Now you should do something in order to not lose it, or not need a new one in order to request more data!
 
 Do note that your `api` object has lots of practical properties: `user` allows you to know which user it acts on behalf of, `expires` allows you to know when your requests with your current `access_token` will fail, and `refresh_token` is your key to getting a new `access_token` without asking the user again!
+
 Although, you should not need to access them often, because your `api` object has a function to use that refresh token which you can call at any given time, and by default, the object will call that function on its own right before the expiration date or when a request seems to fail because of the `access_token` being invalid! (those are features you can deactivate if needed)
 
 Your `refresh_token` can actually also expire at a (purposefully) unknown time, so depending of how your application works, you could use it at some point around the date of expiration, or you could throw away your `api` object while waiting for a user to start the authorization flow again
@@ -178,99 +180,107 @@ As you may have noticed, when calling the functions through the namespaces, inst
 
 Of course, using [the apply() method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply) would also work, so just do things the way you prefer or the way that is more intuitive to you!
 
-## Implemented endpoints
+## List of implemented endpoints
+
+In the same order as on the API's official documentation:
 
 ### Beatmap Packs
-- [x] `GET /beatmaps/packs` -> getBeatmapPacks()
-- [x] `GET /beatmaps/packs/{pack}` -> getBeatmapPack()
+- `GET /beatmaps/packs` -> [getBeatmapPacks()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmappacks)
+- `GET /beatmaps/packs/{pack}` -> [getBeatmapPack()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmappack)
 
 ### Beatmaps
-- [x] `GET /beatmaps/lookup` -> lookupBeatmap()
-- [x] `GET /beatmaps/{beatmap}/scores/users/{user}` -> getBeatmapUserScore()
-- [x] `GET /beatmaps/{beatmap}/scores/users/{user}/all` -> getBeatmapUserScores()
-- [x] `GET /beatmaps/{beatmap}/scores` -> getBeatmapScores()
-- [x] `GET /beatmaps/{beatmap}/solo-scores` -> getBeatmapSoloScores()
-- [x] `GET /beatmaps` -> getBeatmaps()
-- [x] `GET /beatmaps/{beatmap}` -> getBeatmap()
-- [x] `POST /beatmaps/{beatmap}/attributes` -> getBeatmapDifficultyAttributes()
+- `GET /beatmaps/lookup` -> [lookupBeatmap()](https://osu-v2.taevas.xyz/classes/API.html#lookupbeatmap)
+- `GET /beatmaps/{beatmap}/scores/users/{user}` -> [getBeatmapUserScore()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapuserscore)
+- `GET /beatmaps/{beatmap}/scores/users/{user}/all` -> [getBeatmapUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapuserscores)
+- `GET /beatmaps/{beatmap}/scores` -> [getBeatmapScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapscores)
+- `GET /beatmaps/{beatmap}/solo-scores` -> [getBeatmapSoloScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsoloscores)
+- `GET /beatmaps` -> [getBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmaps)
+- `GET /beatmaps/{beatmap}` -> [getBeatmap()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmap)
+- `POST /beatmaps/{beatmap}/attributes` -> [getBeatmapDifficultyAttributes()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapdifficultyattributes)
 
 ### Beatmapset Discussions
-- [x] `GET /beatmapsets/discussions/posts` -> getBeatmapsetDiscussionPosts()
-- [x] `GET /beatmapsets/discussions/votes` -> getBeatmapsetDiscussionVotes()
-- [x] `GET /beatmapsets/discussions` -> getBeatmapsetDiscussions()
+- `GET /beatmapsets/discussions/posts` -> [getBeatmapsetDiscussionPosts()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetdiscussionposts)
+- `GET /beatmapsets/discussions/votes` -> [getBeatmapsetDiscussionVotes()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetdiscussionvotes)
+- `GET /beatmapsets/discussions` -> [getBeatmapsetDiscussions()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetdiscussions)
 
 ### Beatmapsets
-- [x] `GET /beatmapsets/search` -> searchBeatmapset()
-- [x] `GET /beatmapsets/lookup` -> lookupBeatmapset()
-- [x] `GET /beatmapsets/{beatmapset}` -> getBeatmapset()
-- [x] `GET /beatmapsets/events` -> getBeatmapsetEvents()
+- `GET /beatmapsets/search` -> [searchBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#searchbeatmapsets)
+- `GET /beatmapsets/lookup` -> [lookupBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#lookupbeatmapset)
+- `GET /beatmapsets/{beatmapset}` -> [getBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapset)
+- `GET /beatmapsets/events` -> [getBeatmapsetEvents()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetevents)
 
 ### Changelog
-- [x] `GET /changelog/{stream}/{build}` -> getChangelogBuild()
-- [x] `GET /changelog` -> getChangelogBuilds() / getChangelogStreams() (removing `search`, putting `builds` behind getChangelogBuilds(), and `streams` behind getChangelogStreams())
-- [x] `GET /changelog/{changelog}` -> lookupChangelogBuild()
+- `GET /changelog/{stream}/{build}` -> [getChangelogBuild()](https://osu-v2.taevas.xyz/classes/API.html#getchangelogbuild)
+- `GET /changelog` -> [getChangelogBuilds()](https://osu-v2.taevas.xyz/classes/API.html#getchangelogbuilds) and [getChangelogStreams()](https://osu-v2.taevas.xyz/classes/API.html#getchangelogstreams) (removing `search`, putting `builds` behind getChangelogBuilds(), and `streams` behind getChangelogStreams())
+- `GET /changelog/{changelog}` -> [lookupChangelogBuild()](https://osu-v2.taevas.xyz/classes/API.html#lookupchangelogbuild)
 
 ### Chat
-- [x] `POST /chat/ack` -> keepChatAlive()
-- [x] `POST /chat/new` -> sendChatPrivateMessage()
-- [x] `GET /chat/channels/{channel}/messages` -> getChatMessages()
-- [x] `POST /chat/channels/{channel}/messages` -> sendChatMessage()
-- [x] `PUT /chat/channels/{channel}/users/{user}` -> joinChatChannel()
-- [x] `DELETE /chat/channels/{channel}/users/{user}` -> leaveChatChannel()
-- [x] `PUT /chat/channels/{channel}/mark-as-read/{message}` -> markChatChannelAsRead()
-- [x] `GET /chat/channels` -> getChatChannels()
-- [x] `POST /chat/channels` -> createChatPrivateChannel() / createChatAnnouncementChannel()
-- [x] `GET /chat/channels/{channel}` -> getChatChannel() (without `users` because `channel` would already have this property)
+- `POST /chat/ack` -> [keepChatAlive()](https://osu-v2.taevas.xyz/classes/API.html#keepchatalive)
+- `POST /chat/new` -> [sendChatPrivateMessage()](https://osu-v2.taevas.xyz/classes/API.html#sendchatprivatemessage)
+- `GET /chat/channels/{channel}/messages` -> [getChatMessages()](https://osu-v2.taevas.xyz/classes/API.html#getchatmessages)
+- `POST /chat/channels/{channel}/messages` -> [sendChatMessage()](https://osu-v2.taevas.xyz/classes/API.html#sendchatmessage)
+- `PUT /chat/channels/{channel}/users/{user}` -> [joinChatChannel()](https://osu-v2.taevas.xyz/classes/API.html#joinchatchannel)
+- `DELETE /chat/channels/{channel}/users/{user}` -> [leaveChatChannel()](https://osu-v2.taevas.xyz/classes/API.html#leavechatchannel)
+- `PUT /chat/channels/{channel}/mark-as-read/{message}` -> [markChatChannelAsRead()](https://osu-v2.taevas.xyz/classes/API.html#markchatchannelasread)
+- `GET /chat/channels` -> [getChatChannels()](https://osu-v2.taevas.xyz/classes/API.html#getchatchannels)
+- `POST /chat/channels` -> [createChatPrivateChannel()](https://osu-v2.taevas.xyz/classes/API.html#createchatprivatechannel) and [createChatAnnouncementChannel()](https://osu-v2.taevas.xyz/classes/API.html#createchatannouncementchannel)
+- `GET /chat/channels/{channel}` -> [getChatChannel()](https://osu-v2.taevas.xyz/classes/API.html#getchatchannel) (without `users` because `channel` would already have this property)
 
 ### Comments
-- [x] `GET /comments` -> getComments()
-- [x] `GET /comments/{comment}` -> getComment()
+- `GET /comments` -> [getComments()](https://osu-v2.taevas.xyz/classes/API.html#getcomments)
+- `GET /comments/{comment}` -> [getComment()](https://osu-v2.taevas.xyz/classes/API.html#getcomment)
+- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### Events
-- [x] `GET /events` -> getEvents()
+- `GET /events` -> [getEvents()](https://osu-v2.taevas.xyz/classes/API.html#getevents)
 
 ### Forum
-- [x] `POST /forums/topics/{topic}/reply` -> replyForumTopic()
-- [x] `POST /forums/topics` -> createForumTopic()
-- [x] `GET /forums/topics/{topic}` -> getForumTopicAndPosts() (removing `search` for simplicity)
-- [x] `PUT /forums/topics/{topic}` -> editForumTopicTitle()
-- [x] `PUT /forums/posts/{post}` -> editForumPost()
+- `POST /forums/topics/{topic}/reply` -> [replyForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#replyforumtopic)
+- `GET /forums/topics` -> **TODO, will be in v1.1.2**
+- `POST /forums/topics` -> [createForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#createforumtopic)
+- `GET /forums/topics/{topic}` -> [getForumTopicAndPosts()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopicandposts) (removing `search` for simplicity)
+- `PUT /forums/topics/{topic}` -> [editForumTopicTitle()](https://osu-v2.taevas.xyz/classes/API.html#editforumtopictitle)
+- `PUT /forums/posts/{post}` -> [editForumPost()](https://osu-v2.taevas.xyz/classes/API.html#editforumpost)
+- `GET /forums` -> **TODO, will be in v1.1.2**
+- `GET /forums/{forum}` -> **TODO, will be in v1.1.2**
 
 ### Home
-- [x] `GET /search` -> searchUser() / searchWiki()
+- `GET /search` -> [searchUser()](https://osu-v2.taevas.xyz/classes/API.html#searchuser) / [searchWiki()](https://osu-v2.taevas.xyz/classes/API.html#searchwiki)
 
 ### Matches
-- [x] `GET /matches` -> getMatches()
-- [x] `GET /matches/{match}` -> getMatch()
+- `GET /matches` -> [getMatches()](https://osu-v2.taevas.xyz/classes/API.html#getmatches)
+- `GET /matches/{match}` -> [getMatch()](https://osu-v2.taevas.xyz/classes/API.html#getmatch)
 
 ### Multiplayer
-- [x] `GET /rooms/{room}/playlist/{playlist}/scores` -> getPlaylistItemScores()
-- [x] `GET /rooms` -> getRooms()
-- [x] `GET /rooms/{room}` -> getRoom()
-- [x] `GET /rooms/{room}/leaderboard` -> getRoomLeaderboard()
+- `GET /rooms/{room}/playlist/{playlist}/scores` -> [getPlaylistItemScores()](https://osu-v2.taevas.xyz/classes/API.html#getplaylistitemscores)
+- `GET /rooms` -> [getRooms()](https://osu-v2.taevas.xyz/classes/API.html#getrooms)
+- `GET /rooms/{room}` -> [getRoom()](https://osu-v2.taevas.xyz/classes/API.html#getroom)
+- `GET /rooms/{room}/leaderboard` -> [getRoomLeaderboard()](https://osu-v2.taevas.xyz/classes/API.html#getroomleaderboard)
+- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### News
-- [x] `GET /news` -> getNewsPosts() (removing everything except `news_sidebar.news_posts`)
-- [x] `GET /news/{news}` -> getNewsPost()
+- `GET /news` -> [getNewsPosts()](https://osu-v2.taevas.xyz/classes/API.html#getnewsposts) (removing everything except `news_sidebar.news_posts`)
+- `GET /news/{news}` -> [getNewsPost()](https://osu-v2.taevas.xyz/classes/API.html#getnewspost)
 
 ### Ranking
-- [x] `GET /rankings/kudosu` -> getKudosuRanking()
-- [x] `GET /rankings/{mode}/{type}` -> getUserRanking() / getCountryRanking() / getSpotlightRanking()
-- [x] `GET /spotlights` -> getSpotlights()
+- `GET /rankings/kudosu` -> [getKudosuRanking()](https://osu-v2.taevas.xyz/classes/API.html#getkudosuranking)
+- `GET /rankings/{mode}/{type}` -> [getUserRanking()](https://osu-v2.taevas.xyz/classes/API.html#getuserranking) and [getCountryRanking()](https://osu-v2.taevas.xyz/classes/API.html#getcountryranking) and [getSpotlightRanking()](https://osu-v2.taevas.xyz/classes/API.html#getspotlightranking)
+- `GET /spotlights` -> [getSpotlights()](https://osu-v2.taevas.xyz/classes/API.html#getspotlights)
 
 ### Users
-- [x] `GET /me/{mode?}` -> getResourceOwner()
-- [x] `GET /users/{user}/kudosu` -> getUserKudosu()
-- [x] `GET /users/{user}/scores/{type}` -> getUserScores()
-- [x] `GET /users/{user}/beatmapsets/{type}` -> getUserBeatmaps() / getUserMostPlayed()
-- [x] `GET /users/{user}/recent_activity` -> getUserRecentActivity()
-- [x] `GET /users/{user}/{mode?}` -> getUser()
-- [x] `GET /users` -> getUsers()
-- [x] `GET /friends` -> getFriends()
+- `GET /me/{mode?}` -> [getResourceOwner()](https://osu-v2.taevas.xyz/classes/API.html#getresourceowner)
+- `GET /users/{user}/kudosu` -> [getUserKudosu()](https://osu-v2.taevas.xyz/classes/API.html#getuserkudosu)
+- `GET /users/{user}/scores/{type}` -> [getUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getuserscores)
+- `GET /users/{user}/beatmapsets/{type}` -> [getUserBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserbeatmaps) / [getUserMostPlayed()](https://osu-v2.taevas.xyz/classes/API.html#getusermostplayed)
+- `GET /users/{user}/recent_activity` -> [getUserRecentActivity()](https://osu-v2.taevas.xyz/classes/API.html#getuserrecentactivity)
+- `GET /users/{user}/{mode?}` -> [getUser()](https://osu-v2.taevas.xyz/classes/API.html#getuser)
+- `GET /users` -> [getUsers()](https://osu-v2.taevas.xyz/classes/API.html#getusers)
+- `GET /friends` -> [getFriends()](https://osu-v2.taevas.xyz/classes/API.html#getfriends)
 
 ### Wiki
-- [x] `GET /wiki/{locale}/{path}` -> getWikiPage()
+- `GET /wiki/{locale}/{path}` -> [getWikiPage()](https://osu-v2.taevas.xyz/classes/API.html#getwikipage)
 
 ### Misc Undocumented Stuff
-- [x] `GET /seasonal-backgrounds` -> getSeasonalBackgrounds()
-- [x] `GET /scores/{score}/download` -> getReplay()
+- `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)
+- `GET /scores/{score}/download` -> [getReplay()](https://osu-v2.taevas.xyz/classes/API.html#getreplay)
+- `GET /tags` -> **TODO**, not yet investigated, likely related to the upcoming beatmap tags feature?
