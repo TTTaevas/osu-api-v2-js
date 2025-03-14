@@ -164,33 +164,32 @@ export namespace Beatmap {
 		/** @obtainableFrom {@link API.getBeatmapDifficultyAttributesOsu} */
 		export interface Osu extends DifficultyAttributes {
 			aim_difficulty: number
+			aim_difficult_slider_count: number
 			speed_difficulty: number
 			speed_note_count: number
-			flashlight_difficulty: number
 			slider_factor: number
-			approach_rate: number
-			overall_difficulty: number
+			aim_difficult_strain_count: number
+			speed_difficult_strain_count: number
 		}
 
 		/** @obtainableFrom {@link API.getBeatmapDifficultyAttributesTaiko} */
 		export interface Taiko extends DifficultyAttributes {
-			stamina_difficulty: number
-			rhythm_difficulty: number
-			colour_difficulty: number
-			peak_difficulty: number
-			great_hit_window: number
+			mono_stamina_factor: number
 		}
 
-		/** @obtainableFrom {@link API.getBeatmapDifficultyAttributesFruits} */
-		export interface Fruits extends DifficultyAttributes {
-			approach_rate: number
-		}
+		/**
+		 * @obtainableFrom {@link API.getBeatmapDifficultyAttributesFruits}
+		 * @remarks Since the pp update of 2025-03-06, no property exclusive to this Ruleset exists
+		 */
+		export interface Fruits extends DifficultyAttributes {}
 
-		/** @obtainableFrom {@link API.getBeatmapDifficultyAttributesMania} */
+		/**
+		 * @obtainableFrom {@link API.getBeatmapDifficultyAttributesMania}
+		 * @remarks Since the pp update of 2025-03-06, no property exclusive to this Ruleset exists
+		 */
 		export interface Mania extends DifficultyAttributes {
-			great_hit_window: number
-			/** @remarks API documentation says it exists, my thorough testing says it doesn't, so... */
-			score_multiplier?: number
+			/** @remarks This seems to be about the max_combo with **Classic mod or Stable (non-lazer) client** */
+			max_combo: number
 		}
 
 		export type Any = Osu | Taiko | Fruits | Mania
@@ -229,6 +228,7 @@ export namespace Beatmap {
 		 * Get various data about the difficulty of a ctb beatmap!
 		 * @param beatmap The Beatmap in question
 		 * @param mods Can be a bitset of mods, an array of mod acronyms, or an array of Mods (ignores mod settings) (defaults to **No Mod**)
+		 * @remarks Since the pp update of 2025-03-06, no property exclusive to this Ruleset exists
 		 */
 		export async function getFruits(this: API, beatmap: Beatmap["id"] | Beatmap, mods?: Mod[] | string[] | number): Promise<DifficultyAttributes.Fruits> {
 			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Ruleset.fruits) as DifficultyAttributes.Fruits
@@ -237,6 +237,7 @@ export namespace Beatmap {
 		 * Get various data about the difficulty of a mania beatmap!
 		 * @param beatmap The Beatmap in question
 		 * @param mods Can be a bitset of mods, an array of mod acronyms, or an array of Mods (ignores mod settings) (defaults to **No Mod**)
+		 * @remarks Since the pp update of 2025-03-06, no property exclusive to this Ruleset exists
 		 */
 		export async function getMania(this: API, beatmap: Beatmap["id"] | Beatmap, mods?: Mod[] | string[] | number): Promise<DifficultyAttributes.Mania> {
 			return await this.getBeatmapDifficultyAttributes(beatmap, mods, Ruleset.mania) as DifficultyAttributes.Mania
