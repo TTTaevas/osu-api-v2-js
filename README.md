@@ -54,9 +54,9 @@ A simple guide on how to do extra fancy stuff
 
 If your application is meant to act on behalf of a user after they've clicked on a button to say they consent to your application identifying them and reading public data on their behalf and some other stuff maybe, then things will work differently
 
-Let's take it step by step! First, this package comes with `generateAuthorizationURL()`, which will generate for you a link so users can click on it and allow your application to do stuff on their behalf
+Let's take it step by step! First, this package comes with [`generateAuthorizationURL()`](https://osu-v2.taevas.xyz/functions/generateAuthorizationURL.html), which will generate for you a link so users can click on it and allow your application to do stuff on their behalf
 
-This function requires you to specify scopes... well, just know that **`identify` is always implicitly specified**, that **`public` is almost always implicitly required**, and that **functions that require other scopes are explicit about it!**
+This function requires you to specify [scopes](https://osu-v2.taevas.xyz/types/Scope.html)... well, just know that **`identify` is always implicitly specified**, that **`public` is almost always implicitly required**, and that **functions that require other scopes are explicit about it!**
 
 Please note: It is the user who ultimately decides which scopes they allow, so you can't assume they allowed all the scopes you specified...
 Thankfully though, you can check at any time the allowed scopes with the `scopes` property of your `api` object!
@@ -67,7 +67,7 @@ The user clicked your link and authorized your application! ...Now what?
 
 When a user authorizes your application, they get redirected to your `Application Callback URL` with a *huge* code as a GET parameter (the name of the parameter is `code`), and it is this very code that will allow you to proceed with the authorization flow! So make sure that somehow, you retrieve this code!
 
-With this code, you're able to create your `api` object:
+With this code, thanks to the [`createAsync()`](https://osu-v2.taevas.xyz/classes/API.html#createasync) method, you're able to create your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object:
 ```typescript
 const api = await osu.API.createAsync("<client_id>", "<client_secret>", {code: "<code>", redirect_uri: "<application_callback_url>"})
 ```
@@ -158,7 +158,7 @@ readChat()
 
 Above is the code I've written to listen to incoming chat messages by using the API's WebSocket!
 
-Using the WebSocket namespace this package provides, it's relatively easy to send commands (anything under `osu.WebSocket.Command`) and you can have 100% type safety with events (anything under `osu.Websocket.Event`) simply by checking what the `event` property is! With that, anything in the `data` property is yours to play with!
+Using the WebSocket namespace this package provides, it's relatively easy to send commands (anything under [`osu.WebSocket.Command`](https://osu-v2.taevas.xyz/modules/WebSocket.Command.html)) and you can have 100% type safety with events (anything under [`osu.Websocket.Event`](https://osu-v2.taevas.xyz/modules/WebSocket.Event.html)) simply by checking what the `event` property is! With that, anything in the `data` property is yours to play with!
 
 ### Calling the functions, but literally
 
@@ -236,16 +236,16 @@ In the same order as on the API's official documentation:
 
 ### Forum
 - `POST /forums/topics/{topic}/reply` -> [replyForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#replyforumtopic)
-- `GET /forums/topics` -> **TODO, will be in v1.1.2**
+- `GET /forums/topics` -> [getForumTopics()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopics) **(v1.1.2 onwards)**
 - `POST /forums/topics` -> [createForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#createforumtopic)
 - `GET /forums/topics/{topic}` -> [getForumTopicAndPosts()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopicandposts) (removing `search` for simplicity)
 - `PUT /forums/topics/{topic}` -> [editForumTopicTitle()](https://osu-v2.taevas.xyz/classes/API.html#editforumtopictitle)
 - `PUT /forums/posts/{post}` -> [editForumPost()](https://osu-v2.taevas.xyz/classes/API.html#editforumpost)
-- `GET /forums` -> **TODO, will be in v1.1.2**
-- `GET /forums/{forum}` -> **TODO, will be in v1.1.2**
+- `GET /forums` -> [getForums()](https://osu-v2.taevas.xyz/classes/API.html#getforums) **(v1.1.2 onwards)**
+- `GET /forums/{forum}` -> [getForum()](https://osu-v2.taevas.xyz/classes/API.html#getforum) **(v1.1.2 onwards)**
 
 ### Home
-- `GET /search` -> [searchUser()](https://osu-v2.taevas.xyz/classes/API.html#searchuser) / [searchWiki()](https://osu-v2.taevas.xyz/classes/API.html#searchwiki)
+- `GET /search` -> [searchUser()](https://osu-v2.taevas.xyz/classes/API.html#searchuser) and [searchWiki()](https://osu-v2.taevas.xyz/classes/API.html#searchwiki)
 
 ### Matches
 - `GET /matches` -> [getMatches()](https://osu-v2.taevas.xyz/classes/API.html#getmatches)
@@ -271,7 +271,7 @@ In the same order as on the API's official documentation:
 - `GET /me/{mode?}` -> [getResourceOwner()](https://osu-v2.taevas.xyz/classes/API.html#getresourceowner)
 - `GET /users/{user}/kudosu` -> [getUserKudosu()](https://osu-v2.taevas.xyz/classes/API.html#getuserkudosu)
 - `GET /users/{user}/scores/{type}` -> [getUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getuserscores)
-- `GET /users/{user}/beatmapsets/{type}` -> [getUserBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserbeatmaps) / [getUserMostPlayed()](https://osu-v2.taevas.xyz/classes/API.html#getusermostplayed)
+- `GET /users/{user}/beatmapsets/{type}` -> [getUserBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserbeatmaps) and [getUserMostPlayed()](https://osu-v2.taevas.xyz/classes/API.html#getusermostplayed)
 - `GET /users/{user}/recent_activity` -> [getUserRecentActivity()](https://osu-v2.taevas.xyz/classes/API.html#getuserrecentactivity)
 - `GET /users/{user}/{mode?}` -> [getUser()](https://osu-v2.taevas.xyz/classes/API.html#getuser)
 - `GET /users` -> [getUsers()](https://osu-v2.taevas.xyz/classes/API.html#getusers)
@@ -283,4 +283,4 @@ In the same order as on the API's official documentation:
 ### Misc Undocumented Stuff
 - `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)
 - `GET /scores/{score}/download` -> [getReplay()](https://osu-v2.taevas.xyz/classes/API.html#getreplay)
-- `GET /tags` -> **TODO**, not yet investigated, likely related to the upcoming beatmap tags feature?
+- `GET /tags` -> **TODO**, not yet investigated, likely related to the upcoming beatmap user tags feature?

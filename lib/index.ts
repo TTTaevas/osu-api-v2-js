@@ -677,6 +677,15 @@ export class API {
 
 	// FORUM STUFF
 
+	/** {@inheritDoc Forum.getOne} @group Forum Functions */
+	readonly getForum = Forum.getOne
+
+	/** {@inheritDoc Forum.getMultiple} @group Forum Functions */
+	readonly getForums = Forum.getMultiple
+
+	/** {@inheritDoc Forum.Topic.getMultiple} @group Forum Functions */
+	readonly getForumTopics = Forum.Topic.getMultiple
+
 	/** {@inheritDoc Forum.Topic.create} @group Forum Functions */
 	readonly createForumTopic = Forum.Topic.create
 

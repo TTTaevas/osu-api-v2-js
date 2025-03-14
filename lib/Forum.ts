@@ -1,7 +1,23 @@
 import { API, User } from "./index.js"
 import { getId } from "./misc.js"
 
+export interface Forum {
+	id: number
+	name: string
+	description: string
+}
+
 export namespace Forum {
+	/** This is a forum with subforums, but those subforums do NOT have subforums */
+	export interface WithSubforums extends Forum {
+		subforums: Forum[]
+	}
+
+	/** This is a forum with subforums, those subforums also have subforums, which in turn do not have subforums */
+	export interface WithSubforums2 extends Forum {
+		subforums: Forum.WithSubforums[]
+	}
+
 	/**
 	 * @obtainableFrom
 	 * {@link API.replyForumTopic} /
@@ -14,7 +30,7 @@ export namespace Forum {
 		deleted_at: Date | null
 		edited_at: Date | null
 		edited_by_id: number | null
-		forum_id: number
+		forum_id: Forum["id"]
 		id: number
 		topic_id: Topic["id"]
 		user_id: User["id"]
@@ -49,7 +65,7 @@ export namespace Forum {
 		created_at: Date
 		deleted_at: Date | null
 		first_post_id: Post["id"]
-		forum_id: number
+		forum_id: Forum["id"]
 		id: number
 		is_locked: boolean
 		last_post_id: Post["id"]
@@ -85,7 +101,25 @@ export namespace Forum {
 
 	export namespace Topic {
 		/**
-		 * Create a new ForumTopic in the forum of your choice!
+		 * Get multiple existing Forum.Topic, optionally in a specific Forum!
+		 * @param config Where you specify filters, sorting options, and the such
+		 * @returns An object with an array of relevant Forum.Topic, and a `cursor_string` to allow you to go further
+		 */
+		export async function getMultiple(this: API, config?: {
+			/** From which specific Forum to get the topcis from */
+			forum_id?: Forum["id"]
+			/** How many `topics` maximum, up to 50 */
+			limit?: number
+			/** "id_asc" to have the oldest post at the beginning of the `topics` array, "id_desc" to have the newest instead */
+			sort?: "id_asc" | "id_desc"
+			/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `topics` in this instance! */
+			cursor_string?: string
+		}): Promise<{topics: Forum.Topic[], cursor_string: string | null}> {
+			return await this.request("get", "forums/topics", {...config})
+		}
+
+		/**
+		 * Create a new Forum.Topic in the forum of your choice!
 		 * @scope {@link Scope"forum.write"}
 		 * @param forum_id The id of the forum you're creating your topic in
 		 * @param title The topic's title
@@ -94,7 +128,7 @@ export namespace Forum {
 		 * @returns An object with the topic you've made, and its first initial post (which uses your `text`)
 		 * @remarks Some users may not be allowed to do that, such as newly registered users, so this can 403 even with the right scopes
 		 */
-		export async function create(this: API, forum_id: number, title: string, text: string, poll?: {
+		export async function create(this: API, forum_id: Forum["id"], title: string, text: string, poll?: {
 			title: string
 			/** The things the users can vote for */
 			options: string[]
@@ -146,7 +180,30 @@ export namespace Forum {
 	}
 
 	/**
-	 * Get a forum topic, as well as its main post (content) and the posts that were sent in it!
+	 * Get a Forum with a specific id, as well as its Forum.Topics!
+	 * @param forum_id The id of the Forum you want to get
+	 * @returns An object with the Forum, its topics, and the topics pinned in it
+	 */
+	export async function getOne(this: API, forum_id: Forum["id"]): Promise<{
+		forum: Forum.WithSubforums2,
+		topics: Forum.Topic[],
+		pinned_topics: Forum.Topic[],
+	}> {
+		return await this.request("get", `forums/${forum_id}`)
+	}
+
+	/**
+	 * Get a list of all top-level Forums!
+	 * @returns All the top-level forums
+	 * @remarks The subforums of a forum are in the properties of their respective forum
+	 */
+	export async function getMultiple(this: API): Promise<Forum.WithSubforums2[]> {
+		const response = await this.request("get", "forums")
+		return response.forums // It's the only property
+	}
+
+	/**
+	 * Get a Forum.Topic, as well as its main post (content) and the posts that were sent in it!
 	 * @param topic An object with the id of the topic in question
 	 * @param config How many results maximum, how to sort them, etc...
 	 * @remarks The oldest post of a topic is the text of a topic
