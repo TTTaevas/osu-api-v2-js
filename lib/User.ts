@@ -216,6 +216,7 @@ export namespace User {
 		count_50: number
 		count_miss: number
 		global_rank: number | null
+		/** @deprecated Use `global_rank` instead | https://github.com/ppy/osu-web/pull/12003 */
 		global_rank_exp: number | null
 		grade_counts: {
 			a: number
@@ -236,7 +237,8 @@ export namespace User {
 		play_count: number
 		play_time: number | null
 		pp: number | null
-		pp_exp: number
+		/** @deprecated Use `pp` instead | https://github.com/ppy/osu-web/pull/12003 */
+		pp_exp: number | null
 		ranked_score: number
 		replays_watched_by_others: number
 		total_hits: number

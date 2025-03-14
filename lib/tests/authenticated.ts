@@ -48,7 +48,7 @@ const startRunningTests = async (id: number, secret: string, redirect_uri: strin
 	const scopes: Scope[] = ["public", "chat.read", "chat.write", "chat.write_manage", "forum.write", "friends.read", "identify"]
 	const url = generateAuthorizationURL(id, redirect_uri, scopes, server)
 	const code = await getCode(url, redirect_uri)
-	const api = await API.createAsync(id, secret, {code, redirect_uri}, { server, retry_on_timeout: true})
+	const api = await API.createAsync(id, secret, {code, redirect_uri}, {server, retry_on_timeout: true, verbose: "all"})
 	// api = api.withSettings({headers: {"x-api-version": getCurrentDateString()}})
 	await runTests(api, domains)
 }

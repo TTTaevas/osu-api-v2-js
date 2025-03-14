@@ -66,20 +66,20 @@ export const runTests = async (api: API, domains: Test[][]): Promise<void> => {
 	const errors: unknown[] = []
 
 	for (let i = 0; i < domains.length; i++) {
-		console.log(`\n---- ${i+1}/${domains.length} ----\n`)
+		console.log(`\n---- ${i+1}/${domains.length} ----`)
 		const tests = domains[i]
 
 		try {
 			for (let e = 0; e < tests.length; e++) {
 				const current_test = tests[e]
-				console.log(current_test.name)
+				console.log("\n" + current_test.name)
 				await current_test(api)
 			}
 		} catch(err) {
 			console.error(err)
 			errors.push(err)
 		}
-		console.log(`\n---- ${i+1}/${domains.length} ----\n`)
+		console.log(`\n---- ${i+1}/${domains.length} ----`)
 	}
 	await api.revokeToken()
 

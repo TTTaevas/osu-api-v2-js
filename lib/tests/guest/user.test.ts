@@ -45,11 +45,11 @@ const getUserScores: Test = async(api) => {
 	expect(validate(scores_first, "Score.WithUserBeatmapBeatmapset")).to.be.true
 
 	console.log("| recent")
-	const scores_recent = await api.getUserScores(4568537, "recent", undefined, {fails: false, lazer: true}, {limit: 2})
+	const scores_recent = await api.getUserScores(2400918, "recent", undefined, {fails: false, lazer: true}, {limit: 2})
 	expect(scores_recent).to.have.lengthOf(2)
 	expect(scores_recent.at(0)?.ended_at).to.be.greaterThanOrEqual(scores_recent.at(1)?.ended_at!)
-	scores_recent.forEach((score) => expect(score.user_id).to.equal(4568537))
-	scores_recent.forEach((score) => expect(score.user.id).to.equal(4568537))
+	scores_recent.forEach((score) => expect(score.user_id).to.equal(2400918))
+	scores_recent.forEach((score) => expect(score.user.id).to.equal(2400918))
 	expect(validate(scores_recent, "Score.WithUserBeatmapBeatmapset")).to.be.true
 
 	return true

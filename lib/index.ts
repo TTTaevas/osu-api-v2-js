@@ -677,8 +677,6 @@ export class API {
 
 	// FORUM STUFF
 
-
-
 	/** {@inheritDoc Forum.getOne} @group Forum Methods */
 	readonly getForum = Forum.getOne
 

@@ -1,6 +1,35 @@
 import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
+const getForum: Test = async(api) => {
+	const response = await api.getForum(18)
+	expect(response.forum.id).to.equal(18)
+	expect(response.forum.name).to.equal("Other Languages")
+	expect(response.pinned_topics).to.have.lengthOf(1)
+	expect(response.topics).to.have.length.greaterThanOrEqual(50)
+
+	expect(validate(response.forum, "Forum.WithSubforums2")).to.be.true
+	expect(validate(response.pinned_topics, "Forum.Topic")).to.be.true
+	expect(validate(response.topics, "Forum.Topic")).to.be.true
+	return true
+}
+
+const getForums: Test = async(api) => {
+	const forums = await api.getForums()
+	expect(forums).to.have.lengthOf(4)
+	expect(validate(forums, "Forum.WithSubforums2")).to.be.true
+	return true
+}
+
+const getForumTopics: Test = async(api) => {
+	const response = await api.getForumTopics({forum_id: 55})
+	expect(response.cursor_string).to.be.a("string")
+	expect(response.topics).to.have.lengthOf(50)
+	response.topics.forEach((topic) => expect(topic.forum_id).to.equal(55))
+	expect(validate(response.topics, "Forum.Topic")).to.be.true
+	return true
+}
+
 const getForumTopicAndPosts: Test = async(api) => {
 	const response = await api.getForumTopicAndPosts(1848236, {limit: 2})
 	expect(response.cursor_string).to.be.a("string")
@@ -11,5 +40,8 @@ const getForumTopicAndPosts: Test = async(api) => {
 }
 
 export const tests = [
+	getForum,
+	getForums,
+	getForumTopics,
 	getForumTopicAndPosts,
 ]
