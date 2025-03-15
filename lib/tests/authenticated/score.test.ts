@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import { Test } from "../exports.js"
 
+/** The awkward thing about this method is that it requires authentication AND that dev.ppy.sh stores no replays */
 const getReplay: Test = async(api) => {
 	if (api.server !== "https://osu.ppy.sh") {
 		console.log("| ⚠️ Skipping getReplay, unable to do this test on this server")

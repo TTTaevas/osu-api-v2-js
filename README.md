@@ -236,13 +236,13 @@ In the same order as on the API's official documentation:
 
 ### Forum
 - `POST /forums/topics/{topic}/reply` -> [replyForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#replyforumtopic)
-- `GET /forums/topics` -> [getForumTopics()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopics) **(v1.1.2 onwards)**
+- `GET /forums/topics` -> [getForumTopics()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopics)
 - `POST /forums/topics` -> [createForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#createforumtopic)
 - `GET /forums/topics/{topic}` -> [getForumTopicAndPosts()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopicandposts) (removing `search` for simplicity)
 - `PUT /forums/topics/{topic}` -> [editForumTopicTitle()](https://osu-v2.taevas.xyz/classes/API.html#editforumtopictitle)
 - `PUT /forums/posts/{post}` -> [editForumPost()](https://osu-v2.taevas.xyz/classes/API.html#editforumpost)
-- `GET /forums` -> [getForums()](https://osu-v2.taevas.xyz/classes/API.html#getforums) **(v1.1.2 onwards)**
-- `GET /forums/{forum}` -> [getForum()](https://osu-v2.taevas.xyz/classes/API.html#getforum) **(v1.1.2 onwards)**
+- `GET /forums` -> [getForums()](https://osu-v2.taevas.xyz/classes/API.html#getforums)
+- `GET /forums/{forum}` -> [getForum()](https://osu-v2.taevas.xyz/classes/API.html#getforum)
 
 ### Home
 - `GET /search` -> [searchUser()](https://osu-v2.taevas.xyz/classes/API.html#searchuser) and [searchWiki()](https://osu-v2.taevas.xyz/classes/API.html#searchwiki)
