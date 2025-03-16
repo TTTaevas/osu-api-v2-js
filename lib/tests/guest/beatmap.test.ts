@@ -29,28 +29,28 @@ const getBeatmaps: Test = async(api) => {
 const getBeatmapDifficultyAttributesOsu: Test = async(api) => {
 	const attributes = await api.getBeatmapDifficultyAttributesOsu(125660, ["DT"])
 	expect(attributes.max_combo).to.equal(1193)
-	expect(validate(attributes, "Beatmap.DifficultyAttributes.Osu"))
+	expect(validate(attributes, "Beatmap.DifficultyAttributes.Osu")).to.be.true
 	return true
 }
 
 const getBeatmapDifficultyAttributesTaiko: Test = async(api) => {
 	const attributes = await api.getBeatmapDifficultyAttributesTaiko(388463, ["DT"])
 	expect(attributes.max_combo).to.equal(876)
-	expect(validate(attributes, "Beatmap.DifficultyAttributes.Taiko"))
+	expect(validate(attributes, "Beatmap.DifficultyAttributes.Taiko")).to.be.true
 	return true
 }
 
 const getBeatmapDifficultyAttributesFruits: Test = async(api) => {
 	const attributes = await api.getBeatmapDifficultyAttributesFruits(705339, ["DT"])
 	expect(attributes.max_combo).to.equal(1029)
-	expect(validate(attributes, "Beatmap.DifficultyAttributes.Fruits"))
+	expect(validate(attributes, "Beatmap.DifficultyAttributes.Fruits")).to.be.true
 	return true
 }
 
 const getBeatmapDifficultyAttributesMania: Test = async(api) => {
 	const attributes = await api.getBeatmapDifficultyAttributesMania(473228, ["DT"])
 	expect(attributes.max_combo).to.equal(5614)
-	expect(validate(attributes, "Beatmap.DifficultyAttributes.Mania"))
+	expect(validate(attributes, "Beatmap.DifficultyAttributes.Mania")).to.be.true
 	return true
 }
 
@@ -58,7 +58,7 @@ const getBeatmapScores: Test = async(api) => {
 	const scores = await api.getBeatmapScores(129891, {legacy_only: true})
 	scores.forEach((score) => expect(score.beatmap_id).to.equal(129891))
 	expect(scores.at(0)?.legacy_total_score).to.equal(132408001)
-	expect(validate(scores, "Score.WithUser"))
+	expect(validate(scores, "Score.WithUser")).to.be.true
 	return true
 }
 
@@ -66,7 +66,7 @@ const getBeatmapSoloScores: Test = async(api) => {
 	const scores = await api.getBeatmapSoloScores(129891)
 	scores.forEach((score) => expect(score.beatmap_id).to.equal(129891))
 	expect(scores.at(0)?.total_score).to.be.greaterThanOrEqual(1073231)
-	expect(validate(scores, "Score.WithUser"))
+	expect(validate(scores, "Score.WithUser")).to.be.true
 	return true
 }
 
@@ -74,14 +74,14 @@ const getBeatmapUserScore: Test = async(api) => {
 	const score = await api.getBeatmapUserScore(176960, 7276846, {mods: ["NM"]})
 	expect(score.position).to.be.a("number")
 	expect(score.score.accuracy).to.be.lessThanOrEqual(0.99)
-	expect(validate(score.score, "Score.WithUserBeatmap"))
+	expect(validate(score.score, "Score.WithUserBeatmap")).to.be.true
 	return true
 }
 
 const getBeatmapUserScores: Test = async(api) => {
 	const scores = await api.getBeatmapUserScores(203993, 7276846, {ruleset: Ruleset.fruits})
 	expect(scores).to.have.lengthOf(1)
-	expect(validate(scores, "Score"))
+	expect(validate(scores, "Score")).to.be.true
 	return true
 }
 
