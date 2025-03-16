@@ -91,9 +91,9 @@ import * as http from "http"
 import { exec } from "child_process"
 
 // This should be from an application registered on https://osu.ppy.sh/home/account/edit#oauth
-const id = "<client_id>" // as a number
+const id = 0 // replace with your client id
 const secret = "<client_secret>"
-const redirect_uri = "<application_callback_url>" // assuming localhost with any port for convenience
+const redirect_uri = "<application_callback_url>" // assuming localhost with any port for convenience (like http://localhost:7272/)
 
 // Because we need to act as an authenticated user, we need to go through the authorization procedure
 // This function largely takes care of it by itself
@@ -130,21 +130,22 @@ async function readChat() {
 	const api = await osu.API.createAsync(id, secret, {code, redirect_uri}, {verbose: "errors"})
 
     // Get a WebSocket object to interact with and get messages from
-	const socket = api.generateWebSocket()
+	const socket = api.generateChatWebsocket()
 
     // Tell the server you want to know whenever there's are chat messages
-	socket.on("open", () => {
-		socket.send(osu.WebSocket.Command.chatStart) // osu.WebSocket.Command.chatStart is simply JSON.stringify({event: "chat.start"}) but easier to remember
-		api.keepChatAlive()
-		setInterval(() => api.keepChatAlive(), 30 * 1000) // Tell the server every 30 seconds that you're still listening to the incoming messages
+	socket.addEventListener("open", async () => {
+		socket.send(osu.Chat.Websocket.Command.chatStart) // osu.Chat.Websocket.Command.chatStart is simply JSON.stringify({event: "chat.start"}) but easier to remember
+		await api.keepChatAlive() // Initial ping
+		console.log("Did the initial ping!")
+		setInterval(() => {console.log("(server ping)"); api.keepChatAlive()}, 30 * 1000) // Tell the server every 30 seconds that you're still listening to the incoming messages
 	})
 
     // Listen for chat messages (and other stuff)
-	socket.on("message", (m) => { // Mind you, "message" doesn't mean "chat message" here, it's more like a raw event
-		const parsed: osu.WebSocket.Event.Any = JSON.parse(m.toString())
+	socket.addEventListener("message", (m) => { // Mind you, "message" doesn't mean "chat message" here, it's more like a raw event
+		const parsed: osu.Chat.Websocket.Event.Any = JSON.parse(m.data.toString())
 
 		if (!parsed.event) { // Should only mean we've gotten an error message
-			throw new Error((parsed as osu.WebSocket.Event.Error).error) // Assertion in case of false positive TS2339 error at build time
+			throw new Error((parsed as osu.Chat.Websocket.Event.Error).error) // Assertion in case of false positive TS2339 error at build time
 		} else if (parsed.event === "chat.message.new") { // Filter out things that aren't new chat messages and get type safety
 			const message = parsed.data.messages.map((message) => message.content).join(" | ")
 			const user = parsed.data.users.map((user) => user.username).join(" | ")

@@ -1,11 +1,11 @@
-import { API, User } from "./index.js";
+import { API, User as IUser } from "./index.js";
 import { getId } from "./misc.js";
 
 export namespace Chat {
 	/** @obtainableFrom {@link API.keepChatAlive} */
 	export interface UserSilence {
 		id: number
-		user_id: User["id"]
+		user_id: IUser["id"]
 	}
 
 	/**
@@ -37,6 +37,7 @@ export namespace Chat {
 		 */
 		export interface WithDetails extends Channel {
 			current_user_attributes: {
+				can_list_users: boolean
 				can_message: boolean
 				/**
 				 * The reason why messages can't be sent in this channel
@@ -51,7 +52,7 @@ export namespace Chat {
 			 * The ids of the users that are in the channel
 			 * @remarks Is empty for public channels
 			 */
-			users: User["id"][]
+			users: IUser["id"][]
 		}
 
 		/**
@@ -91,7 +92,7 @@ export namespace Chat {
 		 * @param user_target The other user able to read and send messages in this channel
 		 * @returns The newly created channel!
 		 */
-		export async function createPrivate(this: API, user_target: User["id"] | User): Promise<Channel.WithRecentmessages> {
+		export async function createPrivate(this: API, user_target: IUser["id"] | IUser): Promise<Channel.WithRecentmessages> {
 			return await this.request("post", "chat/channels", {type: "PM", target_id: getId(user_target)})
 		}
 
@@ -104,7 +105,7 @@ export namespace Chat {
 		 * @returns The newly created channel!
 		 * @remarks From my understanding, this WILL 403 unless the user is kinda special
 		 */
-		export async function createAnnouncement(this: API, channel: {name: string, description: string}, user_targets: Array<User["id"] | User>, message: string):
+		export async function createAnnouncement(this: API, channel: {name: string, description: string}, user_targets: Array<IUser["id"] | IUser>, message: string):
 		Promise<Channel> {
 			const target_ids = user_targets.map((u) => getId(u))
 			return await this.request("post", "chat/channels", {type: "ANNOUNCE", channel, target_ids, message})
@@ -116,7 +117,7 @@ export namespace Chat {
 		 * @param channel The channel you wanna join
 		 * @param user The user joining the channel (defaults to the **presumed authorized user** (api.user))
 		 */
-		export async function joinOne(this: API, channel: Channel["channel_id"] | Channel, user?: User["id"] | User): Promise<Channel.WithDetails> {
+		export async function joinOne(this: API, channel: Channel["channel_id"] | Channel, user?: IUser["id"] | IUser): Promise<Channel.WithDetails> {
 			const user_id = user ? getId(user) : this.user ? this.user : ""
 			return await this.request("put", `chat/channels/${getId(channel, "channel_id")}/users/${user_id}`)
 		}
@@ -127,32 +128,45 @@ export namespace Chat {
 		 * @param channel The channel you wanna leave/close
 		 * @param user The user leaving/closing the channel (defaults to the **presumed authorized user** (api.user))
 		 */
-		export async function leaveOne(this: API, channel: Channel["channel_id"] | Channel, user?: User["id"] | User): Promise<void> {
+		export async function leaveOne(this: API, channel: Channel["channel_id"] | Channel, user?: IUser["id"] | IUser): Promise<void> {
 			const user_id = user ? getId(user) : this.user ? this.user : ""
 			return await this.request("delete", `chat/channels/${getId(channel, "channel_id")}/users/${user_id}`)
 		}
 	}
 
-	/**
-	 * @obtainableFrom
-	 * {@link API.sendChatPrivateMessage} /
-	 * {@link API.sendChatMessage} /
-	 * {@link API.getChatMessages}
-	 */
+	/** A normal, basic user, but `last_visit` is a string when not null! */
+	export interface User extends Omit<IUser, "last_visit"> {
+		/** When not null, it looks like "2025-03-16T14:28:23+00:00" so just run `new Date()` with that */
+		last_visit: string | null
+	}
+
+	/** @obtainableFrom {@link Chat.Websocket.Event.ChatMessageNew} */
 	export interface Message {
 		channel_id: Channel["channel_id"]
 		content: string
 		is_action: boolean
 		message_id: number
-		sender_id: User["id"]
-		timestamp: Date
+		sender_id: IUser["id"]
+		/** It looks like "2025-03-16T14:28:23Z" so just run `new Date()` with that */
+		timestamp: string
 		/** Like "action", "markdown", "plain" */
 		type: string
-		sender: User
-		uuid?: string | null
 	}
 
 	export namespace Message {
+		/**
+		 * @obtainableFrom
+		 * {@link API.sendChatPrivateMessage} /
+		 * {@link API.sendChatMessage} /
+		 * {@link API.getChatMessages}
+		 */
+		export interface WithSender extends Omit<Message, "timestamp"> {
+			/** Unlike the `timestamp` of a default `Message`, it is a Date object! */
+			timestamp: Date
+			sender: IUser
+			uuid?: string | null
+		}
+
 		/**
 		 * Get the recent messages of a specific ChatChannel!
 		 * @scope {@link Scope"chat.read"}
@@ -162,7 +176,7 @@ export namespace Chat {
 		 * @param until Get the messages sent up to but not including this message
 		 */
 		export async function getMultiple(this: API, channel: Channel["channel_id"] | Channel, limit: number = 20,
-		since?: Message["message_id"] | Message, until?: Message["message_id"] | Message): Promise<Message[]> {
+		since?: Message["message_id"] | Message, until?: Message["message_id"] | Message): Promise<Message.WithSender[]> {
 			since = since ? getId(since, "message_id") : undefined
 			until = until ? getId(until, "message_id") : undefined
 			return await this.request("get", `chat/channels/${getId(channel, "channel_id")}/messages`, {limit, since, until})
@@ -176,7 +190,7 @@ export namespace Chat {
 		 * @param is_action Is it a command? Like `/me dances` (defaults to **false**)
 		 * @returns The newly sent ChatMessage!
 		 */
-		export async function send(this: API, channel: Channel["channel_id"] | Channel, message: string, is_action: boolean = false): Promise<Message> {
+		export async function send(this: API, channel: Channel["channel_id"] | Channel, message: string, is_action: boolean = false): Promise<Message.WithSender> {
 			return await this.request("post", `chat/channels/${getId(channel, "channel_id")}/messages`, {message, is_action})
 		}
 
@@ -190,9 +204,66 @@ export namespace Chat {
 		 * @returns The message you sent
 		 * @remarks You don't need to use `createChatPrivateChannel` before sending a message
 		 */
-		export async function sendPrivate(this: API, user_target: User["id"] | User, message: string, is_action: boolean = false, uuid?: string):
-		Promise<{channel: Channel, message: Message}> {
+		export async function sendPrivate(this: API, user_target: IUser["id"] | IUser, message: string, is_action: boolean = false, uuid?: string):
+		Promise<{channel: Channel, message: Message.WithSender}> {
 			return await this.request("post", "chat/new", {target_id: getId(user_target), message, is_action, uuid})
+		}
+	}
+
+	/** Everything here is great to use with the WebSocket you can get with {@link API.generateChatWebsocket}! */
+	export namespace Websocket {
+		/**
+		* Use any of those with `socket.send()` to send a command to the WebSocket!
+		* @example `socket.send(osu.Chat.Websocket.Command.chatStart)`
+		*/
+		export namespace Command {
+			export const chatStart = JSON.stringify({event: "chat.start"})
+			export const chatEnd = JSON.stringify({event: "chat.end"})
+		}
+
+		/** Those are what you'll get from WebSocket's `MessageEvent`s! */
+		export namespace Event {
+			export interface Error {
+				error: string
+				event: undefined
+				data: undefined
+			}
+
+			export interface ChatChannelJoin {
+				event: "chat.channel.join"
+				data: Chat.Channel.WithDetails
+			}
+
+			export interface ChatChannelLeave {
+				event: "chat.channel.part"
+				data: Chat.Channel.WithDetails
+			}
+
+			export interface ChatMessageNew {
+				event: "chat.message.new"
+				data: {
+					messages: Chat.Message[]
+					users: Chat.User[]
+				}
+			}
+
+			/** That's the type of `JSON.parse(m.toString())` where `m` is a WebSocket's `MessageEvent`! */
+			export type Any = Error | ChatChannelJoin | ChatChannelLeave | ChatMessageNew
+		}
+
+		// return new WebSocket(server, {
+		// 		headers: {
+		// 			"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
+		// 			Authorization: `${this.token_type} ${this.access_token}`
+		// 		}
+		// 	})
+
+		/**
+		* Get a websocket to get WebSocket events from!
+		* @param server The "notification websocket/server" URL (defaults to **wss://notify.ppy.sh**)
+		*/
+		export function generate(this: API, server = "wss://notify.ppy.sh"): WebSocket {
+			return new WebSocket(server, {headers: {Authorization: `${this.token_type} ${this.access_token}`}})
 		}
 	}
 

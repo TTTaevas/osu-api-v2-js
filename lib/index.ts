@@ -1,43 +1,22 @@
-import { User } from "./User.js"
+import { adaptParametersForGETRequests, anySignal, correctType } from "./misc.js"
 import { Beatmap } from "./Beatmap.js"
 import { Beatmapset } from "./Beatmapset.js"
-
-import { Multiplayer } from "./Multiplayer.js"
-import { Spotlight } from "./Spotlight.js"
-import { Score } from "./Score.js"
-import { Ranking } from "./Ranking.js"
-import { Event } from "./Event.js"
-
 import { Changelog } from "./Changelog.js"
-import { Forum } from "./Forum.js"
-import { WikiPage } from "./WikiPage.js"
-import { NewsPost } from "./NewsPost.js"
-import { Home } from "./Home.js"
-import { adaptParametersForGETRequests, anySignal, correctType } from "./misc.js"
 import { Chat } from "./Chat.js"
 import { Comment } from "./Comment.js"
-import { WebSocket } from "./WebSocket.js"
+import { Event } from "./Event.js"
+import { Forum } from "./Forum.js"
+import { Home } from "./Home.js"
+import { Multiplayer } from "./Multiplayer.js"
+import { NewsPost } from "./NewsPost.js"
+import { Ranking } from "./Ranking.js"
+import { Score } from "./Score.js"
+import { Spotlight } from "./Spotlight.js"
+import { User } from "./User.js"
+import { WikiPage } from "./WikiPage.js"
 
-
-export { User } from "./User.js"
-export { Beatmap } from "./Beatmap.js"
-export { Beatmapset } from "./Beatmapset.js"
-
-export { Multiplayer } from "./Multiplayer.js"
-export { Spotlight } from "./Spotlight.js"
-export { Score } from "./Score.js"
-export { Ranking } from "./Ranking.js"
-export { Event } from "./Event.js"
-
-export { Changelog } from "./Changelog.js"
-export { Forum } from "./Forum.js"
-export { WikiPage } from "./WikiPage.js"
-export { NewsPost } from "./NewsPost.js"
-export { Home } from "./Home.js"
-export { Chat } from "./Chat.js"
-export { Comment } from "./Comment.js"
-export { WebSocket } from "./WebSocket.js"
-
+export { Beatmap, Beatmapset, Changelog, Chat, Comment, Event, Forum, Home,
+	Multiplayer, NewsPost, Ranking, Score, Spotlight, User, WikiPage }
 
 export enum Ruleset {
 	osu 	= 0,
@@ -659,6 +638,9 @@ export class API {
 	/** {@inheritDoc Chat.Channel.leaveOne} @group Chat Methods */
 	readonly leaveChatChannel = Chat.Channel.leaveOne
 
+	/** {@inheritDoc Chat.Websocket.generate} @group Chat Methods */
+	readonly generateChatWebsocket = Chat.Websocket.generate
+
 
 	// COMMENT STUFF
 
@@ -799,12 +781,6 @@ export class API {
 
 	/** {@inheritDoc User.getFriends} @group User Methods */
 	readonly getFriends = User.getFriends
-
-
-	// WEBSOCKET STUFF
-
-	/** {@inheritDoc WebSocket.generate} @group WebSocket Methods */
-	readonly generateWebSocket = WebSocket.generate
 
 
 	// WIKI STUFF
