@@ -1,4 +1,4 @@
-import { adaptParametersForGETRequests, anySignal, correctType } from "./misc.js"
+import { adaptParametersForGETRequests, correctType } from "./misc.js"
 import { Beatmap } from "./Beatmap.js"
 import { Beatmapset } from "./Beatmapset.js"
 import { Changelog } from "./Changelog.js"
@@ -22,7 +22,7 @@ export enum Ruleset {
 	osu 	= 0,
 	taiko 	= 1,
 	fruits	= 2,
-	mania 	= 3
+	mania 	= 3,
 }
 
 export type Mod = {
@@ -153,15 +153,25 @@ export class API {
 	get route_token() {return this._route_token}
 	set route_token(route_token) {this._route_token = route_token}
 
+	private _scopes: Scope[] = []
+	/** The {@link Scope}s your application has, assuming it acts as a user */
+	get scopes() {return this._scopes}
+	set scopes(scopes) {this._scopes = scopes}
+
+	private _headers: {[key: string]: any} = {
+		"Accept": "application/json",
+		"Accept-Encoding": "gzip",
+		"Content-Type": "application/json",
+		"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
+		"x-api-version": "20250316",
+	}
+	get headers() {return this._headers}
+	set headers(headers) {this._headers = headers}
+
 	private _user?: User["id"]
 	/** The osu! user id of the user who went through the Authorization Code Grant */
 	get user() {return this._user}
 	set user(user) {this._user = user}
-
-	private _scopes?: Scope[]
-	/** The {@link Scope}s your application has, assuming it acts as a user */
-	get scopes() {return this._scopes}
-	set scopes(scopes) {this._scopes = scopes}
 
 
 	// CLIENT CONFIGURATION
@@ -180,7 +190,7 @@ export class API {
 	set timeout(timeout) {this._timeout = timeout}
 
 	private _retry_delay: number = 2
-	/** In seconds, how long should it wait until retrying? (defaults to **2**) */
+	/** In seconds, how long should it wait after a request failed before retrying? (defaults to **2**) */
 	get retry_delay() {return this._retry_delay}
 	set retry_delay(retry_delay) {this._retry_delay = retry_delay}
 
@@ -248,11 +258,7 @@ export class API {
 	}, api: API): Promise<API> {
 		const response = await fetch(`${this.server}/${this.route_token}`, {
 			method: "post",
-			headers: {
-				"Accept": "application/json",
-				"Content-Type": "application/json",
-				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)"
-			},
+			headers: this.headers,
 			body: JSON.stringify(body),
 			signal: this.timeout > 0 ? AbortSignal.timeout(this.timeout * 1000) : undefined
 		})
@@ -366,8 +372,9 @@ export class API {
 
 		const old_token = this.access_token
 		try {
-			await this.getAndSetToken(
-			{client_id: this.client_id, client_secret: this.client_secret, grant_type: "refresh_token", refresh_token: this.refresh_token}, this)
+			await this.getAndSetToken({
+				client_id: this.client_id, client_secret: this.client_secret, grant_type: "refresh_token", refresh_token: this.refresh_token
+			}, this)
 			if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
 		} catch(e) {
 			this.log(true, "Failed to refresh the token :(", e)
@@ -444,16 +451,12 @@ export class API {
 			method,
 			...settings, // has priority over what's above, but not over what's lower
 			headers: {
-				"Accept": "application/json",
-				"Accept-Encoding": "gzip",
-				"Content-Type": "application/json",
-				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`,
-				"x-api-version": "20241028",
+				...this.headers,
 				...settings?.headers // written that way, custom headers with (for example) only a user-agent would only overwrite the default user-agent
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
-			signal: anySignal(signals) // node20, in May2025: AbortSignal.any(signals)
+			signal: AbortSignal.any(signals)
 		})
 		.catch((error) => {
 			if (error.name === "TimeoutError" && this.retry_on_timeout) to_retry = true

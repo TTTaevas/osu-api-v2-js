@@ -86,36 +86,7 @@ export function correctType(x: any, force_string?: boolean): any {
 }
 
 /**
- * This is an alternative to `AbortSignal.any` that is friendly to older versions of Node.js, it was provided by the kind https://github.com/baileyherbert
- * https://github.com/TTTaevas/osu-api-v2-js/issues/33#issuecomment-2062026279
- * @param signals The multiple signals you'd want `fetch()` to take
- * @returns A signal that's aborted when any of the `signals` is aborted
- * @remarks Will be safe to remove with Node 20
- */
-export function anySignal(signals: AbortSignal[]) {
-	const controller = new AbortController()
-	const unsubscribe: (() => void)[] = []
-
-	function onAbort(signal: AbortSignal) {
-		controller.abort(signal.reason)
-		unsubscribe.forEach((f) => f())
-	}
-
-	for (const signal of signals) {
-		if (signal.aborted) {
-			onAbort(signal)
-			break
-		}
-
-		const handler = onAbort.bind(undefined, signal)
-		signal.addEventListener("abort", handler)
-		unsubscribe.push(() => signal.removeEventListener("abort", handler))
-	}
-
-	return controller.signal
-}
-
-/**
+ * @deprecated This has the potential to **not** return a number if the wrong property is accidentally given, it is better to not use it
  * A function that makes it easy to get the id from the argument of a function
  * @param arg The id or the object with the id
  * @returns The id
