@@ -118,6 +118,6 @@ export namespace Score {
 	 * @returns The correctly encoded content of what would be a replay file (you can just fs.writeFileSync with it!)
 	 */
 	export async function getReplay(this: API, score: Score["id"] | Score): Promise<string> {
-		return await this.request("get", `scores/${getId(score)}/download`)
+		return await this.request("get", ["scores", getId(score), "download"])
 	}
 }

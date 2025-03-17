@@ -22,7 +22,7 @@ export namespace Spotlight {
 	 * but you can't really get the id of those newer spotlights without going through the website's URLs (https://osu.ppy.sh/seasons/latest) as far as I know :(
 	 */
 	export async function getAll(this: API): Promise<Spotlight[]> {
-		const response = await this.request("get", "spotlights")
+		const response = await this.request("get", ["spotlights"])
 		return response.spotlights // It's the only property
 	}
 }

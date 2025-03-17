@@ -51,7 +51,7 @@ export namespace Forum {
 		 * @returns The edited ForumPost
 		 */
 		export async function edit(this: API, post: Post["id"] | Post, new_text: string): Promise<Post> {
-			return await this.request("put", `forums/posts/${getId(post)}`, {body: new_text})
+			return await this.request("put", ["forums", "posts", getId(post)], {body: new_text})
 		}
 	}
 
@@ -115,7 +115,7 @@ export namespace Forum {
 			/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `topics` in this instance! */
 			cursor_string?: string
 		}): Promise<{topics: Forum.Topic[], cursor_string: string | null}> {
-			return await this.request("get", "forums/topics", {...config})
+			return await this.request("get", ["forums", "topics"], {...config})
 		}
 
 		/**
@@ -144,7 +144,7 @@ export namespace Forum {
 			const with_poll = poll !== undefined
 			const options = poll?.options !== undefined ? poll.options.toString().replace(/,/g, "\n") : undefined
 
-			return await this.request("post", "forums/topics", {forum_id, title, body: text, with_poll, forum_topic_poll: poll ? {
+			return await this.request("post", ["forums", "topics"], {forum_id, title, body: text, with_poll, forum_topic_poll: poll ? {
 				title: poll.title,
 				options: options,
 				length_days: poll.length_days,
@@ -163,7 +163,7 @@ export namespace Forum {
 		 * @remarks Replying when the last post was made by the authorized user will likely cause the server to return a 403
 		 */
 		export async function reply(this: API, topic: Topic["id"] | Topic, text: string): Promise<Post> {
-			return await this.request("post", `forums/topics/${getId(topic)}/reply`, {body: text})
+			return await this.request("post", ["forums", "topics", getId(topic), "reply"], {body: text})
 		}
 
 		/**
@@ -175,7 +175,7 @@ export namespace Forum {
 		 * @remarks Use `editForumPost` if you wanna edit the post at the top of the topic
 		 */
 		export async function editTitle(this: API, topic: Topic["id"] | Topic, new_title: string): Promise<Topic> {
-			return await this.request("put", `forums/topics/${getId(topic)}`, {forum_topic: {topic_title:  new_title}})
+			return await this.request("put", ["forums", "topics", getId(topic)], {forum_topic: {topic_title:  new_title}})
 		}
 	}
 
@@ -189,7 +189,7 @@ export namespace Forum {
 		topics: Forum.Topic[],
 		pinned_topics: Forum.Topic[],
 	}> {
-		return await this.request("get", `forums/${forum_id}`)
+		return await this.request("get", ["forums", forum_id])
 	}
 
 	/**
@@ -198,7 +198,7 @@ export namespace Forum {
 	 * @remarks The subforums of a forum are in the properties of their respective forum
 	 */
 	export async function getMultiple(this: API): Promise<Forum.WithSubforums2[]> {
-		const response = await this.request("get", "forums")
+		const response = await this.request("get", ["forums"])
 		return response.forums // It's the only property
 	}
 
@@ -220,7 +220,7 @@ export namespace Forum {
 	}): Promise<{topic: Topic, posts: Post[], cursor_string: string | null}> {
 		const start = config?.sort === "id_asc" && config?.first_post ? getId(config.first_post) : undefined
 		const end = config?.sort === "id_desc" && config?.first_post ? getId(config.first_post) : undefined
-		return await this.request("get", `forums/topics/${getId(topic)}`,
+		return await this.request("get", ["forums", "topics", getId(topic)],
 		{start, end, sort: config?.sort, limit: config?.limit, cursor_string: config?.cursor_string})
 	}
 }

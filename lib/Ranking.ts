@@ -56,7 +56,7 @@ export namespace Ranking {
 		/** If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k! */
 		variant?: "4k" | "7k"
 	}): Promise<Ranking.User> {
-		return await this.request("get", `rankings/${Ruleset[ruleset]}/${type}`,
+		return await this.request("get", ["rankings", Ruleset[ruleset], type],
 		{page: config?.page, filter: config?.filter, country: config?.country, variant: config?.variant})
 	}
 
@@ -66,12 +66,12 @@ export namespace Ranking {
 	 * @param page Imagine the array you get as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one (defaults to **1**)
 	 */
 	export async function getCountry(this: API, ruleset: Ruleset, page: number = 1): Promise<Ranking.Country> {
-		return await this.request("get", `rankings/${Ruleset[ruleset]}/country`, {page})
+		return await this.request("get", ["rankings", Ruleset[ruleset], "country"], {page})
 	}
 
 	/** Get the top 50 players who have the most total kudosu! */
 	export async function getKudosu(this: API): Promise<User.WithKudosu[]> {
-		const response = await this.request("get", "rankings/kudosu")
+		const response = await this.request("get", ["rankings", "kudosu"])
 		return response.ranking // It's the only property
 	}
 
@@ -83,6 +83,6 @@ export namespace Ranking {
 	 */
 	export async function getSpotlight(this: API, ruleset: Ruleset, spotlight: SpotlightImport["id"] | SpotlightImport, filter: "all" | "friends" = "all"):
 	Promise<Ranking.Spotlight> {
-		return await this.request("get", `rankings/${Ruleset[ruleset]}/charts`, {spotlight: getId(spotlight), filter})
+		return await this.request("get", ["rankings", Ruleset[ruleset], "charts"], {spotlight: getId(spotlight), filter})
 	}
 }

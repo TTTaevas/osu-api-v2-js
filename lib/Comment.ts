@@ -94,7 +94,7 @@ export namespace Comment {
 	 * @param comment The comment in question
 	 */
 	export async function getOne(this: API, comment: Comment["id"] | Comment): Promise<Bundle> {
-		return removeDeletedItems(await this.request("get", `comments/${getId(comment)}`))
+		return removeDeletedItems(await this.request("get", ["comments", getId(comment)]))
 	}
 
 	/**
@@ -108,7 +108,7 @@ export namespace Comment {
 		const after = sort?.after ? String(getId(sort.after)) : undefined
 		const parent_id = parent ? String(getId(parent)) : undefined
 
-		return removeDeletedItems(await this.request("get", "comments", {
+		return removeDeletedItems(await this.request("get", ["comments"], {
 			after, commentable_type: from?.type, commentable_id: from?.id,
 			cursor: sort?.cursor, parent_id, sort: sort?.type
 		}))

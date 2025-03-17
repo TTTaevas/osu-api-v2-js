@@ -143,6 +143,6 @@ export namespace Event {
 	 */
 	export async function getMultiple(this: API, sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string):
 	Promise<{events: Event.Any[], cursor_string: string | null}> {
-		return await this.request("get", "events", {sort, cursor_string})
+		return await this.request("get", ["events"], {sort, cursor_string})
 	}
 }

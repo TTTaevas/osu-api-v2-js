@@ -26,6 +26,6 @@ export namespace WikiPage {
 	 * @param locale Lowercase language tag ("fr" for french, "pt-br" for brazilian portuguese) (defaults to **en**) 
 	 */
 	export async function getOne(this: API, path: string, locale: WikiPage["locale"] = "en"): Promise<WikiPage> {
-		return await this.request("get", `wiki/${locale}/${path}`)
+		return await this.request("get", ["wiki", locale, path])
 	}
 }

@@ -432,7 +432,7 @@ export namespace Beatmapset {
 		Promise<{events: Event.Any[], users: User.WithGroups[]}> {
 			const beatmapset = from?.beatmapset ? getId(from.beatmapset) : undefined
 			const user = from?.user ? getId(from.user) : undefined
-			return await this.request("get", "beatmapsets/events", {beatmapset_id: beatmapset, user, min_date: from?.min_date?.toISOString(),
+			return await this.request("get", ["beatmapsets", "events"], {beatmapset_id: beatmapset, user, min_date: from?.min_date?.toISOString(),
 			max_date: from?.max_date?.toISOString(), types, sort: config?.sort, page: config?.page, limit: config?.limit, cursor_string: config?.cursor_string})
 		}
 	}
@@ -580,7 +580,7 @@ export namespace Beatmapset {
 			Promise<{beatmapsets: Beatmapset.WithHype[], posts: Post[], users: User[], cursor_string: string | null}> {
 				const discussion = from?.discussion ? getId(from.discussion) : undefined
 				const user = from?.user ? getId(from.user) : undefined
-				return await this.request("get", "beatmapsets/discussions/posts", {beatmapset_discussion_id: discussion, limit: config?.limit,
+				return await this.request("get", ["beatmapsets", "discussions", "posts"], {beatmapset_discussion_id: discussion, limit: config?.limit,
 				page: config?.page, sort: config?.sort, types, user, cursor_string: config?.cursor_string})
 			}
 		}
@@ -611,7 +611,7 @@ export namespace Beatmapset {
 				const user = from?.vote_giver ? getId(from.vote_giver) : undefined
 				const receiver = from?.vote_receiver ? getId(from.vote_receiver) : undefined
 
-				return await this.request("get", "beatmapsets/discussions/votes", {beatmapset_discussion_id: discussion, limit: config?.limit,
+				return await this.request("get", ["beatmapsets", "discussions", "votes"], {beatmapset_discussion_id: discussion, limit: config?.limit,
 				page: config?.page, receiver, score, sort: config?.sort, user, cursor_string: config?.cursor_string})
 			}
 		}
@@ -634,7 +634,7 @@ export namespace Beatmapset {
 			const beatmapset = from?.beatmapset ? getId(from.beatmapset) : undefined
 			const user = from?.user ? getId(from.user) : undefined
 
-			return await this.request("get", "beatmapsets/discussions", {beatmapset_id: beatmapset, beatmapset_status: from?.status,
+			return await this.request("get", ["beatmapsets", "discussions"], {beatmapset_id: beatmapset, beatmapset_status: from?.status,
 			limit: config?.limit, message_types: filter?.types, only_unresolved: filter?.only_unresolved, page: config?.page, sort: config?.sort,
 			user, cursor_string: config?.cursor_string})
 		}
@@ -704,7 +704,7 @@ export namespace Beatmapset {
 		}).join("x") : undefined
 		const played = query?.played ? query.played.toLowerCase() : undefined
 	
-		return await this.request("get", `beatmapsets/search`,
+		return await this.request("get", ["beatmapsets", "search"],
 		{q: query?.keywords, sort, c, m: query?.mode, s, nsfw, g: query?.genre, l: query?.language, e, r, played, cursor_string: query?.cursor_string})
 	}
 
@@ -713,7 +713,7 @@ export namespace Beatmapset {
 	 * @param beatmap A beatmap from the beatmapset you're looking for
 	 */
 	export async function lookup(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Beatmapset.Extended.Plus> {
-		return await this.request("get", `beatmapsets/lookup`, {beatmap_id: getId(beatmap)})
+		return await this.request("get", ["beatmapsets", "lookup"], {beatmap_id: getId(beatmap)})
 	}
 
 	/**
@@ -721,6 +721,6 @@ export namespace Beatmapset {
 	 * @param beatmapset The beatmapset or the id of the beatmapset you're trying to get
 	 */
 	export async function getOne(this: API, beatmapset: Beatmapset["id"] | Beatmapset): Promise<Beatmapset.Extended.Plus> {
-		return await this.request("get", `beatmapsets/${getId(beatmapset)}`)
+		return await this.request("get", ["beatmapsets", getId(beatmapset)])
 	}
 }

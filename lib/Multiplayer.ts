@@ -100,7 +100,7 @@ export namespace Multiplayer {
 				/** @remarks Will be null if there is no next page */
 				cursor_string: string | null
 			}> {
-				return await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
+				return await this.request("get", ["rooms", item.room_id, "playlist", item.id, "scores"], {limit, sort, cursor_string})
 			}
 		}
 	
@@ -129,7 +129,7 @@ export namespace Multiplayer {
 			 * @returns An object with the leaderboard, and the score and position of the authorized user under `user_score`
 			 */
 			export async function getMultiple(this: API, room: number | Room): Promise<{leaderboard: Leader[], user_score: Leader.WithPosition | null}> {
-				return await this.request("get", `rooms/${getId(room)}/leaderboard`)
+				return await this.request("get", ["rooms", getId(room), "leaderboard"])
 			}
 		}
 
@@ -138,7 +138,7 @@ export namespace Multiplayer {
 		 * @param room The room or the id of the room, can be found at the end of its URL (after `/multiplayer/rooms/`)
 		 */
 		export async function getOne(this: API, room: number | Room): Promise<Room> {
-			return await this.request("get", `rooms/${getId(room)}`)
+			return await this.request("get", ["rooms", getId(room)])
 		}
 
 		/**
@@ -153,7 +153,7 @@ export namespace Multiplayer {
 		 */
 		export async function getMultiple(this: API, type: "playlists" | "realtime", mode: "active" | "all" | "ended" | "participated" | "owned",
 		limit: number = 10, sort: "ended" | "created" = "created", season_id?: number): Promise<Room[]> {
-			return await this.request("get", "rooms", {type_group: type, mode, limit, sort, season_id})
+			return await this.request("get", ["rooms"], {type_group: type, mode, limit, sort, season_id})
 		}
 	}
 
@@ -226,7 +226,7 @@ export namespace Multiplayer {
 			 */
 			limit?: number
 		}): Promise<Match> {
-			const response = await this.request("get", `matches/${getId(match)}`, {
+			const response = await this.request("get", ["matches", getId(match)], {
 				before: query?.before ? getId(query.before) : undefined,
 				after: query?.after ? getId(query.after) : undefined,
 				limit: query?.limit
@@ -260,7 +260,7 @@ export namespace Multiplayer {
 		}): Promise<Info[]> {
 			// `first_match_in_array` is a cool way to use the endpoint's cursor
 			const cursor = query?.first_match_in_array ? {match_id: getId(query.first_match_in_array) + (query?.sort === "id_asc" ? -1 : 1)} : undefined
-			const response = await this.request("get", "matches", {cursor, limit: query?.limit, sort: query?.sort})
+			const response = await this.request("get", ["matches"], {cursor, limit: query?.limit, sort: query?.sort})
 			return response.matches // NOT the only property; `params` is useless while `cursor` and `cursor_string` are superseded by `first_match_in_array`
 		}	
 	}

@@ -62,7 +62,7 @@ export namespace Chat {
 		 * @remarks Will 404 if the user has not joined the channel (use `joinChatChannel` for that)
 		 */
 		export async function getOne(this: API, channel: Channel["channel_id"] | Channel): Promise<Channel.WithDetails> {
-			const response = await this.request("get", `chat/channels/${getId(channel, "channel_id")}`)
+			const response = await this.request("get", ["chat", "channels", getId(channel, "channel_id")])
 			return response.channel // NOT the only property; `users` is already provided within `channel` so it is useless
 		}
 
@@ -71,7 +71,7 @@ export namespace Chat {
 		 * @scope {@link Scope"chat.read"}
 		 */
 		export async function getAll(this: API): Promise<Channel[]> {
-			return await this.request("get", "chat/channels")
+			return await this.request("get", ["chat", "channels"])
 		}
 
 		/**
@@ -83,7 +83,7 @@ export namespace Chat {
 		export async function markAsRead(this: API, channel: Channel["channel_id"] | Channel, message: Message["message_id"] | Message): Promise<void> {
 			const channel_id = getId(channel, "channel_id")
 			const message_id = getId(message, "message_id")
-			return await this.request("put", `chat/channels/${channel_id}/mark-as-read/${message_id}`, {channel_id, message_id})
+			return await this.request("put", ["chat", "channels", channel_id, "mark-as-read", message_id], {channel_id, message_id})
 		}
 
 		/**
@@ -93,7 +93,7 @@ export namespace Chat {
 		 * @returns The newly created channel!
 		 */
 		export async function createPrivate(this: API, user_target: IUser["id"] | IUser): Promise<Channel.WithRecentmessages> {
-			return await this.request("post", "chat/channels", {type: "PM", target_id: getId(user_target)})
+			return await this.request("post", ["chat", "channels"], {type: "PM", target_id: getId(user_target)})
 		}
 
 		/**
@@ -108,7 +108,7 @@ export namespace Chat {
 		export async function createAnnouncement(this: API, channel: {name: string, description: string}, user_targets: Array<IUser["id"] | IUser>, message: string):
 		Promise<Channel> {
 			const target_ids = user_targets.map((u) => getId(u))
-			return await this.request("post", "chat/channels", {type: "ANNOUNCE", channel, target_ids, message})
+			return await this.request("post", ["chat", "channels"], {type: "ANNOUNCE", channel, target_ids, message})
 		}
 
 		/**
@@ -119,7 +119,7 @@ export namespace Chat {
 		 */
 		export async function joinOne(this: API, channel: Channel["channel_id"] | Channel, user?: IUser["id"] | IUser): Promise<Channel.WithDetails> {
 			const user_id = user ? getId(user) : this.user ? this.user : ""
-			return await this.request("put", `chat/channels/${getId(channel, "channel_id")}/users/${user_id}`)
+			return await this.request("put", ["chat", "channels", getId(channel, "channel_id"), "users", user_id])
 		}
 
 		/**
@@ -130,7 +130,7 @@ export namespace Chat {
 		 */
 		export async function leaveOne(this: API, channel: Channel["channel_id"] | Channel, user?: IUser["id"] | IUser): Promise<void> {
 			const user_id = user ? getId(user) : this.user ? this.user : ""
-			return await this.request("delete", `chat/channels/${getId(channel, "channel_id")}/users/${user_id}`)
+			return await this.request("delete", ["chat", "channels", getId(channel, "channel_id"), "users", user_id])
 		}
 	}
 
@@ -179,7 +179,7 @@ export namespace Chat {
 		since?: Message["message_id"] | Message, until?: Message["message_id"] | Message): Promise<Message.WithSender[]> {
 			since = since ? getId(since, "message_id") : undefined
 			until = until ? getId(until, "message_id") : undefined
-			return await this.request("get", `chat/channels/${getId(channel, "channel_id")}/messages`, {limit, since, until})
+			return await this.request("get", ["chat", "channels", getId(channel, "channel_id"), "messages"], {limit, since, until})
 		}
 
 		/**
@@ -191,7 +191,7 @@ export namespace Chat {
 		 * @returns The newly sent ChatMessage!
 		 */
 		export async function send(this: API, channel: Channel["channel_id"] | Channel, message: string, is_action: boolean = false): Promise<Message.WithSender> {
-			return await this.request("post", `chat/channels/${getId(channel, "channel_id")}/messages`, {message, is_action})
+			return await this.request("post", ["chat", "channels", getId(channel, "channel_id"), "messages"], {message, is_action})
 		}
 
 		/**
@@ -206,7 +206,7 @@ export namespace Chat {
 		 */
 		export async function sendPrivate(this: API, user_target: IUser["id"] | IUser, message: string, is_action: boolean = false, uuid?: string):
 		Promise<{channel: Channel, message: Message.WithSender}> {
-			return await this.request("post", "chat/new", {target_id: getId(user_target), message, is_action, uuid})
+			return await this.request("post", ["chat", "new"], {target_id: getId(user_target), message, is_action, uuid})
 		}
 	}
 
@@ -278,7 +278,7 @@ export namespace Chat {
 	Promise<UserSilence[]> {
 		const history_since = since?.user_silence ? getId(since.user_silence) : undefined
 		const message_since = since?.message ? getId(since.message, "message_id") : undefined
-		const response = await this.request("post", "chat/ack", {history_since, since: message_since})
+		const response = await this.request("post", ["chat", "ack"], {history_since, since: message_since})
 		return response.silences // It's the only property
 	}
 }

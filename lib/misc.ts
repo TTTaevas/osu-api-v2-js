@@ -86,7 +86,7 @@ export function correctType(x: any, force_string?: boolean): any {
 }
 
 /**
- * @deprecated This has the potential to **not** return a number if the wrong property is accidentally given, it is better to not use it
+ * @deprecated This has the potential to **not** return a number if a property is bad or forgotten, it is better to not use it
  * A function that makes it easy to get the id from the argument of a function
  * @param arg The id or the object with the id
  * @returns The id

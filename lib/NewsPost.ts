@@ -33,7 +33,7 @@ export namespace NewsPost {
 	export async function getOne(this: API, post: NewsPost["id"] | NewsPost["slug"] | NewsPost): Promise<NewsPost.WithContentNavigation> {
 		const lookup = typeof post === "object" ? post.id : post
 		const key = typeof post === "string" ? undefined : "id"
-		return await this.request("get", `news/${lookup}`, {key})
+		return await this.request("get", ["news", lookup], {key})
 	}
 
 	/**
@@ -44,7 +44,7 @@ export namespace NewsPost {
 	 * @remarks If the specified year is invalid/has no news, it fallbacks to the default year
 	 */
 	export async function getMultiple(this: API, year?: number): Promise<NewsPost[]> {
-		const response = await this.request("get", "news", {year, limit: 0}) // Put the limit at minimum because it's about stuff we're filtering out anyway
+		const response = await this.request("get", ["news"], {year, limit: 0}) // Put the limit at minimum because it's about stuff we're filtering out anyway
 		return response.news_sidebar.news_posts // NOT the only property as explained by the private remarks; it's believed to be the only USEFUL property
 	}
 }

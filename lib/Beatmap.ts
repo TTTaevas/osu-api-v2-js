@@ -139,7 +139,7 @@ export namespace Beatmap {
 		 */
 		export async function getOne(this: API, pack: Pack["tag"] | Pack, legacy_only: boolean = false): Promise<Pack.WithBeatmapset> {
 			const tag = typeof pack === "string" ? pack : pack.tag
-			return await this.request("get", `beatmaps/packs/${tag}`, {legacy_only})
+			return await this.request("get", ["beatmaps", "packs", tag], {legacy_only})
 		}
 
 		/**
@@ -149,7 +149,7 @@ export namespace Beatmap {
 		 */
 		export async function getMultiple(this: API, type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard",
 		cursor_string?: string): Promise<{beatmap_packs: Pack[], cursor_string: string | null}> {
-			return await this.request("get", "beatmaps/packs", {type, cursor_string})
+			return await this.request("get", ["beatmaps", "packs"], {type, cursor_string})
 		}
 	}
 
@@ -203,7 +203,7 @@ export namespace Beatmap {
 		export async function get(this: API, beatmap: Beatmap["id"] | Beatmap, mods?: Mod[] | string[] | number, ruleset?: Ruleset):
 		Promise<DifficultyAttributes.Any> {
 			beatmap = typeof beatmap === "number" ? beatmap : beatmap.id
-			const response = await this.request("post", `beatmaps/${beatmap}/attributes`, {ruleset_id: ruleset, mods})
+			const response = await this.request("post", ["beatmaps", beatmap, "attributes"], {ruleset_id: ruleset, mods})
 			return response.attributes // It's the only property
 		}
 
@@ -261,7 +261,7 @@ export namespace Beatmap {
 
 		beatmap = typeof beatmap === "number" ? beatmap : beatmap.id
 		user = typeof user === "number" ? user : user.id
-		return await this.request("get", `beatmaps/${beatmap}/scores/users/${user}`, {...config, mode})
+		return await this.request("get", ["beatmaps", beatmap, "scores", "users", user], {...config, mode})
 	}
 
 	/**
@@ -276,7 +276,7 @@ export namespace Beatmap {
 
 		beatmap = typeof beatmap === "number" ? beatmap : beatmap.id
 		user = typeof user === "number" ? user : user.id
-		const response = await this.request("get", `beatmaps/${beatmap}/scores/users/${user}/all`, {...config, ruleset})
+		const response = await this.request("get", ["beatmaps", beatmap, "scores", "users", user, "all"], {...config, ruleset})
 		return response.scores // It's the only property
 	}
 	
@@ -287,7 +287,7 @@ export namespace Beatmap {
 	export async function lookup(this: API, query: {checksum?: Beatmap.WithChecksum["checksum"], filename?: string, id?: Beatmap["id"]}):
 	Promise<Extended.WithFailtimesOwnersBeatmapset> {
 		const id = query.id ? String(query.id) : undefined
-		return await this.request("get", "beatmaps/lookup", {...query, id})
+		return await this.request("get", ["beatmaps", "lookup"], {...query, id})
 	}
 
 	/**
@@ -296,7 +296,7 @@ export namespace Beatmap {
 	 */
 	export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Extended.WithFailtimesOwnersBeatmapset> {
 		beatmap = typeof beatmap === "number" ? beatmap : beatmap.id
-		return await this.request("get", `beatmaps/${beatmap}`)
+		return await this.request("get", ["beatmaps", beatmap])
 	}
 
 	/**
@@ -305,7 +305,7 @@ export namespace Beatmap {
 	 */
 	export async function getMultiple(this: API, beatmaps: Array<Beatmap["id"] | Beatmap>): Promise<Extended.WithFailtimesOwnersMaxcombo[]> {
 		const ids = beatmaps.map((beatmap) => typeof beatmap === "number" ? beatmap : beatmap.id)
-		const response = await this.request("get", "beatmaps", {ids})
+		const response = await this.request("get", ["beatmaps"], {ids})
 		return response.beatmaps // It's the only property
 	}
 
@@ -320,7 +320,7 @@ export namespace Beatmap {
 		delete config?.ruleset
 
 		beatmap = typeof beatmap === "number" ? beatmap : beatmap.id
-		const response = await this.request("get", `beatmaps/${beatmap}/scores`, {...config, mode})
+		const response = await this.request("get", ["beatmaps", beatmap, "scores"], {...config, mode})
 		return response.scores // It's the only property
 	}
 
@@ -337,7 +337,7 @@ export namespace Beatmap {
 		delete config?.ruleset
 
 		beatmap = typeof beatmap === "number" ? beatmap : beatmap.id
-		const response = await this.request("get", `beatmaps/${beatmap}/solo-scores`, {...config, mode})
+		const response = await this.request("get", ["beatmaps", beatmap, "solo-scores"], {...config, mode})
 		return response.scores // It's the only property
 	}
 }
