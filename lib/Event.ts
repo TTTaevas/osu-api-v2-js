@@ -1,4 +1,4 @@
-import { API, User as UserImport, Ruleset } from "./index.js"
+import { API, User as IUser, Ruleset } from "./index.js"
 
 /** @obtainableFrom {@link API.getEvents} */
 export interface Event {
@@ -10,7 +10,7 @@ export namespace Event {
 	/** Those are used as properties by Events, they're not events themselves */
 	export namespace SharedProperties {
 		export interface User {
-			username: UserImport["username"]
+			username: IUser["username"]
 			/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`) */
 			url: string
 		}
@@ -121,10 +121,10 @@ export namespace Event {
 	export interface UsernameChange extends Event {
 		type: "usernameChange"
 		user: {
-			username: UserImport["username"]
+			username: IUser["username"]
 			/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`) */
 			url: string
-			previousUsername: UserImport["username"]
+			previousUsername: IUser["username"]
 		}
 	}
 

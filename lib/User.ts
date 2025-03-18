@@ -1,5 +1,4 @@
 import { API, Beatmap, Beatmapset, Event, Ruleset, Score } from "./index.js"
-import { getId } from "./misc.js"
 
 export interface User {
 	avatar_url: string
@@ -309,7 +308,7 @@ export namespace User {
 	 * @param users An array containing user ids or/and `User` objects!
 	 */
 	export async function lookupMultiple(this: API, users: Array<User["id"] | User>): Promise<User.WithCountryCoverGroupsTeam[]> {
-		const ids = users.map((user) => getId(user))
+		const ids = users.map((user) => typeof user === "number" ? user : user.id)
 		const response = await this.request("get", ["users", "lookup"], {ids})
 		return response.users // It's the only property
 	}
@@ -321,7 +320,7 @@ export namespace User {
 	 */
 	export async function getMultiple(this: API, users: Array<User["id"] | User>, include_variant_statistics: boolean = false):
 	Promise<User.WithCountryCoverGroupsTeamStatisticsrulesets[]> {
-		const ids = users.map((user) => getId(user))
+		const ids = users.map((user) => typeof user === "number" ? user : user.id)
 		const response = await this.request("get", ["users"], {ids, include_variant_statistics})
 		return response.users // It's the only property
 	}
@@ -336,8 +335,9 @@ export namespace User {
 	 */
 	export async function getScores(this: API, user: User["id"] | User, type: "best" | "firsts" | "recent", ruleset?: Ruleset,
 	include: {lazer?: boolean, fails?: boolean} = {lazer: true, fails: false}, config?: Config): Promise<Score.WithUserBeatmapBeatmapset[]> {
+		const user_id = typeof user === "number" ? user : user.id
 		const mode = ruleset !== undefined ? Ruleset[ruleset] : undefined
-		return await this.request("get", ["users", getId(user), "scores", type],
+		return await this.request("get", ["users", user_id, "scores", type],
 		{mode, limit: config?.limit, offset: config?.offset, legacy_only: Number(!include.lazer), include_fails: String(Number(include.fails))})
 	}
 
@@ -349,7 +349,8 @@ export namespace User {
 	 */
 	export async function getBeatmaps(this: API, user: User["id"] | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
 	config?: Config): Promise<Beatmapset.Extended.WithBeatmap[]> {
-		return await this.request("get", ["users", getId(user), "beatmapsets", type], {limit: config?.limit, offset: config?.offset})
+		const user_id = typeof user === "number" ? user : user.id
+		return await this.request("get", ["users", user_id, "beatmapsets", type], {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**
@@ -358,7 +359,8 @@ export namespace User {
 	 * @param config Array limit & offset
 	 */
 	export async function getMostPlayed(this: API, user: User["id"] | User, config?: Config): Promise<Beatmap.Playcount[]> {
-		return await this.request("get", ["users", getId(user), "beatmapsets", "most_played"], {limit: config?.limit, offset: config?.offset})
+		const user_id = typeof user === "number" ? user : user.id
+		return await this.request("get", ["users", user_id, "beatmapsets", "most_played"], {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**
@@ -367,7 +369,8 @@ export namespace User {
 	 * @param config Array limit & offset
 	 */
 	export async function getRecentActivity(this: API, user: User["id"] | User, config?: Config): Promise<Event.AnyRecentActivity[]> {
-		return await this.request("get", ["users", getId(user), "recent_activity"], {limit: config?.limit, offset: config?.offset})
+		const user_id = typeof user === "number" ? user : user.id
+		return await this.request("get", ["users", user_id, "recent_activity"], {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**
@@ -376,7 +379,8 @@ export namespace User {
 	 * @param config Array limit & offset
 	 */
 	export async function getKudosu(this: API, user: User["id"] | User, config?: Config): Promise<User.KudosuHistory[]> {
-		return await this.request("get", ["users", getId(user), "kudosu"], {limit: config?.limit, offset: config?.offset})
+		const user_id = typeof user === "number" ? user : user.id
+		return await this.request("get", ["users", user_id, "kudosu"], {limit: config?.limit, offset: config?.offset})
 	}
 
 	/**

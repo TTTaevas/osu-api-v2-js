@@ -1,5 +1,4 @@
 import { API, Beatmap, Beatmapset, Changelog, Mod, Ruleset, User } from "./index.js"
-import { getId } from "./misc.js"
 
 /** Common to older and newer formats */
 interface Basic {
@@ -118,6 +117,7 @@ export namespace Score {
 	 * @returns The correctly encoded content of what would be a replay file (you can just fs.writeFileSync with it!)
 	 */
 	export async function getReplay(this: API, score: Score["id"] | Score): Promise<string> {
-		return await this.request("get", ["scores", getId(score), "download"])
+		const score_id = typeof score === "number" ? score : score.id
+		return await this.request("get", ["scores", score_id, "download"])
 	}
 }

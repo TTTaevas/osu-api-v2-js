@@ -1,5 +1,4 @@
 import { API, User as IUser } from "./index.js";
-import { getId } from "./misc.js";
 
 export namespace Chat {
 	/** @obtainableFrom {@link API.keepChatAlive} */
@@ -62,7 +61,8 @@ export namespace Chat {
 		 * @remarks Will 404 if the user has not joined the channel (use `joinChatChannel` for that)
 		 */
 		export async function getOne(this: API, channel: Channel["channel_id"] | Channel): Promise<Channel.WithDetails> {
-			const response = await this.request("get", ["chat", "channels", getId(channel, "channel_id")])
+			const channel_id = typeof channel === "number" ? channel : channel.channel_id
+			const response = await this.request("get", ["chat", "channels", channel_id])
 			return response.channel // NOT the only property; `users` is already provided within `channel` so it is useless
 		}
 
@@ -81,8 +81,8 @@ export namespace Chat {
 		 * @param message You're marking this and all the messages before it as read!
 		 */
 		export async function markAsRead(this: API, channel: Channel["channel_id"] | Channel, message: Message["message_id"] | Message): Promise<void> {
-			const channel_id = getId(channel, "channel_id")
-			const message_id = getId(message, "message_id")
+			const channel_id = typeof channel === "number" ? channel : channel.channel_id
+			const message_id = typeof message === "number" ? message : message.message_id
 			return await this.request("put", ["chat", "channels", channel_id, "mark-as-read", message_id], {channel_id, message_id})
 		}
 
@@ -93,7 +93,8 @@ export namespace Chat {
 		 * @returns The newly created channel!
 		 */
 		export async function createPrivate(this: API, user_target: IUser["id"] | IUser): Promise<Channel.WithRecentmessages> {
-			return await this.request("post", ["chat", "channels"], {type: "PM", target_id: getId(user_target)})
+			const target_id = typeof user_target === "number" ? user_target : user_target.id
+			return await this.request("post", ["chat", "channels"], {type: "PM", target_id})
 		}
 
 		/**
@@ -107,7 +108,7 @@ export namespace Chat {
 		 */
 		export async function createAnnouncement(this: API, channel: {name: string, description: string}, user_targets: Array<IUser["id"] | IUser>, message: string):
 		Promise<Channel> {
-			const target_ids = user_targets.map((u) => getId(u))
+			const target_ids = user_targets.map((user) => typeof user === "number" ? user : user.id)
 			return await this.request("post", ["chat", "channels"], {type: "ANNOUNCE", channel, target_ids, message})
 		}
 
@@ -118,8 +119,9 @@ export namespace Chat {
 		 * @param user The user joining the channel (defaults to the **presumed authorized user** (api.user))
 		 */
 		export async function joinOne(this: API, channel: Channel["channel_id"] | Channel, user?: IUser["id"] | IUser): Promise<Channel.WithDetails> {
-			const user_id = user ? getId(user) : this.user ? this.user : ""
-			return await this.request("put", ["chat", "channels", getId(channel, "channel_id"), "users", user_id])
+			const channel_id = typeof channel === "number" ? channel : channel.channel_id
+			const user_id = typeof user === "number" ? user : typeof user === "object" ? user.id : this.user!
+			return await this.request("put", ["chat", "channels", channel_id, "users", user_id])
 		}
 
 		/**
@@ -129,8 +131,9 @@ export namespace Chat {
 		 * @param user The user leaving/closing the channel (defaults to the **presumed authorized user** (api.user))
 		 */
 		export async function leaveOne(this: API, channel: Channel["channel_id"] | Channel, user?: IUser["id"] | IUser): Promise<void> {
-			const user_id = user ? getId(user) : this.user ? this.user : ""
-			return await this.request("delete", ["chat", "channels", getId(channel, "channel_id"), "users", user_id])
+			const channel_id = typeof channel === "number" ? channel : channel.channel_id
+			const user_id = typeof user === "number" ? user : typeof user === "object" ? user.id : this.user!
+			return await this.request("delete", ["chat", "channels", channel_id, "users", user_id])
 		}
 	}
 
@@ -177,9 +180,10 @@ export namespace Chat {
 		 */
 		export async function getMultiple(this: API, channel: Channel["channel_id"] | Channel, limit: number = 20,
 		since?: Message["message_id"] | Message, until?: Message["message_id"] | Message): Promise<Message.WithSender[]> {
-			since = since ? getId(since, "message_id") : undefined
-			until = until ? getId(until, "message_id") : undefined
-			return await this.request("get", ["chat", "channels", getId(channel, "channel_id"), "messages"], {limit, since, until})
+			const channel_id = typeof channel === "number" ? channel : channel.channel_id
+			since = typeof since === "number" ? since : since?.message_id
+			until = typeof until === "number" ? until : until?.message_id
+			return await this.request("get", ["chat", "channels", channel_id, "messages"], {limit, since, until})
 		}
 
 		/**
@@ -191,7 +195,8 @@ export namespace Chat {
 		 * @returns The newly sent ChatMessage!
 		 */
 		export async function send(this: API, channel: Channel["channel_id"] | Channel, message: string, is_action: boolean = false): Promise<Message.WithSender> {
-			return await this.request("post", ["chat", "channels", getId(channel, "channel_id"), "messages"], {message, is_action})
+			const channel_id = typeof channel === "number" ? channel : channel.channel_id
+			return await this.request("post", ["chat", "channels", channel_id, "messages"], {message, is_action})
 		}
 
 		/**
@@ -206,7 +211,8 @@ export namespace Chat {
 		 */
 		export async function sendPrivate(this: API, user_target: IUser["id"] | IUser, message: string, is_action: boolean = false, uuid?: string):
 		Promise<{channel: Channel, message: Message.WithSender}> {
-			return await this.request("post", ["chat", "new"], {target_id: getId(user_target), message, is_action, uuid})
+			const target_id = typeof user_target === "number" ? user_target : user_target.id
+			return await this.request("post", ["chat", "new"], {target_id, message, is_action, uuid})
 		}
 	}
 
@@ -251,19 +257,12 @@ export namespace Chat {
 			export type Any = Error | ChatChannelJoin | ChatChannelLeave | ChatMessageNew
 		}
 
-		// return new WebSocket(server, {
-		// 		headers: {
-		// 			"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
-		// 			Authorization: `${this.token_type} ${this.access_token}`
-		// 		}
-		// 	})
-
 		/**
 		* Get a websocket to get WebSocket events from!
 		* @param server The "notification websocket/server" URL (defaults to **wss://notify.ppy.sh**)
 		*/
 		export function generate(this: API, server = "wss://notify.ppy.sh"): WebSocket {
-			return new WebSocket(server, {headers: {Authorization: `${this.token_type} ${this.access_token}`}})
+			return new WebSocket(server, {headers: {...this.headers, Authorization: `${this.token_type} ${this.access_token}`}})
 		}
 	}
 
@@ -276,8 +275,8 @@ export namespace Chat {
 	 */
 	export async function keepAlive(this: API, since?: {user_silence?: UserSilence["id"] | UserSilence, message?: Message["message_id"] | Message}):
 	Promise<UserSilence[]> {
-		const history_since = since?.user_silence ? getId(since.user_silence) : undefined
-		const message_since = since?.message ? getId(since.message, "message_id") : undefined
+		const history_since = typeof since?.user_silence === "object" ? since.user_silence.id : since?.user_silence
+		const message_since = typeof since?.message === "object" ? since.message.message_id : since?.message
 		const response = await this.request("post", ["chat", "ack"], {history_since, since: message_since})
 		return response.silences // It's the only property
 	}

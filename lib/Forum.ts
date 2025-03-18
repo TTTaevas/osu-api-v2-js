@@ -1,5 +1,4 @@
 import { API, User } from "./index.js"
-import { getId } from "./misc.js"
 
 export interface Forum {
 	id: number
@@ -51,7 +50,8 @@ export namespace Forum {
 		 * @returns The edited ForumPost
 		 */
 		export async function edit(this: API, post: Post["id"] | Post, new_text: string): Promise<Post> {
-			return await this.request("put", ["forums", "posts", getId(post)], {body: new_text})
+			const post_id = typeof post === "number" ? post : post.id
+			return await this.request("put", ["forums", "posts", post_id], {body: new_text})
 		}
 	}
 
@@ -121,14 +121,14 @@ export namespace Forum {
 		/**
 		 * Create a new Forum.Topic in the forum of your choice!
 		 * @scope {@link Scope"forum.write"}
-		 * @param forum_id The id of the forum you're creating your topic in
+		 * @param forum The Forum you're creating your topic in
 		 * @param title The topic's title
 		 * @param text The first post's content/message
 		 * @param poll If you want to make a poll, specify the parameters of that poll!
 		 * @returns An object with the topic you've made, and its first initial post (which uses your `text`)
 		 * @remarks Some users may not be allowed to do that, such as newly registered users, so this can 403 even with the right scopes
 		 */
-		export async function create(this: API, forum_id: Forum["id"], title: string, text: string, poll?: {
+		export async function create(this: API, forum: Forum["id"] | Forum, title: string, text: string, poll?: {
 			title: string
 			/** The things the users can vote for */
 			options: string[]
@@ -141,6 +141,7 @@ export namespace Forum {
 			/** Should the results of the poll be hidden while the voting period is still active? (defaults to **false**) */
 			hide_results?: boolean
 		}): Promise<{topic: Forum.Topic, post: Forum.Post}> {
+			const forum_id = typeof forum === "number" ? forum : forum.id
 			const with_poll = poll !== undefined
 			const options = poll?.options !== undefined ? poll.options.toString().replace(/,/g, "\n") : undefined
 
@@ -163,7 +164,8 @@ export namespace Forum {
 		 * @remarks Replying when the last post was made by the authorized user will likely cause the server to return a 403
 		 */
 		export async function reply(this: API, topic: Topic["id"] | Topic, text: string): Promise<Post> {
-			return await this.request("post", ["forums", "topics", getId(topic), "reply"], {body: text})
+			const topic_id = typeof topic === "number" ? topic : topic.id
+			return await this.request("post", ["forums", "topics", topic_id, "reply"], {body: text})
 		}
 
 		/**
@@ -175,20 +177,22 @@ export namespace Forum {
 		 * @remarks Use `editForumPost` if you wanna edit the post at the top of the topic
 		 */
 		export async function editTitle(this: API, topic: Topic["id"] | Topic, new_title: string): Promise<Topic> {
-			return await this.request("put", ["forums", "topics", getId(topic)], {forum_topic: {topic_title:  new_title}})
+			const topic_id = typeof topic === "number" ? topic : topic.id
+			return await this.request("put", ["forums", "topics", topic_id], {forum_topic: {topic_title: new_title}})
 		}
 	}
 
 	/**
 	 * Get a Forum with a specific id, as well as its Forum.Topics!
-	 * @param forum_id The id of the Forum you want to get
+	 * @param forum_id The Forum you want to get
 	 * @returns An object with the Forum, its topics, and the topics pinned in it
 	 */
-	export async function getOne(this: API, forum_id: Forum["id"]): Promise<{
+	export async function getOne(this: API, forum: Forum["id"] | Forum): Promise<{
 		forum: Forum.WithSubforums2,
 		topics: Forum.Topic[],
 		pinned_topics: Forum.Topic[],
 	}> {
+		const forum_id = typeof forum === "number" ? forum : forum.id
 		return await this.request("get", ["forums", forum_id])
 	}
 
@@ -218,9 +222,10 @@ export namespace Forum {
 		/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance! */
 		cursor_string?: string
 	}): Promise<{topic: Topic, posts: Post[], cursor_string: string | null}> {
-		const start = config?.sort === "id_asc" && config?.first_post ? getId(config.first_post) : undefined
-		const end = config?.sort === "id_desc" && config?.first_post ? getId(config.first_post) : undefined
-		return await this.request("get", ["forums", "topics", getId(topic)],
+		const topic_id = typeof topic === "number" ? topic : topic.id
+		const start = config?.sort === "id_asc" ? typeof config.first_post === "number" ? config.first_post : config.first_post?.id : undefined
+		const end = config?.sort === "id_desc" ? typeof config.first_post === "number" ? config.first_post : config.first_post?.id : undefined
+		return await this.request("get", ["forums", "topics", topic_id],
 		{start, end, sort: config?.sort, limit: config?.limit, cursor_string: config?.cursor_string})
 	}
 }

@@ -1,5 +1,4 @@
-import { API, Beatmapset, Ruleset, Spotlight as SpotlightImport, User } from "./index.js"
-import { getId } from "./misc.js"
+import { API, Beatmapset, Ruleset, Spotlight as ISpotlight, User } from "./index.js"
 
 interface Ranking {
 	cursor: {
@@ -37,7 +36,7 @@ export namespace Ranking {
 	export interface Spotlight {
 		beatmapsets: Beatmapset.Extended[]
 		ranking: User.Statistics.WithUser[]
-		spotlight: SpotlightImport.WithParticipantcount
+		spotlight: ISpotlight.WithParticipantcount
 	}
 
 	/**
@@ -81,8 +80,9 @@ export namespace Ranking {
 	 * @param spotlight The spotlight in question
 	 * @param filter What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user (defaults to **all**)
 	 */
-	export async function getSpotlight(this: API, ruleset: Ruleset, spotlight: SpotlightImport["id"] | SpotlightImport, filter: "all" | "friends" = "all"):
+	export async function getSpotlight(this: API, ruleset: Ruleset, spotlight: ISpotlight["id"] | ISpotlight, filter: "all" | "friends" = "all"):
 	Promise<Ranking.Spotlight> {
-		return await this.request("get", ["rankings", Ruleset[ruleset], "charts"], {spotlight: getId(spotlight), filter})
+		spotlight = typeof spotlight === "number" ? spotlight : spotlight.id
+		return await this.request("get", ["rankings", Ruleset[ruleset], "charts"], {spotlight, filter})
 	}
 }

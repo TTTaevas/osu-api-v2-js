@@ -1,5 +1,4 @@
 import { API, Beatmap, Chat, Mod, Ruleset, Score as ScoreImport, User } from "./index.js"
-import { getId } from "./misc.js"
 
 export namespace Multiplayer {
 	/**
@@ -128,8 +127,9 @@ export namespace Multiplayer {
 			 * @param room The room or the id of the room in question
 			 * @returns An object with the leaderboard, and the score and position of the authorized user under `user_score`
 			 */
-			export async function getMultiple(this: API, room: number | Room): Promise<{leaderboard: Leader[], user_score: Leader.WithPosition | null}> {
-				return await this.request("get", ["rooms", getId(room), "leaderboard"])
+			export async function getMultiple(this: API, room: Room["id"] | Room): Promise<{leaderboard: Leader[], user_score: Leader.WithPosition | null}> {
+				const room_id = typeof room === "number" ? room : room.id
+				return await this.request("get", ["rooms", room_id, "leaderboard"])
 			}
 		}
 
@@ -137,8 +137,9 @@ export namespace Multiplayer {
 		 * Get data about a lazer multiplayer room (realtime or playlists)!
 		 * @param room The room or the id of the room, can be found at the end of its URL (after `/multiplayer/rooms/`)
 		 */
-		export async function getOne(this: API, room: number | Room): Promise<Room> {
-			return await this.request("get", ["rooms", getId(room)])
+		export async function getOne(this: API, room: Room["id"] | Room): Promise<Room> {
+			const room_id = typeof room === "number" ? room : room.id
+			return await this.request("get", ["rooms", room_id])
 		}
 
 		/**
@@ -226,18 +227,17 @@ export namespace Multiplayer {
 			 */
 			limit?: number
 		}): Promise<Match> {
-			const response = await this.request("get", ["matches", getId(match)], {
-				before: query?.before ? getId(query.before) : undefined,
-				after: query?.after ? getId(query.after) : undefined,
-				limit: query?.limit
-			}) as Match
+			const match_id = typeof match === "number" ? match : match.id
+			const before = typeof query?.before === "object" ? query.before.id : query?.before
+			const after = typeof query?.after === "object" ? query.after.id : query?.after
+			const response = await this.request("get", ["matches", match_id], {before,after, limit: query?.limit}) as Match
 
 			// This converts scores' "perfect" from number to boolean
-			for (let i = 0; i < response.events.length; i++) {
-				for (let e = 0; e < Number(response.events[i].game?.scores.length); e++) {
-					response.events[i].game!.scores[e].perfect = Boolean(response.events[i].game!.scores[e].perfect)
-				}
-			}
+			response.events.forEach((event) => {
+				event.game?.scores.forEach((score) => {
+					score.perfect = Boolean(score.perfect)
+				})
+			})
 
 			return response
 		}
@@ -259,7 +259,8 @@ export namespace Multiplayer {
 			sort?: "id_desc" | "id_asc"
 		}): Promise<Info[]> {
 			// `first_match_in_array` is a cool way to use the endpoint's cursor
-			const cursor = query?.first_match_in_array ? {match_id: getId(query.first_match_in_array) + (query?.sort === "id_asc" ? -1 : 1)} : undefined
+			const match_id = typeof query?.first_match_in_array === "object" ? query.first_match_in_array.id : query?.first_match_in_array
+			const cursor = match_id ? {match_id: match_id + (query?.sort === "id_asc" ? -1 : 1)} : undefined
 			const response = await this.request("get", ["matches"], {cursor, limit: query?.limit, sort: query?.sort})
 			return response.matches // NOT the only property; `params` is useless while `cursor` and `cursor_string` are superseded by `first_match_in_array`
 		}	
