@@ -9,6 +9,7 @@ import * as Comment from "./guest/comment.test.js"
 import * as Event from "./guest/event.test.js"
 import * as Forum from "./guest/forum.test.js"
 import * as Home from "./guest/home.test.js"
+import * as Match from "./guest/match.test.js"
 import * as Multiplayer from "./guest/multiplayer.test.js"
 import * as News from "./guest/news.test.js"
 import * as Ranking from "./guest/ranking.test.js"
@@ -25,6 +26,7 @@ const domains: Test[][] = [
 	Event.tests,
 	Forum.tests,
 	Home.tests,
+	Match.tests,
 	Multiplayer.tests,
 	News.tests,
 	Ranking.tests,

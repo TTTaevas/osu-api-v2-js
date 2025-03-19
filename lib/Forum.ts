@@ -101,6 +101,29 @@ export namespace Forum {
 
 	export namespace Topic {
 		/**
+		* Get a Forum.Topic, as well as its main post (content) and the posts that were sent in it!
+		* @param topic An object with the id of the topic in question
+		* @param config How many results maximum, how to sort them, etc...
+		* @remarks The oldest post of a topic is the text of a topic
+		*/
+		export async function getOne(this: API, topic: Topic["id"] | Topic, config?: {
+			/** The id (or the post itself) of the first post to be returned in `posts` (irrelevant if using a `cursor_string`) */
+			first_post?: Post["id"] | Post
+			/** How many `posts` maximum, up to 50 */
+			limit?: number
+			/** "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead */
+			sort?: "id_asc" | "id_desc"
+			/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance! */
+			cursor_string?: string
+		}): Promise<{topic: Topic, posts: Post[], cursor_string: string | null}> {
+			const topic_id = typeof topic === "number" ? topic : topic.id
+			const start = config?.sort === "id_asc" ? typeof config.first_post === "number" ? config.first_post : config.first_post?.id : undefined
+			const end = config?.sort === "id_desc" ? typeof config.first_post === "number" ? config.first_post : config.first_post?.id : undefined
+			return await this.request("get", ["forums", "topics", topic_id],
+			{start, end, sort: config?.sort, limit: config?.limit, cursor_string: config?.cursor_string})
+		}
+
+		/**
 		 * Get multiple existing Forum.Topic, optionally in a specific Forum!
 		 * @param config Where you specify filters, sorting options, and the such
 		 * @returns An object with an array of relevant Forum.Topic, and a `cursor_string` to allow you to go further
@@ -204,28 +227,5 @@ export namespace Forum {
 	export async function getMultiple(this: API): Promise<Forum.WithSubforums2[]> {
 		const response = await this.request("get", ["forums"])
 		return response.forums // It's the only property
-	}
-
-	/**
-	 * Get a Forum.Topic, as well as its main post (content) and the posts that were sent in it!
-	 * @param topic An object with the id of the topic in question
-	 * @param config How many results maximum, how to sort them, etc...
-	 * @remarks The oldest post of a topic is the text of a topic
-	 */
-	export async function getTopicAndPosts(this: API, topic: Topic["id"] | Topic, config?: {
-		/** The id (or the post itself) of the first post to be returned in `posts` (irrelevant if using a `cursor_string`) */
-		first_post?: Post["id"] | Post
-		/** How many `posts` maximum, up to 50 */
-		limit?: number
-		/** "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead */
-		sort?: "id_asc" | "id_desc"
-		/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance! */
-		cursor_string?: string
-	}): Promise<{topic: Topic, posts: Post[], cursor_string: string | null}> {
-		const topic_id = typeof topic === "number" ? topic : topic.id
-		const start = config?.sort === "id_asc" ? typeof config.first_post === "number" ? config.first_post : config.first_post?.id : undefined
-		const end = config?.sort === "id_desc" ? typeof config.first_post === "number" ? config.first_post : config.first_post?.id : undefined
-		return await this.request("get", ["forums", "topics", topic_id],
-		{start, end, sort: config?.sort, limit: config?.limit, cursor_string: config?.cursor_string})
 	}
 }

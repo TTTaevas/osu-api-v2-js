@@ -6,7 +6,7 @@ You can find this package's documentation on [osu-v2.taevas.xyz](https://osu-v2.
 
 ## How to install and get started
 
-Before installing, if using Node.js, check if you're running version 18 or above:
+Before installing, if using Node.js, check if you're running version 20 or above:
 
 ```bash
 node -v # displays your version of node.js

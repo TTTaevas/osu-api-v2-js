@@ -7,16 +7,17 @@ import { Comment } from "./Comment.js"
 import { Event } from "./Event.js"
 import { Forum } from "./Forum.js"
 import { Home } from "./Home.js"
+import { Match } from "./Match.js"
 import { Multiplayer } from "./Multiplayer.js"
 import { NewsPost } from "./NewsPost.js"
 import { Ranking } from "./Ranking.js"
 import { Score } from "./Score.js"
 import { Spotlight } from "./Spotlight.js"
 import { User } from "./User.js"
-import { WikiPage } from "./WikiPage.js"
+import { WikiPage } from "./Wiki.js"
 
 export { Beatmap, Beatmapset, Changelog, Chat, Comment, Event, Forum, Home,
-	Multiplayer, NewsPost, Ranking, Score, Spotlight, User, WikiPage }
+	Match, Multiplayer, NewsPost, Ranking, Score, Spotlight, User, WikiPage }
 
 export enum Ruleset {
 	osu 	= 0,
@@ -662,6 +663,9 @@ export class API {
 	/** {@inheritDoc Forum.getMultiple} @group Forum Methods */
 	readonly getForums = Forum.getMultiple
 
+	/** {@inheritDoc Forum.Topic.getOne} @group Forum Methods */
+	readonly getForumTopic = Forum.Topic.getOne
+
 	/** {@inheritDoc Forum.Topic.getMultiple} @group Forum Methods */
 	readonly getForumTopics = Forum.Topic.getMultiple
 
@@ -677,9 +681,6 @@ export class API {
 	/** {@inheritDoc Forum.Post.edit} @group Forum Methods */
 	readonly editForumPost = Forum.Post.edit
 
-	/** {@inheritDoc Forum.getTopicAndPosts} @group Forum Methods */
-	readonly getForumTopicAndPosts = Forum.getTopicAndPosts
-
 
 	// HOME STUFF
 
@@ -688,6 +689,15 @@ export class API {
 
 	/** {@inheritDoc Home.Search.getWikiPages} @group Home Methods */
 	readonly searchWiki = Home.Search.getWikiPages
+
+
+	// MATCH STUFF
+
+	/** {@inheritDoc Match.getOne} @group Match Methods */
+	readonly getMatch = Match.getOne
+
+	/** {@inheritDoc Match.getMultiple} @group Match Methods */
+	readonly getMatches = Match.getMultiple
 
 
 	// MULTIPLAYER STUFF
@@ -703,12 +713,6 @@ export class API {
 
 	/** {@inheritDoc Multiplayer.Room.PlaylistItem.getScores} @group Multiplayer Methods */
 	readonly getPlaylistItemScores = Multiplayer.Room.PlaylistItem.getScores
-
-	/** {@inheritDoc Multiplayer.Match.getOne} @group Multiplayer Methods */
-	readonly getMatch = Multiplayer.Match.getOne
-
-	/** {@inheritDoc Multiplayer.Match.getMultiple} @group Multiplayer Methods */
-	readonly getMatches = Multiplayer.Match.getMultiple
 
 
 	// NEWS STUFF
