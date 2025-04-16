@@ -32,7 +32,7 @@ export namespace NewsPost {
 	 */
 	export async function getOne(this: API, post: NewsPost["id"] | NewsPost["slug"] | NewsPost): Promise<NewsPost.WithContentNavigation> {
 		const lookup = typeof post === "object" ? post.id : post
-		const key = typeof post === "string" ? undefined : "id"
+		const key = typeof post === "number" ? "id" : undefined
 		return await this.request("get", ["news", lookup], {key})
 	}
 

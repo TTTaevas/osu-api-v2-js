@@ -31,7 +31,7 @@ const getForumTopic: Test = async(api) => {
 }
 
 const getForumTopics: Test = async(api) => {
-	const response = await api.getForumTopics({forum_id: 55})
+	const response = await api.getForumTopics({forum: 55})
 	expect(response.cursor_string).to.be.a("string")
 	expect(response.topics).to.have.lengthOf(50)
 	response.topics.forEach((topic) => expect(topic.forum_id).to.equal(55))

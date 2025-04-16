@@ -72,7 +72,7 @@ export namespace Match {
 		const match_id = typeof match === "number" ? match : match.id
 		const before = typeof query?.before === "object" ? query.before.id : query?.before
 		const after = typeof query?.after === "object" ? query.after.id : query?.after
-		const response = await this.request("get", ["matches", match_id], {before,after, limit: query?.limit}) as Match
+		const response = await this.request("get", ["matches", match_id], {before, after, limit: query?.limit}) as Match
 
 		// This converts scores' "perfect" from number to boolean
 		response.events.forEach((event) => {

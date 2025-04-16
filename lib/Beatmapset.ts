@@ -624,12 +624,23 @@ export namespace Beatmapset {
 		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 		 * @privateRemarks I don't allow setting `beatmap_id` because my testing has led me to believe it does nothing (and is therefore misleading)
 		 */
-		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset["id"] | Beatmapset, user?: User["id"] | User,
-		status?: "all" | "ranked" | "qualified" | "disqualified" | "never_qualified"}, filter?: {types?: Beatmapset.Discussion["message_type"][],
-		only_unresolved?: boolean}, config?: Config):
-		Promise<{beatmaps: Beatmap.Extended[], beatmapsets: Beatmapset.Extended[], discussions: Beatmapset.Discussion.WithStartingpost[]
-		included_discussions: Beatmapset.Discussion.WithStartingpost[], reviews_config: {max_blocks: number}, users: User.WithGroups[],
-		cursor_string: string | null}> {
+		export async function getMultiple(this: API, from?: {
+			beatmapset?: Beatmapset["id"] | Beatmapset,
+			user?: User["id"] | User,
+			status?: "all" | "ranked" | "qualified" | "disqualified" | "never_qualified"
+		}, filter?: {
+			types?: Beatmapset.Discussion["message_type"][],
+			only_unresolved?: boolean
+		}, config?: Config):
+		Promise<{
+			beatmaps: Beatmap.Extended[],
+			beatmapsets: Beatmapset.Extended[],
+			discussions: Beatmapset.Discussion.WithStartingpost[]
+			included_discussions: Beatmapset.Discussion.WithStartingpost[],
+			reviews_config: {max_blocks: number},
+			users: User.WithGroups[],
+			cursor_string: string | null
+		}> {
 			const beatmapset = typeof from?.beatmapset === "object" ? from.beatmapset.id : from?.beatmapset
 			const user = typeof from?.user === "object" ? from.user.id : from?.user
 
@@ -682,6 +693,8 @@ export namespace Beatmapset {
 	Promise<{beatmapsets: Beatmapset.Extended.WithBeatmapPacktags[], recommended_difficulty: number | null, total: number, error: any | null,
 	cursor_string: string | null}> {
 		const sort = query?.sort ? (query.sort.by + "_" + query.sort.in) : undefined
+
+		/** General */
 		const c = query?.general ? query.general.map((general_value) => {
 			if (general_value === "Recommended difficulty") return "recommended"
 			if (general_value === "Include converted beatmaps") return "converts"
@@ -689,18 +702,28 @@ export namespace Beatmapset {
 			if (general_value === "Spotlighted beatmaps") return "spotlights"
 			if (general_value === "Featured Artists") return "featured_artists"
 		}).join(".") : undefined
+
+		/** Categories */
 		const s = query?.categories ? query.categories === "My Maps" ? "mine" : query.categories.toLowerCase() : undefined
+
+		/** Explicit Content */
 		const nsfw = query?.hide_explicit_content ? false : undefined
+
+		/** Extra */
 		const e = query?.extra ? query.extra.map((extra_value) => {
 			if (extra_value === "must_have_video") return "video"
 			if (extra_value === "must_have_storyboard") return "storyboard"
 		}).join(".") : undefined
+
+		/** Rank Achieved */
 		const r = query?.rank_achieved ? query.rank_achieved.map((rank_achieved_value) => {
 			if (rank_achieved_value === "Silver SS") return "XH"
 			if (rank_achieved_value === "SS") return "X"
 			if (rank_achieved_value === "Silver S") return "SH"
 			return rank_achieved_value
 		}).join("x") : undefined
+
+		/** Played */
 		const played = query?.played ? query.played.toLowerCase() : undefined
 	
 		return await this.request("get", ["beatmapsets", "search"],

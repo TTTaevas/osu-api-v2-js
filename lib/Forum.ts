@@ -117,10 +117,9 @@ export namespace Forum {
 			cursor_string?: string
 		}): Promise<{topic: Topic, posts: Post[], cursor_string: string | null}> {
 			const topic_id = typeof topic === "number" ? topic : topic.id
-			const start = config?.sort === "id_asc" ? typeof config.first_post === "number" ? config.first_post : config.first_post?.id : undefined
-			const end = config?.sort === "id_desc" ? typeof config.first_post === "number" ? config.first_post : config.first_post?.id : undefined
-			return await this.request("get", ["forums", "topics", topic_id],
-			{start, end, sort: config?.sort, limit: config?.limit, cursor_string: config?.cursor_string})
+			const start = config?.sort !== "id_desc" ? typeof config?.first_post === "object" ? config.first_post.id : config?.first_post : undefined
+			const end = config?.sort === "id_desc" ? typeof config.first_post === "object" ? config.first_post.id : config.first_post : undefined
+			return await this.request("get", ["forums", "topics", topic_id], {...config, start, end})
 		}
 
 		/**
@@ -130,15 +129,16 @@ export namespace Forum {
 		 */
 		export async function getMultiple(this: API, config?: {
 			/** From which specific Forum to get the topcis from */
-			forum_id?: Forum["id"]
+			forum?: Forum["id"] | Forum
 			/** How many `topics` maximum, up to 50 */
 			limit?: number
-			/** "id_asc" to have the oldest post at the beginning of the `topics` array, "id_desc" to have the newest instead */
-			sort?: "id_asc" | "id_desc"
+			/** Sort by topic's last post time, "old" to have the topic with the oldest post at the beginning of the `topics` array, "new" to have the newest instead */
+			sort?: "old" | "new"
 			/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `topics` in this instance! */
 			cursor_string?: string
 		}): Promise<{topics: Forum.Topic[], cursor_string: string | null}> {
-			return await this.request("get", ["forums", "topics"], {...config})
+			const forum_id = typeof config?.forum === "object" ? config.forum.id : config?.forum
+			return await this.request("get", ["forums", "topics"], {...config, forum_id})
 		}
 
 		/**
