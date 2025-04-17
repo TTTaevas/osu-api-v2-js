@@ -356,13 +356,13 @@ export namespace Beatmapset {
 		}
 		
 		/** @group Discussion Change */
-		export interface IssueResolve extends WithUserid, WithOptionalBeatmapset, WithDiscussion {
+		export interface IssueResolve extends WithUserid, WithOptionalBeatmapset, WithOptionalDiscussion {
 			type: "issue_resolve"
 			comment: Comment.WithDiscussionidPostid
 		}
 
 		/** @group Discussion Change */
-		export interface IssueReopen extends WithUserid, WithOptionalBeatmapset, WithDiscussion {
+		export interface IssueReopen extends WithUserid, WithOptionalBeatmapset, WithOptionalDiscussion {
 			type: "issue_reopen"
 			comment: Comment.WithDiscussionidPostid
 		}
