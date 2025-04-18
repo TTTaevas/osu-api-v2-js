@@ -496,7 +496,7 @@ export namespace Beatmapset {
 		 */
 		export interface Plus extends Extended, WithUserHype {
 			/** The different beatmaps/difficulties this beatmapset has */
-			beatmaps: Beatmap.Extended.WithFailtimesOwners[]
+			beatmaps: Beatmap.Extended.WithFailtimesOwnersMaxcomboToptagids[]
 			/** The different beatmaps made for osu!, but converted to the other Rulesets */
 			converts: Beatmap.Extended.WithFailtimesOwners[]
 			current_nominations: {
@@ -521,6 +521,8 @@ export namespace Beatmapset {
 			ratings: number[]
 			recent_favourites: User[]
 			related_users: User[]
+			/** Tags that have been voted for by users in some of this Beatmapset's Beatmaps! */
+			related_tags: Beatmap.UserTag.WithDates[]
 			/** Only exists if authorized user */
 			has_favourited?: boolean
 		}

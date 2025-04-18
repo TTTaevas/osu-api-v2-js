@@ -75,7 +75,7 @@ export namespace Beatmap {
 			}
 			owners: Array<{
 				id: User["id"]
-				/** @remarks Users that are no longer visible will have the username set to `[deleted user]` **/
+				/** @remarks Users that are no longer visible will have the username set to `[deleted user]` */
 				username: User["username"]
 			}>
 		}
@@ -92,8 +92,23 @@ export namespace Beatmap {
 		 * {@link API.getBeatmap} /
 		 * {@link API.lookupBeatmap}
 		 */
-		export interface WithFailtimesOwnersBeatmapset extends WithFailtimesOwnersMaxcombo {
+		export interface WithFailtimesOwnersMaxcomboBeatmapset extends WithFailtimesOwnersMaxcombo {
 			beatmapset: Beatmapset.Extended
+		}
+
+		/**
+		 * @obtainableFrom
+		 * {@link API.getBeatmapset} /
+		 * {@link API.lookupBeatmapset}
+		 */
+		export interface WithFailtimesOwnersMaxcomboToptagids extends WithFailtimesOwnersMaxcombo {
+			/** Objects with the ids of the tags that have been voted by users for this Beatmap! */
+			top_tag_ids: {
+				tag_id: UserTag["id"]
+				count: number
+			}[]
+			/** The ids of the tags that have been voted by the authenticated user for this Beatmap! */
+			current_user_tag_ids: unknown
 		}
 	}
 
@@ -104,6 +119,30 @@ export namespace Beatmap {
 		count: number
 		beatmap: Beatmap
 		beatmapset: Beatmapset
+	}
+
+	/** @obtainableFrom {@link API.getUserMostPlayed} */
+	export interface UserTag {
+		id: number
+		name: string
+		ruleset_id: Ruleset | null
+		description: string
+	}
+
+	export namespace UserTag {
+		export interface WithDates extends UserTag {
+			created_at: Date | null
+			updated_at: Date | null
+		}
+
+		/**
+		 * Get all the UserTags that currently exist in the game!
+		 * @returns An Array of UserTags
+		 */
+		export async function getAll(this: API): Promise<UserTag[]> {
+			const response = await this.request("get", "tags")
+			return response.tags // It's the only property
+		}
 	}
 
 	/** @obtainableFrom {@link API.getBeatmapPacks} */
@@ -118,7 +157,7 @@ export namespace Beatmap {
 		/** Download page; going there with a web browser should start the download of a zip file automatically */
 		url: string
 		/** Not there if the application doesn't act as a specific user */
-		user_completion_data?:{
+		user_completion_data?: {
 			/** IDs of beatmapsets completed by the user (according to the requirements of the pack) */
 			beatmapset_ids: Beatmapset["id"][],
 			/** Whether all beatmapsets are completed by the user or not */
@@ -279,7 +318,7 @@ export namespace Beatmap {
 	 * @param query What to specify in order to find the right beatmap
 	*/
 	export async function lookup(this: API, query: {checksum?: Beatmap.WithChecksum["checksum"], filename?: string, id?: Beatmap["id"]}):
-	Promise<Extended.WithFailtimesOwnersBeatmapset> {
+	Promise<Extended.WithFailtimesOwnersMaxcomboBeatmapset> {
 		return await this.request("get", `beatmaps/lookup`, {checksum: query.checksum, filename: query.filename, id: query.id ? String(query.id) : undefined})
 	}
 
@@ -287,7 +326,7 @@ export namespace Beatmap {
 	 * Get extensive beatmap data about whichever beatmap you want!
 	 * @param beatmap The beatmap or the id of the beatmap you're trying to get
 	 */
-	export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Extended.WithFailtimesOwnersBeatmapset> {
+	export async function getOne(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Extended.WithFailtimesOwnersMaxcomboBeatmapset> {
 		return await this.request("get", `beatmaps/${getId(beatmap)}`)
 	}
 

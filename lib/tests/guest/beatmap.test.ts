@@ -6,15 +6,15 @@ const lookupBeatmap: Test = async(api) => {
 	const beatmap = await api.lookupBeatmap({id: 388463})
 	expect(beatmap.id).to.equal(388463)
 	expect(beatmap.beatmapset.title_unicode).to.equal("夜啼く兎は夢を見る")
-	expect(validate(beatmap, "Beatmap.Extended.WithFailtimesOwnersBeatmapset")).to.be.true
+	expect(validate(beatmap, "Beatmap.Extended.WithFailtimesOwnersMaxcomboBeatmapset")).to.be.true
 	return true
 }
 
 const getBeatmap: Test = async(api) => {
-	const beatmap = await api.getBeatmap(388463)
-	expect(beatmap.id).to.equal(388463)
+	const beatmap = await api.getBeatmap(178645)
+	expect(beatmap.id).to.equal(178645)
 	expect(beatmap.beatmapset.title_unicode).to.equal("夜啼く兎は夢を見る")
-	expect(validate(beatmap, "Beatmap.Extended.WithFailtimesOwnersBeatmapset")).to.be.true
+	expect(validate(beatmap, "Beatmap.Extended.WithFailtimesOwnersMaxcomboBeatmapset")).to.be.true
 	return true
 }
 
@@ -85,6 +85,13 @@ const getBeatmapUserScores: Test = async(api) => {
 	return true
 }
 
+const getBeatmapUserTags: Test = async(api) => {
+	const tags = await api.getBeatmapUserTags()
+	expect(tags).to.have.length.greaterThan(60)
+	expect(validate(tags, "Beatmap.UserTag")).to.be.true
+	return true
+}
+
 const getBeatmapPack: Test = async(api) => {
 	const pack = await api.getBeatmapPack("P217")
 	expect(pack.tag).to.equal("P217")
@@ -112,6 +119,7 @@ export const tests = [
 	getBeatmapSoloScores,
 	getBeatmapUserScore,
 	getBeatmapUserScores,
+	getBeatmapUserTags,
 	getBeatmapPack,
 	getBeatmapPacks,
 ]
