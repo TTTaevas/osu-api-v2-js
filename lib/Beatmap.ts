@@ -107,8 +107,11 @@ export namespace Beatmap {
 				tag_id: UserTag["id"]
 				count: number
 			}[]
-			/** The ids of the tags that have been voted by the authenticated user for this Beatmap! */
-			current_user_tag_ids: unknown
+			/**
+			 * The ids of the tags that have been voted by the authenticated user for this Beatmap!
+			 * @remarks Unusually, if there is no authenticated user, this is an empty array (it exists and is not null)
+			 */
+			current_user_tag_ids: UserTag["id"][]
 		}
 	}
 
@@ -354,8 +357,8 @@ export namespace Beatmap {
 	}
 
 	/**
-	 * **You may want to use `getScores` instead, nowadays it *seems* to do just about the same thing**
-	 * 
+	 * @deprecated **Use the non-solo version of this instead, nowadays it does just about the same thing** | https://github.com/ppy/osu-web/pull/12093
+	 *
 	 * Get the top scores of a beatmap, in the "solo score" format lazer brought with it!
 	 * More info on GitHub if needed https://github.com/ppy/osu-infrastructure/blob/master/score-submission.md
 	 * @param beatmap The Beatmap in question
