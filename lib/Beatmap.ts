@@ -124,7 +124,7 @@ export namespace Beatmap {
 		beatmapset: Beatmapset
 	}
 
-	/** @obtainableFrom {@link API.getUserMostPlayed} */
+	/** @obtainableFrom {@link API.getBeatmapUserTags} */
 	export interface UserTag {
 		id: number
 		name: string
@@ -133,6 +133,11 @@ export namespace Beatmap {
 	}
 
 	export namespace UserTag {
+		/**
+		 * @obtainableFrom
+		 * {@link API.getBeatmapset} /
+		 * {@link API.lookupBeatmapset}
+		 */
 		export interface WithDates extends UserTag {
 			created_at: Date | null
 			updated_at: Date | null

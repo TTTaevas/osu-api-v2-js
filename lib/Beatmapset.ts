@@ -424,8 +424,7 @@ export namespace Beatmapset {
 		 * @param types What kinds of events?
 		 * @param config How many results maximum, how to sort them, which page of those, maybe a cursor_string...
 		 * @returns Relevant events and users
-		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware,
-		 * and also there's no documentation for this route in the API, so this is only the result of my interpretation of the website's code lol
+		 * @remarks This route is undocumented in the API docs, so this is only the result of my interpretation of the website's code and could be unstable
 		 */
 		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset["id"] | Beatmapset, user?: User["id"] | User, min_date?: Date, max_date?: Date},
 		types?: Event["type"][], config?: Config):
