@@ -147,7 +147,7 @@ export namespace Beatmap {
 		 * @returns An Array of UserTags
 		 */
 		export async function getAll(this: API): Promise<UserTag[]> {
-			const response = await this.request("get", "tags")
+			const response = await this.request("get", ["tags"])
 			return response.tags // It's the only property
 		}
 	}
@@ -368,23 +368,6 @@ export namespace Beatmap {
 
 		beatmap = typeof beatmap === "number" ? beatmap : beatmap.id
 		const response = await this.request("get", ["beatmaps", beatmap, "scores"], {...config, mode})
-		return response.scores // It's the only property
-	}
-
-	/**
-	 * @deprecated **Use the non-solo version of this instead, nowadays it does just about the same thing** | https://github.com/ppy/osu-web/pull/12093
-	 *
-   * Get the top scores of a beatmap, using the endpoint used by lazer since the change in score infrastructure that happened with lazer scores getting ranked: https://github.com/ppy/osu-infrastructure/blob/master/score-submission.md
-	 * @param beatmap The Beatmap in question
-	 * @param config Specify the score's ruleset, mods, type **(`legacy_only` should not be supported)**
-	 * @remarks Please check if `mods` and `type` seem to be supported or not by the API: https://osu.ppy.sh/docs/index.html#get-beatmap-scores-non-legacy
-	 */
-	export async function getSoloScores(this: API, beatmap: Beatmap["id"] | Beatmap, config?: Omit<Config, "legacy_only">): Promise<Score.WithUser[]> {
-		const mode = config?.ruleset !== undefined ? Ruleset[config.ruleset] : undefined
-		delete config?.ruleset
-
-		beatmap = typeof beatmap === "number" ? beatmap : beatmap.id
-		const response = await this.request("get", ["beatmaps", beatmap, "solo-scores"], {...config, mode})
 		return response.scores // It's the only property
 	}
 }

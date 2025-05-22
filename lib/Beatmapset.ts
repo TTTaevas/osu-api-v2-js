@@ -15,7 +15,9 @@ export interface Beatmapset {
 	}
 	creator: User["username"]
 	favourite_count: number
+	genre_id: Beatmapset.Genre
 	id: number
+	language_id: Beatmapset.Language
 	nsfw: boolean
 	offset: number
 	play_count: number

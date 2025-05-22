@@ -194,10 +194,10 @@ In the same order as on the API's official documentation:
 - `GET /beatmaps/{beatmap}/scores/users/{user}` -> [getBeatmapUserScore()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapuserscore)
 - `GET /beatmaps/{beatmap}/scores/users/{user}/all` -> [getBeatmapUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapuserscores)
 - `GET /beatmaps/{beatmap}/scores` -> [getBeatmapScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapscores)
-- `GET /beatmaps/{beatmap}/solo-scores` -> [getBeatmapSoloScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsoloscores)
 - `GET /beatmaps` -> [getBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmaps)
 - `GET /beatmaps/{beatmap}` -> [getBeatmap()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmap)
 - `POST /beatmaps/{beatmap}/attributes` -> [getBeatmapDifficultyAttributes()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapdifficultyattributes)
+- `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)
 
 ### Beatmapset Discussions
 - `GET /beatmapsets/discussions/posts` -> [getBeatmapsetDiscussionPosts()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetdiscussionposts)
@@ -257,6 +257,7 @@ In the same order as on the API's official documentation:
 - `GET /rooms` -> [getRooms()](https://osu-v2.taevas.xyz/classes/API.html#getrooms)
 - `GET /rooms/{room}` -> [getRoom()](https://osu-v2.taevas.xyz/classes/API.html#getroom)
 - `GET /rooms/{room}/leaderboard` -> [getRoomLeaderboard()](https://osu-v2.taevas.xyz/classes/API.html#getroomleaderboard)
+- `GET /rooms/{room}/events` -> [getRoomEvents()](https://osu-v2.taevas.xyz/classes/API.html#getroomevents)
 - While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### News
@@ -284,4 +285,3 @@ In the same order as on the API's official documentation:
 ### Misc Undocumented Stuff
 - `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)
 - `GET /scores/{score}/download` -> [getReplay()](https://osu-v2.taevas.xyz/classes/API.html#getreplay)
-- `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)
