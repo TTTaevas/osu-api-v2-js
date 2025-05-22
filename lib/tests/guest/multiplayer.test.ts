@@ -45,7 +45,36 @@ const getPlaylistItemScores: Test = async(api) => {
 	return true
 }
 
+const getRoomLeaderboard: Test = async(api) => {
+	console.log("|", "Playlist")
+	const response_playlists = await api.getRoomLeaderboard(588230)
+	expect(validate(response_playlists.leaderboard, "Multiplayer.Room.Leader")).to.be.true
+	response_playlists.leaderboard.forEach((leader) => expect(leader.room_id).to.equal(588230))
+	if (response_playlists.user_score) {expect(validate(response_playlists.user_score, "Multiplayer.Room.Leader.WithPosition"))}
+
+	console.log("|", "Realtime")
+	const response_realtime = await api.getRoomLeaderboard(591993)
+	expect(validate(response_realtime.leaderboard, "Multiplayer.Room.Leader")).to.be.true
+	response_realtime.leaderboard.forEach((leader) => expect(leader.room_id).to.equal(591993))
+	if (response_realtime.user_score) {expect(validate(response_realtime.user_score, "Multiplayer.Room.Leader.WithPosition"))}
+
+	return true
+}
+
+const getRoomEvents: Test = async(api) => {
+	const response = await api.getRoomEvents(1337921)
+	expect(response.first_event_id).to.be.lessThan(response.last_event_id)
+	expect(response.users).to.have.lengthOf(2)
+	expect(response.playlist_items).to.have.lengthOf(9)
+	expect(validate(response.events, "Multiplayer.Room.Event.Any")).to.be.true
+	expect(validate(response.users, "User.WithCountry")).to.be.true
+	expect(validate(response.playlist_items, "Multiplayer.Room.PlaylistItem.WithBeatmap")).to.be.true
+	return true
+}
+
 export const tests = [
 	getRoom,
 	getPlaylistItemScores,
+	getRoomLeaderboard,
+	getRoomEvents,
 ]

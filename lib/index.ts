@@ -158,7 +158,7 @@ export class API {
 		"Accept-Encoding": "gzip",
 		"Content-Type": "application/json",
 		"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
-		"x-api-version": "20250316",
+		"x-api-version": "20250522",
 	}
 	get headers() {return this._headers}
 	set headers(headers) {this._headers = headers}
@@ -713,6 +713,9 @@ export class API {
 
 	/** {@inheritDoc Multiplayer.Room.PlaylistItem.getScores} @group Multiplayer Methods */
 	readonly getPlaylistItemScores = Multiplayer.Room.PlaylistItem.getScores
+
+	/** {@inheritDoc Multiplayer.Room.Event.getAll} @group Multiplayer Methods */
+	readonly getRoomEvents = Multiplayer.Room.Event.getAll
 
 
 	// NEWS STUFF

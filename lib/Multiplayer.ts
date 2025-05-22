@@ -57,6 +57,7 @@ export namespace Multiplayer {
 			ruleset_id: Ruleset
 			allowed_mods: Mod[]
 			required_mods: Mod[]
+			freestyle: boolean
 			expired: boolean
 			owner_id: User["id"]
 			/** @remarks Should be null if the room isn't the realtime multiplayer kind */
@@ -123,13 +124,60 @@ export namespace Multiplayer {
 
 			/**
 			 * Get the room stats of all the users of that room!
-			 * @scope {@link Scope"public"}
 			 * @param room The room or the id of the room in question
 			 * @returns An object with the leaderboard, and the score and position of the authorized user under `user_score`
 			 */
 			export async function getMultiple(this: API, room: Room["id"] | Room): Promise<{leaderboard: Leader[], user_score: Leader.WithPosition | null}> {
 				const room_id = typeof room === "number" ? room : room.id
 				return await this.request("get", ["rooms", room_id, "leaderboard"])
+			}
+		}
+
+		export interface Event {
+			id: number
+			created_at: Date,
+			user_id: User["id"] | null,
+			playlist_item_id: PlaylistItem["id"] | null,
+		}
+
+		export namespace Event {
+			export interface GameStarted extends Event {
+				event_type: "game_started"
+				event_detail: {
+					room_type: "head_to_head" | "team_versus"
+					teams: Partial<Record<number, "red" | "blue">> | null
+				}
+			}
+
+			export interface Other extends Event {
+				event_type:
+				| "game_aborted"
+				| "game_completed"
+				| "host_changed"
+				| "player_joined"
+				| "player_kicked"
+				| "player_left"
+				| "room_created"
+				| "room_disbanded"
+				| "unknown"
+			}
+
+			export type Any = GameStarted | Other
+
+			/**
+			 * Get all the events about a lazer **realtime** room!
+			 * @remarks It **WILL error** if the provided room is playlist or other, and **may return empty arrays** on rooms from 2024 or older
+			 */
+			export async function getAll(this: API, room: Room["id"] | Room): Promise<{
+				events: Event.Any[],
+				users: User.WithCountry[],
+				first_event_id: number,
+				last_event_id: number,
+				playlist_items: PlaylistItem.WithBeatmap[],
+				current_playlist_item_id: PlaylistItem["id"],
+			}> {
+				const room_id = typeof room === "number" ? room : room.id
+				return await this.request("get", ["rooms", room_id, "events"])
 			}
 		}
 
