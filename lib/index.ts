@@ -555,6 +555,9 @@ export class API {
 	/** {@inheritDoc Beatmap.getUserScores} @group Beatmap Methods */
 	readonly getBeatmapUserScores = Beatmap.getUserScores
 
+	/** {@inheritDoc Beatmap.UserTag.getAll} @group Beatmap Methods */
+	readonly getBeatmapUserTags = Beatmap.UserTag.getAll
+
 	/** {@inheritDoc Beatmap.Pack.getOne} @group Beatmap Methods */
 	readonly getBeatmapPack = Beatmap.Pack.getOne
 

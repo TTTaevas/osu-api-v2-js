@@ -158,23 +158,17 @@ export namespace User {
 			weekly_streak_best: number
 			weekly_streak_current: number
 		}
-		favourite_beatmapset_count: number
 		follower_count: number
-		graveyard_beatmapset_count: number
-		guest_beatmapset_count: number
-		loved_beatmapset_count: number
 		mapping_follower_count: number
 		monthly_playcounts: {
 			start_date: Date
 			count: number
 		}[]
-		nominated_beatmapset_count: number
 		page: {
 			html: string
 			/** Basically the text with the BBCode */
 			raw: string
 		}
-		pending_beatmapset_count: number
 		previous_usernames: User["username"][]
 		rank_highest: {
 			rank: number
@@ -199,6 +193,14 @@ export namespace User {
 			mode: keyof typeof Ruleset
 			data: number[]
 		} | null
+		// all the beatmapset_count stuff, in order as on https://osu.ppy.sh/users/<user_id>
+		favourite_beatmapset_count: number
+		ranked_beatmapset_count: number
+		loved_beatmapset_count: number
+		guest_beatmapset_count: number
+		pending_beatmapset_count: number
+		graveyard_beatmapset_count: number
+		nominated_beatmapset_count: number
 	}
 
 	export namespace Extended {

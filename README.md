@@ -284,4 +284,4 @@ In the same order as on the API's official documentation:
 ### Misc Undocumented Stuff
 - `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)
 - `GET /scores/{score}/download` -> [getReplay()](https://osu-v2.taevas.xyz/classes/API.html#getreplay)
-- `GET /tags` -> **TODO**, not yet investigated, likely related to the upcoming beatmap user tags feature?
+- `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)

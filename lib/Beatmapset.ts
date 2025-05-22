@@ -355,13 +355,13 @@ export namespace Beatmapset {
 		}
 		
 		/** @group Discussion Change */
-		export interface IssueResolve extends WithUserid, WithOptionalBeatmapset, WithDiscussion {
+		export interface IssueResolve extends WithUserid, WithOptionalBeatmapset, WithOptionalDiscussion {
 			type: "issue_resolve"
 			comment: Comment.WithDiscussionidPostid
 		}
 
 		/** @group Discussion Change */
-		export interface IssueReopen extends WithUserid, WithOptionalBeatmapset, WithDiscussion {
+		export interface IssueReopen extends WithUserid, WithOptionalBeatmapset, WithOptionalDiscussion {
 			type: "issue_reopen"
 			comment: Comment.WithDiscussionidPostid
 		}
@@ -423,8 +423,7 @@ export namespace Beatmapset {
 		 * @param types What kinds of events?
 		 * @param config How many results maximum, how to sort them, which page of those, maybe a cursor_string...
 		 * @returns Relevant events and users
-		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware,
-		 * and also there's no documentation for this route in the API, so this is only the result of my interpretation of the website's code lol
+		 * @remarks This route is undocumented in the API docs, so this is only the result of my interpretation of the website's code and could be unstable
 		 */
 		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset["id"] | Beatmapset, user?: User["id"] | User, min_date?: Date, max_date?: Date},
 		types?: Event["type"][], config?: Config):
@@ -495,7 +494,7 @@ export namespace Beatmapset {
 		 */
 		export interface Plus extends Extended, WithUserHype {
 			/** The different beatmaps/difficulties this beatmapset has */
-			beatmaps: Beatmap.Extended.WithFailtimesOwners[]
+			beatmaps: Beatmap.Extended.WithFailtimesOwnersMaxcomboToptagids[]
 			/** The different beatmaps made for osu!, but converted to the other Rulesets */
 			converts: Beatmap.Extended.WithFailtimesOwners[]
 			current_nominations: {
@@ -520,6 +519,8 @@ export namespace Beatmapset {
 			ratings: number[]
 			recent_favourites: User[]
 			related_users: User[]
+			/** Tags that have been voted for by users in some of this Beatmapset's Beatmaps! */
+			related_tags: Beatmap.UserTag.WithDates[]
 			/** Only exists if authorized user */
 			has_favourited?: boolean
 		}
