@@ -12,7 +12,6 @@ import * as Home from "./guest/home.test.js"
 import * as Match from "./guest/match.test.js"
 import * as Multiplayer from "./guest/multiplayer.test.js"
 import * as News from "./guest/news.test.js"
-import * as Ranking from "./guest/ranking.test.js"
 import * as Spotlight from "./guest/spotlight.test.js"
 import * as User from "./guest/user.test.js"
 import * as Wiki from "./guest/wiki.test.js"
@@ -29,7 +28,6 @@ const domains: Test[][] = [
 	Match.tests,
 	Multiplayer.tests,
 	News.tests,
-	Ranking.tests,
 	Spotlight.tests,
 	User.tests,
 	Wiki.tests,

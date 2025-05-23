@@ -10,14 +10,13 @@ import { Home } from "./Home.js"
 import { Match } from "./Match.js"
 import { Multiplayer } from "./Multiplayer.js"
 import { NewsPost } from "./NewsPost.js"
-import { Ranking } from "./Ranking.js"
 import { Score } from "./Score.js"
 import { Spotlight } from "./Spotlight.js"
 import { User } from "./User.js"
 import { WikiPage } from "./Wiki.js"
 
 export { Beatmap, Beatmapset, Changelog, Chat, Comment, Event, Forum, Home,
-	Match, Multiplayer, NewsPost, Ranking, Score, Spotlight, User, WikiPage }
+	Match, Multiplayer, NewsPost, Score, Spotlight, User, WikiPage }
 
 export enum Ruleset {
 	osu 	= 0,
@@ -669,7 +668,7 @@ export class API {
 	/** {@inheritDoc Forum.Topic.getMultiple} @group Forum Methods */
 	readonly getForumTopics = Forum.Topic.getMultiple
 
-		/** {@inheritDoc Forum.Topic.create} @group Forum Methods */
+	/** {@inheritDoc Forum.Topic.create} @group Forum Methods */
 	readonly createForumTopic = Forum.Topic.create
 
 	/** {@inheritDoc Forum.Topic.reply} @group Forum Methods */
@@ -727,21 +726,6 @@ export class API {
 	readonly getNewsPosts = NewsPost.getMultiple
 
 
-	// RANKING STUFF
-
-	/** {@inheritDoc Ranking.getUser} @group Ranking Methods */
-	readonly getUserRanking = Ranking.getUser
-
-	/** {@inheritDoc Ranking.getCountry} @group Ranking Methods */
-	readonly getCountryRanking = Ranking.getCountry
-
-	/** {@inheritDoc Ranking.getKudosu} @group Ranking Methods */
-	readonly getKudosuRanking = Ranking.getKudosu
-
-	/** {@inheritDoc Ranking.getSpotlight} @group Ranking Methods */
-	readonly getSpotlightRanking = Ranking.getSpotlight
-
-
 	// SCORE STUFF
 
 	/** {@inheritDoc Score.getReplay} @group Score Methods */
@@ -752,6 +736,9 @@ export class API {
 
 	/** {@inheritDoc Spotlight.getAll} @group Spotlight Methods */
 	readonly getSpotlights = Spotlight.getAll
+
+	/** {@inheritDoc Spotlight.getRanking} @group Spotlight Methods */
+	readonly getSpotlightRanking = Spotlight.getRanking
 
 
 	// USER STUFF
@@ -780,11 +767,20 @@ export class API {
 	/** {@inheritDoc User.getRecentActivity} @group User Methods */
 	readonly getUserRecentActivity = User.getRecentActivity
 
-	/** {@inheritDoc User.getKudosu} @group User Methods */
-	readonly getUserKudosu = User.getKudosu
+	/** {@inheritDoc User.getRanking} @group User Methods */
+	readonly getUserRanking = User.getRanking
 
 	/** {@inheritDoc User.getFriends} @group User Methods */
 	readonly getFriends = User.getFriends
+
+	/** {@inheritDoc User.Country.getRanking} @group User Methods */
+	readonly getCountryRanking = User.Country.getRanking
+
+	/** {@inheritDoc User.Kudosu.getHistory} @group User Methods */
+	readonly getUserKudosuHistory = User.Kudosu.getHistory
+
+	/** {@inheritDoc User.Kudosu.getRanking} @group User Methods */
+	readonly getKudosuRanking = User.Kudosu.getRanking
 
 
 	// WIKI STUFF

@@ -55,10 +55,7 @@ export namespace User {
 
 	/** @obtainableFrom {@link API.getMatch} */
 	export interface WithCountry extends User {
-		country: {
-			code: string
-			name: string
-		}
+		country: Country
 	}
 
 	export interface WithCountryCover extends WithCountry {
@@ -260,25 +257,105 @@ export namespace User {
 		target: WithCountryCoverGroupsTeamStatisticsSupport
 	}
 
-	/** @obtainableFrom {@link API.getUserKudosu} */
-	export interface KudosuHistory {
-		id: number
-		action: "give" | "vote.give" | "reset" | "vote.reset" | "revoke" | "vote.revoke"
-		amount: number
-		model: string
-		created_at: Date
-		giver: {
-			url: string
-			username: string
-		} | null
-		post: {
-			url: string | null
-			title: string
+	/** @obtainableFrom {@link API.getUserRanking} */
+	export interface Ranking {
+		cursor: {
+			/** The number of the next page, is null if no more results are available */
+			page: number | null
+		}
+		/** Total amount of elements available across all pages, not on this specific page! Maximum of 10000 */
+		total: number
+		ranking: Statistics.WithUser[]
+	}
+
+	export interface Country {
+		/** The country's ISO 3166-1 alpha-2 code! (France would be `FR`, United States `US`) */
+		code: string
+		name: string
+	}
+
+	export namespace Country {
+		export interface Ranking {
+			cursor: {
+				/** The number of the next page, is null if no more results are available */
+				page: number | null
+			}
+			/** Total amount of elements available across all pages, not on this specific page! Maximum of 10000 */
+			total: number
+			ranking: {
+				/** Same as `country.code` */
+				code: Country["code"]
+				active_users: number
+				play_count: number
+				ranked_score: number
+				performance: number
+				country: Country
+			}[]
+		}
+
+		/**
+		* Get the top countries of a specific ruleset!
+		* @param ruleset On which Ruleset should the countries be compared?
+		* @param page Imagine the array you get as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one (defaults to **1**)
+		*/
+		export async function getRanking(this: API, ruleset: Ruleset, page: number = 1): Promise<Country.Ranking> {
+			return await this.request("get", ["rankings", Ruleset[ruleset], "country"], {page})
 		}
 	}
 
+	export namespace Kudosu {
+		/** @obtainableFrom {@link API.getUserKudosuHistory} */
+		export interface History {
+			id: number
+			action: "give" | "vote.give" | "reset" | "vote.reset" | "revoke" | "vote.revoke"
+			amount: number
+			model: string
+			created_at: Date
+			giver: {
+				url: string
+				username: string
+			} | null
+			post: {
+				url: string | null
+				title: string
+			}
+		}
 
-	// FUNCTIONS
+		/**
+		 * Get data about the history of a user's kudosu!
+		 * @param user The user in question
+		 * @param config Array limit & offset
+		 */
+		export async function getHistory(this: API, user: User["id"] | User, config?: Config): Promise<Kudosu.History[]> {
+			const user_id = typeof user === "number" ? user : user.id
+			return await this.request("get", ["users", user_id, "kudosu"], {...config})
+		}
+
+		/** Get the top 50 players who have the most total kudosu! */
+		export async function getRanking(this: API): Promise<User.WithKudosu[]> {
+			const response = await this.request("get", ["rankings", "kudosu"])
+			return response.ranking // It's the only property
+		}
+	}
+
+	/**
+	 * Get the top players of the game, with some filters!
+	 * @param ruleset Self-explanatory, is also known as "Gamemode"
+	 * @param type Rank players by their performance points or by their ranked score?
+	 * @param config Specify which page, country, filter out non-friends...
+	 */
+	export async function getRanking(this: API, ruleset: Ruleset, type: "performance" | "score", config?: {
+		/** Imagine the array you get as a page, it can only have a maximum of 50 players, while 50 others may be on the next one */
+		page?: number,
+		/** What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user */
+		filter?: "all" | "friends",
+		/** Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`) */
+		country?: Country["code"]
+		/** If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k! */
+		variant?: "4k" | "7k"
+	}): Promise<Ranking> {
+		return await this.request("get", ["rankings", Ruleset[ruleset], type], {...config})
+	}
 
 	/**
 	 * Get extensive user data about the authorized user
@@ -336,7 +413,7 @@ export namespace User {
 		const user_id = typeof user === "number" ? user : user.id
 		const mode = ruleset !== undefined ? Ruleset[ruleset] : undefined
 		return await this.request("get", ["users", user_id, "scores", type],
-		{mode, limit: config?.limit, offset: config?.offset, legacy_only: Number(!include.lazer), include_fails: String(Number(include.fails))})
+		{mode, ...config, legacy_only: Number(!include.lazer), include_fails: String(Number(include.fails))})
 	}
 
 	/**
@@ -348,7 +425,7 @@ export namespace User {
 	export async function getBeatmaps(this: API, user: User["id"] | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
 	config?: Config): Promise<Beatmapset.Extended.WithBeatmap[]> {
 		const user_id = typeof user === "number" ? user : user.id
-		return await this.request("get", ["users", user_id, "beatmapsets", type], {limit: config?.limit, offset: config?.offset})
+		return await this.request("get", ["users", user_id, "beatmapsets", type], {...config})
 	}
 
 	/**
@@ -358,7 +435,7 @@ export namespace User {
 	 */
 	export async function getMostPlayed(this: API, user: User["id"] | User, config?: Config): Promise<Beatmap.Playcount[]> {
 		const user_id = typeof user === "number" ? user : user.id
-		return await this.request("get", ["users", user_id, "beatmapsets", "most_played"], {limit: config?.limit, offset: config?.offset})
+		return await this.request("get", ["users", user_id, "beatmapsets", "most_played"], {...config})
 	}
 
 	/**
@@ -368,17 +445,7 @@ export namespace User {
 	 */
 	export async function getRecentActivity(this: API, user: User["id"] | User, config?: Config): Promise<Event.AnyRecentActivity[]> {
 		const user_id = typeof user === "number" ? user : user.id
-		return await this.request("get", ["users", user_id, "recent_activity"], {limit: config?.limit, offset: config?.offset})
-	}
-
-	/**
-	 * Get data about the activity of a user kudosu-wise!
-	 * @param user The user in question
-	 * @param config Array limit & offset
-	 */
-	export async function getKudosu(this: API, user: User["id"] | User, config?: Config): Promise<User.KudosuHistory[]> {
-		const user_id = typeof user === "number" ? user : user.id
-		return await this.request("get", ["users", user_id, "kudosu"], {limit: config?.limit, offset: config?.offset})
+		return await this.request("get", ["users", user_id, "recent_activity"], {...config})
 	}
 
 	/**
