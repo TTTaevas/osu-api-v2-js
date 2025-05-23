@@ -45,39 +45,36 @@ const getPlaylistItemScores: Test = async(api) => {
 	return true
 }
 
-const getMatch: Test = async(api) => {
-	console.log("|", "Without teams")
-	const response_noteams = await api.getMatch(75706987, {limit: 15})
-	expect(response_noteams.match.id).to.equal(75706987)
-	expect(response_noteams.match.name).to.equal("KC: (Taevas) vs (Stipoki)")
-	expect(response_noteams.current_game_id).to.be.null
-	expect(response_noteams.events).to.have.lengthOf(15)
-	response_noteams.events.forEach((e) => e.game?.scores.forEach((score) => expect(score.match.team).to.equal("none")))
-	expect(validate(response_noteams, "Multiplayer.Match")).to.be.true
+const getRoomLeaderboard: Test = async(api) => {
+	console.log("|", "Playlist")
+	const response_playlists = await api.getRoomLeaderboard(588230)
+	expect(validate(response_playlists.leaderboard, "Multiplayer.Room.Leader")).to.be.true
+	response_playlists.leaderboard.forEach((leader) => expect(leader.room_id).to.equal(588230))
+	if (response_playlists.user_score) {expect(validate(response_playlists.user_score, "Multiplayer.Room.Leader.WithPosition"))}
 
-	console.log("|", "With teams")
-	const response_teams = await api.getMatch(62006076, {limit: 15})
-	expect(response_teams.match.id).to.equal(62006076)
-	expect(response_teams.match.name).to.equal("CWC2020: (Italy) vs (Indonesia)")
-	expect(response_teams.current_game_id).to.be.null
-	expect(response_teams.events).to.have.lengthOf(15)
-	response_teams.events.forEach((e) => e.game?.scores.forEach((score) => expect(score.match.team).to.not.equal("none")))
-	expect(validate(response_teams, "Multiplayer.Match")).to.be.true
+	console.log("|", "Realtime")
+	const response_realtime = await api.getRoomLeaderboard(591993)
+	expect(validate(response_realtime.leaderboard, "Multiplayer.Room.Leader")).to.be.true
+	response_realtime.leaderboard.forEach((leader) => expect(leader.room_id).to.equal(591993))
+	if (response_realtime.user_score) {expect(validate(response_realtime.user_score, "Multiplayer.Room.Leader.WithPosition"))}
 
 	return true
 }
 
-const getMatches: Test = async(api) => {
-	const matches = await api.getMatches({limit: 2})
-	expect(matches).to.have.lengthOf(2)
-	matches.forEach((match) => expect(match.id).to.be.greaterThan(111250329))
-	expect(validate(matches, "Multiplayer.Match.Info")).to.be.true
+const getRoomEvents: Test = async(api) => {
+	const response = await api.getRoomEvents(1337921)
+	expect(response.first_event_id).to.be.lessThan(response.last_event_id)
+	expect(response.users).to.have.lengthOf(2)
+	expect(response.playlist_items).to.have.lengthOf(9)
+	expect(validate(response.events, "Multiplayer.Room.Event.Any")).to.be.true
+	expect(validate(response.users, "User.WithCountry")).to.be.true
+	expect(validate(response.playlist_items, "Multiplayer.Room.PlaylistItem.WithBeatmap")).to.be.true
 	return true
 }
 
 export const tests = [
 	getRoom,
 	getPlaylistItemScores,
-	getMatch,
-	getMatches,
+	getRoomLeaderboard,
+	getRoomEvents,
 ]

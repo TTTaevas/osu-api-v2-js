@@ -1,5 +1,4 @@
-import { API, Beatmap, Chat, Mod, Ruleset, Score as ScoreImport, User } from "./index.js"
-import { getId } from "./misc.js"
+import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User } from "./index.js"
 
 export namespace Multiplayer {
 	/**
@@ -58,6 +57,7 @@ export namespace Multiplayer {
 			ruleset_id: Ruleset
 			allowed_mods: Mod[]
 			required_mods: Mod[]
+			freestyle: boolean
 			expired: boolean
 			owner_id: User["id"]
 			/** @remarks Should be null if the room isn't the realtime multiplayer kind */
@@ -76,7 +76,7 @@ export namespace Multiplayer {
 			}
 
 			/** @obtainableFrom {@link API.getPlaylistItemScores} */
-			export interface Score extends ScoreImport.WithUser {
+			export interface Score extends IScore.WithUser {
 				playlist_item_id: PlaylistItem["id"]
 				room_id: Room["id"]
 			}
@@ -100,7 +100,7 @@ export namespace Multiplayer {
 				/** @remarks Will be null if there is no next page */
 				cursor_string: string | null
 			}> {
-				return await this.request("get", `rooms/${item.room_id}/playlist/${item.id}/scores`, {limit, sort, cursor_string})
+				return await this.request("get", ["rooms", item.room_id, "playlist", item.id, "scores"], {limit, sort, cursor_string})
 			}
 		}
 	
@@ -124,12 +124,60 @@ export namespace Multiplayer {
 
 			/**
 			 * Get the room stats of all the users of that room!
-			 * @scope {@link Scope"public"}
 			 * @param room The room or the id of the room in question
 			 * @returns An object with the leaderboard, and the score and position of the authorized user under `user_score`
 			 */
-			export async function getMultiple(this: API, room: number | Room): Promise<{leaderboard: Leader[], user_score: Leader.WithPosition | null}> {
-				return await this.request("get", `rooms/${getId(room)}/leaderboard`)
+			export async function getMultiple(this: API, room: Room["id"] | Room): Promise<{leaderboard: Leader[], user_score: Leader.WithPosition | null}> {
+				const room_id = typeof room === "number" ? room : room.id
+				return await this.request("get", ["rooms", room_id, "leaderboard"])
+			}
+		}
+
+		export interface Event {
+			id: number
+			created_at: Date,
+			user_id: User["id"] | null,
+			playlist_item_id: PlaylistItem["id"] | null,
+		}
+
+		export namespace Event {
+			export interface GameStarted extends Event {
+				event_type: "game_started"
+				event_detail: {
+					room_type: "head_to_head" | "team_versus"
+					teams: Partial<Record<number, "red" | "blue">> | null
+				}
+			}
+
+			export interface Other extends Event {
+				event_type:
+				| "game_aborted"
+				| "game_completed"
+				| "host_changed"
+				| "player_joined"
+				| "player_kicked"
+				| "player_left"
+				| "room_created"
+				| "room_disbanded"
+				| "unknown"
+			}
+
+			export type Any = GameStarted | Other
+
+			/**
+			 * Get all the events about a lazer **realtime** room!
+			 * @remarks It **WILL error** if the provided room is playlist or other, and **may return empty arrays** on rooms from 2024 or older
+			 */
+			export async function getAll(this: API, room: Room["id"] | Room): Promise<{
+				events: Event.Any[],
+				users: User.WithCountry[],
+				first_event_id: number,
+				last_event_id: number,
+				playlist_items: PlaylistItem.WithBeatmap[],
+				current_playlist_item_id: PlaylistItem["id"],
+			}> {
+				const room_id = typeof room === "number" ? room : room.id
+				return await this.request("get", ["rooms", room_id, "events"])
 			}
 		}
 
@@ -137,8 +185,9 @@ export namespace Multiplayer {
 		 * Get data about a lazer multiplayer room (realtime or playlists)!
 		 * @param room The room or the id of the room, can be found at the end of its URL (after `/multiplayer/rooms/`)
 		 */
-		export async function getOne(this: API, room: number | Room): Promise<Room> {
-			return await this.request("get", `rooms/${getId(room)}`)
+		export async function getOne(this: API, room: Room["id"] | Room): Promise<Room> {
+			const room_id = typeof room === "number" ? room : room.id
+			return await this.request("get", ["rooms", room_id])
 		}
 
 		/**
@@ -153,115 +202,7 @@ export namespace Multiplayer {
 		 */
 		export async function getMultiple(this: API, type: "playlists" | "realtime", mode: "active" | "all" | "ended" | "participated" | "owned",
 		limit: number = 10, sort: "ended" | "created" = "created", season_id?: number): Promise<Room[]> {
-			return await this.request("get", "rooms", {type_group: type, mode, limit, sort, season_id})
+			return await this.request("get", ["rooms"], {type_group: type, mode, limit, sort, season_id})
 		}
-	}
-
-	/** @obtainableFrom {@link API.getMatch} */
-	export interface Match {
-		match: Match.Info
-		events: Match.Event[]
-		users: User.WithCountry[]
-		first_event_id: Match.Event["id"]
-		latest_event_id: Match.Event["id"]
-		current_game_id: number | null
-	}
-
-	export namespace Match {
-		export interface Score extends ScoreImport.OldFormat {
-			created_at: Date
-			match: {
-				slot: number
-				team: "none" | "red" | "blue"
-				pass: boolean
-			}
-		}
-
-		export interface Event {
-			id: number
-			detail: {
-				type: string
-				/** If `detail.type` is `other`, this exists and will be the name of the room */
-				text?: string
-			}
-			timestamp: Date
-			user_id: User["id"] | null
-			/** If `detail.type` is `other`, then this should exist! */
-			game?: {
-				beatmap_id: Beatmap["id"]
-				id: number
-				start_time: Date
-				end_time: Date | null
-				mode: keyof typeof Ruleset
-				mode_int: Ruleset
-				scoring_type: string
-				team_type: string
-				mods: string[]
-				beatmap: Beatmap.WithBeatmapset
-				scores: Score[]
-			}
-		}
-
-		/** @obtainableFrom {@link API.getMatches} */
-		export interface Info {
-			id: number
-			start_time: Date
-			end_time: Date | null
-			name: string
-		}
-
-		/**
-		 * Get data of a multiplayer lobby from the stable (non-lazer) client that have URLs with `community/matches` or `mp`
-		 * @param match The id of a match can be found at the end of its URL
-		 * @param query Filter and limit the amount of events shown
-		 */
-		export async function getOne(this: API, match: Info["id"] | Info, query?: {
-			/** Filter FOR events BEFORE this one */
-			before?: Match.Event["id"] | Match.Event,
-			/** Filter FOR events AFTER this one */
-			after?: Match.Event["id"] | Match.Event,
-			/** 
-			 * From 1 to 101 events (defaults to **100**)
-			 * @remarks 0 is treated as 1, anything above 101 is treated as 101
-			 */
-			limit?: number
-		}): Promise<Match> {
-			const response = await this.request("get", `matches/${getId(match)}`, {
-				before: query?.before ? getId(query.before) : undefined,
-				after: query?.after ? getId(query.after) : undefined,
-				limit: query?.limit
-			}) as Match
-
-			// This converts scores' "perfect" from number to boolean
-			for (let i = 0; i < response.events.length; i++) {
-				for (let e = 0; e < Number(response.events[i].game?.scores.length); e++) {
-					response.events[i].game!.scores[e].perfect = Boolean(response.events[i].game!.scores[e].perfect)
-				}
-			}
-
-			return response
-		}
-
-		/**
-		 * Get the info about several matches!
-		 * @param query The id of the first match of the array, and the sorting and size of said array
-		 */
-		export async function getMultiple(this: API, query?: {
-			/** 
-			 * Which match should be featured at index 0 of the returned array? Will get one with a similar id if it is unavailable
-			 * @remarks You can use this argument differently to get all matches before/after (depending of `query.sort`) a certain match,
-			 * by adding +1/-1 to its id! So if you want all matches after match_id 10 with sorting is_desc, just have this argument be 10 + 1, or 11!
-			 */
-			first_match_in_array?: Info["id"] | Info
-			/** The maximum amount of elements returned in the array (defaults to **50**) */
-			limit?: number
-			/** "id_desc" has the biggest id (most recent start_time) at the beginning of the array, "id_asc" is the opposite (defaults to **id_desc**) */
-			sort?: "id_desc" | "id_asc"
-		}): Promise<Info[]> {
-			// `first_match_in_array` is a cool way to use the endpoint's cursor
-			const cursor = query?.first_match_in_array ? {match_id: getId(query.first_match_in_array) + (query?.sort === "id_asc" ? -1 : 1)} : undefined
-			const response = await this.request("get", "matches", {cursor, limit: query?.limit, sort: query?.sort})
-			return response.matches // NOT the only property; `params` is useless while `cursor` and `cursor_string` are superseded by `first_match_in_array`
-		}	
 	}
 }

@@ -62,14 +62,6 @@ const getBeatmapScores: Test = async(api) => {
 	return true
 }
 
-const getBeatmapSoloScores: Test = async(api) => {
-	const scores = await api.getBeatmapSoloScores(129891)
-	scores.forEach((score) => expect(score.beatmap_id).to.equal(129891))
-	expect(scores.at(0)?.total_score).to.be.greaterThanOrEqual(1073231)
-	expect(validate(scores, "Score.WithUser")).to.be.true
-	return true
-}
-
 const getBeatmapUserScore: Test = async(api) => {
 	const score = await api.getBeatmapUserScore(176960, 7276846, {mods: ["NM"]})
 	expect(score.position).to.be.a("number")
@@ -116,7 +108,6 @@ export const tests = [
 	getBeatmapDifficultyAttributesFruits,
 	getBeatmapDifficultyAttributesMania,
 	getBeatmapScores,
-	getBeatmapSoloScores,
 	getBeatmapUserScore,
 	getBeatmapUserScores,
 	getBeatmapUserTags,

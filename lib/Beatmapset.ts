@@ -1,5 +1,4 @@
 import { API, Beatmap, Ruleset, User } from "./index.js"
-import { getId } from "./misc.js"
 
 export interface Beatmapset {
 	artist: string
@@ -16,7 +15,9 @@ export interface Beatmapset {
 	}
 	creator: User["username"]
 	favourite_count: number
+	genre_id: Beatmapset.Genre
 	id: number
+	language_id: Beatmapset.Language
 	nsfw: boolean
 	offset: number
 	play_count: number
@@ -62,7 +63,7 @@ export namespace Beatmapset {
 		Ranked		= 1,
 		Approved	= 2,
 		Qualified	= 3,
-		Loved 		= 4
+		Loved 		= 4,
 	}
 
 	export enum Genre {
@@ -79,7 +80,7 @@ export namespace Beatmapset {
 		Metal			= 11,
 		Classical		= 12,
 		Folk			= 13,
-		Jazz			= 14
+		Jazz			= 14,
 	}
 
 	export enum Language {
@@ -97,7 +98,7 @@ export namespace Beatmapset {
 		Italian			= 11,
 		Russian			= 12,
 		Polish			= 13,
-		Other			= 14
+		Other			= 14,
 	}
 
 	/** @obtainableFrom {@link API.getBeatmapsetEvents} */
@@ -429,9 +430,9 @@ export namespace Beatmapset {
 		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset["id"] | Beatmapset, user?: User["id"] | User, min_date?: Date, max_date?: Date},
 		types?: Event["type"][], config?: Config):
 		Promise<{events: Event.Any[], users: User.WithGroups[]}> {
-			const beatmapset = from?.beatmapset ? getId(from.beatmapset) : undefined
-			const user = from?.user ? getId(from.user) : undefined
-			return await this.request("get", "beatmapsets/events", {beatmapset_id: beatmapset, user, min_date: from?.min_date?.toISOString(),
+			const beatmapset = typeof from?.beatmapset === "object" ? from.beatmapset.id : from?.beatmapset
+			const user = typeof from?.user === "object" ? from.user.id : from?.user
+			return await this.request("get", ["beatmapsets", "events"], {beatmapset_id: beatmapset, user, min_date: from?.min_date?.toISOString(),
 			max_date: from?.max_date?.toISOString(), types, sort: config?.sort, page: config?.page, limit: config?.limit, cursor_string: config?.cursor_string})
 		}
 	}
@@ -579,9 +580,9 @@ export namespace Beatmapset {
 			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, user?: User["id"] | User},
 			types?: ("first" | "reply" | "system")[], config?: Config):
 			Promise<{beatmapsets: Beatmapset.WithHype[], posts: Post[], users: User[], cursor_string: string | null}> {
-				const discussion = from?.discussion ? getId(from.discussion) : undefined
-				const user = from?.user ? getId(from.user) : undefined
-				return await this.request("get", "beatmapsets/discussions/posts", {beatmapset_discussion_id: discussion, limit: config?.limit,
+				const discussion = typeof from?.discussion === "object" ? from.discussion.id : from?.discussion
+				const user = typeof from?.user === "object" ? from.user.id : from?.user
+				return await this.request("get", ["beatmapsets", "discussions", "posts"], {beatmapset_discussion_id: discussion, limit: config?.limit,
 				page: config?.page, sort: config?.sort, types, user, cursor_string: config?.cursor_string})
 			}
 		}
@@ -608,11 +609,11 @@ export namespace Beatmapset {
 			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, vote_giver?: User["id"] | User,
 			vote_receiver?: User["id"] | User}, score?: 1 | -1, config?: Config):
 			Promise<{votes: Vote[], discussions: Discussion[], users: User.WithGroups[], cursor_string: string | null}> {
-				const discussion = from?.discussion ? getId(from.discussion) : undefined
-				const user = from?.vote_giver ? getId(from.vote_giver) : undefined
-				const receiver = from?.vote_receiver ? getId(from.vote_receiver) : undefined
+				const discussion = typeof from?.discussion === "object" ? from.discussion.id : from?.discussion
+				const user = typeof from?.vote_giver === "object" ? from.vote_giver.id : from?.vote_giver
+				const receiver = typeof from?.vote_receiver === "object" ? from.vote_receiver.id : from?.vote_receiver
 
-				return await this.request("get", "beatmapsets/discussions/votes", {beatmapset_discussion_id: discussion, limit: config?.limit,
+				return await this.request("get", ["beatmapsets", "discussions", "votes"], {beatmapset_discussion_id: discussion, limit: config?.limit,
 				page: config?.page, receiver, score, sort: config?.sort, user, cursor_string: config?.cursor_string})
 			}
 		}
@@ -626,16 +627,27 @@ export namespace Beatmapset {
 		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 		 * @privateRemarks I don't allow setting `beatmap_id` because my testing has led me to believe it does nothing (and is therefore misleading)
 		 */
-		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset["id"] | Beatmapset, user?: User["id"] | User,
-		status?: "all" | "ranked" | "qualified" | "disqualified" | "never_qualified"}, filter?: {types?: Beatmapset.Discussion["message_type"][],
-		only_unresolved?: boolean}, config?: Config):
-		Promise<{beatmaps: Beatmap.Extended[], beatmapsets: Beatmapset.Extended[], discussions: Beatmapset.Discussion.WithStartingpost[]
-		included_discussions: Beatmapset.Discussion.WithStartingpost[], reviews_config: {max_blocks: number}, users: User.WithGroups[],
-		cursor_string: string | null}> {
-			const beatmapset = from?.beatmapset ? getId(from.beatmapset) : undefined
-			const user = from?.user ? getId(from.user) : undefined
+		export async function getMultiple(this: API, from?: {
+			beatmapset?: Beatmapset["id"] | Beatmapset,
+			user?: User["id"] | User,
+			status?: "all" | "ranked" | "qualified" | "disqualified" | "never_qualified"
+		}, filter?: {
+			types?: Beatmapset.Discussion["message_type"][],
+			only_unresolved?: boolean
+		}, config?: Config):
+		Promise<{
+			beatmaps: Beatmap.Extended[],
+			beatmapsets: Beatmapset.Extended[],
+			discussions: Beatmapset.Discussion.WithStartingpost[]
+			included_discussions: Beatmapset.Discussion.WithStartingpost[],
+			reviews_config: {max_blocks: number},
+			users: User.WithGroups[],
+			cursor_string: string | null
+		}> {
+			const beatmapset = typeof from?.beatmapset === "object" ? from.beatmapset.id : from?.beatmapset
+			const user = typeof from?.user === "object" ? from.user.id : from?.user
 
-			return await this.request("get", "beatmapsets/discussions", {beatmapset_id: beatmapset, beatmapset_status: from?.status,
+			return await this.request("get", ["beatmapsets", "discussions"], {beatmapset_id: beatmapset, beatmapset_status: from?.status,
 			limit: config?.limit, message_types: filter?.types, only_unresolved: filter?.only_unresolved, page: config?.page, sort: config?.sort,
 			user, cursor_string: config?.cursor_string})
 		}
@@ -684,6 +696,8 @@ export namespace Beatmapset {
 	Promise<{beatmapsets: Beatmapset.Extended.WithBeatmapPacktags[], recommended_difficulty: number | null, total: number, error: any | null,
 	cursor_string: string | null}> {
 		const sort = query?.sort ? (query.sort.by + "_" + query.sort.in) : undefined
+
+		/** General */
 		const c = query?.general ? query.general.map((general_value) => {
 			if (general_value === "Recommended difficulty") return "recommended"
 			if (general_value === "Include converted beatmaps") return "converts"
@@ -691,21 +705,31 @@ export namespace Beatmapset {
 			if (general_value === "Spotlighted beatmaps") return "spotlights"
 			if (general_value === "Featured Artists") return "featured_artists"
 		}).join(".") : undefined
+
+		/** Categories */
 		const s = query?.categories ? query.categories === "My Maps" ? "mine" : query.categories.toLowerCase() : undefined
+
+		/** Explicit Content */
 		const nsfw = query?.hide_explicit_content ? false : undefined
+
+		/** Extra */
 		const e = query?.extra ? query.extra.map((extra_value) => {
 			if (extra_value === "must_have_video") return "video"
 			if (extra_value === "must_have_storyboard") return "storyboard"
 		}).join(".") : undefined
+
+		/** Rank Achieved */
 		const r = query?.rank_achieved ? query.rank_achieved.map((rank_achieved_value) => {
 			if (rank_achieved_value === "Silver SS") return "XH"
 			if (rank_achieved_value === "SS") return "X"
 			if (rank_achieved_value === "Silver S") return "SH"
 			return rank_achieved_value
 		}).join("x") : undefined
+
+		/** Played */
 		const played = query?.played ? query.played.toLowerCase() : undefined
 	
-		return await this.request("get", `beatmapsets/search`,
+		return await this.request("get", ["beatmapsets", "search"],
 		{q: query?.keywords, sort, c, m: query?.mode, s, nsfw, g: query?.genre, l: query?.language, e, r, played, cursor_string: query?.cursor_string})
 	}
 
@@ -714,7 +738,8 @@ export namespace Beatmapset {
 	 * @param beatmap A beatmap from the beatmapset you're looking for
 	 */
 	export async function lookup(this: API, beatmap: Beatmap["id"] | Beatmap): Promise<Beatmapset.Extended.Plus> {
-		return await this.request("get", `beatmapsets/lookup`, {beatmap_id: getId(beatmap)})
+		const beatmap_id = typeof beatmap === "number" ? beatmap : beatmap.id
+		return await this.request("get", ["beatmapsets", "lookup"], {beatmap_id})
 	}
 
 	/**
@@ -722,6 +747,7 @@ export namespace Beatmapset {
 	 * @param beatmapset The beatmapset or the id of the beatmapset you're trying to get
 	 */
 	export async function getOne(this: API, beatmapset: Beatmapset["id"] | Beatmapset): Promise<Beatmapset.Extended.Plus> {
-		return await this.request("get", `beatmapsets/${getId(beatmapset)}`)
+		beatmapset = typeof beatmapset === "number" ? beatmapset : beatmapset.id
+		return await this.request("get", ["beatmapsets", beatmapset])
 	}
 }
