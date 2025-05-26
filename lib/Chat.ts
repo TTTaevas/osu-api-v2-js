@@ -235,6 +235,10 @@ export namespace Chat {
 				data: undefined
 			}
 
+			export interface Ready {
+				event: "connection.ready"
+			}
+
 			export interface ChatChannelJoin {
 				event: "chat.channel.join"
 				data: Chat.Channel.WithDetails
@@ -254,15 +258,27 @@ export namespace Chat {
 			}
 
 			/** That's the type of `JSON.parse(m.toString())` where `m` is a WebSocket's `MessageEvent`! */
-			export type Any = Error | ChatChannelJoin | ChatChannelLeave | ChatMessageNew
+			export type Any = Error | Ready | ChatChannelJoin | ChatChannelLeave | ChatMessageNew
 		}
 
 		/**
-		* Get a websocket to get WebSocket events from!
+		 * Get the headers you might require in order to create a WebSocket connection!
+		 * @returns An object with the proper `Authorization: Bearer` header, in addition to the headers used in other requests,
+		 * which are all specified in {@link API.headers}
+		 * @remarks Feel free to use this and ignore {@link API.generateChatWebsocket} if for example
+		 * you're gonna use a third party package for handling websockets
+		 */
+		export function getHeaders(this: API): {[key: string]: any} {
+			return {...this.headers, Authorization: `${this.token_type} ${this.access_token}`}
+		}
+
+		/**
+		* Get a WebSocket to get Websocket events from!
+		* @param headers The headers that will be used to create the WebSocket (defaults to **running `getChatWebsocketHeaders()`**)
 		* @param server The "notification websocket/server" URL (defaults to **wss://notify.ppy.sh**)
 		*/
-		export function generate(this: API, server = "wss://notify.ppy.sh"): WebSocket {
-			return new WebSocket(server, {headers: {...this.headers, Authorization: `${this.token_type} ${this.access_token}`}})
+		export function generate(this: API, headers?: {[key: string]: any}, server = "wss://notify.ppy.sh"): WebSocket {
+			return new WebSocket(server, {headers: headers ?? this.getChatWebsocketHeaders()})
 		}
 	}
 

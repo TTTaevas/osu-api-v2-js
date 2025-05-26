@@ -1,6 +1,8 @@
 import ajv from "ajv"
 import tsj from "ts-json-schema-generator"
 import util from "util"
+import { exec } from "child_process"
+import http from "http"
 import { API } from "../index.js";
 
 export type AR<T extends (...args: any) => any> = Awaited<ReturnType<T>>;
@@ -50,6 +52,29 @@ export function fixDate(arg: any) {
 	}
 
 	return arg
+}
+
+export async function getCode(url: string, redirect_uri: string): Promise<string> {
+	const httpserver = http.createServer()
+	const host = redirect_uri.substring(redirect_uri.indexOf("/") + 2, redirect_uri.lastIndexOf(":"))
+	const port = Number(redirect_uri.substring(redirect_uri.lastIndexOf(":") + 1).split("/")[0])
+	httpserver.listen({host, port})
+
+	console.log("Waiting for code...")
+	const command = (process.platform == "darwin" ? "open" : process.platform == "win32" ? "start" : "xdg-open")
+	exec(`${command} "${url}"`)
+
+	const code: string = await new Promise((resolve) => {
+		httpserver.on("request", (request, response) => {
+			if (request.url) {
+				console.log("Received code!")
+				response.end("Worked! You may now close this tab.", "utf-8")
+				httpserver.close()
+				resolve(request.url.substring(request.url.indexOf("code=") + 5))
+			}
+		})
+	})
+	return code
 }
 
 /** cool for automatically coming up with the latest x-api-verison */

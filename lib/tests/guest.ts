@@ -34,7 +34,7 @@ const domains: Test[][] = [
 	Uncategorized.tests,
 ]
 
-const startRunningTests = async (id: number, secret: string): Promise<void> => {
+async function startRunningTests(id: number, secret: string): Promise<void> {
 	const api = await API.createAsync(id, secret, undefined, {server: "https://osu.ppy.sh", retry_on_timeout: true, verbose: "all"})
 	// api = api.withSettings({headers: {"x-api-version": getCurrentDateString()}})
 	await runTests(api, domains)

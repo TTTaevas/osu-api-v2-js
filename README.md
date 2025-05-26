@@ -135,9 +135,8 @@ async function readChat() {
     // Tell the server you want to know whenever there's are chat messages
 	socket.addEventListener("open", async () => {
 		socket.send(osu.Chat.Websocket.Command.chatStart) // osu.Chat.Websocket.Command.chatStart is simply JSON.stringify({event: "chat.start"}) but easier to remember
-		await api.keepChatAlive() // Initial ping
-		console.log("Did the initial ping!")
-		setInterval(() => {console.log("(server ping)"); api.keepChatAlive()}, 30 * 1000) // Tell the server every 30 seconds that you're still listening to the incoming messages
+		await api.keepChatAlive().then(() => console.log("Made the initial ping!"))
+		setInterval(() => api.keepChatAlive().then(() => console.log("(server ping)")), 30 * 1000) // Tell the server every 30 seconds that you're still listening to the incoming messages
 	})
 
     // Listen for chat messages (and other stuff)

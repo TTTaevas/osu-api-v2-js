@@ -635,6 +635,9 @@ export class API {
 	/** {@inheritDoc Chat.Channel.leaveOne} @group Chat Methods */
 	readonly leaveChatChannel = Chat.Channel.leaveOne
 
+	/** {@inheritDoc Chat.Websocket.getHeaders} @group Chat Methods */
+	readonly getChatWebsocketHeaders = Chat.Websocket.getHeaders
+
 	/** {@inheritDoc Chat.Websocket.generate} @group Chat Methods */
 	readonly generateChatWebsocket = Chat.Websocket.generate
 

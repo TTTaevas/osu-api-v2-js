@@ -10,6 +10,7 @@
     "build": "tsc",
     "test": "npm run build && node ./dist/tests/guest.js",
     "test-authenticated": "npm run build && node ./dist/tests/authenticated.js",
+    "test-websocket": "npm run build && node ./dist/tests/websocket.js",
     "doc": "npx typedoc lib/index.ts --cname osu-v2.taevas.xyz --plugin ./docs_plugins/visitors.ts"
   },
   "engines": {
