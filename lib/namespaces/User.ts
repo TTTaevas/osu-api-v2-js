@@ -1,8 +1,8 @@
-import { API, Beatmap, Beatmapset, Event, Ruleset, Score } from "./index.js"
+import { API, Beatmap, Beatmapset, Event, Ruleset, Score } from "../index.js"
 
 export interface User {
 	avatar_url: string
-	country_code: string
+	country_code: User.Country["code"]
 	default_group: string
 	id: number
 	is_active: boolean

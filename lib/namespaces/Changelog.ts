@@ -1,4 +1,4 @@
-import { API, User } from "./index.js"
+import { API, User } from "../index.js"
 
 export namespace Changelog {
 	export interface Build {

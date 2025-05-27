@@ -1,4 +1,4 @@
-import { API, User as IUser } from "./index.js";
+import { API, User as IUser } from "../index.js";
 
 export namespace Chat {
 	/** @obtainableFrom {@link API.keepChatAlive} */
@@ -154,6 +154,7 @@ export namespace Chat {
 		timestamp: string
 		/** Like "action", "markdown", "plain" */
 		type: string
+		uuid?: string | null
 	}
 
 	export namespace Message {
@@ -167,7 +168,6 @@ export namespace Chat {
 			/** Unlike the `timestamp` of a default `Message`, it is a Date object! */
 			timestamp: Date
 			sender: IUser
-			uuid?: string | null
 		}
 
 		/**

@@ -1,4 +1,4 @@
-import { API, User } from "./index.js"
+import { API, User } from "../index.js"
 
 export interface Forum {
 	id: number
@@ -138,6 +138,7 @@ export namespace Forum {
 			cursor_string?: string
 		}): Promise<{topics: Forum.Topic[], cursor_string: string | null}> {
 			const forum_id = typeof config?.forum === "object" ? config.forum.id : config?.forum
+			delete config?.forum
 			return await this.request("get", ["forums", "topics"], {...config, forum_id})
 		}
 

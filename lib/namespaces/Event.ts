@@ -1,4 +1,4 @@
-import { API, User as IUser, Ruleset } from "./index.js"
+import { API, User as IUser, Ruleset } from "../index.js"
 
 /** @obtainableFrom {@link API.getEvents} */
 export interface Event {
@@ -29,7 +29,6 @@ export namespace Event {
 			url: string
 		}
 	}
-	
 	
 	export interface Achievement extends Event {
 		type: "achievement"

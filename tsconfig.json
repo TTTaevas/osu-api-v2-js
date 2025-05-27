@@ -7,6 +7,6 @@
     "outDir": "./dist",
     "strict": true
   },
-  "include": ["./lib/*.ts", "./lib/tests/*.ts"],
+  "include": ["./lib"],
   "exclude": ["./docs_plugins"]
 }

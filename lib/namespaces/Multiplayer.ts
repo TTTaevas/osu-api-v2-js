@@ -1,4 +1,4 @@
-import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User } from "./index.js"
+import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User } from "../index.js"
 
 export namespace Multiplayer {
 	/**

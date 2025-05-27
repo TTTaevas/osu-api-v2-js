@@ -1,4 +1,4 @@
-import { API, User, WikiPage } from "./index.js"
+import { API, User, WikiPage } from "../index.js"
 
 export namespace Home {
 	export namespace Search {

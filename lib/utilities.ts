@@ -1,3 +1,5 @@
+// This file hosts important functions that are too big or unreadable to belong in another file
+
 /**
  * When using `fetch()` for a GET request, you can't just give the parameters the same way you'd give them for a POST request!
  * @param parameters The parameters as they'd be for a POST request (prior to using `JSON.stringify`)

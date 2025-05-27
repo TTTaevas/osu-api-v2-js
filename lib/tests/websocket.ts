@@ -9,7 +9,7 @@ import { expect } from "chai"
  * @remarks And it's fine to use the actual server here because we won't send any message, we will just *listen*
  */
 const server: string = "https://osu.ppy.sh"
-const scopes: Scope[] = ["public", "chat.read", "chat.write", "chat.write_manage", "identify"]
+const scopes: Scope[] = ["chat.read"]
 
 async function startTesting(id: number, secret: string, redirect_uri: string): Promise<void> {
 	const url = generateAuthorizationURL(id, redirect_uri, scopes, server)

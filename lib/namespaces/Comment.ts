@@ -1,4 +1,4 @@
-import { API, Beatmapset, Changelog, NewsPost, User } from "./index.js"
+import { API, Beatmapset, Changelog, NewsPost, User } from "../index.js"
 
 /**
  * Remove so-called "Deleted Items" / items that lack an id, add a "deleted_commentable_meta" and make it the number of removed objects

@@ -1,4 +1,4 @@
-import { API, Beatmapset, Mod, Ruleset, Score, User } from "./index.js"
+import { API, Beatmapset, Mod, Ruleset, Score, User } from "../index.js"
 
 export interface Beatmap {
 	beatmapset_id: Beatmapset["id"]
@@ -186,7 +186,7 @@ export namespace Beatmap {
 		 */
 		export async function getOne(this: API, pack: Pack["tag"] | Pack, legacy_only: boolean = false): Promise<Pack.WithBeatmapset> {
 			const tag = typeof pack === "string" ? pack : pack.tag
-			return await this.request("get", ["beatmaps", "packs", tag], {legacy_only})
+			return await this.request("get", ["beatmaps", "packs", tag], {legacy_only: Number(legacy_only)})
 		}
 
 		/**
@@ -292,12 +292,12 @@ export namespace Beatmap {
 	}
 
 	/**
-		 * Get the score on a beatmap made by a specific user (with specific mods and on a specific ruleset if needed)
-		 * @param beatmap The Beatmap the score was made on
-		 * @param user The User who made the score
-		 * @param config Specify the score's ruleset, the score's mods, prevent a lazer score from being returned
-		 * @returns An Object with the position of the score according to the specified Mods and Ruleset, and with the score itself
-		 */
+	 * Get the score on a beatmap made by a specific user (with specific mods and on a specific ruleset if needed)
+	 * @param beatmap The Beatmap the score was made on
+	 * @param user The User who made the score
+	 * @param config Specify the score's ruleset, the score's mods, prevent a lazer score from being returned
+	 * @returns An Object with the position of the score according to the specified Mods and Ruleset, and with the score itself
+	 */
 	export async function getUserScore(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Omit<Config, "type">): Promise<{
 		/** Value depends on the requested mode and mods! */
 		position: number,

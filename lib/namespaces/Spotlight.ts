@@ -1,4 +1,4 @@
-import { API, Beatmapset, Ruleset, User } from "./index.js"
+import { API, Beatmapset, Ruleset, User } from "../index.js"
 
 /** @obtainableFrom {@link API.getSpotlights} */
 export interface Spotlight {

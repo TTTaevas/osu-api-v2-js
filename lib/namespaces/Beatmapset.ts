@@ -1,4 +1,4 @@
-import { API, Beatmap, Ruleset, User } from "./index.js"
+import { API, Beatmap, Ruleset, User } from "../index.js"
 
 export interface Beatmapset {
 	artist: string
@@ -248,12 +248,12 @@ export namespace Beatmapset {
 
 		/** @group Beatmap Change */
 		export type AnyBeatmapChange =
-		| BeatmapOwnerChange
-		| GenreEdit
-		| LanguageEdit
-		| NsfwToggle
-		| OffsetEdit
-		| TagsEdit
+			| BeatmapOwnerChange
+			| GenreEdit
+			| LanguageEdit
+			| NsfwToggle
+			| OffsetEdit
+			| TagsEdit
 
 		/** @group Beatmapset Status Change */
 		export interface Approve extends Event {
@@ -370,14 +370,14 @@ export namespace Beatmapset {
 
 		/** @group Discussion Change */
 		export type AnyDiscussionChange = 
-		| DiscussionDelete
-		| DiscussionRestore
-		| DiscussionPostRestore
-		| DiscussionPostDelete
-		| DiscussionLock
-		| DiscussionUnlock
-		| IssueResolve
-		| IssueReopen
+			| DiscussionDelete
+			| DiscussionRestore
+			| DiscussionPostRestore
+			| DiscussionPostDelete
+			| DiscussionLock
+			| DiscussionUnlock
+			| IssueResolve
+			| IssueReopen
 
 		/** @group Kudosu Change */
 		export interface KudosuAllow extends WithOptionalBeatmapset, WithOptionalDiscussion {
@@ -411,11 +411,11 @@ export namespace Beatmapset {
 
 		/** @group Kudosu Change */
 		export type AnyKudosuChange =
-		| KudosuAllow
-		| KudosuDeny
-		| KudosuRecalculate
-		| KudosuGain
-		| KudosuLost
+			| KudosuAllow
+			| KudosuDeny
+			| KudosuRecalculate
+			| KudosuGain
+			| KudosuLost
 
 		export type Any = AnyBeatmapChange | AnyBeatmapsetStatusChange | AnyDiscussionChange | AnyKudosuChange
 
@@ -433,7 +433,7 @@ export namespace Beatmapset {
 			const beatmapset = typeof from?.beatmapset === "object" ? from.beatmapset.id : from?.beatmapset
 			const user = typeof from?.user === "object" ? from.user.id : from?.user
 			return await this.request("get", ["beatmapsets", "events"], {beatmapset_id: beatmapset, user, min_date: from?.min_date?.toISOString(),
-			max_date: from?.max_date?.toISOString(), types, sort: config?.sort, page: config?.page, limit: config?.limit, cursor_string: config?.cursor_string})
+			max_date: from?.max_date?.toISOString(), types, ...config})
 		}
 	}
 
@@ -582,8 +582,7 @@ export namespace Beatmapset {
 			Promise<{beatmapsets: Beatmapset.WithHype[], posts: Post[], users: User[], cursor_string: string | null}> {
 				const discussion = typeof from?.discussion === "object" ? from.discussion.id : from?.discussion
 				const user = typeof from?.user === "object" ? from.user.id : from?.user
-				return await this.request("get", ["beatmapsets", "discussions", "posts"], {beatmapset_discussion_id: discussion, limit: config?.limit,
-				page: config?.page, sort: config?.sort, types, user, cursor_string: config?.cursor_string})
+				return await this.request("get", ["beatmapsets", "discussions", "posts"], {beatmapset_discussion_id: discussion, types, user, ...config})
 			}
 		}
 
@@ -613,8 +612,8 @@ export namespace Beatmapset {
 				const user = typeof from?.vote_giver === "object" ? from.vote_giver.id : from?.vote_giver
 				const receiver = typeof from?.vote_receiver === "object" ? from.vote_receiver.id : from?.vote_receiver
 
-				return await this.request("get", ["beatmapsets", "discussions", "votes"], {beatmapset_discussion_id: discussion, limit: config?.limit,
-				page: config?.page, receiver, score, sort: config?.sort, user, cursor_string: config?.cursor_string})
+				return await this.request("get", ["beatmapsets", "discussions", "votes"],
+				{beatmapset_discussion_id: discussion, receiver, score, user, ...config})
 			}
 		}
 
@@ -644,12 +643,11 @@ export namespace Beatmapset {
 			users: User.WithGroups[],
 			cursor_string: string | null
 		}> {
-			const beatmapset = typeof from?.beatmapset === "object" ? from.beatmapset.id : from?.beatmapset
-			const user = typeof from?.user === "object" ? from.user.id : from?.user
+			const beatmapset_id = typeof from?.beatmapset === "object" ? from.beatmapset.id : from?.beatmapset
+			const user_id = typeof from?.user === "object" ? from.user.id : from?.user
 
-			return await this.request("get", ["beatmapsets", "discussions"], {beatmapset_id: beatmapset, beatmapset_status: from?.status,
-			limit: config?.limit, message_types: filter?.types, only_unresolved: filter?.only_unresolved, page: config?.page, sort: config?.sort,
-			user, cursor_string: config?.cursor_string})
+			return await this.request("get", ["beatmapsets", "discussions"], {beatmapset_id, beatmapset_status: from?.status,
+			message_types: filter?.types, only_unresolved: filter?.only_unresolved, user: user_id, ...config})
 		}
 	}
 

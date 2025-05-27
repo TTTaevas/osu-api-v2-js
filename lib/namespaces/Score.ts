@@ -1,4 +1,4 @@
-import { API, Beatmap, Beatmapset, Changelog, Mod, Ruleset, User } from "./index.js"
+import { API, Beatmap, Beatmapset, Changelog, Mod, Ruleset, User } from "../index.js"
 
 /** Common to older and newer formats */
 interface Basic {

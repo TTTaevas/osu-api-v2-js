@@ -1,4 +1,4 @@
-import { API, User } from "./index.js"
+import { API, User } from "../index.js"
 
 /** @obtainableFrom {@link API.getNewsPosts} */
 export interface NewsPost {

@@ -1,7 +1,7 @@
-import { API, Beatmap, Ruleset, Score as IScore, User } from "./index.js"
+import { API, Beatmap, Ruleset, Score as IScore, User } from "../index.js"
 
 /** @obtainableFrom {@link API.getMatch} */
-	export interface Match {
+export interface Match {
 	match: Match.Info
 	events: Match.Event[]
 	users: User.WithCountry[]
@@ -12,7 +12,7 @@ import { API, Beatmap, Ruleset, Score as IScore, User } from "./index.js"
 
 export namespace Match {
 	export interface Score extends IScore.OldFormat {
-	created_at: Date
+		created_at: Date
 		match: {
 			slot: number
 			team: "none" | "red" | "blue"
@@ -58,7 +58,7 @@ export namespace Match {
 	 * @param match The id of a match can be found at the end of its URL
 	 * @param query Filter and limit the amount of events shown
 	 */
-		export async function getOne(this: API, match: Info["id"] | Info, query?: {
+	export async function getOne(this: API, match: Info["id"] | Info, query?: {
 		/** Filter FOR events BEFORE this one */
 		before?: Match.Event["id"] | Match.Event,
 		/** Filter FOR events AFTER this one */
