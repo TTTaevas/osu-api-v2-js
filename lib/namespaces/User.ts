@@ -1,8 +1,8 @@
-import { API, Beatmap, Beatmapset, Event, Ruleset, Score } from "../index.js"
+import { API, Beatmap, Beatmapset, Event, Miscellaneous, Ruleset, Score } from "../index.js"
 
 export interface User {
 	avatar_url: string
-	country_code: User.Country["code"]
+	country_code: Miscellaneous.Country["code"]
 	default_group: string
 	id: number
 	is_active: boolean
@@ -55,7 +55,7 @@ export namespace User {
 
 	/** @obtainableFrom {@link API.getMatch} */
 	export interface WithCountry extends User {
-		country: Country
+		country: Miscellaneous.Country
 	}
 
 	export interface WithCountryCover extends WithCountry {
@@ -161,11 +161,7 @@ export namespace User {
 			start_date: Date
 			count: number
 		}[]
-		page: {
-			html: string
-			/** Basically the text with the BBCode */
-			raw: string
-		}
+		page: Miscellaneous.RichText
 		previous_usernames: User["username"][]
 		rank_highest: {
 			rank: number
@@ -261,46 +257,11 @@ export namespace User {
 	export interface Ranking {
 		cursor: {
 			/** The number of the next page, is null if no more results are available */
-			page: number | null
+			page: Miscellaneous.Page | null
 		}
 		/** Total amount of elements available across all pages, not on this specific page! Maximum of 10000 */
 		total: number
 		ranking: Statistics.WithUser[]
-	}
-
-	export interface Country {
-		/** The country's ISO 3166-1 alpha-2 code! (France would be `FR`, United States `US`) */
-		code: string
-		name: string
-	}
-
-	export namespace Country {
-		export interface Ranking {
-			cursor: {
-				/** The number of the next page, is null if no more results are available */
-				page: number | null
-			}
-			/** Total amount of elements available across all pages, not on this specific page! Maximum of 10000 */
-			total: number
-			ranking: {
-				/** Same as `country.code` */
-				code: Country["code"]
-				active_users: number
-				play_count: number
-				ranked_score: number
-				performance: number
-				country: Country
-			}[]
-		}
-
-		/**
-		* Get the top countries of a specific ruleset!
-		* @param ruleset On which Ruleset should the countries be compared?
-		* @param page Imagine the array you get as a page, it can only have a maximum of 50 countries, while 50 others may be on the next one (defaults to **1**)
-		*/
-		export async function getRanking(this: API, ruleset: Ruleset, page: number = 1): Promise<Country.Ranking> {
-			return await this.request("get", ["rankings", Ruleset[ruleset], "country"], {page})
-		}
 	}
 
 	export namespace Kudosu {
@@ -313,7 +274,7 @@ export namespace User {
 			created_at: Date
 			giver: {
 				url: string
-				username: string
+				username: User["username"]
 			} | null
 			post: {
 				url: string | null
@@ -346,11 +307,11 @@ export namespace User {
 	 */
 	export async function getRanking(this: API, ruleset: Ruleset, type: "performance" | "score", config?: {
 		/** Imagine the array you get as a page, it can only have a maximum of 50 players, while 50 others may be on the next one */
-		page?: number,
+		page?: Miscellaneous.Page,
 		/** What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user */
 		filter?: "all" | "friends",
 		/** Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`) */
-		country?: Country["code"]
+		country?: Miscellaneous.Country["code"]
 		/** If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k! */
 		variant?: "4k" | "7k"
 	}): Promise<Ranking> {

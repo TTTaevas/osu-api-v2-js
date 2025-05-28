@@ -1,4 +1,4 @@
-import { API, Beatmapset, Mod, Ruleset, Score, User } from "../index.js"
+import { API, Beatmapset, Miscellaneous, Mod, Ruleset, Score, User } from "../index.js"
 
 export interface Beatmap {
 	beatmapset_id: Beatmapset["id"]
@@ -195,7 +195,7 @@ export namespace Beatmap {
 		 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results!
 		 */
 		export async function getMultiple(this: API, type: "standard" | "featured" | "tournament" | "loved" | "chart" | "theme" | "artist" = "standard",
-		cursor_string?: string): Promise<{beatmap_packs: Pack[], cursor_string: string | null}> {
+		cursor_string?: Miscellaneous.CursorString): Promise<{beatmap_packs: Pack[], cursor_string: Miscellaneous.CursorString | null}> {
 			return await this.request("get", ["beatmaps", "packs"], {type, cursor_string})
 		}
 	}

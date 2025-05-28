@@ -1,4 +1,4 @@
-import { API, User } from "../index.js"
+import { API, Miscellaneous, User } from "../index.js"
 
 export interface Forum {
 	id: number
@@ -21,7 +21,7 @@ export namespace Forum {
 	 * @obtainableFrom
 	 * {@link API.replyForumTopic} /
 	 * {@link API.createForumTopic} /
-	 * {@link API.getForumTopicAndPosts} /
+	 * {@link API.getForumTopic} /
 	 * {@link API.editForumPost}
 	 */
 	export interface Post {
@@ -33,12 +33,7 @@ export namespace Forum {
 		id: number
 		topic_id: Topic["id"]
 		user_id: User["id"]
-		body: {
-			/** Post content in HTML format */
-			html: string
-			/** Post content in BBCode format */
-			raw: string
-		}
+		body: Miscellaneous.RichText
 	}
 
 	export namespace Post {
@@ -58,7 +53,7 @@ export namespace Forum {
 	/**
 	 * @obtainableFrom
 	 * {@link API.createForumTopic} /
-	 * {@link API.getForumTopicAndPosts} /
+	 * {@link API.getForumTopic} /
 	 * {@link API.editForumTopicTitle}
 	 */
 	export interface Topic {
@@ -114,8 +109,8 @@ export namespace Forum {
 			/** "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead */
 			sort?: "id_asc" | "id_desc"
 			/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance! */
-			cursor_string?: string
-		}): Promise<{topic: Topic, posts: Post[], cursor_string: string | null}> {
+			cursor_string?: Miscellaneous.CursorString
+		}): Promise<{topic: Topic, posts: Post[], cursor_string: Miscellaneous.CursorString | null}> {
 			const topic_id = typeof topic === "number" ? topic : topic.id
 			const start = config?.sort !== "id_desc" ? typeof config?.first_post === "object" ? config.first_post.id : config?.first_post : undefined
 			const end = config?.sort === "id_desc" ? typeof config.first_post === "object" ? config.first_post.id : config.first_post : undefined
@@ -135,8 +130,8 @@ export namespace Forum {
 			/** Sort by topic's last post time, "old" to have the topic with the oldest post at the beginning of the `topics` array, "new" to have the newest instead */
 			sort?: "old" | "new"
 			/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `topics` in this instance! */
-			cursor_string?: string
-		}): Promise<{topics: Forum.Topic[], cursor_string: string | null}> {
+			cursor_string?: Miscellaneous.CursorString
+		}): Promise<{topics: Forum.Topic[], cursor_string: Miscellaneous.CursorString | null}> {
 			const forum_id = typeof config?.forum === "object" ? config.forum.id : config?.forum
 			delete config?.forum
 			return await this.request("get", ["forums", "topics"], {...config, forum_id})
@@ -208,7 +203,7 @@ export namespace Forum {
 
 	/**
 	 * Get a Forum with a specific id, as well as its Forum.Topics!
-	 * @param forum_id The Forum you want to get
+	 * @param forum The Forum you want to get
 	 * @returns An object with the Forum, its topics, and the topics pinned in it
 	 */
 	export async function getOne(this: API, forum: Forum["id"] | Forum): Promise<{

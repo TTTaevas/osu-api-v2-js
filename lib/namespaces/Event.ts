@@ -1,4 +1,4 @@
-import { API, User as IUser, Ruleset } from "../index.js"
+import { API, User as IUser, Miscellaneous, Ruleset } from "../index.js"
 
 /** @obtainableFrom {@link API.getEvents} */
 export interface Event {
@@ -140,8 +140,8 @@ export namespace Event {
 	 * @param sort "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead (defaults to **id_desc**)
 	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `events` in this instance!
 	 */
-	export async function getMultiple(this: API, sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string):
-	Promise<{events: Event.Any[], cursor_string: string | null}> {
+	export async function getMultiple(this: API, sort: Miscellaneous.Sort = "id_desc", cursor_string?: Miscellaneous.CursorString):
+	Promise<{events: Event.Any[], cursor_string: Miscellaneous.CursorString | null}> {
 		return await this.request("get", ["events"], {sort, cursor_string})
 	}
 }

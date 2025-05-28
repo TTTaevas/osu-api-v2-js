@@ -1,4 +1,4 @@
-import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User } from "../index.js"
+import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User, Miscellaneous } from "../index.js"
 
 export namespace Multiplayer {
 	/**
@@ -90,7 +90,7 @@ export namespace Multiplayer {
 			 * @remarks This will **not work for rooms created before ~March 5th 2024** https://github.com/ppy/osu-web/issues/10725
 			 */
 			export async function getScores(this: API, item: {id: number, room_id: number} | Multiplayer.Room.PlaylistItem, limit: number = 50,
-			sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: string): Promise<{
+			sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: Miscellaneous.CursorString): Promise<{
 				params: {limit: number, sort: string}
 				scores: Score[]
 				/** How many scores there are across all pages, not necessarily `scores.length` */
@@ -98,7 +98,7 @@ export namespace Multiplayer {
 				/** @remarks Will be null if not an authorized user or if the authorized user has no score */
 				user_score: Score | null
 				/** @remarks Will be null if there is no next page */
-				cursor_string: string | null
+				cursor_string: Miscellaneous.CursorString | null
 			}> {
 				return await this.request("get", ["rooms", item.room_id, "playlist", item.id, "scores"], {limit, sort, cursor_string})
 			}

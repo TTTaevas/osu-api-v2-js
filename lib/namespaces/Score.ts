@@ -77,11 +77,7 @@ export namespace Score {
 		}
 	}
 
-	/**
-	 * @obtainableFrom
-	 * {@link API.getBeatmapScores} /
-	 * {@link API.getBeatmapSoloScores}
-	 */
+	/** @obtainableFrom {@link API.getBeatmapScores} */
 	export interface WithUser extends Score {
 		user: User.WithCountryCover
 	}

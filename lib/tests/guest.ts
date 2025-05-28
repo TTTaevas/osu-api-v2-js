@@ -10,12 +10,12 @@ import * as Event from "./guest/event.test.js"
 import * as Forum from "./guest/forum.test.js"
 import * as Home from "./guest/home.test.js"
 import * as Match from "./guest/match.test.js"
+import * as Miscellaneous from "./guest/miscellaneous.test.js"
 import * as Multiplayer from "./guest/multiplayer.test.js"
 import * as News from "./guest/news.test.js"
 import * as Spotlight from "./guest/spotlight.test.js"
 import * as User from "./guest/user.test.js"
 import * as Wiki from "./guest/wiki.test.js"
-import * as Uncategorized from "./guest/uncategorized.test.js"
 
 const domains: Test[][] = [
 	Beatmap.tests,
@@ -26,12 +26,12 @@ const domains: Test[][] = [
 	Forum.tests,
 	Home.tests,
 	Match.tests,
+	Miscellaneous.tests,
 	Multiplayer.tests,
 	News.tests,
 	Spotlight.tests,
 	User.tests,
 	Wiki.tests,
-	Uncategorized.tests,
 ]
 
 async function startRunningTests(id: number, secret: string): Promise<void> {

@@ -2,11 +2,12 @@ import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
 const getForum: Test = async(api) => {
-	const response = await api.getForum(18)
-	expect(response.forum.id).to.equal(18)
-	expect(response.forum.name).to.equal("Other Languages")
-	expect(response.pinned_topics).to.have.lengthOf(1)
-	expect(response.topics).to.have.length.greaterThanOrEqual(50)
+	const response = await api.getForum(14)
+	expect(response.forum.id).to.equal(14)
+	expect(response.forum.name).to.equal("Ranked Beatmaps (Archived)")
+	expect(response.forum.subforums).to.have.lengthOf(3)
+	expect(response.pinned_topics).to.have.lengthOf(2)
+	expect(response.topics).to.have.lengthOf(50)
 
 	expect(validate(response.forum, "Forum.WithSubforums2")).to.be.true
 	expect(validate(response.pinned_topics, "Forum.Topic")).to.be.true

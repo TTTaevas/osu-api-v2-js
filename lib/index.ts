@@ -8,6 +8,7 @@ import { Event } from "./namespaces/Event.js"
 import { Forum } from "./namespaces/Forum.js"
 import { Home } from "./namespaces/Home.js"
 import { Match } from "./namespaces/Match.js"
+import { Miscellaneous } from "./namespaces/Miscellaneous.js"
 import { Multiplayer } from "./namespaces/Multiplayer.js"
 import { NewsPost } from "./namespaces/NewsPost.js"
 import { Score } from "./namespaces/Score.js"
@@ -16,7 +17,7 @@ import { User } from "./namespaces/User.js"
 import { WikiPage } from "./namespaces/Wiki.js"
 
 export { Beatmap, Beatmapset, Changelog, Chat, Comment, Event, Forum, Home,
-	Match, Multiplayer, NewsPost, Score, Spotlight, User, WikiPage }
+	Match, Miscellaneous, Multiplayer, NewsPost, Score, Spotlight, User, WikiPage }
 
 export enum Ruleset {
 	osu 	= 0,
@@ -115,7 +116,7 @@ export class API {
 		})
 
 		return user ?
-		await new_api.getAndSetToken({client_id, client_secret, grant_type: "authorization_code", redirect_uri: user.redirect_uri, code: user.code}, new_api) :
+		await new_api.getAndSetToken({client_id, client_secret, grant_type: "authorization_code", ...user}, new_api) :
 		await new_api.getAndSetToken({client_id, client_secret, grant_type: "client_credentials", scope: "public"}, new_api)
 	}
 
@@ -702,6 +703,15 @@ export class API {
 	readonly getMatches = Match.getMultiple
 
 
+	// MISCELLANEOUS STUFF
+
+	/** {@inheritDoc Miscellaneous.Country.getRanking} @group Miscellaneous Methods */
+	readonly getCountryRanking = Miscellaneous.Country.getRanking
+
+	/** {@inheritDoc Miscellaneous.getSeasonalBackgrounds} @group Miscellaneous Methods */
+	readonly getSeasonalBackgrounds = Miscellaneous.getSeasonalBackgrounds
+
+
 	// MULTIPLAYER STUFF
 
 	/** {@inheritDoc Multiplayer.Room.getOne} @group Multiplayer Methods */
@@ -776,9 +786,6 @@ export class API {
 	/** {@inheritDoc User.getFriends} @group User Methods */
 	readonly getFriends = User.getFriends
 
-	/** {@inheritDoc User.Country.getRanking} @group User Methods */
-	readonly getCountryRanking = User.Country.getRanking
-
 	/** {@inheritDoc User.Kudosu.getHistory} @group User Methods */
 	readonly getUserKudosuHistory = User.Kudosu.getHistory
 
@@ -790,16 +797,6 @@ export class API {
 
 	/** {@inheritDoc WikiPage.getOne} @group WikiPage Methods */
 	readonly getWikiPage = WikiPage.getOne
-
-
-	/**
-	 * Get the backgrounds made and selected for this season or for last season!
-	 * @returns When the season ended, and for each background, its URL and its artist
-	 * @group Other Methods
-	 */
-	async getSeasonalBackgrounds(): Promise<{ends_at: Date, backgrounds: {url: string, user: User}[]}> {
-		return await this.request("get", ["seasonal-backgrounds"])
-	}
 }
 
 /**

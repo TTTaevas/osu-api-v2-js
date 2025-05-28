@@ -99,16 +99,6 @@ const getUserRanking: Test = async(api) => {
 	return true
 }
 
-const getCountryRanking: Test = async(api) => {
-	const response = await api.getCountryRanking(Ruleset.osu)
-	expect(response.total).to.be.greaterThan(200).and.lessThan(500)
-	expect(response.ranking).to.have.lengthOf(50)
-	expect(response.cursor.page).to.equal(2)
-	expect(response.ranking.at(0)?.code).to.equal("US")
-	expect(validate(response, "User.Country.Ranking")).to.be.true
-	return true
-}
-
 const getUserKudosuHistory: Test = async(api) => {
 	const events = await api.getUserKudosuHistory(7276846, {limit: 5})
 	expect(events).to.have.lengthOf(5)
@@ -133,7 +123,6 @@ export const tests = [
 	getUserMostPlayed,
 	getUserRecentActivity,
 	getUserRanking,
-	getCountryRanking,
 	getUserKudosuHistory,
 	getKudosuRanking,
 ]

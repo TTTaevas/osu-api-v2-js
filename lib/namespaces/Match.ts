@@ -1,4 +1,4 @@
-import { API, Beatmap, Ruleset, Score as IScore, User } from "../index.js"
+import { API, Beatmap, Ruleset, Score as IScore, User, Miscellaneous } from "../index.js"
 
 /** @obtainableFrom {@link API.getMatch} */
 export interface Match {
@@ -98,7 +98,7 @@ export namespace Match {
 		/** The maximum amount of elements returned in the array (defaults to **50**) */
 		limit?: number
 		/** "id_desc" has the biggest id (most recent start_time) at the beginning of the array, "id_asc" is the opposite (defaults to **id_desc**) */
-		sort?: "id_desc" | "id_asc"
+		sort?: Miscellaneous.Sort
 	}): Promise<Info[]> {
 		// `first_match_in_array` is a cool way to use the endpoint's cursor
 		const match_id = typeof query?.first_match_in_array === "object" ? query.first_match_in_array.id : query?.first_match_in_array

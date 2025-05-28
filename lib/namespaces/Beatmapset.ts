@@ -1,4 +1,4 @@
-import { API, Beatmap, Ruleset, User } from "../index.js"
+import { API, Beatmap, Miscellaneous, Ruleset, User } from "../index.js"
 
 export interface Beatmapset {
 	artist: string
@@ -49,11 +49,11 @@ export namespace Beatmapset {
 		/** The maximum amount of elements to get */
 		limit?: number
 		/** "id_asc" to have the oldest element first, "id_desc" to have the newest instead */
-		sort?: "id_desc" | "id_asc"
+		sort?: Miscellaneous.Sort
 		/** Which page of the results to get */
-		page?: number
+		page?: Miscellaneous.Page
 		/** A cursor_string provided by a previous request */
-		cursor_string?: string
+		cursor_string?: Miscellaneous.CursorString
 	}
 
 	export enum RankStatus {
@@ -579,7 +579,7 @@ export namespace Beatmapset {
 			 */
 			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, user?: User["id"] | User},
 			types?: ("first" | "reply" | "system")[], config?: Config):
-			Promise<{beatmapsets: Beatmapset.WithHype[], posts: Post[], users: User[], cursor_string: string | null}> {
+			Promise<{beatmapsets: Beatmapset.WithHype[], posts: Post[], users: User[], cursor_string: Miscellaneous.CursorString | null}> {
 				const discussion = typeof from?.discussion === "object" ? from.discussion.id : from?.discussion
 				const user = typeof from?.user === "object" ? from.user.id : from?.user
 				return await this.request("get", ["beatmapsets", "discussions", "posts"], {beatmapset_discussion_id: discussion, types, user, ...config})
@@ -607,7 +607,7 @@ export namespace Beatmapset {
 			 */
 			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, vote_giver?: User["id"] | User,
 			vote_receiver?: User["id"] | User}, score?: 1 | -1, config?: Config):
-			Promise<{votes: Vote[], discussions: Discussion[], users: User.WithGroups[], cursor_string: string | null}> {
+			Promise<{votes: Vote[], discussions: Discussion[], users: User.WithGroups[], cursor_string: Miscellaneous.CursorString | null}> {
 				const discussion = typeof from?.discussion === "object" ? from.discussion.id : from?.discussion
 				const user = typeof from?.vote_giver === "object" ? from.vote_giver.id : from?.vote_giver
 				const receiver = typeof from?.vote_receiver === "object" ? from.vote_receiver.id : from?.vote_receiver
@@ -641,7 +641,7 @@ export namespace Beatmapset {
 			included_discussions: Beatmapset.Discussion.WithStartingpost[],
 			reviews_config: {max_blocks: number},
 			users: User.WithGroups[],
-			cursor_string: string | null
+			cursor_string: Miscellaneous.CursorString | null
 		}> {
 			const beatmapset_id = typeof from?.beatmapset === "object" ? from.beatmapset.id : from?.beatmapset
 			const user_id = typeof from?.user === "object" ? from.user.id : from?.user
@@ -689,10 +689,10 @@ export namespace Beatmapset {
 		/** Does the authorized user with osu!supporter have already played those sets, or have they not played them yet? */
 		played?: "Played" | "Unplayed",
 		/** The thing you've got from a previous request to get another page of results! */
-		cursor_string?: string
+		cursor_string?: Miscellaneous.CursorString
 	}):
 	Promise<{beatmapsets: Beatmapset.Extended.WithBeatmapPacktags[], recommended_difficulty: number | null, total: number, error: any | null,
-	cursor_string: string | null}> {
+	cursor_string: Miscellaneous.CursorString | null}> {
 		const sort = query?.sort ? (query.sort.by + "_" + query.sort.in) : undefined
 
 		/** General */
