@@ -41,21 +41,6 @@ export interface Beatmapset {
 }
 
 export namespace Beatmapset {
-	/** 
-	 * An interface to tell the API how the returned Array should be like
-	 * @group Parameter Object Interfaces
-	 */
-	export interface Config {
-		/** The maximum amount of elements to get */
-		limit?: number
-		/** "id_asc" to have the oldest element first, "id_desc" to have the newest instead */
-		sort?: Miscellaneous.Sort
-		/** Which page of the results to get */
-		page?: Miscellaneous.Page
-		/** A cursor_string provided by a previous request */
-		cursor_string?: Miscellaneous.CursorString
-	}
-
 	export enum RankStatus {
 		Graveyard 	= -2,
 		Wip 		= -1,
@@ -428,7 +413,7 @@ export namespace Beatmapset {
 		 * @remarks This route is undocumented in the API docs, so this is only the result of my interpretation of the website's code and could be unstable
 		 */
 		export async function getMultiple(this: API, from?: {beatmapset?: Beatmapset["id"] | Beatmapset, user?: User["id"] | User, min_date?: Date, max_date?: Date},
-		types?: Event["type"][], config?: Config):
+		types?: Event["type"][], config?: Miscellaneous.Config):
 		Promise<{events: Event.Any[], users: User.WithGroups[]}> {
 			const beatmapset = typeof from?.beatmapset === "object" ? from.beatmapset.id : from?.beatmapset
 			const user = typeof from?.user === "object" ? from.user.id : from?.user
@@ -578,7 +563,7 @@ export namespace Beatmapset {
 			 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 			 */
 			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, user?: User["id"] | User},
-			types?: ("first" | "reply" | "system")[], config?: Config):
+			types?: ("first" | "reply" | "system")[], config?: Miscellaneous.Config):
 			Promise<{beatmapsets: Beatmapset.WithHype[], posts: Post[], users: User[], cursor_string: Miscellaneous.CursorString | null}> {
 				const discussion = typeof from?.discussion === "object" ? from.discussion.id : from?.discussion
 				const user = typeof from?.user === "object" ? from.user.id : from?.user
@@ -606,7 +591,7 @@ export namespace Beatmapset {
 			 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 			 */
 			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, vote_giver?: User["id"] | User,
-			vote_receiver?: User["id"] | User}, score?: 1 | -1, config?: Config):
+			vote_receiver?: User["id"] | User}, score?: 1 | -1, config?: Miscellaneous.Config):
 			Promise<{votes: Vote[], discussions: Discussion[], users: User.WithGroups[], cursor_string: Miscellaneous.CursorString | null}> {
 				const discussion = typeof from?.discussion === "object" ? from.discussion.id : from?.discussion
 				const user = typeof from?.vote_giver === "object" ? from.vote_giver.id : from?.vote_giver
@@ -633,7 +618,7 @@ export namespace Beatmapset {
 		}, filter?: {
 			types?: Beatmapset.Discussion["message_type"][],
 			only_unresolved?: boolean
-		}, config?: Config):
+		}, config?: Miscellaneous.Config):
 		Promise<{
 			beatmaps: Beatmap.Extended[],
 			beatmapsets: Beatmapset.Extended[],

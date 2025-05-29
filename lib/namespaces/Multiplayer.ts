@@ -84,14 +84,12 @@ export namespace Multiplayer {
 			/**
 			 * Get the scores on a specific item of a room!
 			 * @param item An object with the id of the item in question, as well as the id of the room
-			 * @param limit How many scores maximum? Defaults to 50, the maximum the API will return
-			 * @param sort Sort by scores, ascending or descending? Defaults to descending
-			 * @param cursor_string Use a Multiplayer.Scores' `params` and `cursor_string` to get the next page (scores 51 to 100 for example)
+			 * @param config How many scores, how are they sorted, is there a cursor_string?
 			 * @remarks This will **not work for rooms created before ~March 5th 2024** https://github.com/ppy/osu-web/issues/10725
 			 */
-			export async function getScores(this: API, item: {id: number, room_id: number} | Multiplayer.Room.PlaylistItem, limit: number = 50,
-			sort: "score_asc" | "score_desc" = "score_desc", cursor_string?: Miscellaneous.CursorString): Promise<{
-				params: {limit: number, sort: string}
+			export async function getScores(this: API, item: {id: number, room_id: number} | Multiplayer.Room.PlaylistItem, config?: Omit<Miscellaneous.Config, "page">):
+			Promise<{
+				params: Omit<Miscellaneous.Config, "page" | "cursor_string">
 				scores: Score[]
 				/** How many scores there are across all pages, not necessarily `scores.length` */
 				total: number
@@ -100,7 +98,9 @@ export namespace Multiplayer {
 				/** @remarks Will be null if there is no next page */
 				cursor_string: Miscellaneous.CursorString | null
 			}> {
-				return await this.request("get", ["rooms", item.room_id, "playlist", item.id, "scores"], {limit, sort, cursor_string})
+				const limit = config?.limit ?? 50
+				const sort = config?.sort === "id_asc" ? "score_asc" : "score_desc"
+				return await this.request("get", ["rooms", item.room_id, "playlist", item.id, "scores"], {limit, sort, cursor_string: config?.cursor_string})
 			}
 		}
 	

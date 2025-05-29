@@ -11,7 +11,7 @@ interface Basic {
 	mods: Mod[] | string[]
 	passed: boolean
 	/** Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%) */
-	rank: string
+	rank: Score.Grade
 	user_id: User["id"]
 	/** @remarks Is null when Beatmap is Loved (for example) */
 	pp: number | null
@@ -49,6 +49,13 @@ export interface Score extends Basic {
 }
 
 export namespace Score {
+	/**
+	 * The letters that kinda allow you to tell at a glance how good the score is
+	 * @remarks XH is better known as a Silver SS, and SH as a Silver S, while F is a failed score
+	 * https://osu.ppy.sh/wiki/en/Gameplay/Grade
+	 */
+	export type Grade = "XH" | "X" | "SH" | "S" | "A" | "B" | "C" | "D" | "F"
+
 	/** All of its properties are optional because instead of being 0, the property actually disappears instead */
 	export interface Statistics {
 		great?: number

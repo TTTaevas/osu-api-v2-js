@@ -88,22 +88,18 @@ export namespace Match {
 	 * Get the info about several matches!
 	 * @param query The id of the first match of the array, and the sorting and size of said array
 	 */
-	export async function getMultiple(this: API, query?: {
+	export async function getMultiple(this: API, config?: Omit<Miscellaneous.Config, "page" | "cursor_string"> & {
 		/**
 		 * Which match should be featured at index 0 of the returned array? Will get one with a similar id if it is unavailable
 		 * @remarks You can use this argument differently to get all matches before/after (depending of `query.sort`) a certain match,
 		 * by adding +1/-1 to its id! So if you want all matches after match_id 10 with sorting is_desc, just have this argument be 10 + 1, or 11!
 		 */
 		first_match_in_array?: Info["id"] | Info
-		/** The maximum amount of elements returned in the array (defaults to **50**) */
-		limit?: number
-		/** "id_desc" has the biggest id (most recent start_time) at the beginning of the array, "id_asc" is the opposite (defaults to **id_desc**) */
-		sort?: Miscellaneous.Sort
 	}): Promise<Info[]> {
 		// `first_match_in_array` is a cool way to use the endpoint's cursor
-		const match_id = typeof query?.first_match_in_array === "object" ? query.first_match_in_array.id : query?.first_match_in_array
-		const cursor = match_id ? {match_id: match_id + (query?.sort === "id_asc" ? -1 : 1)} : undefined
-		const response = await this.request("get", ["matches"], {cursor, limit: query?.limit, sort: query?.sort})
+		const match_id = typeof config?.first_match_in_array === "object" ? config?.first_match_in_array.id : config?.first_match_in_array
+		const cursor = match_id ? {match_id: match_id + (config?.sort === "id_asc" ? -1 : 1)} : undefined
+		const response = await this.request("get", ["matches"], {cursor, limit: config?.limit, sort: config?.sort})
 		return response.matches // NOT the only property; `params` is useless while `cursor` and `cursor_string` are superseded by `first_match_in_array`
 	}
 }

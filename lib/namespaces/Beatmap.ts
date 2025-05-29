@@ -317,7 +317,7 @@ export namespace Beatmap {
 	 * @param user The User who made the scores
 	 * @param config Specify the score's ruleset, prevent a lazer score from being returned**
 	 */
-	export async function getUserScores(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Omit<Omit<Config, "mods">, "type">): Promise<Score[]> {
+	export async function getUserScores(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Omit<Config, "mods" | "type">): Promise<Score[]> {
 		const ruleset = config?.ruleset !== undefined ? Ruleset[config.ruleset] : undefined
 		delete config?.ruleset
 

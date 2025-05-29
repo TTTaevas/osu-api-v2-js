@@ -101,15 +101,9 @@ export namespace Forum {
 		* @param config How many results maximum, how to sort them, etc...
 		* @remarks The oldest post of a topic is the text of a topic
 		*/
-		export async function getOne(this: API, topic: Topic["id"] | Topic, config?: {
+		export async function getOne(this: API, topic: Topic["id"] | Topic, config?: Omit<Miscellaneous.Config, "page"> & {
 			/** The id (or the post itself) of the first post to be returned in `posts` (irrelevant if using a `cursor_string`) */
 			first_post?: Post["id"] | Post
-			/** How many `posts` maximum, up to 50 */
-			limit?: number
-			/** "id_asc" to have the oldest post at the beginning of the `posts` array, "id_desc" to have the newest instead */
-			sort?: "id_asc" | "id_desc"
-			/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `posts` in this instance! */
-			cursor_string?: Miscellaneous.CursorString
 		}): Promise<{topic: Topic, posts: Post[], cursor_string: Miscellaneous.CursorString | null}> {
 			const topic_id = typeof topic === "number" ? topic : topic.id
 			const start = config?.sort !== "id_desc" ? typeof config?.first_post === "object" ? config.first_post.id : config?.first_post : undefined
@@ -119,22 +113,16 @@ export namespace Forum {
 
 		/**
 		 * Get multiple existing Forum.Topic, optionally in a specific Forum!
-		 * @param config Where you specify filters, sorting options, and the such
+		 * @param config Specify the Forum of the Topics, sorting options, how many Topics maximum...
 		 * @returns An object with an array of relevant Forum.Topic, and a `cursor_string` to allow you to go further
 		 */
-		export async function getMultiple(this: API, config?: {
+		export async function getMultiple(this: API, config?: Omit<Miscellaneous.Config, "page"> & {
 			/** From which specific Forum to get the topcis from */
 			forum?: Forum["id"] | Forum
-			/** How many `topics` maximum, up to 50 */
-			limit?: number
-			/** Sort by topic's last post time, "old" to have the topic with the oldest post at the beginning of the `topics` array, "new" to have the newest instead */
-			sort?: "old" | "new"
-			/** Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `topics` in this instance! */
-			cursor_string?: Miscellaneous.CursorString
 		}): Promise<{topics: Forum.Topic[], cursor_string: Miscellaneous.CursorString | null}> {
+			const sort = config?.sort === "id_asc" ? "old" : config?.sort === "id_desc" ? "new" : undefined
 			const forum_id = typeof config?.forum === "object" ? config.forum.id : config?.forum
-			delete config?.forum
-			return await this.request("get", ["forums", "topics"], {...config, forum_id})
+			return await this.request("get", ["forums", "topics"], {limit: config?.limit, cursor_string: config?.cursor_string, sort, forum_id})
 		}
 
 		/**

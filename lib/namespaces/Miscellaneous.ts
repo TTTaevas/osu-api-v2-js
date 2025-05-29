@@ -28,6 +28,25 @@ export namespace Miscellaneous {
 	 */
 	export type Sort = "id_desc" | "id_asc"
 
+	/**
+	 * Some endpoints allow you to customize the amount and order of what you will receive, such endpoints usually have a `config` argument
+	 * that will expect an object that roughly meets this very interface!
+	 */
+	export interface Config {
+		/**
+		 * The maximum amount of results to get
+		 * @remarks Regardless of the limit, the API server will not send more than a certain amount of results,
+		 * that amount being different for every endpoint
+		 */
+		limit?: number
+		/** "id_asc" to have the oldest element first, "id_desc" to have the newest instead */
+		sort?: Miscellaneous.Sort
+		/** Which page of the results to get */
+		page?: Miscellaneous.Page
+		/** A cursor_string provided by a previous request */
+		cursor_string?: Miscellaneous.CursorString
+	}
+
 	/** The content of a forum post or the "me!" section of a user page, where there can be lots of custom text */
 	export interface RichText {
 		/** Content in HTML format */
