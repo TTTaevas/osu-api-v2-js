@@ -90,6 +90,8 @@ export function getCurrentDateString(): string {
 }
 
 export const runTests = async (api: API, domains: Test[][]): Promise<void> => {
+	const retry_on_timeout = api.retry_on_timeout
+	const timeout = api.timeout
 	const errors: unknown[] = []
 
 	for (let i = 0; i < domains.length; i++) {
@@ -101,6 +103,10 @@ export const runTests = async (api: API, domains: Test[][]): Promise<void> => {
 				const current_test = tests[e]
 				console.log("\n" + current_test.name)
 				await current_test(api)
+
+				// Reset the settings to expected
+				api.retry_on_timeout = retry_on_timeout
+				api.timeout = timeout
 			}
 		} catch(err) {
 			console.error(err)

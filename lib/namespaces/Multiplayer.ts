@@ -87,9 +87,10 @@ export namespace Multiplayer {
 			 * @param config How many scores, how are they sorted, is there a cursor_string?
 			 * @remarks This will **not work for rooms created before ~March 5th 2024** https://github.com/ppy/osu-web/issues/10725
 			 */
-			export async function getScores(this: API, item: {id: number, room_id: number} | Multiplayer.Room.PlaylistItem, config?: Omit<Miscellaneous.Config, "page">):
+			export async function getScores(this: API, item: {id: number, room_id: number} | Multiplayer.Room.PlaylistItem,
+			config?: Pick<Miscellaneous.Config, "limit" | "sort" | "cursor_string">):
 			Promise<{
-				params: Omit<Miscellaneous.Config, "page" | "cursor_string">
+				params: Pick<Miscellaneous.Config, "limit" | "sort">
 				scores: Score[]
 				/** How many scores there are across all pages, not necessarily `scores.length` */
 				total: number

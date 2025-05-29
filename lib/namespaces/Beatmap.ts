@@ -298,7 +298,8 @@ export namespace Beatmap {
 	 * @param config Specify the score's ruleset, the score's mods, prevent a lazer score from being returned
 	 * @returns An Object with the position of the score according to the specified Mods and Ruleset, and with the score itself
 	 */
-	export async function getUserScore(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Omit<Config, "type">): Promise<{
+	export async function getUserScore(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Pick<Config, "ruleset" | "mods" | "legacy_only">):
+	Promise<{
 		/** Value depends on the requested mode and mods! */
 		position: number,
 		score: Score.WithUserBeatmap
@@ -317,7 +318,8 @@ export namespace Beatmap {
 	 * @param user The User who made the scores
 	 * @param config Specify the score's ruleset, prevent a lazer score from being returned**
 	 */
-	export async function getUserScores(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Omit<Config, "mods" | "type">): Promise<Score[]> {
+	export async function getUserScores(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Pick<Config, "ruleset" | "legacy_only">):
+	Promise<Score[]> {
 		const ruleset = config?.ruleset !== undefined ? Ruleset[config.ruleset] : undefined
 		delete config?.ruleset
 

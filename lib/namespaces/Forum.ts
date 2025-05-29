@@ -101,7 +101,7 @@ export namespace Forum {
 		* @param config How many results maximum, how to sort them, etc...
 		* @remarks The oldest post of a topic is the text of a topic
 		*/
-		export async function getOne(this: API, topic: Topic["id"] | Topic, config?: Omit<Miscellaneous.Config, "page"> & {
+		export async function getOne(this: API, topic: Topic["id"] | Topic, config?: Pick<Miscellaneous.Config, "limit" | "sort" | "cursor_string"> & {
 			/** The id (or the post itself) of the first post to be returned in `posts` (irrelevant if using a `cursor_string`) */
 			first_post?: Post["id"] | Post
 		}): Promise<{topic: Topic, posts: Post[], cursor_string: Miscellaneous.CursorString | null}> {
@@ -116,7 +116,7 @@ export namespace Forum {
 		 * @param config Specify the Forum of the Topics, sorting options, how many Topics maximum...
 		 * @returns An object with an array of relevant Forum.Topic, and a `cursor_string` to allow you to go further
 		 */
-		export async function getMultiple(this: API, config?: Omit<Miscellaneous.Config, "page"> & {
+		export async function getMultiple(this: API, config?: Pick<Miscellaneous.Config, "limit" | "sort" | "cursor_string"> & {
 			/** From which specific Forum to get the topcis from */
 			forum?: Forum["id"] | Forum
 		}): Promise<{topics: Forum.Topic[], cursor_string: Miscellaneous.CursorString | null}> {

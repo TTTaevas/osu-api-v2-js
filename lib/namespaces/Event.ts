@@ -139,7 +139,7 @@ export namespace Event {
 	 * Get everything note-worthy that happened on osu! recently!
 	 * @param config Sort the results differently, or use a cursor_string to get more results
 	 */
-	export async function getMultiple(this: API, config?: Omit<Miscellaneous.Config, "limit" | "page">):
+	export async function getMultiple(this: API, config?: Pick<Miscellaneous.Config, "sort" | "cursor_string">):
 	Promise<{events: Event.Any[], cursor_string: Miscellaneous.CursorString | null}> {
 		return await this.request("get", ["events"], {sort: config?.sort ?? "id_desc", cursor_string: config?.cursor_string})
 	}

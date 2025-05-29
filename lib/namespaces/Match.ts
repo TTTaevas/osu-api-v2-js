@@ -88,7 +88,7 @@ export namespace Match {
 	 * Get the info about several matches!
 	 * @param query The id of the first match of the array, and the sorting and size of said array
 	 */
-	export async function getMultiple(this: API, config?: Omit<Miscellaneous.Config, "page" | "cursor_string"> & {
+	export async function getMultiple(this: API, config?: Pick<Miscellaneous.Config, "limit" | "sort"> & {
 		/**
 		 * Which match should be featured at index 0 of the returned array? Will get one with a similar id if it is unavailable
 		 * @remarks You can use this argument differently to get all matches before/after (depending of `query.sort`) a certain match,
