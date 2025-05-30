@@ -158,7 +158,7 @@ export class API {
 		"Accept-Encoding": "gzip",
 		"Content-Type": "application/json",
 		"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
-		"x-api-version": "20250522",
+		"x-api-version": "20250530",
 	}
 	/** Used in practically all requests, those are all the headers the package uses excluding `Authorization`, the one with the token */
 	get headers() {return this._headers}

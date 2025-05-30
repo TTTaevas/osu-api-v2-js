@@ -12,11 +12,10 @@ const getMatch: Test = async(api) => {
 	expect(validate(response_noteams, "Match")).to.be.true
 
 	console.log("|", "With teams")
-	const response_teams = await api.getMatch(62006076, {limit: 15})
-	expect(response_teams.match.id).to.equal(62006076)
-	expect(response_teams.match.name).to.equal("CWC2020: (Italy) vs (Indonesia)")
+	const response_teams = await api.getMatch(118245933)
+	expect(response_teams.match.id).to.equal(118245933)
+	expect(response_teams.match.name).to.equal("ZCC2: (Suaaaaa) vs. (pwaczar)")
 	expect(response_teams.current_game_id).to.be.null
-	expect(response_teams.events).to.have.lengthOf(15)
 	response_teams.events.forEach((e) => e.game?.scores.forEach((score) => expect(score.match.team).to.not.equal("none")))
 	expect(validate(response_teams, "Match")).to.be.true
 

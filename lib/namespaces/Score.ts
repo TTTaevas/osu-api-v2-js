@@ -1,14 +1,11 @@
 import { API, Beatmap, Beatmapset, Changelog, Mod, Ruleset, User } from "../index.js"
 
-/** Common to older and newer formats */
-interface Basic {
+/** @obtainableFrom {@link API.getBeatmapUserScores} */
+export interface Score {
 	/** In a format where `96.40%` would be `0.9640` **(and maybe some numbers afterwards)** */
 	accuracy: number
 	best_id: number | null
-	/** Would be null if ScoreV2 on stable, for example */
-	id: number | null
 	max_combo: number
-	mods: Mod[] | string[]
 	passed: boolean
 	/** Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%) */
 	rank: Score.Grade
@@ -16,12 +13,6 @@ interface Basic {
 	/** @remarks Is null when Beatmap is Loved (for example) */
 	pp: number | null
 	replay: boolean
-	/** Score format */
-	type: string
-}
-
-/** @obtainableFrom {@link API.getBeatmapUserScores} */
-export interface Score extends Basic {
 	classic_total_score: number
 	preserve: boolean
 	ranked: boolean
@@ -30,7 +21,7 @@ export interface Score extends Basic {
 	statistics: Score.Statistics
 	beatmap_id: Beatmap["id"]
 	id: number
-	/** @remarks Is null if the score has not been set on lazer */
+	/** @remarks Is null if the score has **NOT** been set on lazer */
 	build_id: Changelog.Build["id"] | null
 	ended_at: Date
 	has_replay: boolean
@@ -72,6 +63,17 @@ export namespace Score {
 		legacy_combo_increase?: number
 	}
 
+	/** @obtainableFrom {@link API.getMatch} */
+	export interface WithMatchPerfect extends Omit<Score, "id" | "type" | "classic_total_score" | "preserve" | "ranked"> {
+		type: "legacy_match_score"
+		match: {
+			slot: number
+			team: "none" | "red" | "blue"
+			pass: boolean
+		}
+		perfect?: boolean
+	}
+
 	/** @obtainableFrom {@link API.getUserScores} */
 	export interface WithUserBeatmapBeatmapset extends Score {
 		beatmap: Beatmap.Extended
@@ -93,24 +95,6 @@ export namespace Score {
 	export interface WithUserBeatmap extends WithUser {
 		user: User.WithCountryCoverTeam
 		beatmap: Beatmap.Extended
-	}
-	
-	/** The old version of scores, barely still used */
-	export interface OldFormat extends Basic {
-		mode: keyof typeof Ruleset
-		mode_int: Ruleset
-		mods: string[]
-		score: number
-		perfect: boolean
-		statistics: {
-			/** @remarks Is null if the score's gamemode/ruleset is Taiko */
-			count_50: number | null
-			count_100: number
-			count_300: number
-			count_geki: number | null
-			count_katu: number | null
-			count_miss: number
-		}
 	}
 
 	/**

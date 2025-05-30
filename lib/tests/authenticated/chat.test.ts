@@ -46,7 +46,7 @@ const sendChatMessage: Test = async(api) => {
 	expect(message.sender.id).to.equal(api.user)
 	expect(message.content).to.equal("hello, just testing something")
 	expect(message.is_action).to.be.false
-	expect(validate(message, "Chat.Message")).to.be.true
+	expect(validate(message, "Chat.Message.WithSender")).to.be.true
 	return true
 }
 
@@ -55,7 +55,7 @@ const getChatMessages: Test = async(api) => {
 	expect(messages).to.have.length.greaterThan(0)
 	messages.forEach((message) => expect(message.channel_id).to.equal(test_channel?.channel_id ?? 14))
 	messages.forEach((message) => expect(message.sender_id).to.equal(message.sender.id))
-	expect(validate(messages, "Chat.Message")).to.be.true
+	expect(validate(messages, "Chat.Message.WithSender")).to.be.true
 	return true
 }
 
@@ -85,7 +85,7 @@ const sendChatPrivateMessage: Test = async(api) => {
 		})
 	} else {console.warn("⚠️ No pm_channel to compare channel with")}
 
-	expect(validate(response.message, "Chat.Message")).to.be.true
+	expect(validate(response.message, "Chat.Message.WithSender")).to.be.true
 	expect(validate(response.channel, "Chat.Channel")).to.be.true
 	return true
 }

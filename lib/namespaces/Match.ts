@@ -1,4 +1,4 @@
-import { API, Beatmap, Ruleset, Score as IScore, User, Miscellaneous } from "../index.js"
+import { API, Beatmap, Ruleset, Score, User, Miscellaneous } from "../index.js"
 
 /** @obtainableFrom {@link API.getMatch} */
 export interface Match {
@@ -11,15 +11,6 @@ export interface Match {
 }
 
 export namespace Match {
-	export interface Score extends IScore.OldFormat {
-		created_at: Date
-		match: {
-			slot: number
-			team: "none" | "red" | "blue"
-			pass: boolean
-		}
-	}
-
 	export interface Event {
 		id: number
 		detail: {
@@ -41,7 +32,7 @@ export namespace Match {
 			team_type: string
 			mods: string[]
 			beatmap: Beatmap.WithBeatmapset
-			scores: Score[]
+			scores: Score.WithMatchPerfect[]
 		}
 	}
 
@@ -72,16 +63,7 @@ export namespace Match {
 		const match_id = typeof match === "number" ? match : match.id
 		const before = typeof query?.before === "object" ? query.before.id : query?.before
 		const after = typeof query?.after === "object" ? query.after.id : query?.after
-		const response = await this.request("get", ["matches", match_id], {before, after, limit: query?.limit}) as Match
-
-		// This converts scores' "perfect" from number to boolean
-		response.events.forEach((event) => {
-			event.game?.scores.forEach((score) => {
-				score.perfect = Boolean(score.perfect)
-			})
-		})
-
-		return response
+		return await this.request("get", ["matches", match_id], {before, after, limit: query?.limit})
 	}
 
 	/**
