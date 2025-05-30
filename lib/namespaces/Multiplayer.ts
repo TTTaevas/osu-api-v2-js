@@ -168,6 +168,8 @@ export namespace Multiplayer {
 			/**
 			 * Get all the events about a lazer **realtime** room!
 			 * @remarks It **WILL error** if the provided room is playlist or other, and **may return empty arrays** on rooms from 2024 or older
+			 *
+			 * Furthermore, its response is likely to change soon/often as it's currently new and nowhere in the API's documentation!
 			 */
 			export async function getAll(this: API, room: Room["id"] | Room): Promise<{
 				events: Event.Any[],
