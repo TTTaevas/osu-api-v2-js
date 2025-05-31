@@ -107,8 +107,13 @@ export namespace Beatmap {
 				count: number
 			}[]
 			/**
+			 * How many times has the authenticated user played this Beatmap?
+			 * @remarks Unusually, if there is no authenticated user, this is simply 0 (it exists and is not `null`)
+			 */
+			current_user_playcount: number
+			/**
 			 * The ids of the tags that have been voted by the authenticated user for this Beatmap!
-			 * @remarks Unusually, if there is no authenticated user, this is an empty array (it exists and is not null)
+			 * @remarks Unusually, if there is no authenticated user, this is an empty array (it exists and is not `null`)
 			 */
 			current_user_tag_ids: UserTag["id"][]
 		}

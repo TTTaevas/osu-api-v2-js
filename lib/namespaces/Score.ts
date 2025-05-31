@@ -100,7 +100,7 @@ export namespace Score {
 	/**
 	 * Get up to the 1000 (!!) most recent scores!
 	 * @param config Specify the ruleset as a filter, or use a cursor_string to get even more scores
-	 * @remarks You may get less than 1000 scores
+	 * @remarks You may get any amount of scores, from 0 to 1000, 0 being more likely when using a cursor_string
 	 */
 	export async function getSome(this: API, config?: Pick<Miscellaneous.Config, "cursor_string"> & {
 		ruleset?: keyof typeof Ruleset
