@@ -1,4 +1,4 @@
-import { API, Beatmap, Beatmapset, Changelog, Mod, Ruleset, User } from "../index.js"
+import { API, Beatmap, Beatmapset, Changelog, Miscellaneous, Mod, Ruleset, User } from "../index.js"
 
 /** @obtainableFrom {@link API.getBeatmapUserScores} */
 export interface Score {
@@ -95,6 +95,17 @@ export namespace Score {
 	export interface WithUserBeatmap extends WithUser {
 		user: User.WithCountryCoverTeam
 		beatmap: Beatmap.Extended
+	}
+
+	/**
+	 * Get up to the 1000 (!!) most recent scores!
+	 * @param config Specify the ruleset as a filter, or use a cursor_string to get even more scores
+	 * @remarks You may get less than 1000 scores
+	 */
+	export async function getSome(this: API, config?: Pick<Miscellaneous.Config, "cursor_string"> & {
+		ruleset?: keyof typeof Ruleset
+	}): Promise<{scores: Score[], cursor_string: Miscellaneous.CursorString}> {
+		return await this.request("get", ["scores"], {...config})
 	}
 
 	/**

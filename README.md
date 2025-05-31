@@ -152,6 +152,8 @@ async function getSelf() {
 getSelf()
 ```
 
+If you're looking for an example that involves WebSockets, you might wanna take a look at `lib/tests/websocket.ts` in the package's repository!
+
 ### Calling the functions, but literally
 
 This package's functions can be accessed both through the api object and through namespaces! It essentially means that for convenience's sake, there are two ways to do anything:
@@ -258,7 +260,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /spotlights` -> [getSpotlights()](https://osu-v2.taevas.xyz/classes/API.html#getspotlights)
 
 ### Scores
-- `GET /scores` -> TODO
+- `GET /scores` -> [getScores()](https://osu-v2.taevas.xyz/classes/API.html#getscores)
 
 ### Under "Undocumented" or missing from docs
 - `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)

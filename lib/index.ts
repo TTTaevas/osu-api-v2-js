@@ -742,6 +742,9 @@ export class API {
 
 	// SCORE STUFF
 
+	/** {@inheritDoc Score.getSome} @group Score Methods */
+	readonly getScores = Score.getSome
+
 	/** {@inheritDoc Score.getReplay} @group Score Methods */
 	readonly getReplay = Score.getReplay
 
