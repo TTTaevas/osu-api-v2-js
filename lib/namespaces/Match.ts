@@ -68,7 +68,7 @@ export namespace Match {
 
 	/**
 	 * Get the info about several matches!
-	 * @param query The id of the first match of the array, and the sorting and size of said array
+	 * @param config The id of the first match of the array, and the sorting and size of said array
 	 */
 	export async function getMultiple(this: API, config?: Pick<Miscellaneous.Config, "limit" | "sort"> & {
 		/**
