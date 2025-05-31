@@ -1,28 +1,18 @@
-import { API, Beatmap, Beatmapset, Changelog, Mod, Ruleset, User } from "./index.js"
-import { getId } from "./misc.js"
+import { API, Beatmap, Beatmapset, Changelog, Miscellaneous, Mod, Ruleset, User } from "../index.js"
 
-/** Common to older and newer formats */
-interface Basic {
+/** @obtainableFrom {@link API.getBeatmapUserScores} */
+export interface Score {
 	/** In a format where `96.40%` would be `0.9640` **(and maybe some numbers afterwards)** */
 	accuracy: number
 	best_id: number | null
-	/** Would be null if ScoreV2 on stable, for example */
-	id: number | null
 	max_combo: number
-	mods: Mod[] | string[]
 	passed: boolean
 	/** Also known as a grade, for example this is `X` (SS) if `accuracy` is `1` (100.00%) */
-	rank: string
+	rank: Score.Grade
 	user_id: User["id"]
 	/** @remarks Is null when Beatmap is Loved (for example) */
 	pp: number | null
 	replay: boolean
-	/** Score format */
-	type: string
-}
-
-/** @obtainableFrom {@link API.getBeatmapUserScores} */
-export interface Score extends Basic {
 	classic_total_score: number
 	preserve: boolean
 	ranked: boolean
@@ -31,7 +21,7 @@ export interface Score extends Basic {
 	statistics: Score.Statistics
 	beatmap_id: Beatmap["id"]
 	id: number
-	/** @remarks Is null if the score has not been set on lazer */
+	/** @remarks Is null if the score has **NOT** been set on lazer */
 	build_id: Changelog.Build["id"] | null
 	ended_at: Date
 	has_replay: boolean
@@ -50,6 +40,13 @@ export interface Score extends Basic {
 }
 
 export namespace Score {
+	/**
+	 * The letters that kinda allow you to tell at a glance how good the score is
+	 * @remarks XH is better known as a Silver SS, and SH as a Silver S, while F is a failed score
+	 * https://osu.ppy.sh/wiki/en/Gameplay/Grade
+	 */
+	export type Grade = "XH" | "X" | "SH" | "S" | "A" | "B" | "C" | "D" | "F"
+
 	/** All of its properties are optional because instead of being 0, the property actually disappears instead */
 	export interface Statistics {
 		great?: number
@@ -66,6 +63,17 @@ export namespace Score {
 		legacy_combo_increase?: number
 	}
 
+	/** @obtainableFrom {@link API.getMatch} */
+	export interface WithMatchPerfect extends Omit<Score, "id" | "type" | "classic_total_score" | "preserve" | "ranked"> {
+		type: "legacy_match_score"
+		match: {
+			slot: number
+			team: "none" | "red" | "blue"
+			pass: boolean
+		}
+		perfect?: boolean
+	}
+
 	/** @obtainableFrom {@link API.getUserScores} */
 	export interface WithUserBeatmapBeatmapset extends Score {
 		beatmap: Beatmap.Extended
@@ -78,11 +86,7 @@ export namespace Score {
 		}
 	}
 
-	/**
-	 * @obtainableFrom
-	 * {@link API.getBeatmapScores} /
-	 * {@link API.getBeatmapSoloScores}
-	 */
+	/** @obtainableFrom {@link API.getBeatmapScores} */
 	export interface WithUser extends Score {
 		user: User.WithCountryCover
 	}
@@ -92,23 +96,16 @@ export namespace Score {
 		user: User.WithCountryCoverTeam
 		beatmap: Beatmap.Extended
 	}
-	
-	/** The old version of scores, barely still used */
-	export interface OldFormat extends Basic {
-		mode: keyof typeof Ruleset
-		mode_int: Ruleset
-		mods: string[]
-		score: number
-		perfect: boolean
-		statistics: {
-			/** @remarks Is null if the score's gamemode/ruleset is Taiko */
-			count_50: number | null
-			count_100: number
-			count_300: number
-			count_geki: number | null
-			count_katu: number | null
-			count_miss: number
-		}
+
+	/**
+	 * Get up to the 1000 (!!) most recent scores!
+	 * @param config Specify the ruleset as a filter, or use a cursor_string to get even more scores
+	 * @remarks You may get any amount of scores, from 0 to 1000, 0 being more likely when using a cursor_string
+	 */
+	export async function getSome(this: API, config?: Pick<Miscellaneous.Config, "cursor_string"> & {
+		ruleset?: keyof typeof Ruleset
+	}): Promise<{scores: Score[], cursor_string: Miscellaneous.CursorString}> {
+		return await this.request("get", ["scores"], {...config})
 	}
 
 	/**
@@ -118,6 +115,7 @@ export namespace Score {
 	 * @returns The correctly encoded content of what would be a replay file (you can just fs.writeFileSync with it!)
 	 */
 	export async function getReplay(this: API, score: Score["id"] | Score): Promise<string> {
-		return await this.request("get", `scores/${getId(score)}/download`)
+		const score_id = typeof score === "number" ? score : score.id
+		return await this.request("get", ["scores", score_id, "download"])
 	}
 }

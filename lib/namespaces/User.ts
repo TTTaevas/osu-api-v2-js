@@ -1,9 +1,8 @@
-import { API, Beatmap, Beatmapset, Event, Ruleset, Score } from "./index.js"
-import { getId } from "./misc.js"
+import { API, Beatmap, Beatmapset, Event, Miscellaneous, Ruleset, Score } from "../index.js"
 
 export interface User {
 	avatar_url: string
-	country_code: string
+	country_code: Miscellaneous.Country["code"]
 	default_group: string
 	id: number
 	is_active: boolean
@@ -56,10 +55,7 @@ export namespace User {
 
 	/** @obtainableFrom {@link API.getMatch} */
 	export interface WithCountry extends User {
-		country: {
-			code: string
-			name: string
-		}
+		country: Miscellaneous.Country
 	}
 
 	export interface WithCountryCover extends WithCountry {
@@ -165,11 +161,7 @@ export namespace User {
 			start_date: Date
 			count: number
 		}[]
-		page: {
-			html: string
-			/** Basically the text with the BBCode */
-			raw: string
-		}
+		page: Miscellaneous.RichText
 		previous_usernames: User["username"][]
 		rank_highest: {
 			rank: number
@@ -218,8 +210,6 @@ export namespace User {
 		count_50: number
 		count_miss: number
 		global_rank: number | null
-		/** @deprecated Use `global_rank` instead | https://github.com/ppy/osu-web/pull/12003 */
-		global_rank_exp: number | null
 		grade_counts: {
 			a: number
 			s: number
@@ -239,8 +229,6 @@ export namespace User {
 		play_count: number
 		play_time: number | null
 		pp: number | null
-		/** @deprecated Use `pp` instead | https://github.com/ppy/osu-web/pull/12003 */
-		pp_exp: number | null
 		ranked_score: number
 		replays_watched_by_others: number
 		total_hits: number
@@ -265,25 +253,70 @@ export namespace User {
 		target: WithCountryCoverGroupsTeamStatisticsSupport
 	}
 
-	/** @obtainableFrom {@link API.getUserKudosu} */
-	export interface KudosuHistory {
-		id: number
-		action: "give" | "vote.give" | "reset" | "vote.reset" | "revoke" | "vote.revoke"
-		amount: number
-		model: string
-		created_at: Date
-		giver: {
-			url: string
-			username: string
-		} | null
-		post: {
-			url: string | null
-			title: string
+	/** @obtainableFrom {@link API.getUserRanking} */
+	export interface Ranking {
+		cursor: {
+			/** The number of the next page, is null if no more results are available */
+			page: Miscellaneous.Page | null
+		}
+		/** Total amount of elements available across all pages, not on this specific page! Maximum of 10000 */
+		total: number
+		ranking: Statistics.WithUser[]
+	}
+
+	export namespace Kudosu {
+		/** @obtainableFrom {@link API.getUserKudosuHistory} */
+		export interface History {
+			id: number
+			action: "give" | "vote.give" | "reset" | "vote.reset" | "revoke" | "vote.revoke"
+			amount: number
+			model: string
+			created_at: Date
+			giver: {
+				url: string
+				username: User["username"]
+			} | null
+			post: {
+				url: string | null
+				title: string
+			}
+		}
+
+		/**
+		 * Get data about the history of a user's kudosu!
+		 * @param user The user in question
+		 * @param config Array limit & offset
+		 */
+		export async function getHistory(this: API, user: User["id"] | User, config?: Config): Promise<Kudosu.History[]> {
+			const user_id = typeof user === "number" ? user : user.id
+			return await this.request("get", ["users", user_id, "kudosu"], {...config})
+		}
+
+		/** Get the top 50 players who have the most total kudosu! */
+		export async function getRanking(this: API): Promise<User.WithKudosu[]> {
+			const response = await this.request("get", ["rankings", "kudosu"])
+			return response.ranking // It's the only property
 		}
 	}
 
-
-	// FUNCTIONS
+	/**
+	 * Get the top players of the game, with some filters!
+	 * @param ruleset Self-explanatory, is also known as "Gamemode"
+	 * @param type Rank players by their performance points or by their ranked score?
+	 * @param config Specify which page, country, filter out non-friends...
+	 */
+	export async function getRanking(this: API, ruleset: Ruleset, type: "performance" | "score", config?: {
+		/** Imagine the array you get as a page, it can only have a maximum of 50 players, while 50 others may be on the next one */
+		page?: Miscellaneous.Page,
+		/** What kind of players do you want to see? Keep in mind `friends` has no effect if no authorized user */
+		filter?: "all" | "friends",
+		/** Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`) */
+		country?: Miscellaneous.Country["code"]
+		/** If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k! */
+		variant?: "4k" | "7k"
+	}): Promise<Ranking> {
+		return await this.request("get", ["rankings", Ruleset[ruleset], type], {...config})
+	}
 
 	/**
 	 * Get extensive user data about the authorized user
@@ -291,7 +324,7 @@ export namespace User {
 	 * @param ruleset The data should be relevant to which ruleset? (defaults to **user's default Ruleset**)
 	 */
 	export async function getResourceOwner(this: API, ruleset?: Ruleset): Promise<User.Extended.WithStatisticsrulesets> {
-		return await this.request("get", "me", {mode: ruleset})
+		return await this.request("get", ["me"], {mode: ruleset})
 	}
 	
 	/**
@@ -301,9 +334,9 @@ export namespace User {
 	 */
 	export async function getOne(this: API, user: User["id"] | User["username"] | User, ruleset?: Ruleset): Promise<User.Extended> {
 		const mode = ruleset !== undefined ? Ruleset[ruleset] : ""
-		if (typeof user === "string") return await this.request("get", `users/@${user}/${mode}`) // `user` is the username, use @ prefix
-		if (typeof user === "number") return await this.request("get", `users/${user}/${mode}`) // `user` is the id
-		return await this.request("get", `users/${user.id}/${mode}`) // `user` is the User object
+		if (typeof user === "string") {user = "@" + user} // `user` is the username, so use the @ prefix
+		if (typeof user === "object") {user = user.id}
+		return await this.request("get", ["users", user, mode])
 	}
 
 	/**
@@ -311,8 +344,8 @@ export namespace User {
 	 * @param users An array containing user ids or/and `User` objects!
 	 */
 	export async function lookupMultiple(this: API, users: Array<User["id"] | User>): Promise<User.WithCountryCoverGroupsTeam[]> {
-		const ids = users.map((user) => getId(user))
-		const response = await this.request("get", "users/lookup", {ids})
+		const ids = users.map((user) => typeof user === "number" ? user : user.id)
+		const response = await this.request("get", ["users", "lookup"], {ids})
 		return response.users // It's the only property
 	}
 
@@ -323,8 +356,8 @@ export namespace User {
 	 */
 	export async function getMultiple(this: API, users: Array<User["id"] | User>, include_variant_statistics: boolean = false):
 	Promise<User.WithCountryCoverGroupsTeamStatisticsrulesets[]> {
-		const ids = users.map((user) => getId(user))
-		const response = await this.request("get", "users", {ids, include_variant_statistics})
+		const ids = users.map((user) => typeof user === "number" ? user : user.id)
+		const response = await this.request("get", ["users"], {ids, include_variant_statistics})
 		return response.users // It's the only property
 	}
 
@@ -338,9 +371,10 @@ export namespace User {
 	 */
 	export async function getScores(this: API, user: User["id"] | User, type: "best" | "firsts" | "recent", ruleset?: Ruleset,
 	include: {lazer?: boolean, fails?: boolean} = {lazer: true, fails: false}, config?: Config): Promise<Score.WithUserBeatmapBeatmapset[]> {
+		const user_id = typeof user === "number" ? user : user.id
 		const mode = ruleset !== undefined ? Ruleset[ruleset] : undefined
-		return await this.request("get", `users/${getId(user)}/scores/${type}`,
-		{mode, limit: config?.limit, offset: config?.offset, legacy_only: Number(!include.lazer), include_fails: String(Number(include.fails))})
+		return await this.request("get", ["users", user_id, "scores", type],
+		{mode, ...config, legacy_only: Number(!include.lazer), include_fails: String(Number(include.fails))})
 	}
 
 	/**
@@ -351,7 +385,8 @@ export namespace User {
 	 */
 	export async function getBeatmaps(this: API, user: User["id"] | User, type: "favourite" | "graveyard" | "guest" | "loved" | "nominated" | "pending" | "ranked",
 	config?: Config): Promise<Beatmapset.Extended.WithBeatmap[]> {
-		return await this.request("get", `users/${getId(user)}/beatmapsets/${type}`, {limit: config?.limit, offset: config?.offset})
+		const user_id = typeof user === "number" ? user : user.id
+		return await this.request("get", ["users", user_id, "beatmapsets", type], {...config})
 	}
 
 	/**
@@ -360,7 +395,8 @@ export namespace User {
 	 * @param config Array limit & offset
 	 */
 	export async function getMostPlayed(this: API, user: User["id"] | User, config?: Config): Promise<Beatmap.Playcount[]> {
-		return await this.request("get", `users/${getId(user)}/beatmapsets/most_played`, {limit: config?.limit, offset: config?.offset})
+		const user_id = typeof user === "number" ? user : user.id
+		return await this.request("get", ["users", user_id, "beatmapsets", "most_played"], {...config})
 	}
 
 	/**
@@ -369,16 +405,8 @@ export namespace User {
 	 * @param config Array limit & offset
 	 */
 	export async function getRecentActivity(this: API, user: User["id"] | User, config?: Config): Promise<Event.AnyRecentActivity[]> {
-		return await this.request("get", `users/${getId(user)}/recent_activity`, {limit: config?.limit, offset: config?.offset})
-	}
-
-	/**
-	 * Get data about the activity of a user kudosu-wise!
-	 * @param user The user in question
-	 * @param config Array limit & offset
-	 */
-	export async function getKudosu(this: API, user: User["id"] | User, config?: Config): Promise<User.KudosuHistory[]> {
-		return await this.request("get", `users/${getId(user)}/kudosu`, {limit: config?.limit, offset: config?.offset})
+		const user_id = typeof user === "number" ? user : user.id
+		return await this.request("get", ["users", user_id, "recent_activity"], {...config})
 	}
 
 	/**
@@ -387,6 +415,6 @@ export namespace User {
 	 * @remarks The Statistics will be of the authorized user's favourite ruleset, not the friend's!
 	 */
 	export async function getFriends(this: API): Promise<User.Relation[]> {
-		return await this.request("get", "friends")
+		return await this.request("get", ["friends"])
 	}
 }

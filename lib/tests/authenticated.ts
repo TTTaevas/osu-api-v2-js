@@ -1,9 +1,6 @@
 import "dotenv/config"
 import { API, generateAuthorizationURL, Scope } from "../index.js"
-import { runTests, Test } from "./exports.js"
-
-import { exec } from "child_process"
-import http from "http"
+import { getCode, runTests, Test } from "./exports.js"
 
 import * as Chat from "./authenticated/chat.test.js"
 import * as Forum from "./authenticated/forum.test.js"
@@ -12,6 +9,7 @@ import * as Score from "./authenticated/score.test.js"
 import * as User from "./authenticated/user.test.js"
 
 const server: string = "https://dev.ppy.sh"
+const scopes: Scope[] = ["public", "chat.read", "chat.write", "chat.write_manage", "forum.write", "friends.read", "identify"]
 
 const domains: Test[][] = [
 	Chat.tests,
@@ -21,31 +19,7 @@ const domains: Test[][] = [
 	User.tests,
 ]
 
-async function getCode(url: string, redirect_uri: string): Promise<string> {
-	const httpserver = http.createServer()
-	const host = redirect_uri.substring(redirect_uri.indexOf("/") + 2, redirect_uri.lastIndexOf(":"))
-	const port = Number(redirect_uri.substring(redirect_uri.lastIndexOf(":") + 1).split("/")[0])
-	httpserver.listen({host, port})
-
-	console.log("Waiting for code...")
-	const command = (process.platform == "darwin" ? "open" : process.platform == "win32" ? "start" : "xdg-open")
-	exec(`${command} "${url}"`)
-
-	const code: string = await new Promise((resolve) => {
-		httpserver.on("request", (request, response) => {
-			if (request.url) {
-				console.log("Received code!")
-				response.end("Worked! You may now close this tab.", "utf-8")
-				httpserver.close()
-				resolve(request.url.substring(request.url.indexOf("code=") + 5))
-			}
-		})
-	})
-	return code
-}
-
-const startRunningTests = async (id: number, secret: string, redirect_uri: string): Promise<void> => {
-	const scopes: Scope[] = ["public", "chat.read", "chat.write", "chat.write_manage", "forum.write", "friends.read", "identify"]
+async function startRunningTests(id: number, secret: string, redirect_uri: string): Promise<void> {
 	const url = generateAuthorizationURL(id, redirect_uri, scopes, server)
 	const code = await getCode(url, redirect_uri)
 	const api = await API.createAsync(id, secret, {code, redirect_uri}, {server, retry_on_timeout: true, verbose: "all"})

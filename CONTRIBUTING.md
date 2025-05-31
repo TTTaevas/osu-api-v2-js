@@ -14,6 +14,9 @@ npm run test-authenticated # Runs those tests specifically (/lib/tests/authentic
 
 # Still by default, all methods that DO NOT require authenticating (so where you act as a guest user) are tested on osu.ppy.sh
 npm run test # Runs these tests specifically (/lib/tests/guest.ts)
+
+# There is a test designed specifically to check the package's WebSocket capacities against the chat on osu.ppy.sh
+npm run test-websocket # Runs the WebSocket test (/lib/tests/websocket.ts)
 ```
 
 In other words, methods that require authentication are not tested when testing methods that don't require authentication, and vice-versa.

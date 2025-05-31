@@ -1,4 +1,4 @@
-import { API, User } from "./index.js"
+import { API, User } from "../index.js"
 
 export namespace Changelog {
 	export interface Build {
@@ -81,7 +81,7 @@ export namespace Changelog {
 		 */
 		export async function lookup(this: API, changelog: Changelog.UpdateStream["name"] | Changelog.Build["display_version"] | Changelog.Build["id"],
 		message_formats: ("html" | "markdown")[] = ["html", "markdown"]): Promise<Changelog.Build.WithChangelogentriesVersions> {
-			return await this.request("get", `changelog/${changelog}`, {key: typeof changelog === "number" ? "id" : undefined, message_formats})
+			return await this.request("get", ["changelog", changelog], {key: typeof changelog === "number" ? "id" : undefined, message_formats})
 		}
 
 		/**
@@ -91,7 +91,7 @@ export namespace Changelog {
 		 */
 		export async function getOne(this: API, stream: Changelog.UpdateStream["name"], build: Changelog.Build["display_version"]):
 		Promise<Changelog.Build.WithChangelogentriesVersions> {
-			return await this.request("get", `changelog/${stream}/${build}`)
+			return await this.request("get", ["changelog", stream, build])
 		}
 
 		/**
@@ -110,7 +110,7 @@ export namespace Changelog {
 			const to = typeof range?.to === "string" ? range.to : undefined
 			const max_id = typeof range?.to === "number" ? range.to : undefined
 
-			const response = await this.request("get", "changelog", {from, to, max_id, stream, message_formats})
+			const response = await this.request("get", ["changelog"], {from, to, max_id, stream, message_formats})
 			return response.builds // NOT the only property; `streams` is irrelevant while `search` is useless
 		}
 	}
@@ -143,7 +143,7 @@ export namespace Changelog {
 		 * ```
 		 */
 		export async function getAll(this: API): Promise<Changelog.UpdateStream.WithLatestbuildUsercount[]> {
-			const response = await this.request("get", "changelog", {max_id: 0}) // Limit how many `builds` we receive, for the sake of speed
+			const response = await this.request("get", ["changelog"], {max_id: 0}) // Limit how many `builds` we receive, for the sake of speed
 			return response.streams // NOT the only property; both `builds` and `search` are irrelevant
 		}
 	}

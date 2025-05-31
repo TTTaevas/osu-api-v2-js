@@ -1,12 +1,14 @@
 import ajv from "ajv"
 import tsj from "ts-json-schema-generator"
 import util from "util"
+import { exec } from "child_process"
+import http from "http"
 import { API } from "../index.js";
 
 export type AR<T extends (...args: any) => any> = Awaited<ReturnType<T>>;
 export type Test = (api: API) => Promise<true>;
 
-const generator = tsj.createGenerator({path: "lib/index.ts", additionalProperties: true})
+const generator = tsj.createGenerator({path: "lib/index.ts", additionalProperties: true, skipTypeCheck: true})
 
 export function validate(obj: unknown, schemaName: string): boolean {
 	try {
@@ -17,15 +19,17 @@ export function validate(obj: unknown, schemaName: string): boolean {
 
 		if (Array.isArray(obj)) {
 			for (let i = 0; i < obj.length; i++) {
-				const result = validator(obj[i])
-				if (validator.errors) console.error(obj[i], util.inspect(validator.errors, {colors: true, depth: 5}))
-				if (!result) return false
+				validator(obj[i])
+				if (validator.errors?.length) {
+					console.error(obj[i], util.inspect(validator.errors, {colors: true, depth: 5}))
+					return false
+				}
 			}
 			return true
 		} else {
-			const result = validator(obj)
-			if (validator.errors) console.error(obj, util.inspect(validator.errors, {colors: true, depth: 5}))
-			return result
+			validator(obj)
+			if (validator.errors?.length) console.error(obj, util.inspect(validator.errors, {colors: true, depth: 5}))
+			return validator.errors?.length === undefined
 		}
 	} catch(err) {
 		console.log(err)
@@ -50,6 +54,29 @@ export function fixDate(arg: any) {
 	return arg
 }
 
+export async function getCode(url: string, redirect_uri: string): Promise<string> {
+	const httpserver = http.createServer()
+	const host = redirect_uri.substring(redirect_uri.indexOf("/") + 2, redirect_uri.lastIndexOf(":"))
+	const port = Number(redirect_uri.substring(redirect_uri.lastIndexOf(":") + 1).split("/")[0])
+	httpserver.listen({host, port})
+
+	console.log("Waiting for code...")
+	const command = (process.platform == "darwin" ? "open" : process.platform == "win32" ? "start" : "xdg-open")
+	exec(`${command} "${url}"`)
+
+	const code: string = await new Promise((resolve) => {
+		httpserver.on("request", (request, response) => {
+			if (request.url) {
+				console.log("Received code!")
+				response.end("Worked! You may now close this tab.", "utf-8")
+				httpserver.close()
+				resolve(request.url.substring(request.url.indexOf("code=") + 5))
+			}
+		})
+	})
+	return code
+}
+
 /** cool for automatically coming up with the latest x-api-verison */
 export function getCurrentDateString(): string {
     const today = new Date()
@@ -63,6 +90,8 @@ export function getCurrentDateString(): string {
 }
 
 export const runTests = async (api: API, domains: Test[][]): Promise<void> => {
+	const retry_on_timeout = api.retry_on_timeout
+	const timeout = api.timeout
 	const errors: unknown[] = []
 
 	for (let i = 0; i < domains.length; i++) {
@@ -74,6 +103,10 @@ export const runTests = async (api: API, domains: Test[][]): Promise<void> => {
 				const current_test = tests[e]
 				console.log("\n" + current_test.name)
 				await current_test(api)
+
+				// Reset the settings to expected
+				api.retry_on_timeout = retry_on_timeout
+				api.timeout = timeout
 			}
 		} catch(err) {
 			console.error(err)

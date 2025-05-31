@@ -84,10 +84,33 @@ const getUserRecentActivity: Test = async(api) => {
 	return true
 }
 
-const getUserKudosu: Test = async(api) => {
-	const events = await api.getUserKudosu(7276846, {limit: 5})
+const getUserRanking: Test = async(api) => {
+	const types: ["performance", "score"] = ["performance", "score"]
+	for (let i = 0; i < types.length; i++) {
+		console.log("|", types[i])
+		const response = await api.getUserRanking(Ruleset.osu, types[i], {country: "FR"})
+		response.ranking.forEach((r) => expect(r.user.country_code).to.equal("FR"))
+		expect(response.total).to.equal(10000)
+		expect(response.ranking).to.have.lengthOf(50)
+		expect(response.cursor.page).to.equal(2)
+		expect(response.ranking.at(0)?.play_count).to.be.greaterThan(100000)
+		expect(validate(response, "User.Ranking")).to.be.true
+	}
+	return true
+}
+
+const getUserKudosuHistory: Test = async(api) => {
+	const events = await api.getUserKudosuHistory(7276846, {limit: 5})
 	expect(events).to.have.lengthOf(5)
-	expect(validate(events, "User.KudosuHistory")).to.be.true
+	expect(validate(events, "User.Kudosu.History")).to.be.true
+	return true
+}
+
+const getKudosuRanking: Test = async(api) => {
+	const users = await api.getKudosuRanking()
+	expect(users).to.have.lengthOf(50)
+	expect(users.at(0)?.kudosu.total).to.be.greaterThan(10000)
+	expect(validate(users, "User.WithKudosu")).to.be.true
 	return true
 }
 
@@ -99,5 +122,7 @@ export const tests = [
 	getUserBeatmaps,
 	getUserMostPlayed,
 	getUserRecentActivity,
-	getUserKudosu,
+	getUserRanking,
+	getUserKudosuHistory,
+	getKudosuRanking,
 ]

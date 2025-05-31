@@ -1,49 +1,29 @@
-import { User } from "./User.js"
-import { Beatmap } from "./Beatmap.js"
-import { Beatmapset } from "./Beatmapset.js"
+import { adaptParametersForGETRequests, correctType } from "./utilities.js"
+import { Beatmap } from "./namespaces/Beatmap.js"
+import { Beatmapset } from "./namespaces/Beatmapset.js"
+import { Changelog } from "./namespaces/Changelog.js"
+import { Chat } from "./namespaces/Chat.js"
+import { Comment } from "./namespaces/Comment.js"
+import { Event } from "./namespaces/Event.js"
+import { Forum } from "./namespaces/Forum.js"
+import { Home } from "./namespaces/Home.js"
+import { Match } from "./namespaces/Match.js"
+import { Miscellaneous } from "./namespaces/Miscellaneous.js"
+import { Multiplayer } from "./namespaces/Multiplayer.js"
+import { NewsPost } from "./namespaces/NewsPost.js"
+import { Score } from "./namespaces/Score.js"
+import { Spotlight } from "./namespaces/Spotlight.js"
+import { User } from "./namespaces/User.js"
+import { WikiPage } from "./namespaces/Wiki.js"
 
-import { Multiplayer } from "./Multiplayer.js"
-import { Spotlight } from "./Spotlight.js"
-import { Score } from "./Score.js"
-import { Ranking } from "./Ranking.js"
-import { Event } from "./Event.js"
-
-import { Changelog } from "./Changelog.js"
-import { Forum } from "./Forum.js"
-import { WikiPage } from "./WikiPage.js"
-import { NewsPost } from "./NewsPost.js"
-import { Home } from "./Home.js"
-import { adaptParametersForGETRequests, anySignal, correctType } from "./misc.js"
-import { Chat } from "./Chat.js"
-import { Comment } from "./Comment.js"
-import { WebSocket } from "./WebSocket.js"
-
-
-export { User } from "./User.js"
-export { Beatmap } from "./Beatmap.js"
-export { Beatmapset } from "./Beatmapset.js"
-
-export { Multiplayer } from "./Multiplayer.js"
-export { Spotlight } from "./Spotlight.js"
-export { Score } from "./Score.js"
-export { Ranking } from "./Ranking.js"
-export { Event } from "./Event.js"
-
-export { Changelog } from "./Changelog.js"
-export { Forum } from "./Forum.js"
-export { WikiPage } from "./WikiPage.js"
-export { NewsPost } from "./NewsPost.js"
-export { Home } from "./Home.js"
-export { Chat } from "./Chat.js"
-export { Comment } from "./Comment.js"
-export { WebSocket } from "./WebSocket.js"
-
+export { Beatmap, Beatmapset, Changelog, Chat, Comment, Event, Forum, Home,
+	Match, Miscellaneous, Multiplayer, NewsPost, Score, Spotlight, User, WikiPage }
 
 export enum Ruleset {
 	osu 	= 0,
 	taiko 	= 1,
 	fruits	= 2,
-	mania 	= 3
+	mania 	= 3,
 }
 
 export type Mod = {
@@ -74,30 +54,24 @@ export function generateAuthorizationURL(client_id: number, redirect_uri: string
 
 /** If the {@link API} throws an error, it should always be an {@link APIError}! */
 export class APIError {
-	/** The reason why things didn't go as expected */
-	message: string
-	/** The server to which the request was sent */
-	server: string
-	/** The method used for this request (like "get", "post", etc...) */
-	method: string
-	/** The type of resource that was requested from the server */
-	endpoint: string
-	/** The filters that were used to specify what resource was wanted */
-	parameters: object
-	/** The status code that was returned by the server, if there is one */
-	status_code?: number
-	/** The error that caused the api to throw an {@link APIError} in the first place, if there is one */
-	original_error?: Error
-
-	constructor(message: string, server: string, method: string, endpoint: string, parameters: object, status_code?: number, original_error?: Error) {
-		this.message = message
-		this.server = server
-		this.method = method
-		this.endpoint = endpoint
-		this.parameters = parameters
-		this.status_code = status_code
-		this.original_error = original_error
-	}
+	/**
+	 * @param message The reason why things didn't go as expected
+	 * @param server The server to which the request was sent
+	 * @param method The method used for this request (like "get", "post", etc...)
+	 * @param endpoint The type of resource that was requested from the server
+	 * @param parameters The filters that were used to specify what resource was wanted
+	 * @param status_code The status code that was returned by the server, if there is one
+	 * @param original_error The error that caused the api to throw an {@link APIError} in the first place, if there is one
+	 */
+	constructor(
+		public message: string,
+		public server: API["server"],
+		public method: Parameters<API["request"]>[0],
+		public endpoint: Parameters<API["request"]>[1],
+		public parameters: Parameters<API["request"]>[2],
+		public status_code?: number,
+		public original_error?: Error
+	) {}
 }
 
 /** You can create an API instance without directly providing an access_token by using {@link API.createAsync}! */
@@ -142,7 +116,7 @@ export class API {
 		})
 
 		return user ?
-		await new_api.getAndSetToken({client_id, client_secret, grant_type: "authorization_code", redirect_uri: user.redirect_uri, code: user.code}, new_api) :
+		await new_api.getAndSetToken({client_id, client_secret, grant_type: "authorization_code", ...user}, new_api) :
 		await new_api.getAndSetToken({client_id, client_secret, grant_type: "client_credentials", scope: "public"}, new_api)
 	}
 
@@ -164,25 +138,36 @@ export class API {
 	get server() {return this._server}
 	set server(server) {this._server = server}
 
-	private _route_api: string = "api/v2"
+	private _route_api: Array<string | number> = ["api", "v2"]
 	/** Used by practically every method to interact with the {@link API.server} (defaults to **api/v2**) */
 	get route_api() {return this._route_api}
 	set route_api(route_api) {this._route_api = route_api}
 
-	private _route_token: string = "oauth/token"
+	private _route_token: Array<string | number> = ["oauth", "token"]
 	/** Used for getting an {@link API.access_token} and using your {@link API.refresh_token} (defaults to **oauth/token**) */
 	get route_token() {return this._route_token}
 	set route_token(route_token) {this._route_token = route_token}
+
+	private _scopes: Scope[] = []
+	/** The {@link Scope}s your application has, assuming it acts as a user */
+	get scopes() {return this._scopes}
+	set scopes(scopes) {this._scopes = scopes}
+
+	private _headers: {[key: string]: any} = {
+		"Accept": "application/json",
+		"Accept-Encoding": "gzip",
+		"Content-Type": "application/json",
+		"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
+		"x-api-version": "20250530",
+	}
+	/** Used in practically all requests, those are all the headers the package uses excluding `Authorization`, the one with the token */
+	get headers() {return this._headers}
+	set headers(headers) {this._headers = headers}
 
 	private _user?: User["id"]
 	/** The osu! user id of the user who went through the Authorization Code Grant */
 	get user() {return this._user}
 	set user(user) {this._user = user}
-
-	private _scopes?: Scope[]
-	/** The {@link Scope}s your application has, assuming it acts as a user */
-	get scopes() {return this._scopes}
-	set scopes(scopes) {this._scopes = scopes}
 
 
 	// CLIENT CONFIGURATION
@@ -201,7 +186,7 @@ export class API {
 	set timeout(timeout) {this._timeout = timeout}
 
 	private _retry_delay: number = 2
-	/** In seconds, how long should it wait until retrying? (defaults to **2**) */
+	/** In seconds, how long should it wait after a request failed before retrying? (defaults to **2**) */
 	get retry_delay() {return this._retry_delay}
 	set retry_delay(retry_delay) {this._retry_delay = retry_delay}
 
@@ -267,13 +252,9 @@ export class API {
 		code?: string
 		refresh_token?: string	
 	}, api: API): Promise<API> {
-		const response = await fetch(`${this.server}/${this.route_token}`, {
+		const response = await fetch(`${this.server}/${this.route_token.join("/")}`, {
 			method: "post",
-			headers: {
-				"Accept": "application/json",
-				"Content-Type": "application/json",
-				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)"
-			},
+			headers: this.headers,
 			body: JSON.stringify(body),
 			signal: this.timeout > 0 ? AbortSignal.timeout(this.timeout * 1000) : undefined
 		})
@@ -309,7 +290,7 @@ export class API {
 	 */
 	public async revokeToken(): Promise<void> {
 		// Note that unlike when getting a token, we actually need to use the normal route to revoke a token for some reason
-		return await this.request("delete", "oauth/tokens/current")
+		return await this.request("delete", ["oauth", "tokens", "current"])
 	}
 
 
@@ -387,8 +368,9 @@ export class API {
 
 		const old_token = this.access_token
 		try {
-			await this.getAndSetToken(
-			{client_id: this.client_id, client_secret: this.client_secret, grant_type: "refresh_token", refresh_token: this.refresh_token}, this)
+			await this.getAndSetToken({
+				client_id: this.client_id, client_secret: this.client_secret, grant_type: "refresh_token", refresh_token: this.refresh_token
+			}, this)
 			if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
 		} catch(e) {
 			this.log(true, "Failed to refresh the token :(", e)
@@ -428,13 +410,13 @@ export class API {
 	/**
 	 * The function that directly communicates with the API! Almost every functions of the API object uses this function!
 	 * @param method The type of request, each endpoint uses a specific one (if it uses multiple, the intent and parameters become different)
-	 * @param endpoint What comes in the URL after `api/`
+	 * @param endpoint What comes in the URL after `api/`, **DO NOT USE TEMPLATE LITERALS (`) OR THE ADDITION OPERATOR (+), put everything separately for type safety**
 	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
 	 * @param settings Additional settings **to add** to the current settings of the `fetch()` request
 	 * @param info Context given by a prior request
 	 * @returns A Promise with the API's response
 	 */
-	public async request(method: "get" | "post" | "put" | "delete", endpoint: string, parameters: {[k: string]: any} = {},
+	public async request(method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>, parameters: {[k: string]: any} = {},
 	settings?: ChildAPI["additional_fetch_settings"], info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}):
 	Promise<any> {
 		let to_retry = false
@@ -445,9 +427,9 @@ export class API {
 		const signals: AbortSignal[] = []
 		if (settings?.signal) signals.push(settings.signal)
 		if (this.timeout > 0) signals.push(AbortSignal.timeout(this.timeout * 1000))
-		
+
 		const second_slash = this.route_api.length ? "/" : "" // if the server **is** the route, don't have `//` between the server and the endpoint
-		let url = `${this.server}/${this.route_api}${second_slash}${endpoint}`
+		let url = `${this.server}/${this.route_api.join("/")}${second_slash}${endpoint.join("/")}`
 
 		if (method === "get" && parameters) {
 			// For GET requests specifically, requests need to be shaped in very particular ways
@@ -460,21 +442,17 @@ export class API {
 				return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
 			}).join("&"))
 		}
-		
+
 		const response = await fetch(url, {
 			method,
 			...settings, // has priority over what's above, but not over what's lower
 			headers: {
-				"Accept": "application/json",
-				"Accept-Encoding": "gzip",
-				"Content-Type": "application/json",
-				"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
 				"Authorization": `${this.token_type} ${this.access_token}`,
-				"x-api-version": "20241028",
+				...this.headers,
 				...settings?.headers // written that way, custom headers with (for example) only a user-agent would only overwrite the default user-agent
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
-			signal: anySignal(signals) // node20, in May2025: AbortSignal.any(signals)
+			signal: AbortSignal.any(signals)
 		})
 		.catch((error) => {
 			if (error.name === "TimeoutError" && this.retry_on_timeout) to_retry = true
@@ -522,7 +500,7 @@ export class API {
 				return await this.request(method, endpoint, parameters, settings, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
 
-			throw new APIError(error_message, `${this.server}/${this.route_api}`, method, endpoint, parameters, error_code, error_object)
+			throw new APIError(error_message, `${this.server}/${this.route_api.join("/")}`, method, endpoint, parameters, error_code, error_object)
 		}
 
 		this.log(false, response.statusText, response.status, {method, endpoint, parameters})
@@ -568,9 +546,6 @@ export class API {
 
 	/** {@inheritDoc Beatmap.getScores} @group Beatmap Methods */
 	readonly getBeatmapScores = Beatmap.getScores
-
-	/** {@inheritDoc Beatmap.getSoloScores} @group Beatmap Methods */
-	readonly getBeatmapSoloScores = Beatmap.getSoloScores
 
 	/** {@inheritDoc Beatmap.getUserScore} @group Beatmap Methods */
 	readonly getBeatmapUserScore = Beatmap.getUserScore
@@ -662,6 +637,12 @@ export class API {
 	/** {@inheritDoc Chat.Channel.leaveOne} @group Chat Methods */
 	readonly leaveChatChannel = Chat.Channel.leaveOne
 
+	/** {@inheritDoc Chat.Websocket.getHeaders} @group Chat Methods */
+	readonly getChatWebsocketHeaders = Chat.Websocket.getHeaders
+
+	/** {@inheritDoc Chat.Websocket.generate} @group Chat Methods */
+	readonly generateChatWebsocket = Chat.Websocket.generate
+
 
 	// COMMENT STUFF
 
@@ -686,10 +667,13 @@ export class API {
 	/** {@inheritDoc Forum.getMultiple} @group Forum Methods */
 	readonly getForums = Forum.getMultiple
 
+	/** {@inheritDoc Forum.Topic.getOne} @group Forum Methods */
+	readonly getForumTopic = Forum.Topic.getOne
+
 	/** {@inheritDoc Forum.Topic.getMultiple} @group Forum Methods */
 	readonly getForumTopics = Forum.Topic.getMultiple
 
-		/** {@inheritDoc Forum.Topic.create} @group Forum Methods */
+	/** {@inheritDoc Forum.Topic.create} @group Forum Methods */
 	readonly createForumTopic = Forum.Topic.create
 
 	/** {@inheritDoc Forum.Topic.reply} @group Forum Methods */
@@ -701,9 +685,6 @@ export class API {
 	/** {@inheritDoc Forum.Post.edit} @group Forum Methods */
 	readonly editForumPost = Forum.Post.edit
 
-	/** {@inheritDoc Forum.getTopicAndPosts} @group Forum Methods */
-	readonly getForumTopicAndPosts = Forum.getTopicAndPosts
-
 
 	// HOME STUFF
 
@@ -712,6 +693,24 @@ export class API {
 
 	/** {@inheritDoc Home.Search.getWikiPages} @group Home Methods */
 	readonly searchWiki = Home.Search.getWikiPages
+
+
+	// MATCH STUFF
+
+	/** {@inheritDoc Match.getOne} @group Match Methods */
+	readonly getMatch = Match.getOne
+
+	/** {@inheritDoc Match.getMultiple} @group Match Methods */
+	readonly getMatches = Match.getMultiple
+
+
+	// MISCELLANEOUS STUFF
+
+	/** {@inheritDoc Miscellaneous.Country.getRanking} @group Miscellaneous Methods */
+	readonly getCountryRanking = Miscellaneous.Country.getRanking
+
+	/** {@inheritDoc Miscellaneous.getSeasonalBackgrounds} @group Miscellaneous Methods */
+	readonly getSeasonalBackgrounds = Miscellaneous.getSeasonalBackgrounds
 
 
 	// MULTIPLAYER STUFF
@@ -728,11 +727,8 @@ export class API {
 	/** {@inheritDoc Multiplayer.Room.PlaylistItem.getScores} @group Multiplayer Methods */
 	readonly getPlaylistItemScores = Multiplayer.Room.PlaylistItem.getScores
 
-	/** {@inheritDoc Multiplayer.Match.getOne} @group Multiplayer Methods */
-	readonly getMatch = Multiplayer.Match.getOne
-
-	/** {@inheritDoc Multiplayer.Match.getMultiple} @group Multiplayer Methods */
-	readonly getMatches = Multiplayer.Match.getMultiple
+	/** {@inheritDoc Multiplayer.Room.Event.getAll} @group Multiplayer Methods */
+	readonly getRoomEvents = Multiplayer.Room.Event.getAll
 
 
 	// NEWS STUFF
@@ -744,22 +740,10 @@ export class API {
 	readonly getNewsPosts = NewsPost.getMultiple
 
 
-	// RANKING STUFF
-
-	/** {@inheritDoc Ranking.getUser} @group Ranking Methods */
-	readonly getUserRanking = Ranking.getUser
-
-	/** {@inheritDoc Ranking.getCountry} @group Ranking Methods */
-	readonly getCountryRanking = Ranking.getCountry
-
-	/** {@inheritDoc Ranking.getKudosu} @group Ranking Methods */
-	readonly getKudosuRanking = Ranking.getKudosu
-
-	/** {@inheritDoc Ranking.getSpotlight} @group Ranking Methods */
-	readonly getSpotlightRanking = Ranking.getSpotlight
-
-
 	// SCORE STUFF
+
+	/** {@inheritDoc Score.getSome} @group Score Methods */
+	readonly getScores = Score.getSome
 
 	/** {@inheritDoc Score.getReplay} @group Score Methods */
 	readonly getReplay = Score.getReplay
@@ -769,6 +753,9 @@ export class API {
 
 	/** {@inheritDoc Spotlight.getAll} @group Spotlight Methods */
 	readonly getSpotlights = Spotlight.getAll
+
+	/** {@inheritDoc Spotlight.getRanking} @group Spotlight Methods */
+	readonly getSpotlightRanking = Spotlight.getRanking
 
 
 	// USER STUFF
@@ -797,33 +784,23 @@ export class API {
 	/** {@inheritDoc User.getRecentActivity} @group User Methods */
 	readonly getUserRecentActivity = User.getRecentActivity
 
-	/** {@inheritDoc User.getKudosu} @group User Methods */
-	readonly getUserKudosu = User.getKudosu
+	/** {@inheritDoc User.getRanking} @group User Methods */
+	readonly getUserRanking = User.getRanking
 
 	/** {@inheritDoc User.getFriends} @group User Methods */
 	readonly getFriends = User.getFriends
 
+	/** {@inheritDoc User.Kudosu.getHistory} @group User Methods */
+	readonly getUserKudosuHistory = User.Kudosu.getHistory
 
-	// WEBSOCKET STUFF
-
-	/** {@inheritDoc WebSocket.generate} @group WebSocket Methods */
-	readonly generateWebSocket = WebSocket.generate
+	/** {@inheritDoc User.Kudosu.getRanking} @group User Methods */
+	readonly getKudosuRanking = User.Kudosu.getRanking
 
 
 	// WIKI STUFF
 
 	/** {@inheritDoc WikiPage.getOne} @group WikiPage Methods */
 	readonly getWikiPage = WikiPage.getOne
-
-
-	/**
-	 * Get the backgrounds made and selected for this season or for last season!
-	 * @returns When the season ended, and for each background, its URL and its artist
-	 * @group Other Methods
-	 */
-	async getSeasonalBackgrounds(): Promise<{ends_at: Date, backgrounds: {url: string, user: User}[]}> {
-		return await this.request("get", "seasonal-backgrounds")
-	}
 }
 
 /**

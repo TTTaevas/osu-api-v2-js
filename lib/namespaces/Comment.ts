@@ -1,5 +1,4 @@
-import { API, Beatmapset, Changelog, NewsPost, User } from "./index.js"
-import { getId } from "./misc.js"
+import { API, Beatmapset, Changelog, NewsPost, User } from "../index.js"
 
 /**
  * Remove so-called "Deleted Items" / items that lack an id, add a "deleted_commentable_meta" and make it the number of removed objects
@@ -94,7 +93,8 @@ export namespace Comment {
 	 * @param comment The comment in question
 	 */
 	export async function getOne(this: API, comment: Comment["id"] | Comment): Promise<Bundle> {
-		return removeDeletedItems(await this.request("get", `comments/${getId(comment)}`))
+		const comment_id = typeof comment === "number" ? comment : comment.id
+		return removeDeletedItems(await this.request("get", ["comments", comment_id]))
 	}
 
 	/**
@@ -105,10 +105,10 @@ export namespace Comment {
 	 */
 	export async function getMultiple(this: API, from?: {type: Comment["commentable_type"], id: number}, parent?: Comment["id"] | Comment,
 	sort?: {type?: Bundle["sort"], after?: Comment["id"] | Comment, cursor?: Bundle["cursor"]}): Promise<Bundle.WithTotalToplevelcount> {
-		const after = sort?.after ? String(getId(sort.after)) : undefined
-		const parent_id = parent ? String(getId(parent)) : undefined
+		const after = typeof sort?.after === "object" ? sort.after.id : sort?.after
+		const parent_id = typeof parent === "number" ? parent : parent?.id
 
-		return removeDeletedItems(await this.request("get", "comments", {
+		return removeDeletedItems(await this.request("get", ["comments"], {
 			after, commentable_type: from?.type, commentable_id: from?.id,
 			cursor: sort?.cursor, parent_id, sort: sort?.type
 		}))

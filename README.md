@@ -2,11 +2,11 @@
 
 [**osu-api-v2-js**](https://github.com/TTTaevas/osu-api-v2-js) is a JavaScript & TypeScript package that helps you interact with [osu!api (v2)](https://docs.ppy.sh).
 
-You can find this package's documentation on [osu-v2.taevas.xyz](https://osu-v2.taevas.xyz) if needed!
+The documentation for the latest version of this package can be found at any time on [osu-v2.taevas.xyz](https://osu-v2.taevas.xyz)!
 
 ## How to install and get started
 
-Before installing, if using Node.js, check if you're running version 18 or above:
+Before installing, if using Node.js, check if you're running version 20 or above:
 
 ```bash
 node -v # displays your version of node.js
@@ -41,7 +41,7 @@ async function logUserTopPlayBeatmap(username: string) {
     const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`
     const y = `+${score.mods.map((m) => m.acronym).toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
     console.log(`${username}'s top play is on: ${x} ${y}`)
-    // Doomsday fanboy's top play is on: Erio o Kamattechan - os-Uchuujin(Asterisk Makina Remix) [Mattress Actress] +DT,CL (8.85*)
+    // Doomsday fanboy's top play is on: Erio o Kamattechan - os-Uchuujin(Asterisk Makina Remix) [Mattress Actress] +DT,CL (8.87*)
 }
 
 logUserTopPlayBeatmap("Doomsday fanboy")
@@ -50,18 +50,20 @@ logUserTopPlayBeatmap("Doomsday fanboy")
 ### Authorization flow
 A simple guide on how to do extra fancy stuff
 
-#### The part where the user says they're okay with using your application
+#### Create and share the authorization link with your users
 
-If your application is meant to act on behalf of a user after they've clicked on a button to say they consent to your application identifying them and reading public data on their behalf and some other stuff maybe, then things will work differently
+If your application is meant to act on behalf of a user after they've clicked on a button to say they **"consent to your application identifying them and reading public data on their behalf and some other stuff maybe"**, then you will need to take a slightly different approach to create your `api` object.
 
-Let's take it step by step! First, this package comes with [`generateAuthorizationURL()`](https://osu-v2.taevas.xyz/functions/generateAuthorizationURL.html), which will generate for you a link so users can click on it and allow your application to do stuff on their behalf
+Let's take it step by step! First, this package comes with [`generateAuthorizationURL()`](https://osu-v2.taevas.xyz/functions/generateAuthorizationURL.html), which will create a link for you that you can share so users can click on it and allow your application to do stuff on their behalf.
 
-This function requires you to specify [scopes](https://osu-v2.taevas.xyz/types/Scope.html)... well, just know that **`identify` is always implicitly specified**, that **`public` is almost always implicitly required**, and that **functions that require other scopes are explicit about it!**
+This function requires you to specify [scopes](https://osu-v2.taevas.xyz/types/Scope.html). Here are some useful things to know about scopes:
+- `identify` is always **implicitly SPECIFIED**, so you should always use it
+- `public` is always **implicitely REQUIRED**, so you should (basically) always use it
+- when a method requires another scope, it will be **explicit** about it in its documentation
+- ultimately, **the user is the one who decides which scopes they allow**, so code assuming they may have allowed no scope at all
+- scopes that have been allowed **can be checked at any time** through [the `scopes` property of your `api` object](https://osu-v2.taevas.xyz/classes/API.html#scopes)
 
-Please note: It is the user who ultimately decides which scopes they allow, so you can't assume they allowed all the scopes you specified...
-Thankfully though, you can check at any time the allowed scopes with the `scopes` property of your `api` object!
-
-#### The part where your application hears the user when the user says okay
+#### Have a server ready to receive the authorization
 
 The user clicked your link and authorized your application! ...Now what?
 
@@ -72,17 +74,27 @@ With this code, thanks to the [`createAsync()`](https://osu-v2.taevas.xyz/classe
 const api = await osu.API.createAsync("<client_id>", "<client_secret>", {code: "<code>", redirect_uri: "<application_callback_url>"})
 ```
 
-#### The part where you make it so your application works without the user saying okay every 2 minutes
+#### Keep your api object somewhere safe
 
-Congrats on making your `api` object! Now you should do something in order to not lose it, or not need a new one in order to request more data!
+Congrats on making your `api` object! As you may have seen from glancing at the documentation, it is pretty important as it holds a lot of information, such as:
+- the [`access_token`](https://osu-v2.taevas.xyz/classes/API.html#access_token) used for all requests and the [`refresh_token`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token) used to get a new `access_token` without asking the user for consent again
+- [`expires`](https://osu-v2.taevas.xyz/classes/API.html#expires), which tells you when your `access_token` will expire
+- [`user`](https://osu-v2.taevas.xyz/classes/API.html#user), which is the id of the osu! user who has gone through that whole authorization thingie
 
-Do note that your `api` object has lots of practical properties: `user` allows you to know which user it acts on behalf of, `expires` allows you to know when your requests with your current `access_token` will fail, and `refresh_token` is your key to getting a new `access_token` without asking the user again!
+It is important to note that it has features you can change or turn off, they are all listed in the documentation but those worth noting are:
+- [`refresh_token_on_expires`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_expires), automatically refresh the token when the expiration date is reached
+- [`refresh_token_on_401`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_401), automatically refresh the token upon encountering a 401 (usual sign of an expired token)
+- [`retry_on_automatic_token_refresh`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_automatic_token_refresh), automatically retry the request that had 401d after successfully refreshing the token
 
-Although, you should not need to access them often, because your `api` object has a function to use that refresh token which you can call at any given time, and by default, the object will call that function on its own right before the expiration date or when a request seems to fail because of the `access_token` being invalid! (those are features you can deactivate if needed)
+Finally, do note that you can use the `refresh_token` yourself using [refreshToken()](https://osu-v2.taevas.xyz/classes/API.html#refreshtoken)!
 
-Your `refresh_token` can actually also expire at a (purposefully) unknown time, so depending of how your application works, you could use it at some point around the date of expiration, or you could throw away your `api` object while waiting for a user to start the authorization flow again
+#### Full example
 
-### Reading all incoming messages
+Here's a full example where you will launch a server that will:
+- listen for an authorization code
+- create the authorization URL and open it in your browser
+- create the api object with the authorization code it has received
+- get your user id and username from that
 
 ```typescript
 // TypeScript
@@ -91,9 +103,9 @@ import * as http from "http"
 import { exec } from "child_process"
 
 // This should be from an application registered on https://osu.ppy.sh/home/account/edit#oauth
-const id = "<client_id>" // as a number
+const id = 0 // replace with your client id
 const secret = "<client_secret>"
-const redirect_uri = "<application_callback_url>" // assuming localhost with any port for convenience
+const redirect_uri = "<application_callback_url>" // assuming localhost with any unused port for convenience (like http://localhost:7272/)
 
 // Because we need to act as an authenticated user, we need to go through the authorization procedure
 // This function largely takes care of it by itself
@@ -123,42 +135,24 @@ async function getCode(authorization_url: string): Promise<string> {
 	return code
 }
 
-async function readChat() {
-    // Somehow get the code so the application can read the messages as your osu! user
-	const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "chat.read"]) // "chat.read" is 100% needed in our case
+async function getSelf() {
+	// Get the code needed for the api object
+	const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "identify"])
 	const code = await getCode(url)
-	const api = await osu.API.createAsync(id, secret, {code, redirect_uri}, {verbose: "errors"})
-
-    // Get a WebSocket object to interact with and get messages from
-	const socket = api.generateWebSocket()
-
-    // Tell the server you want to know whenever there's are chat messages
-	socket.on("open", () => {
-		socket.send(osu.WebSocket.Command.chatStart) // osu.WebSocket.Command.chatStart is simply JSON.stringify({event: "chat.start"}) but easier to remember
-		api.keepChatAlive()
-		setInterval(() => api.keepChatAlive(), 30 * 1000) // Tell the server every 30 seconds that you're still listening to the incoming messages
-	})
-
-    // Listen for chat messages (and other stuff)
-	socket.on("message", (m) => { // Mind you, "message" doesn't mean "chat message" here, it's more like a raw event
-		const parsed: osu.WebSocket.Event.Any = JSON.parse(m.toString())
-
-		if (!parsed.event) { // Should only mean we've gotten an error message
-			throw new Error((parsed as osu.WebSocket.Event.Error).error) // Assertion in case of false positive TS2339 error at build time
-		} else if (parsed.event === "chat.message.new") { // Filter out things that aren't new chat messages and get type safety
-			const message = parsed.data.messages.map((message) => message.content).join(" | ")
-			const user = parsed.data.users.map((user) => user.username).join(" | ")
-			console.log(`${user}: ${message}`)
-		}
-	})
+	const api = await osu.API.createAsync(id, secret, {code, redirect_uri}, {verbose: "all"})
+	
+	// Use the `me` endpoint, which gives information about the authorized user!
+	const me = await api.getResourceOwner()
+	console.log("My id is", me.id, "but I'm better known as", me.username)
+	
+	// If you're not gonna use the token anymore, might as well revoke it for the sake of security
+	await api.revokeToken().then(() => console.log("Revoked the token, it can no longer be used!"))
 }
 
-readChat()
+getSelf()
 ```
 
-Above is the code I've written to listen to incoming chat messages by using the API's WebSocket!
-
-Using the WebSocket namespace this package provides, it's relatively easy to send commands (anything under [`osu.WebSocket.Command`](https://osu-v2.taevas.xyz/modules/WebSocket.Command.html)) and you can have 100% type safety with events (anything under [`osu.Websocket.Event`](https://osu-v2.taevas.xyz/modules/WebSocket.Event.html)) simply by checking what the `event` property is! With that, anything in the `data` property is yours to play with!
+If you're looking for an example that involves WebSockets, you might wanna take a look at `lib/tests/websocket.ts` in the package's repository!
 
 ### Calling the functions, but literally
 
@@ -167,7 +161,7 @@ This package's functions can be accessed both through the api object and through
 ```typescript
 // Obtaining a match, assuming an `api` object already exists and everything from the package is imported as `osu`
 const match_1 = await api.getMatch(103845156) // through the api object
-const match_2 = await osu.Multiplayer.Match.getOne.call(api, 103845156) // through the namespaces
+const match_2 = await osu.Match.getOne.call(api, 103845156) // through the namespaces
 // `match_1` and `match_2` are the same, because they're essentially using the same function!
 
 // The same, but for obtaining multiple lazer updates
@@ -182,7 +176,7 @@ Of course, using [the apply() method](https://developer.mozilla.org/en-US/docs/W
 
 ## List of implemented endpoints
 
-In the same order as on the API's official documentation:
+In the same order as on [the API's official documentation](https://osu.ppy.sh/docs/):
 
 ### Beatmap Packs
 - `GET /beatmaps/packs` -> [getBeatmapPacks()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmappacks)
@@ -193,7 +187,6 @@ In the same order as on the API's official documentation:
 - `GET /beatmaps/{beatmap}/scores/users/{user}` -> [getBeatmapUserScore()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapuserscore)
 - `GET /beatmaps/{beatmap}/scores/users/{user}/all` -> [getBeatmapUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapuserscores)
 - `GET /beatmaps/{beatmap}/scores` -> [getBeatmapScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapscores)
-- `GET /beatmaps/{beatmap}/solo-scores` -> [getBeatmapSoloScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsoloscores)
 - `GET /beatmaps` -> [getBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmaps)
 - `GET /beatmaps/{beatmap}` -> [getBeatmap()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmap)
 - `POST /beatmaps/{beatmap}/attributes` -> [getBeatmapDifficultyAttributes()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapdifficultyattributes)
@@ -225,6 +218,7 @@ In the same order as on the API's official documentation:
 - `GET /chat/channels` -> [getChatChannels()](https://osu-v2.taevas.xyz/classes/API.html#getchatchannels)
 - `POST /chat/channels` -> [createChatPrivateChannel()](https://osu-v2.taevas.xyz/classes/API.html#createchatprivatechannel) and [createChatAnnouncementChannel()](https://osu-v2.taevas.xyz/classes/API.html#createchatannouncementchannel)
 - `GET /chat/channels/{channel}` -> [getChatChannel()](https://osu-v2.taevas.xyz/classes/API.html#getchatchannel) (without `users` because `channel` would already have this property)
+- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### Comments
 - `GET /comments` -> [getComments()](https://osu-v2.taevas.xyz/classes/API.html#getcomments)
@@ -238,7 +232,7 @@ In the same order as on the API's official documentation:
 - `POST /forums/topics/{topic}/reply` -> [replyForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#replyforumtopic)
 - `GET /forums/topics` -> [getForumTopics()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopics)
 - `POST /forums/topics` -> [createForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#createforumtopic)
-- `GET /forums/topics/{topic}` -> [getForumTopicAndPosts()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopicandposts) (removing `search` for simplicity)
+- `GET /forums/topics/{topic}` -> [getForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#getforum) (removing `search` for simplicity)
 - `PUT /forums/topics/{topic}` -> [editForumTopicTitle()](https://osu-v2.taevas.xyz/classes/API.html#editforumtopictitle)
 - `PUT /forums/posts/{post}` -> [editForumPost()](https://osu-v2.taevas.xyz/classes/API.html#editforumpost)
 - `GET /forums` -> [getForums()](https://osu-v2.taevas.xyz/classes/API.html#getforums)
@@ -254,8 +248,6 @@ In the same order as on the API's official documentation:
 ### Multiplayer
 - `GET /rooms/{room}/playlist/{playlist}/scores` -> [getPlaylistItemScores()](https://osu-v2.taevas.xyz/classes/API.html#getplaylistitemscores)
 - `GET /rooms` -> [getRooms()](https://osu-v2.taevas.xyz/classes/API.html#getrooms)
-- `GET /rooms/{room}` -> [getRoom()](https://osu-v2.taevas.xyz/classes/API.html#getroom)
-- `GET /rooms/{room}/leaderboard` -> [getRoomLeaderboard()](https://osu-v2.taevas.xyz/classes/API.html#getroomleaderboard)
 - While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### News
@@ -267,20 +259,26 @@ In the same order as on the API's official documentation:
 - `GET /rankings/{mode}/{type}` -> [getUserRanking()](https://osu-v2.taevas.xyz/classes/API.html#getuserranking) and [getCountryRanking()](https://osu-v2.taevas.xyz/classes/API.html#getcountryranking) and [getSpotlightRanking()](https://osu-v2.taevas.xyz/classes/API.html#getspotlightranking)
 - `GET /spotlights` -> [getSpotlights()](https://osu-v2.taevas.xyz/classes/API.html#getspotlights)
 
+### Scores
+- `GET /scores` -> [getScores()](https://osu-v2.taevas.xyz/classes/API.html#getscores)
+
+### Under "Undocumented" or missing from docs
+- `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)
+- `GET /rooms/{room}` -> [getRoom()](https://osu-v2.taevas.xyz/classes/API.html#getroom)
+- `GET /rooms/{room}/leaderboard` -> [getRoomLeaderboard()](https://osu-v2.taevas.xyz/classes/API.html#getroomleaderboard)
+- `GET /rooms/{room}/events` -> [getRoomEvents()](https://osu-v2.taevas.xyz/classes/API.html#getroomevents)
+- `GET /scores/{score}/download` -> [getReplay()](https://osu-v2.taevas.xyz/classes/API.html#getreplay)
+- `GET /friends` -> [getFriends()](https://osu-v2.taevas.xyz/classes/API.html#getfriends)
+- `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)
+
 ### Users
 - `GET /me/{mode?}` -> [getResourceOwner()](https://osu-v2.taevas.xyz/classes/API.html#getresourceowner)
-- `GET /users/{user}/kudosu` -> [getUserKudosu()](https://osu-v2.taevas.xyz/classes/API.html#getuserkudosu)
+- `GET /users/{user}/kudosu` -> [getUserKudosuHistory()](https://osu-v2.taevas.xyz/classes/API.html#getuserkudosuhistory)
 - `GET /users/{user}/scores/{type}` -> [getUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getuserscores)
 - `GET /users/{user}/beatmapsets/{type}` -> [getUserBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserbeatmaps) and [getUserMostPlayed()](https://osu-v2.taevas.xyz/classes/API.html#getusermostplayed)
 - `GET /users/{user}/recent_activity` -> [getUserRecentActivity()](https://osu-v2.taevas.xyz/classes/API.html#getuserrecentactivity)
 - `GET /users/{user}/{mode?}` -> [getUser()](https://osu-v2.taevas.xyz/classes/API.html#getuser)
 - `GET /users` -> [getUsers()](https://osu-v2.taevas.xyz/classes/API.html#getusers)
-- `GET /friends` -> [getFriends()](https://osu-v2.taevas.xyz/classes/API.html#getfriends)
 
 ### Wiki
 - `GET /wiki/{locale}/{path}` -> [getWikiPage()](https://osu-v2.taevas.xyz/classes/API.html#getwikipage)
-
-### Misc Undocumented Stuff
-- `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)
-- `GET /scores/{score}/download` -> [getReplay()](https://osu-v2.taevas.xyz/classes/API.html#getreplay)
-- `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)

@@ -1,4 +1,4 @@
-import { API, User as UserImport, Ruleset } from "./index.js"
+import { API, User as IUser, Miscellaneous, Ruleset, Score } from "../index.js"
 
 /** @obtainableFrom {@link API.getEvents} */
 export interface Event {
@@ -10,7 +10,7 @@ export namespace Event {
 	/** Those are used as properties by Events, they're not events themselves */
 	export namespace SharedProperties {
 		export interface User {
-			username: UserImport["username"]
+			username: IUser["username"]
 			/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`) */
 			url: string
 		}
@@ -30,7 +30,6 @@ export namespace Event {
 		}
 	}
 	
-	
 	export interface Achievement extends Event {
 		type: "achievement"
 		achievement: {
@@ -43,7 +42,7 @@ export namespace Event {
 			description: string
 			/** If the achievement is for a specific mode only (such as pass a 2* beatmap in taiko) */
 			mode: keyof typeof Ruleset | null
-			/** @remarks May contain HTML (like have the text between <i></i>) */
+			/** @remarks May contain HTML (like have the text between \<i>\</i>) */
 			instructions: string | null
 		}
 		user: SharedProperties.User
@@ -88,7 +87,7 @@ export namespace Event {
 	export interface Rank extends Event {
 		type: "rank"
 		/** The grade, like "S" */
-		scoreRank: string
+		scoreRank: Score.Grade
 		/** The position achieved, like 14 */
 		rank: number
 		mode: keyof typeof Ruleset
@@ -121,10 +120,10 @@ export namespace Event {
 	export interface UsernameChange extends Event {
 		type: "usernameChange"
 		user: {
-			username: UserImport["username"]
+			username: IUser["username"]
 			/** What goes after the website's URL, so for example, it could be the `/u/7276846` of `https://osu.ppy.sh/u/7276846` (or `users` instead of `u`) */
 			url: string
-			previousUsername: UserImport["username"]
+			previousUsername: IUser["username"]
 		}
 	}
 
@@ -138,11 +137,10 @@ export namespace Event {
 
 	/**
 	 * Get everything note-worthy that happened on osu! recently!
-	 * @param sort "id_asc" to have the oldest recent event first, "id_desc" to have the newest instead (defaults to **id_desc**)
-	 * @param cursor_string Use a response's `cursor_string` with the same parameters to get the next "page" of results, so `events` in this instance!
+	 * @param config Sort the results differently, or use a cursor_string to get more results
 	 */
-	export async function getMultiple(this: API, sort: "id_desc" | "id_asc" = "id_desc", cursor_string?: string):
-	Promise<{events: Event.Any[], cursor_string: string | null}> {
-		return await this.request("get", "events", {sort, cursor_string})
+	export async function getMultiple(this: API, config?: Pick<Miscellaneous.Config, "sort" | "cursor_string">):
+	Promise<{events: Event.Any[], cursor_string: Miscellaneous.CursorString | null}> {
+		return await this.request("get", ["events"], {sort: config?.sort ?? "id_desc", cursor_string: config?.cursor_string})
 	}
 }

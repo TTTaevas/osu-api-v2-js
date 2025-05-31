@@ -1,3 +1,5 @@
+// This file hosts important functions that are too big or unreadable to belong in another file
+
 /**
  * When using `fetch()` for a GET request, you can't just give the parameters the same way you'd give them for a POST request!
  * @param parameters The parameters as they'd be for a POST request (prior to using `JSON.stringify`)
@@ -83,43 +85,4 @@ export function correctType(x: any, force_string?: boolean): any {
 	}
 
 	return x
-}
-
-/**
- * This is an alternative to `AbortSignal.any` that is friendly to older versions of Node.js, it was provided by the kind https://github.com/baileyherbert
- * https://github.com/TTTaevas/osu-api-v2-js/issues/33#issuecomment-2062026279
- * @param signals The multiple signals you'd want `fetch()` to take
- * @returns A signal that's aborted when any of the `signals` is aborted
- * @remarks Will be safe to remove with Node 20
- */
-export function anySignal(signals: AbortSignal[]) {
-	const controller = new AbortController()
-	const unsubscribe: (() => void)[] = []
-
-	function onAbort(signal: AbortSignal) {
-		controller.abort(signal.reason)
-		unsubscribe.forEach((f) => f())
-	}
-
-	for (const signal of signals) {
-		if (signal.aborted) {
-			onAbort(signal)
-			break
-		}
-
-		const handler = onAbort.bind(undefined, signal)
-		signal.addEventListener("abort", handler)
-		unsubscribe.push(() => signal.removeEventListener("abort", handler))
-	}
-
-	return controller.signal
-}
-
-/**
- * A function that makes it easy to get the id from the argument of a function
- * @param arg The id or the object with the id
- * @returns The id
- */
-export function getId(arg: number | {[key: string]: any}, property_name: string = "id"): number {
-	return typeof arg === "number" ? arg : arg[property_name]
 }
