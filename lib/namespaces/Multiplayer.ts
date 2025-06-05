@@ -1,15 +1,11 @@
-import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User, Miscellaneous } from "../index.js"
+import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User, Miscellaneous, Beatmapset } from "../index.js"
 
 export namespace Multiplayer {
-	/**
-	 * @obtainableFrom
-	 * {@link API.getRoom} /
-	 * {@link API.getRooms}
-	 */
 	export interface Room {
 		id: number
 		name: string
 		category: "normal" | "spotlight" | "daily_challenge"
+		status: "idle" | "playing"
 		type: "head_to_head" | "team_versus" | "playlists"
 		user_id: User["id"]
 		starts_at: Date
@@ -21,8 +17,6 @@ export namespace Multiplayer {
 		has_password: boolean
 		queue_mode: "all_players" | "all_players_round_robin" | "host_only"
 		auto_skip: boolean
-		host: User.WithCountry
-		recent_participants: User[]
 		current_playlist_item?: Room.PlaylistItem.WithBeatmap | null
 		playlist?: Room.PlaylistItem.WithComplexBeatmap[]
 		playlist_item_stats?: {
@@ -50,6 +44,16 @@ export namespace Multiplayer {
 	}
 
 	export namespace Room {
+		/**
+		* @obtainableFrom
+		* {@link API.getRoom} /
+		* {@link API.getRooms}
+		*/
+		export interface WithUsers extends Room {
+			host: User.WithCountry
+			recent_participants: User[]
+		}
+
 		export interface PlaylistItem {
 			id: number
 			room_id: number
@@ -75,11 +79,24 @@ export namespace Multiplayer {
 				beatmap: Beatmap.WithBeatmapsetChecksumMaxcombo
 			}
 
-			/** @obtainableFrom {@link API.getPlaylistItemScores} */
-			export interface Score extends IScore.WithUser {
+			/** @obtainableFrom {@link API.getRoomEvents} */
+			export interface WithDetailsScores extends PlaylistItem {
+				details: {
+					room_type: "head_to_head" | "team_versus"
+					teams?: Partial<Record<number, "red" | "blue">> | null
+				}
+				/** @remarks It doesn't have a `user`, but there should be a `users` in the same response as the one you got the `scores` from! */
+				scores: PlaylistItem.Score[]
+			}
+
+			/** @obtainableFrom {@link API.getRoomEvents} */
+			export interface Score extends IScore {
 				playlist_item_id: PlaylistItem["id"]
 				room_id: Room["id"]
 			}
+
+			/** @obtainableFrom {@link API.getPlaylistItemScores} */
+			export interface ScoreWithUser extends Score, IScore.WithUser {}
 
 			/**
 			 * Get the scores on a specific item of a room!
@@ -87,15 +104,15 @@ export namespace Multiplayer {
 			 * @param config How many scores, how are they sorted, is there a cursor_string?
 			 * @remarks This will **not work for rooms created before ~March 5th 2024** https://github.com/ppy/osu-web/issues/10725
 			 */
-			export async function getScores(this: API, item: {id: number, room_id: number} | Multiplayer.Room.PlaylistItem,
+			export async function getScores(this: API, item: {id: PlaylistItem["id"], room_id: Room["id"]} | Multiplayer.Room.PlaylistItem,
 			config?: Pick<Miscellaneous.Config, "limit" | "sort" | "cursor_string">):
 			Promise<{
 				params: Pick<Miscellaneous.Config, "limit" | "sort">
-				scores: Score[]
+				scores: ScoreWithUser[]
 				/** How many scores there are across all pages, not necessarily `scores.length` */
 				total: number
 				/** @remarks Will be null if not an authorized user or if the authorized user has no score */
-				user_score: Score | null
+				user_score: ScoreWithUser | null
 				/** @remarks Will be null if there is no next page */
 				cursor_string: Miscellaneous.CursorString | null
 			}> {
@@ -135,49 +152,38 @@ export namespace Multiplayer {
 		}
 
 		export interface Event {
+			created_at: Date
+			event_type:
+			| "game_started"
+			| "game_aborted"
+			| "game_completed"
+			| "host_changed"
+			| "player_joined"
+			| "player_kicked"
+			| "player_left"
+			| "room_created"
+			| "room_disbanded"
+			| "unknown"
 			id: number
-			created_at: Date,
-			user_id: User["id"] | null,
-			playlist_item_id: PlaylistItem["id"] | null,
+			playlist_item_id: PlaylistItem["id"] | null
+			user_id: User["id"] | null
 		}
 
 		export namespace Event {
-			export interface GameStarted extends Event {
-				event_type: "game_started"
-				event_detail: {
-					room_type: "head_to_head" | "team_versus"
-					teams: Partial<Record<number, "red" | "blue">> | null
-				}
-			}
-
-			export interface Other extends Event {
-				event_type:
-				| "game_aborted"
-				| "game_completed"
-				| "host_changed"
-				| "player_joined"
-				| "player_kicked"
-				| "player_left"
-				| "room_created"
-				| "room_disbanded"
-				| "unknown"
-			}
-
-			export type Any = GameStarted | Other
-
 			/**
 			 * Get all the events about a lazer **realtime** room!
-			 * @remarks It **WILL error** if the provided room is playlist or other, and **may return empty arrays** on rooms from 2024 or older
-			 *
-			 * Furthermore, its response is likely to change soon/often as it's currently new and nowhere in the API's documentation!
+			 * @remarks It **WILL error (422)** if the provided room is not realtime, and **may return empty arrays** on rooms from roughly April 2025 or older
 			 */
 			export async function getAll(this: API, room: Room["id"] | Room): Promise<{
-				events: Event.Any[],
-				users: User.WithCountry[],
-				first_event_id: number,
-				last_event_id: number,
-				playlist_items: PlaylistItem.WithBeatmap[],
-				current_playlist_item_id: PlaylistItem["id"],
+				beatmaps: Beatmap[]
+				beatmapsets: Beatmapset.WithHype[]
+				current_playlist_item_id: PlaylistItem["id"]
+				events: Event[]
+				first_event_id: number
+				last_event_id: number
+				playlist_items: PlaylistItem.WithDetailsScores[]
+				room: Room
+				users: User.WithCountry[]
 			}> {
 				const room_id = typeof room === "number" ? room : room.id
 				return await this.request("get", ["rooms", room_id, "events"])
@@ -188,7 +194,7 @@ export namespace Multiplayer {
 		 * Get data about a lazer multiplayer room (realtime or playlists)!
 		 * @param room The room or the id of the room, can be found at the end of its URL (after `/multiplayer/rooms/`)
 		 */
-		export async function getOne(this: API, room: Room["id"] | Room): Promise<Room> {
+		export async function getOne(this: API, room: Room["id"] | Room): Promise<Room.WithUsers> {
 			const room_id = typeof room === "number" ? room : room.id
 			return await this.request("get", ["rooms", room_id])
 		}
@@ -204,7 +210,7 @@ export namespace Multiplayer {
 		 * (so `5`'d be summer 2020's mania rooms, not winter 2022!!)
 		 */
 		export async function getMultiple(this: API, type: "playlists" | "realtime", mode: "active" | "all" | "ended" | "participated" | "owned",
-		limit: number = 10, sort: "ended" | "created" = "created", season_id?: number): Promise<Room[]> {
+		limit: number = 10, sort: "ended" | "created" = "created", season_id?: number): Promise<Room.WithUsers[]> {
 			return await this.request("get", ["rooms"], {type_group: type, mode, limit, sort, season_id})
 		}
 	}

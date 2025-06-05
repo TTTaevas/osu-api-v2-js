@@ -6,13 +6,13 @@ const getRoom: Test = async(api) => {
 	const room_playlist = await api.getRoom(588230)
 	expect(room_playlist.id).to.equal(588230)
 	expect(room_playlist.participant_count).to.equal(27)
-	expect(validate(room_playlist, "Multiplayer.Room")).to.be.true
+	expect(validate(room_playlist, "Multiplayer.Room.WithUsers")).to.be.true
 
 	console.log("|", "Realtime")
 	const room_realtime = await api.getRoom(591993)
 	expect(room_realtime.id).to.equal(591993)
 	expect(room_realtime.participant_count).to.equal(5)
-	expect(validate(room_realtime, "Multiplayer.Room")).to.be.true
+	expect(validate(room_realtime, "Multiplayer.Room.WithUsers")).to.be.true
 
 	return true
 }
@@ -40,7 +40,7 @@ const getPlaylistItemScores: Test = async(api) => {
 	expect(response_realtime.scores).to.have.length.greaterThan(0)
 	response_realtime.scores.forEach((score) => expect(score.playlist_item_id).to.equal(5421279))
 	response_realtime.scores.forEach((score) => expect(score.room_id).to.equal(591993))
-	expect(validate(response_realtime.scores, "Multiplayer.Room.PlaylistItem.Score")).to.be.true
+	expect(validate(response_realtime.scores, "Multiplayer.Room.PlaylistItem.ScoreWithUser")).to.be.true
 
 	return true
 }
@@ -62,13 +62,18 @@ const getRoomLeaderboard: Test = async(api) => {
 }
 
 const getRoomEvents: Test = async(api) => {
-	const response = await api.getRoomEvents(1337921)
+	const response = await api.getRoomEvents(1379842)
+	expect(response.room.id).to.equal(1379842)
 	expect(response.first_event_id).to.be.lessThan(response.last_event_id)
 	expect(response.users).to.have.lengthOf(2)
-	expect(response.playlist_items).to.have.lengthOf(9)
-	expect(validate(response.events, "Multiplayer.Room.Event.Any")).to.be.true
+	expect(response.playlist_items).to.have.lengthOf(17)
+
+	expect(validate(response.beatmaps, "Beatmap")).to.be.true
+	expect(validate(response.beatmapsets, "Beatmapset.WithHype")).to.be.true
+	expect(validate(response.events, "Multiplayer.Room.Event")).to.be.true
+	expect(validate(response.playlist_items, "Multiplayer.Room.PlaylistItem.WithDetailsScores")).to.be.true
+	expect(validate(response.room, "Multiplayer.Room")).to.be.true
 	expect(validate(response.users, "User.WithCountry")).to.be.true
-	expect(validate(response.playlist_items, "Multiplayer.Room.PlaylistItem.WithBeatmap")).to.be.true
 	return true
 }
 

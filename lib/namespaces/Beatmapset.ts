@@ -21,12 +21,12 @@ export interface Beatmapset {
 	nsfw: boolean
 	offset: number
 	play_count: number
-	/** A string like that where id is the `id` of the beatmapset: `//b.ppy.sh/preview/58951.mp3` */
+	/** A string like that where id is the `id` of the beatmapset: `//b.ppy.sh/preview/<id>.mp3` */
 	preview_url: string
 	source: string
 	spotlight: boolean
 	/** Is it ranked, is it graveyarded, etc */
-	status: string
+	status: Lowercase<keyof typeof Beatmapset.RankStatus>
 	/** A title readable by any english-speaking person, so it'd be in romaji if the song's title is in Japanese */
 	title: string
 	/** Basically the title is the original language, so with hiragana, katakana and kanji if Japanese */
