@@ -16,6 +16,8 @@ const getSeasonalBackgrounds: Test = async(api) => {
 	const response = await api.getSeasonalBackgrounds()
 	expect(response.ends_at).to.be.greaterThan(new Date("2025-01-01"))
 	expect(response.backgrounds).to.have.length.greaterThan(0)
+	expect(response.backgrounds[0].url).to.be.a("string")
+	expect(validate(response.backgrounds[0].user, "User")).to.be.true
 	return true
 }
 

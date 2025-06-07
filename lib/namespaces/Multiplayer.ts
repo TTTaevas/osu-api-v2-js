@@ -49,7 +49,7 @@ export namespace Multiplayer {
 		* {@link API.getRoom} /
 		* {@link API.getRooms}
 		*/
-		export interface WithUsers extends Room {
+		export interface WithHostRecentparticipants extends Room {
 			host: User.WithCountry
 			recent_participants: User[]
 		}
@@ -172,6 +172,7 @@ export namespace Multiplayer {
 		export namespace Event {
 			/**
 			 * Get all the events about a lazer **realtime** room!
+			 * @param room The room (or its id) where the events occurred
 			 * @remarks It **WILL error (422)** if the provided room is not realtime, and **may return empty arrays** on rooms from roughly April 2025 or older
 			 */
 			export async function getAll(this: API, room: Room["id"] | Room): Promise<{
@@ -194,7 +195,7 @@ export namespace Multiplayer {
 		 * Get data about a lazer multiplayer room (realtime or playlists)!
 		 * @param room The room or the id of the room, can be found at the end of its URL (after `/multiplayer/rooms/`)
 		 */
-		export async function getOne(this: API, room: Room["id"] | Room): Promise<Room.WithUsers> {
+		export async function getOne(this: API, room: Room["id"] | Room): Promise<Room.WithHostRecentparticipants> {
 			const room_id = typeof room === "number" ? room : room.id
 			return await this.request("get", ["rooms", room_id])
 		}
@@ -210,7 +211,7 @@ export namespace Multiplayer {
 		 * (so `5`'d be summer 2020's mania rooms, not winter 2022!!)
 		 */
 		export async function getMultiple(this: API, type: "playlists" | "realtime", mode: "active" | "all" | "ended" | "participated" | "owned",
-		limit: number = 10, sort: "ended" | "created" = "created", season_id?: number): Promise<Room.WithUsers[]> {
+		limit: number = 10, sort: "ended" | "created" = "created", season_id?: number): Promise<Room.WithHostRecentparticipants[]> {
 			return await this.request("get", ["rooms"], {type_group: type, mode, limit, sort, season_id})
 		}
 	}

@@ -6,13 +6,13 @@ const getRoom: Test = async(api) => {
 	const room_playlist = await api.getRoom(588230)
 	expect(room_playlist.id).to.equal(588230)
 	expect(room_playlist.participant_count).to.equal(27)
-	expect(validate(room_playlist, "Multiplayer.Room.WithUsers")).to.be.true
+	expect(validate(room_playlist, "Multiplayer.Room.WithHostRecentparticipants")).to.be.true
 
 	console.log("|", "Realtime")
 	const room_realtime = await api.getRoom(591993)
 	expect(room_realtime.id).to.equal(591993)
 	expect(room_realtime.participant_count).to.equal(5)
-	expect(validate(room_realtime, "Multiplayer.Room.WithUsers")).to.be.true
+	expect(validate(room_realtime, "Multiplayer.Room.WithHostRecentparticipants")).to.be.true
 
 	return true
 }

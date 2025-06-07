@@ -1,6 +1,6 @@
 {
   "name": "osu-api-v2-js",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Package to easily access the new api of osu!",
   "type": "module",
   "main": "dist/index.js",
@@ -39,7 +39,7 @@
     "chai": "^5.2.0",
     "dotenv": "^16.5.0",
     "ts-json-schema-generator": "^2.4.0",
-    "typedoc": "^0.28.4",
+    "typedoc": "^0.28.5",
     "typescript": "^5.8.3"
   }
 }

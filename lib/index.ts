@@ -19,9 +19,11 @@ import { WikiPage } from "./namespaces/Wiki.js"
 export { Beatmap, Beatmapset, Changelog, Chat, Comment, Event, Forum, Home,
 	Match, Miscellaneous, Multiplayer, NewsPost, Score, Spotlight, User, WikiPage }
 
+/** The name "Ruleset" is synonymous with "Game mode" or "Gamemode" */
 export enum Ruleset {
 	osu 	= 0,
 	taiko 	= 1,
+	/** Better known as "osu!catch" or "Catch the Beat", "fruits" is the name used throughout the API */
 	fruits	= 2,
 	mania 	= 3,
 }

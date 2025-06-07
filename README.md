@@ -1,5 +1,9 @@
 # osu-api-v2-js
 
+[![Node.js Test CI](https://github.com/TTTaevas/osu-api-v2-js/actions/workflows/test.yml/badge.svg)](https://github.com/TTTaevas/osu-api-v2-js/actions/workflows/test.yml)
+[![Chat on Matrix](https://matrix.to/img/matrix-badge.svg)](https://matrix.to/#/!UDoTSsVxLnywpVCGmE:matrix.org)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V4J78L0)
+
 [**osu-api-v2-js**](https://github.com/TTTaevas/osu-api-v2-js) is a JavaScript & TypeScript package that helps you interact with [osu!api (v2)](https://docs.ppy.sh).
 
 The documentation for the latest version of this package can be found at any time on [osu-v2.taevas.xyz](https://osu-v2.taevas.xyz)!
