@@ -20,9 +20,9 @@ const getChangelogBuild: Test = async(api) => {
 }
 
 const getChangelogBuilds: Test = async(api) => {
-	const builds = await api.getChangelogBuilds(undefined, {from: "2023.1031.0", to: 7184}, ["markdown"])
-	expect(builds).to.have.lengthOf(4)
-	builds.forEach((build) => expect(build.created_at).to.be.lessThan(new Date("2024")))
+	const builds = await api.getChangelogBuilds(undefined, undefined, ["markdown"])
+	expect(builds).to.have.lengthOf(21)
+	builds.forEach((build) => expect(build.created_at).to.be.greaterThan(new Date("2025")))
 	builds.forEach((build) => build.changelog_entries.forEach((entry) => expect(entry.message).to.not.be.undefined))
 	builds.forEach((build) => build.changelog_entries.forEach((entry) => expect(entry.message_html).to.be.undefined))
 	expect(validate(builds, "Changelog.Build.WithUpdatestreamsChangelogentries")).to.be.true

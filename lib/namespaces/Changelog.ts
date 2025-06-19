@@ -34,7 +34,7 @@ export namespace Changelog {
 				title: string | null
 				major: boolean
 				/** @remarks Can be January 1st 1970! */
-				created_at: Date
+				created_at: Date | null
 				/** @remarks Doesn't exist if no github user is associated with the person who's credited with the change */
 				github_user?: {
 					display_name: string

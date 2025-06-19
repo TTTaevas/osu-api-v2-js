@@ -141,12 +141,12 @@ export class API {
 	set server(server) {this._server = server}
 
 	private _route_api: Array<string | number> = ["api", "v2"]
-	/** Used by practically every method to interact with the {@link API.server} (defaults to **api/v2**) */
+	/** Used by practically every method to interact with the {@link API.server} (defaults to **[api, v2]**) */
 	get route_api() {return this._route_api}
 	set route_api(route_api) {this._route_api = route_api}
 
 	private _route_token: Array<string | number> = ["oauth", "token"]
-	/** Used for getting an {@link API.access_token} and using your {@link API.refresh_token} (defaults to **oauth/token**) */
+	/** Used for getting an {@link API.access_token} and using your {@link API.refresh_token} (defaults to **[oauth, token]**) */
 	get route_token() {return this._route_token}
 	set route_token(route_token) {this._route_token = route_token}
 
