@@ -55,9 +55,11 @@ const getBeatmapDifficultyAttributesMania: Test = async(api) => {
 }
 
 const getBeatmapScores: Test = async(api) => {
-	const scores = await api.getBeatmapScores(129891, {legacy_only: true})
+	const scores = await api.getBeatmapScores(129891, {legacy_only: true, mods: ["NM"]})
+	expect(scores).to.have.lengthOf(50)
 	scores.forEach((score) => expect(score.beatmap_id).to.equal(129891))
-	expect(scores.at(0)?.legacy_total_score).to.equal(132408001)
+	scores.forEach((score) => expect(score.mods.find((mod) => mod.acronym === "CL")).to.not.be.undefined)
+	scores.forEach((score) => expect(score.mods).to.have.lengthOf(1))
 	expect(validate(scores, "Score.WithUser")).to.be.true
 	return true
 }

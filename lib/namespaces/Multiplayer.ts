@@ -96,7 +96,9 @@ export namespace Multiplayer {
 			}
 
 			/** @obtainableFrom {@link API.getPlaylistItemScores} */
-			export interface ScoreWithUser extends Score, IScore.WithUser {}
+			export interface ScoreWithUser extends Score {
+				user: User.WithCountryCover
+			}
 
 			/**
 			 * Get the scores on a specific item of a room!

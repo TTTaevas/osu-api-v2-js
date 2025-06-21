@@ -60,7 +60,7 @@ export function correctType(x: any, force_string?: boolean): any {
 	const bannedProperties = [
 		"name", "artist", "artist_unicode", "title", "title_unicode", "tags", "username", "location", "interests", "occupation", "twitter", "discord",
 		"beatmap_version", "version", "display_version", "author", "raw", "bbcode", "message", "creator", "source", "new_user_username", "source_user_username",
-		"previousUsername", "previous_usernames", "display_name", "github_username", "osu_username"
+		"previousUsername", "previous_usernames", "display_name", "github_username", "osu_username", "name", "short_name"
 	]
 	if (force_string && typeof x !== "object") {
 		return String(x)

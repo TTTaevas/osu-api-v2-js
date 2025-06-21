@@ -23,8 +23,12 @@ export namespace Beatmap {
 		ruleset?: Ruleset
 		/** The Mods used to make the score, you can simply use `["NM"]` to filter out scores with mods (defaults to **any mods**, no scores filtered) */
 		mods?: string[]
-		/** "Beatmap score ranking type", whatever that means... */
-		type?: string
+		/**
+		 * The type of score ranking to retrieve (defaults to **global**)
+		 * @remarks This does **NOT** bypass the requirement for an osu!supporter tag to use `country`/`friend` (https://osu.ppy.sh/home/support)
+		 * and will throw (HTTP 422) if the requirement is not met
+		 */
+		type?: "global" | "country" | "friend" | "team"
 		/** Exclude lazer scores? (defaults to **false**) */
 		legacy_only?: boolean
 	}
@@ -250,7 +254,7 @@ export namespace Beatmap {
 		 * @param beatmap The Beatmap in question
 		 * @param mods Can be a bitset of mods, an array of mod acronyms, or an array of Mods (ignores mod settings) (defaults to **No Mod**)
 		 * @param ruleset Useful to specify if the beatmap is a convert (defaults to **the ruleset the beatmap was intended for**)
-		 * @remarks You may want to use api.getBeatmapDifficultyAttributesOsu (or Taiko or whatever) instead for better type safety
+		 * @remarks You may want to use {@link API.getBeatmapDifficultyAttributesOsu} (or Taiko or whatever) instead for better type safety
 		 */
 		export async function get(this: API, beatmap: Beatmap["id"] | Beatmap, mods?: Mod[] | string[] | number, ruleset?: Ruleset):
 		Promise<DifficultyAttributes.Any> {
@@ -321,7 +325,7 @@ export namespace Beatmap {
 	 * Get the scores on a beatmap made by a specific user (with the possibility to specify if the scores are on a convert)
 	 * @param beatmap The Beatmap the scores were made on
 	 * @param user The User who made the scores
-	 * @param config Specify the score's ruleset, prevent a lazer score from being returned**
+	 * @param config Specify the score's ruleset, prevent a lazer score from being returned
 	 */
 	export async function getUserScores(this: API, beatmap: Beatmap["id"] | Beatmap, user: User["id"] | User, config?: Pick<Config, "ruleset" | "legacy_only">):
 	Promise<Score[]> {
@@ -367,7 +371,6 @@ export namespace Beatmap {
 	 * Get the top scores of a beatmap!
 	 * @param beatmap The Beatmap in question
 	 * @param config Specify the score's ruleset, mods, type, prevent a lazer score from being returned
-	 * @remarks Please check if `mods` and `type` seem to be supported or not by the API: https://osu.ppy.sh/docs/index.html#get-beatmap-scores
 	 */
 	export async function getScores(this: API, beatmap: Beatmap["id"] | Beatmap, config?: Config): Promise<Score.WithUser[]> {
 		const mode = config?.ruleset !== undefined ? Ruleset[config.ruleset] : undefined
