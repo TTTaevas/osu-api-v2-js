@@ -27,13 +27,14 @@ export namespace Changelog {
 				id: number | null
 				repository: string | null
 				github_pull_request_id: number | null
+				/** The URL of the Pull Request, for example `https://github.com/ppy/osu/pull/<github_pull_request_id>` */
 				github_url: string | null
 				url: string | null
 				type: string
 				category: string
 				title: string | null
 				major: boolean
-				/** @remarks Can be January 1st 1970! */
+				/** @remarks Can be January 1st 1970, and can be null if it's for example a notice to say the build is a hotfix */
 				created_at: Date | null
 				/** @remarks Doesn't exist if no github user is associated with the person who's credited with the change */
 				github_user?: {
@@ -43,6 +44,7 @@ export namespace Changelog {
 					id: number | null
 					osu_username: User["username"] | null
 					user_id: User["id"] | null
+					/** The URL of the user's osu! profile, for example `https://osu.ppy.sh/users/<user_id>` */
 					user_url: string | null
 				}
 				/**

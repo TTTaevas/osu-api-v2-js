@@ -34,13 +34,13 @@ import * as osu from "osu-api-v2-js"
 
 async function logUserTopPlayBeatmap(username: string) {
     // It's more convenient to use `osu.API.createAsync()` instead of `new osu.API()` as it doesn't require you to directly provide an access_token!
-    // In a proper application, you'd use this function as soon as the app starts so you can use that object everywhere
-    // (or if it acts as a user, you'd use this function at the end of the authorization flow)
-    const api = await osu.API.createAsync("<client_id>", "<client_secret>") // with id as a number
+    // You may wish to make it so you can use your `api` object multiple times instead of creating multiple `api` objects
+    const api = await osu.API.createAsync("<client_id>", "<client_secret>") // id as a number, secret as a string
 
     const user = await api.getUser(username) // We need to get the id of the user in order to request what we want
-    const score = (await api.getUserScores(user, "best", osu.Ruleset.osu, {lazer: false}, {limit: 1}))[0] // Specifying the Ruleset is optional
-    const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(score.beatmap, score.mods) // Specifying the mods so the SR is adapted to them
+    const scores = await api.getUserScores(user, "best", osu.Ruleset.osu, {lazer: false}, {limit: 1}) // Specifying the Ruleset is optional
+    const score = scores[0] // Array is already sorted
+    const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(score.beatmap, score.mods) // Specify the mods to get the appropriate SR
 
     const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`
     const y = `+${score.mods.map((m) => m.acronym).toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
@@ -66,6 +66,8 @@ This function requires you to specify [scopes](https://osu-v2.taevas.xyz/types/S
 - when a method requires another scope, it will be **explicit** about it in its documentation
 - ultimately, **the user is the one who decides which scopes they allow**, so code assuming they may have allowed no scope at all
 - scopes that have been allowed **can be checked at any time** through [the `scopes` property of your `api` object](https://osu-v2.taevas.xyz/classes/API.html#scopes)
+
+The TLDR of scopes: Use `identify` and `public`, add other scopes on top of that when necessary!
 
 #### Have a server ready to receive the authorization
 

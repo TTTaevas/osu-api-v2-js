@@ -28,8 +28,10 @@ export enum Ruleset {
 	mania 	= 3,
 }
 
+/** Also known as "Game Modifier" https://osu.ppy.sh/wiki/en/Gameplay/Game_modifier */
 export type Mod = {
 	acronym: string
+	/** Lazer allows mods to be customized, applied customizations will appear here */
 	settings?: {[k: string]: any}
 }
 
@@ -343,10 +345,12 @@ export class API {
 			const now = new Date()
 			const ms = this.expires.getTime() - now.getTime()
 
-			// Let's say that we used a refresh token *after* the expiration time, our refresh token would naturally get updated
-			// However, if it is updated before the (local) expiration date is updated, then ms should be 0
-			// This should mean that, upon using a refresh token, we would use our new refresh token instantly...
-			// In other words, don't allow timeouts that would mean no timeout; refreshToken() exists for that
+			/**
+			 * Let's say that we used a refresh token *after* the expiration time, our refresh token would naturally get updated
+			 * However, if it is updated before the (local) expiration date is updated, then ms should be 0
+			 * This should mean that, upon using a refresh token, we would use our new refresh token instantly...
+			 * In other words, don't allow timeouts that would mean no timeout; {@link API.refreshToken} exists for that
+			 */
 			if (ms <= 0) {
 				return undefined
 			}
@@ -361,7 +365,11 @@ export class API {
 		}
 	}
 
-	/** @returns Whether or not the token has been refreshed */
+	/**
+	 * Uses the {@link API.refresh_token}, {@link API.client_id}, and {@link API.client_secret}
+	 * to set a new {@link API.access_token} and {@link API.refresh_token}
+	 * @returns Whether or not the token has been refreshed
+	 */
 	public async refreshToken(): Promise<boolean> {
 		if (!this.refresh_token) {
 			this.log(true, "Ignored an attempt at refreshing the access token despite not having a refresh token!")
@@ -412,7 +420,7 @@ export class API {
 	/**
 	 * The function that directly communicates with the API! Almost every functions of the API object uses this function!
 	 * @param method The type of request, each endpoint uses a specific one (if it uses multiple, the intent and parameters become different)
-	 * @param endpoint What comes in the URL after `api/`, **DO NOT USE TEMPLATE LITERALS (`) OR THE ADDITION OPERATOR (+), put everything separately for type safety**
+	 * @param endpoint What comes in the URL after `api/`, **DO NOT USE TEMPLATE LITERALS (\`) OR THE ADDITION OPERATOR (+), put everything separately for type safety**
 	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
 	 * @param settings Additional settings **to add** to the current settings of the `fetch()` request
 	 * @param info Context given by a prior request
