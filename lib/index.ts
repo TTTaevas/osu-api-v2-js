@@ -788,6 +788,9 @@ export class API {
 	/** {@inheritDoc User.getBeatmaps} @group User Methods */
 	readonly getUserBeatmaps = User.getBeatmaps
 
+	/** {@inheritDoc User.getPassedBeatmaps} @group User Methods */
+	readonly getUserPassedBeatmaps = User.getPassedBeatmaps
+
 	/** {@inheritDoc User.getMostPlayed} @group User Methods */
 	readonly getUserMostPlayed = User.getMostPlayed
 

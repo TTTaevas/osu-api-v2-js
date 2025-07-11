@@ -283,6 +283,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /users/{user}/scores/{type}` -> [getUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getuserscores)
 - `GET /users/{user}/beatmapsets/{type}` -> [getUserBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserbeatmaps) and [getUserMostPlayed()](https://osu-v2.taevas.xyz/classes/API.html#getusermostplayed)
 - `GET /users/{user}/recent_activity` -> [getUserRecentActivity()](https://osu-v2.taevas.xyz/classes/API.html#getuserrecentactivity)
+- `GET /users/{user}/beatmaps-passed` -> [getUserPassedBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserpassedbeatmaps) **(in a future version)**
 - `GET /users/{user}/{mode?}` -> [getUser()](https://osu-v2.taevas.xyz/classes/API.html#getuser)
 - `GET /users` -> [getUsers()](https://osu-v2.taevas.xyz/classes/API.html#getusers)
 

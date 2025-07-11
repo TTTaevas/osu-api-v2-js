@@ -373,6 +373,11 @@ export namespace User {
 	include: {lazer?: boolean, fails?: boolean} = {lazer: true, fails: false}, config?: Config): Promise<Score.WithUserBeatmapBeatmapset[]> {
 		const user_id = typeof user === "number" ? user : user.id
 		const mode = ruleset !== undefined ? Ruleset[ruleset] : undefined
+		/**
+		 * TODO legacy_only & include_fails should be undefined if their `include` property equivalent is undefined
+		 * Maybe the core issue is more like that the defaults don't properly apply if include is partially set
+		 * Also it looks pretty ugly, + ratio
+		 */
 		return await this.request("get", ["users", user_id, "scores", type],
 		{mode, ...config, legacy_only: Number(!include.lazer), include_fails: String(Number(include.fails))})
 	}
@@ -387,6 +392,31 @@ export namespace User {
 	config?: Config): Promise<Beatmapset.Extended.WithBeatmap[]> {
 		const user_id = typeof user === "number" ? user : user.id
 		return await this.request("get", ["users", user_id, "beatmapsets", type], {...config})
+	}
+
+	/**
+	 * Get the ranked beatmaps of beatmapsets that have been passed by a specific user!
+	 * @param user The user who has passed the beatmaps
+	 * @param beatmapsets The Beatmapsets that contain the Beatmaps that have been passed (up to 50 Beatmapsets)
+	 * @param config Various filters to set on and off
+	 */
+	export async function getPassedBeatmaps(this: API, user: User["id"] | User, beatmapsets: Array<Beatmapset["id"] | Beatmapset>, config?: {
+		/** Should converts be considered? (defaults to **true**, passing a beatmap made for the osu! Ruleset with another Ruleset instead counts) */
+		converts?: boolean,
+		/** Should legacy scores (scores from stable) be considered? (defaults to **true**, consider legacy & non-legacy) */
+		is_legacy?: boolean,
+		/** Should scores that used difficulty reduction mods be excluded? (defaults to **true**, scores with NF, EZ, and the such are excluded) */
+		no_diff_reduction?: boolean,
+		/** The Ruleset **of the score** (defaults to **all rulesets**, no filter applied) */
+		ruleset?: Ruleset,
+	}): Promise<Beatmap[]> {
+		const user_id = typeof user === "number" ? user : user.id
+		const beatmapset_ids = beatmapsets.map((beatmapset) => typeof beatmapset === "number" ? beatmapset : beatmapset.id)
+
+		const ruleset_id = config?.ruleset
+		delete config?.ruleset
+		const response = await this.request("get", ["users", user_id, "beatmaps-passed"], {beatmapset_ids, ruleset_id, ...config})
+		return response.beatmaps_passed // It's the only property
 	}
 
 	/**

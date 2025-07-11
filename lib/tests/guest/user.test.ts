@@ -65,6 +65,19 @@ const getUserBeatmaps: Test = async(api) => {
 	return true
 }
 
+const getUserPassedBeatmaps: Test = async(api) => {
+	const beatmaps = await api.getUserPassedBeatmaps(7276846, [630897, 316580, 241526],
+		{converts: true, is_legacy: true, no_diff_reduction: true, ruleset: Ruleset.fruits})
+	expect(beatmaps).to.have.lengthOf(5)
+	expect(beatmaps.find((beatmap) => beatmap.beatmapset_id === 630897)).to.be.undefined
+	expect(beatmaps.find((beatmap) => beatmap.beatmapset_id === 316580)).to.not.be.undefined
+	expect(beatmaps.find((beatmap) => beatmap.beatmapset_id === 241526)).to.not.be.undefined
+	expect(beatmaps.find((beatmap) => beatmap.mode === Ruleset[0]))
+	expect(beatmaps.find((beatmap) => beatmap.mode === Ruleset[2]))
+	expect(validate(beatmaps, "Beatmap")).to.be.true
+	return true
+}
+
 const getUserMostPlayed: Test = async(api) => {
 	const playcounts = await api.getUserMostPlayed(7276846)
 	expect(playcounts).to.have.lengthOf(5)
@@ -120,6 +133,7 @@ export const tests = [
 	lookupUsers,
 	getUserScores,
 	getUserBeatmaps,
+	getUserPassedBeatmaps,
 	getUserMostPlayed,
 	getUserRecentActivity,
 	getUserRanking,
