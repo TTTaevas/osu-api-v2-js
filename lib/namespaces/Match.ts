@@ -28,8 +28,8 @@ export namespace Match {
 			end_time: Date | null
 			mode: keyof typeof Ruleset
 			mode_int: Ruleset
-			scoring_type: string
-			team_type: string
+			scoring_type: "accuracy" | "combo" | "score" | "scorev2"
+			team_type: "head-to-head" | "tag-coop" | "tag-team-vs" | "team-vs"
 			mods: string[]
 			beatmap: Beatmap.WithBeatmapset
 			scores: Score.WithMatchPerfect[]

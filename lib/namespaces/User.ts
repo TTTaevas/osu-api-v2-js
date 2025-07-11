@@ -217,8 +217,8 @@ export namespace User {
 			ss: number
 			ssh: number
 		}
-		/** Accuracy in the normal format, where 96.56% would be `96.56` */
-		hit_accuracy: number
+		/** Where 96.56% would be `96.56` */
+		hit_accuracy: Score.Accuracy100
 		/** Hasn't become inactive in the rankings */
 		is_ranked: boolean
 		level: {
@@ -370,16 +370,12 @@ export namespace User {
 	 * @param config Array limit & offset
 	 */
 	export async function getScores(this: API, user: User["id"] | User, type: "best" | "firsts" | "recent", ruleset?: Ruleset,
-	include: {lazer?: boolean, fails?: boolean} = {lazer: true, fails: false}, config?: Config): Promise<Score.WithUserBeatmapBeatmapset[]> {
+	include?: {lazer?: boolean, fails?: boolean}, config?: Config): Promise<Score.WithUserBeatmapBeatmapset[]> {
 		const user_id = typeof user === "number" ? user : user.id
 		const mode = ruleset !== undefined ? Ruleset[ruleset] : undefined
-		/**
-		 * TODO legacy_only & include_fails should be undefined if their `include` property equivalent is undefined
-		 * Maybe the core issue is more like that the defaults don't properly apply if include is partially set
-		 * Also it looks pretty ugly, + ratio
-		 */
-		return await this.request("get", ["users", user_id, "scores", type],
-		{mode, ...config, legacy_only: Number(!include.lazer), include_fails: String(Number(include.fails))})
+		const legacy_only = include?.lazer !== undefined ? Number(!include.lazer) : undefined
+		const include_fails = include?.fails !== undefined ? String(Number(include.fails)) : undefined
+		return await this.request("get", ["users", user_id, "scores", type], {mode, ...config, legacy_only, include_fails})
 	}
 
 	/**

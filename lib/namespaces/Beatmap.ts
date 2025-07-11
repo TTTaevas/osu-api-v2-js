@@ -2,10 +2,11 @@ import { API, Beatmapset, Miscellaneous, Mod, Ruleset, Score, User } from "../in
 
 export interface Beatmap {
 	beatmapset_id: Beatmapset["id"]
+	/** Better known as Star Rating (SR) https://osu.ppy.sh/wiki/en/Beatmap/Star_rating */
 	difficulty_rating: number
 	id: number
 	mode: keyof typeof Ruleset
-	status: string
+	status: Lowercase<keyof typeof Beatmapset.RankStatus>
 	total_length: number
 	user_id: User["id"]
 	/** The name of the difficulty, maybe something like "Someone's Insane" */
@@ -50,6 +51,10 @@ export namespace Beatmap {
 	}
 
 	export interface Extended extends WithChecksum {
+		/**
+		 * Also known as Overall Difficulty https://osu.ppy.sh/wiki/en/Beatmap/Overall_difficulty
+		 * @remarks Not to be confused with a Score's accuracy https://osu.ppy.sh/wiki/en/Gameplay/Accuracy
+		 */
 		accuracy: number
 		ar: number
 		bpm: number
@@ -59,6 +64,7 @@ export namespace Beatmap {
 		count_spinners: number
 		cs: number
 		deleted_at: Date | null
+		/** Drain length/time is how long the beatmap is if you remove the intro and breaks (in seconds) */
 		drain: number
 		hit_length: number
 		is_scoreable: boolean

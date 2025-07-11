@@ -1,4 +1,4 @@
-import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User, Miscellaneous, Beatmapset } from "../index.js"
+import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User, Miscellaneous, Beatmapset, Score } from "../index.js"
 
 export namespace Multiplayer {
 	export interface Room {
@@ -27,8 +27,8 @@ export namespace Multiplayer {
 		difficulty_range?: {min: Beatmap["difficulty_rating"], max: Beatmap["difficulty_rating"]}
 		/** Only exists if the authorized user has played */
 		current_user_score?: {
-			/** In a format where `96.40%` would be `0.9640` (with some numbers after the zero) */
-			accuracy: number
+			/** Where 96.40% would be `0.9640` */
+			accuracy: Score.Accuracy1
 			attempts: number
 			completed: number
 			pp: number
@@ -125,8 +125,8 @@ export namespace Multiplayer {
 		}
 	
 		export interface Leader {
-			/** In a format where `96.40%` would be `0.9640` (likely with some numbers after the zero) */
-			accuracy: number
+			/** Where 96.40% would be `0.9640` */
+			accuracy: Score.Accuracy1
 			attempts: number
 			completed: number
 			pp: number

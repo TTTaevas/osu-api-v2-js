@@ -2,8 +2,8 @@ import { API, Beatmap, Beatmapset, Changelog, Miscellaneous, Mod, Ruleset, User 
 
 /** @obtainableFrom {@link API.getBeatmapUserScores} */
 export interface Score {
-	/** In a format where `96.40%` would be `0.9640` **(and maybe some numbers afterwards)** */
-	accuracy: number
+	/** Where 96.40% would be `0.9640` */
+	accuracy: Score.Accuracy1
 	best_id: number | null
 	max_combo: number
 	passed: boolean
@@ -46,6 +46,24 @@ export namespace Score {
 	 * https://osu.ppy.sh/wiki/en/Gameplay/Grade
 	 */
 	export type Grade = "XH" | "X" | "SH" | "S" | "A" | "B" | "C" | "D" | "F"
+
+	/**
+	 * Accuracy comes in two ways: From 0 to 1, and from 0 to 100
+	 *
+	 * This is the type that represents accuracy that goes **from 0 to 1**,
+	 * meaning a score that is displayed in-game as "95.74%" will be `0.9574` here
+	 * (with more digits)
+	 */
+	export type Accuracy1 = number
+
+	/**
+	 * Accuracy comes in two ways: From 0 to 1, and from 0 to 100
+	 *
+	 * This is the type that represents accuracy that goes **from 0 to 100**,
+	 * meaning a score that is displayed in-game as "95.74%" will be `95.74` here
+	 * (with more digits)
+	 */
+	export type Accuracy100 = number
 
 	/** All of its properties are optional because instead of being 0, the property actually disappears instead */
 	export interface Statistics {
