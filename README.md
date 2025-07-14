@@ -274,6 +274,8 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /rooms/{room}/leaderboard` -> [getRoomLeaderboard()](https://osu-v2.taevas.xyz/classes/API.html#getroomleaderboard)
 - `GET /rooms/{room}/events` -> [getRoomEvents()](https://osu-v2.taevas.xyz/classes/API.html#getroomevents)
 - `GET /scores/{score}/download` -> [getReplay()](https://osu-v2.taevas.xyz/classes/API.html#getreplay)
+- `GET /scores/{rulesetOrScore}/{score?}` -> [getScore()](https://osu-v2.taevas.xyz/classes/API.html#getscore) **(in a future version)**
+- `GET /users/lookup` -> [lookupUsers()](https://osu-v2.taevas.xyz/classes/API.html#lookupusers)
 - `GET /friends` -> [getFriends()](https://osu-v2.taevas.xyz/classes/API.html#getfriends)
 - `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)
 

@@ -33,13 +33,13 @@
   ],
   "license": "Unlicense",
   "devDependencies": {
-    "@types/chai": "^5.2.0",
+    "@types/chai": "^5.2.2",
     "@types/node": "^22.13.5",
     "ajv": "^8.17.1",
-    "chai": "^5.2.0",
+    "chai": "^5.2.1",
     "dotenv": "^16.5.0",
     "ts-json-schema-generator": "^2.4.0",
-    "typedoc": "^0.28.5",
+    "typedoc": "^0.28.7",
     "typescript": "^5.8.3"
   }
 }

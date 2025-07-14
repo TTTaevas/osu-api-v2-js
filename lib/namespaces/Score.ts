@@ -29,6 +29,7 @@ export interface Score {
 	legacy_perfect: boolean
 	/** @remarks Is null if the score has been set on lazer */
 	legacy_score_id: number | null
+	/** @remarks Is 0 if the score has been set on lazer */
 	legacy_total_score: number
 	ruleset_id: Ruleset
 	started_at: Date | null
@@ -112,6 +113,23 @@ export namespace Score {
 	/** @obtainableFrom {@link API.getBeatmapUserScore} */
 	export interface WithUserBeatmap extends WithUser {
 		beatmap: Beatmap.Extended
+	}
+
+	/** @obtainableFrom {@link API.getScore} */
+	export interface Extended extends Omit<WithUserBeatmapBeatmapset, "user"> {
+		user: User.WithCountryCoverGroupsTeam
+		processed: boolean
+		total_score_without_mods: number
+		rank_global: number
+	}
+
+	/**
+	 * Get information about a score!
+	 * @param score About which score do you want information?
+	 */
+	export async function getOne(this: API, score: Score["id"] | Score): Promise<Score.Extended> {
+		const score_id = typeof score === "object" ? score.id : score
+		return await this.request("get", ["scores", score_id])
 	}
 
 	/**

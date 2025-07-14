@@ -1,4 +1,4 @@
-import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User, Miscellaneous, Beatmapset, Score } from "../index.js"
+import { API, Beatmap, Chat, Mod, Ruleset, Score as IScore, User, Miscellaneous, Beatmapset } from "../index.js"
 
 export namespace Multiplayer {
 	export interface Room {
@@ -28,7 +28,7 @@ export namespace Multiplayer {
 		/** Only exists if the authorized user has played */
 		current_user_score?: {
 			/** Where 96.40% would be `0.9640` */
-			accuracy: Score.Accuracy1
+			accuracy: IScore.Accuracy1
 			attempts: number
 			completed: number
 			pp: number
@@ -126,7 +126,7 @@ export namespace Multiplayer {
 	
 		export interface Leader {
 			/** Where 96.40% would be `0.9640` */
-			accuracy: Score.Accuracy1
+			accuracy: IScore.Accuracy1
 			attempts: number
 			completed: number
 			pp: number

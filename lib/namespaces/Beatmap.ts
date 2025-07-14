@@ -7,6 +7,7 @@ export interface Beatmap {
 	id: number
 	mode: keyof typeof Ruleset
 	status: Lowercase<keyof typeof Beatmapset.RankStatus>
+	/** In seconds */
 	total_length: number
 	user_id: User["id"]
 	/** The name of the difficulty, maybe something like "Someone's Insane" */

@@ -1,6 +1,8 @@
 import { expect } from "chai"
 import { validate, Test } from "../exports.js"
-import { Ruleset } from "../../index.js"
+import { Ruleset, Score } from "../../index.js"
+
+let all_scores: Score[] = []
 
 const getScores: Test = async(api) => {
 	const scores = await api.getScores()
@@ -21,9 +23,21 @@ const getScores: Test = async(api) => {
 	scores_ruleset.scores.forEach((s) => expect(s.ruleset_id).to.equal(Ruleset.fruits))
 	expect(validate(scores_ruleset.scores, "Score")).to.be.true
 
+	all_scores = scores.scores
+	return true
+}
+
+const getScore: Test = async(api) => {
+	const score_id = all_scores.length ? all_scores[Math.floor(Math.random() * all_scores.length)].id : 4892985569
+	if (all_scores.length === 0) console.log("| ⚠️ No score gotten from previous test, using an old score instead")
+	const score = await api.getScore(score_id)
+
+	expect(score.id).to.equal(score_id)
+	expect(validate(score, "Score.Extended")).to.be.true
 	return true
 }
 
 export const tests = [
 	getScores,
+	getScore
 ]
