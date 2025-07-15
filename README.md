@@ -274,7 +274,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /rooms/{room}/leaderboard` -> [getRoomLeaderboard()](https://osu-v2.taevas.xyz/classes/API.html#getroomleaderboard)
 - `GET /rooms/{room}/events` -> [getRoomEvents()](https://osu-v2.taevas.xyz/classes/API.html#getroomevents)
 - `GET /scores/{score}/download` -> [getReplay()](https://osu-v2.taevas.xyz/classes/API.html#getreplay)
-- `GET /scores/{rulesetOrScore}/{score?}` -> [getScore()](https://osu-v2.taevas.xyz/classes/API.html#getscore) **(in a future version)**
+- `GET /scores/{rulesetOrScore}/{score?}` -> [getScore()](https://osu-v2.taevas.xyz/classes/API.html#getscore)
 - `GET /users/lookup` -> [lookupUsers()](https://osu-v2.taevas.xyz/classes/API.html#lookupusers)
 - `GET /friends` -> [getFriends()](https://osu-v2.taevas.xyz/classes/API.html#getfriends)
 - `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)
@@ -285,7 +285,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /users/{user}/scores/{type}` -> [getUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getuserscores)
 - `GET /users/{user}/beatmapsets/{type}` -> [getUserBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserbeatmaps) and [getUserMostPlayed()](https://osu-v2.taevas.xyz/classes/API.html#getusermostplayed)
 - `GET /users/{user}/recent_activity` -> [getUserRecentActivity()](https://osu-v2.taevas.xyz/classes/API.html#getuserrecentactivity)
-- `GET /users/{user}/beatmaps-passed` -> [getUserPassedBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserpassedbeatmaps) **(in a future version)**
+- `GET /users/{user}/beatmaps-passed` -> [getUserPassedBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserpassedbeatmaps)
 - `GET /users/{user}/{mode?}` -> [getUser()](https://osu-v2.taevas.xyz/classes/API.html#getuser)
 - `GET /users` -> [getUsers()](https://osu-v2.taevas.xyz/classes/API.html#getusers)
 
