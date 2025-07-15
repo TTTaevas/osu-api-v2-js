@@ -445,10 +445,11 @@ export namespace Beatmapset {
 		discussion_locked: boolean
 		is_scoreable: boolean
 		last_updated: Date
+		/** In the following format: `https://osu.ppy.sh/community/forums/topics/<topic_id>` */
 		legacy_thread_url: string
 		nominations_summary: {
 			current: number
-			eligible_main_rulesets: [(keyof typeof Ruleset)] | null
+			eligible_main_rulesets: (keyof typeof Ruleset)[] | null
 			/** Required nominations */
 			required_meta: {
 				main_ruleset: number
@@ -560,7 +561,6 @@ export namespace Beatmapset {
 			 * @param types What kind of posts?
 			 * @param config How many results maximum, how to sort them, which page of those, maybe a cursor_string...
 			 * @returns Relevant posts and info about them
-			 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 			 */
 			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, user?: User["id"] | User},
 			types?: ("first" | "reply" | "system")[], config?: Miscellaneous.Config):
@@ -588,7 +588,6 @@ export namespace Beatmapset {
 			 * @param score An upvote (1) or a downvote (-1)
 			 * @param config How many results maximum, how to sort them, which page of those, maybe a cursor_string...
 			 * @returns Relevant votes and info about them
-			 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 			 */
 			export async function getMultiple(this: API, from?: {discussion?: Discussion["id"] | Discussion, vote_giver?: User["id"] | User,
 			vote_receiver?: User["id"] | User}, score?: 1 | -1, config?: Miscellaneous.Config):
@@ -608,7 +607,6 @@ export namespace Beatmapset {
 		 * @param filter Should those discussions only be unresolved problems, for example?
 		 * @param config How many results maximum, how to sort them, which page of those, maybe a cursor_string...
 		 * @returns Relevant discussions and info about them
-		 * @remarks (2024-03-11) For months now, the API's documentation says the response is likely to change, so beware
 		 * @privateRemarks I don't allow setting `beatmap_id` because my testing has led me to believe it does nothing (and is therefore misleading)
 		 */
 		export async function getMultiple(this: API, from?: {
@@ -693,7 +691,7 @@ export namespace Beatmapset {
 		const s = query?.categories ? query.categories === "My Maps" ? "mine" : query.categories.toLowerCase() : undefined
 
 		/** Explicit Content */
-		const nsfw = query?.hide_explicit_content ? false : undefined
+		const nsfw = query?.hide_explicit_content ? false : true
 
 		/** Extra */
 		const e = query?.extra ? query.extra.map((extra_value) => {

@@ -74,6 +74,7 @@ export namespace Beatmap {
 		passcount: number
 		playcount: number
 		ranked: Beatmapset.RankStatus
+		/** In the following format: `https://osu.ppy.sh/beatmaps/<id>` */
 		url: string
 	}
 
