@@ -369,7 +369,7 @@ export namespace Beatmap {
 	 * Get extensive beatmap data for up to 50 beatmaps at once!
 	 * @param beatmaps An array of beatmaps or of objects that have the id of the beatmaps you're trying to get
 	 */
-	export async function getMultiple(this: API, beatmaps: Array<Beatmap["id"] | Beatmap>): Promise<Extended.WithFailtimesOwnersMaxcombo[]> {
+	export async function getMultiple(this: API, beatmaps: Array<Beatmap["id"] | Beatmap>): Promise<Extended.WithFailtimesOwnersMaxcomboBeatmapset[]> {
 		const ids = beatmaps.map((beatmap) => typeof beatmap === "number" ? beatmap : beatmap.id)
 		const response = await this.request("get", ["beatmaps"], {ids})
 		return response.beatmaps // It's the only property
