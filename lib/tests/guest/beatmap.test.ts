@@ -22,7 +22,7 @@ const getBeatmaps: Test = async(api) => {
 	const ids = [388463, 4089655]
 	const beatmaps = await api.getBeatmaps(ids)
 	ids.forEach((id, index) => expect(beatmaps[index].id).to.equal(id))
-	expect(validate(beatmaps, "Beatmap.Extended.WithFailtimesOwnersMaxcombo")).to.be.true
+	expect(validate(beatmaps, "Beatmap.Extended.WithFailtimesOwnersMaxcomboBeatmapset")).to.be.true
 	return true
 }
 
