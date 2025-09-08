@@ -447,7 +447,7 @@ export namespace User {
 	/**
 	 * Get the ids of the beatmapsets that have been marked as favourite by the authorized user!
 	 * @scope {@link Scope"identify"}
-	 * @remarks A similar method in the User namespace ({@link User"getBeatmaps"}) exists as well
+	 * @remarks A similar method in the User namespace ({@link API.getUserBeatmaps}) exists as well
 	 */
 	export async function getFavouriteBeatmapsetsIds(this: API): Promise<Beatmapset["id"][]> {
 	  const response = await this.request("get", ["me", "beatmapset-favourites"])
