@@ -209,7 +209,6 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /beatmapsets/search` -> [searchBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#searchbeatmapsets)
 - `GET /beatmapsets/lookup` -> [lookupBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#lookupbeatmapset)
 - `GET /beatmapsets/{beatmapset}` -> [getBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapset)
-- `GET /beatmapsets/events` -> [getBeatmapsetEvents()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetevents)
 
 ### Changelog
 - `GET /changelog/{stream}/{build}` -> [getChangelogBuild()](https://osu-v2.taevas.xyz/classes/API.html#getchangelogbuild)
@@ -272,6 +271,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /scores` -> [getScores()](https://osu-v2.taevas.xyz/classes/API.html#getscores)
 
 ### Under "Undocumented" or missing from docs
+- `GET /beatmapsets/events` -> [getBeatmapsetEvents()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetevents)
 - `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)
 - `GET /rooms/{room}` -> [getRoom()](https://osu-v2.taevas.xyz/classes/API.html#getroom)
 - `GET /rooms/{room}/leaderboard` -> [getRoomLeaderboard()](https://osu-v2.taevas.xyz/classes/API.html#getroomleaderboard)
@@ -283,7 +283,6 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)
 
 ### Users
-- `GET /me/{mode?}` -> [getResourceOwner()](https://osu-v2.taevas.xyz/classes/API.html#getresourceowner)
 - `GET /users/{user}/kudosu` -> [getUserKudosuHistory()](https://osu-v2.taevas.xyz/classes/API.html#getuserkudosuhistory)
 - `GET /users/{user}/scores/{type}` -> [getUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getuserscores)
 - `GET /users/{user}/beatmapsets/{type}` -> [getUserBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserbeatmaps) and [getUserMostPlayed()](https://osu-v2.taevas.xyz/classes/API.html#getusermostplayed)
@@ -291,6 +290,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /users/{user}/beatmaps-passed` -> [getUserPassedBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserpassedbeatmaps)
 - `GET /users/{user}/{mode?}` -> [getUser()](https://osu-v2.taevas.xyz/classes/API.html#getuser)
 - `GET /users` -> [getUsers()](https://osu-v2.taevas.xyz/classes/API.html#getusers)
+- `GET /me/{mode?}` -> [getResourceOwner()](https://osu-v2.taevas.xyz/classes/API.html#getresourceowner)
 
 ### Wiki
 - `GET /wiki/{locale}/{path}` -> [getWikiPage()](https://osu-v2.taevas.xyz/classes/API.html#getwikipage)

@@ -4,6 +4,7 @@ export namespace Multiplayer {
 	export interface Room {
 		id: number
 		name: string
+		description: string | null
 		category: "normal" | "spotlight" | "daily_challenge"
 		status: "idle" | "playing"
 		type: "head_to_head" | "team_versus" | "playlists"
@@ -17,6 +18,7 @@ export namespace Multiplayer {
 		has_password: boolean
 		queue_mode: "all_players" | "all_players_round_robin" | "host_only"
 		auto_skip: boolean
+		pinned: boolean
 		current_playlist_item?: Room.PlaylistItem.WithBeatmap | null
 		playlist?: Room.PlaylistItem.WithComplexBeatmap[]
 		playlist_item_stats?: {
@@ -97,7 +99,7 @@ export namespace Multiplayer {
 
 			/** @obtainableFrom {@link API.getPlaylistItemScores} */
 			export interface ScoreWithUser extends Score {
-				user: User.WithCountryCover
+				user: User.WithCountryCoverTeam
 			}
 
 			/**
