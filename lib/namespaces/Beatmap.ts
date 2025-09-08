@@ -95,13 +95,14 @@ export namespace Beatmap {
 			max_combo: number
 		}
 
-		/** @obtainableFrom {@link API.getBeatmaps} */
+		/** @remarks Nowadays, it only exists to be extended and it itself is not used */
 		export interface WithFailtimesOwnersMaxcombo extends WithFailtimesOwners, WithMaxcombo {}
 
 		/**
 		 * @obtainableFrom
 		 * {@link API.getBeatmap} /
-		 * {@link API.lookupBeatmap}
+		 * {@link API.lookupBeatmap} /
+		 * {@link API.getBeatmaps}
 		 */
 		export interface WithFailtimesOwnersMaxcomboBeatmapset extends WithFailtimesOwnersMaxcombo {
 			beatmapset: Beatmapset.Extended

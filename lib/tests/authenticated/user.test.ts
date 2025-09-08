@@ -24,7 +24,15 @@ const getFriends: Test = async(api) => {
 	return true
 }
 
+const getFavouriteBeatmapsetsIds: Test = async(api) => {
+	const ids = await api.getFavouriteBeatmapsetsIds()
+	expect(ids).to.have.length.greaterThan(0)
+	ids.forEach((id) => expect(id).to.be.greaterThan(0))
+	return true
+}
+
 export const tests = [
 	getResourceOwner,
 	getFriends,
+	getFavouriteBeatmapsetsIds,
 ]

@@ -806,6 +806,9 @@ export class API {
 	/** {@inheritDoc User.getFriends} @group User Methods */
 	readonly getFriends = User.getFriends
 
+	/** {@inheritDoc User.getFavouriteBeatmapsetsIds} @group User Methods */
+	readonly getFavouriteBeatmapsetsIds = User.getFavouriteBeatmapsetsIds
+
 	/** {@inheritDoc User.Kudosu.getHistory} @group User Methods */
 	readonly getUserKudosuHistory = User.Kudosu.getHistory
 

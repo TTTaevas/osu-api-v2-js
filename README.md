@@ -184,6 +184,9 @@ Of course, using [the apply() method](https://developer.mozilla.org/en-US/docs/W
 
 In the same order as on [the API's official documentation](https://osu.ppy.sh/docs/):
 
+### Account
+- `GET /me/beatmapset-favourites` -> [getFavouriteBeatmapsetsIds()](https://osu-v2.taevas.xyz/classes/API.html#getfavouritebeatmapsetsids) **(in a future version)**
+
 ### Beatmap Packs
 - `GET /beatmaps/packs` -> [getBeatmapPacks()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmappacks)
 - `GET /beatmaps/packs/{pack}` -> [getBeatmapPack()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmappack)

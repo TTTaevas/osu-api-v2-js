@@ -443,4 +443,14 @@ export namespace User {
 	export async function getFriends(this: API): Promise<User.Relation[]> {
 		return await this.request("get", ["friends"])
 	}
+
+	/**
+	 * Get the ids of the beatmapsets that have been marked as favourite by the authorized user!
+	 * @scope {@link Scope"identify"}
+	 * @remarks A similar method in the User namespace ({@link User"getBeatmaps"}) exists as well
+	 */
+	export async function getFavouriteBeatmapsetsIds(this: API): Promise<Beatmapset["id"][]> {
+	  const response = await this.request("get", ["me", "beatmapset-favourites"])
+	  return response.beatmapset_ids // It's the only property
+	}
 }
