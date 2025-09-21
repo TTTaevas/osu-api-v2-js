@@ -17,7 +17,7 @@ import * as Score from "./guest/score.test.js"
 import * as Spotlight from "./guest/spotlight.test.js"
 import * as User from "./guest/user.test.js"
 import * as Wiki from "./guest/wiki.test.js"
-import * as Signal from "./guest/signal.test.js"
+import * as Meta from "./guest/meta.test.js"
 
 const domains: Test[][] = [
 	Beatmap.tests,
@@ -35,7 +35,7 @@ const domains: Test[][] = [
 	Spotlight.tests,
 	User.tests,
 	Wiki.tests,
-	Signal.tests,
+	Meta.tests,
 ]
 
 async function startRunningTests(id: number, secret: string): Promise<void> {

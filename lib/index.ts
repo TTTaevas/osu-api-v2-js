@@ -230,7 +230,7 @@ export class API {
 	get token_type() {return this._token_type}
 	set token_type(token) {this._token_type = token}
 
-	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000) // in 24 hours
+	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000) // 24 hours default, is set through getAndSetToken anyway
 	/** The expiration date of your access_token */
 	get expires() {return this._expires}
 	set expires(date) {
@@ -289,7 +289,7 @@ export class API {
 	}
 
 	/** 
-	 * Revoke your current token! This revokes the refresh token as well
+	 * Revoke your current token! **This will revoke the {@link API.refresh_token} as well if it exists**, so use this with care
 	 * @remarks Uses {@link API.route_api} instead of {@link API.route_token}, as normally expected by the server
 	 */
 	public async revokeToken(): Promise<void> {
@@ -303,7 +303,8 @@ export class API {
 	private _refresh_token?: string
 	/**
 	 * Valid for an unknown amount of time, it allows you to get a new token without going through the Authorization Code Grant again!
-	 * Use {@link API.refreshToken} to do that
+	 * Use {@link API.refreshToken} to make use of this token
+	 * @remarks There is no refresh_token if the Authorization Code Grant hasn't been done, it would be pointless to have one in that case
 	 */
 	get refresh_token() {return this._refresh_token}
 	set refresh_token(token) {
@@ -312,14 +313,14 @@ export class API {
 	}
 	
 	private _refresh_token_on_401: boolean = true
-	/** If true, upon failing a request due to a 401, it will use the {@link API.refresh_token} if it exists (defaults to **true**) */
+	/** If true, upon failing a request due to a 401, it will call {@link API.refreshToken} (defaults to **true**) */
 	get refresh_token_on_401() {return this._refresh_token_on_401}
 	set refresh_token_on_401(refresh) {this._refresh_token_on_401 = refresh}
 	
-	private _refresh_token_on_expires: boolean = true
+	private _refresh_token_on_expires: boolean = false
 	/**
-	 * If true, the application will silently use the {@link API.refresh_token} right before the {@link API.access_token} expires,
-	 * as determined by {@link API.expires} (defaults to **true**)
+	 * If true, the application will silently call {@link API.refreshToken} when the{@link API.access_token} is set to expire,
+	 * as determined by {@link API.expires} (defaults to **false**)
 	 */
 	get refresh_token_on_expires() {return this._refresh_token_on_expires}
 	set refresh_token_on_expires(enabled) {
@@ -341,7 +342,7 @@ export class API {
 
 	/** Add, remove, change the timeout used for refreshing the token automatically whenever certain properties change */
 	private updateRefreshTokenTimer() {
-		if (this.refresh_token && this.expires && this.refresh_token_on_expires) {
+		if (this.expires && this.refresh_token_on_expires) {
 			const now = new Date()
 			const ms = this.expires.getTime() - now.getTime()
 
@@ -366,21 +367,24 @@ export class API {
 	}
 
 	/**
-	 * Uses the {@link API.refresh_token}, {@link API.client_id}, and {@link API.client_secret}
+	 * - Uses the {@link API.refresh_token}, {@link API.client_id}, and {@link API.client_secret}
 	 * to set a new {@link API.access_token} and {@link API.refresh_token}
+	 * - Or uses the {@link API.client_id} and {@link API.client_secret} to set a new {@link API.access_token}
 	 * @returns Whether or not the token has been refreshed
 	 */
 	public async refreshToken(): Promise<boolean> {
-		if (!this.refresh_token) {
-			this.log(true, "Ignored an attempt at refreshing the access token despite not having a refresh token!")
-			return false
-		}
-
 		const old_token = this.access_token
+
 		try {
-			await this.getAndSetToken({
-				client_id: this.client_id, client_secret: this.client_secret, grant_type: "refresh_token", refresh_token: this.refresh_token
-			}, this)
+			if (this.refresh_token) {
+				await this.getAndSetToken({
+					client_id: this.client_id, client_secret: this.client_secret, grant_type: "refresh_token", refresh_token: this.refresh_token
+				}, this)
+			} else {
+				await this.getAndSetToken({
+					client_id: this.client_id, client_secret: this.client_secret, grant_type: "client_credentials", scope: "public"
+				}, this)
+			}
 			if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
 		} catch(e) {
 			this.log(true, "Failed to refresh the token :(", e)
@@ -478,7 +482,7 @@ export class API {
 				if (this.retry_on_status_codes.includes(response.status)) to_retry = true
 				
 				if (response.status === 401) {
-					if (this.refresh_token_on_401 && this.refresh_token && !info.just_refreshed) {
+					if (this.refresh_token_on_401 && !info.just_refreshed) {
 						this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
 						
 						if (await this.refreshToken() && this.retry_on_automatic_token_refresh) {

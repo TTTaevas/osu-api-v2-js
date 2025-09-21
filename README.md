@@ -51,6 +51,33 @@ async function logUserTopPlayBeatmap(username: string) {
 logUserTopPlayBeatmap("Doomsday fanboy")
 ```
 
+### Tokens
+
+An [`access_token`](https://osu-v2.taevas.xyz/classes/API.html#access_token) is required to access the API, and should be valid for 24 hours. When you first create your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object through [`createAsync()`](https://osu-v2.taevas.xyz/classes/API.html#createasync), that token is automatically set, so you don't have to worry about that! But how about after those 24 hours?
+
+Once an `access_token` has become invalid, the server will no longer respond correctly to requests made with it, instead responding with [401](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/401). Thankfully, there are solutions to get and set new `access_token`s in a convenient way, so there is no need to create a new `api` object every day!
+
+- If you'd like to manually get a new `access_token`, calling [refreshToken()](https://osu-v2.taevas.xyz/classes/API.html#refreshtoken) will automatically replace your previous one
+- If you'd prefer to automatically do that as soon as it expires, set the [`refresh_token_on_expires`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_expires) option to true (it's false by default)
+- By default, the [`refresh_token_on_401`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_401) option is set to true, which (as its name indicates) will do that upon encountering a 401
+- When that happens, if [`retry_on_automatic_token_refresh`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_automatic_token_refresh) is set to true as it is by default, it will retry the request it has encountered a 401 on, with the new token! (note that loops are prevented, it won't retry or refresh if the same request with the new token gets a 401)
+
+At any point in time, you can see when the current `access_token` is set to expire through the [`expires`](https://osu-v2.taevas.xyz/classes/API.html#expires) property of the API.
+
+You may also choose to manually invalidate your `access_token` through [`revokeToken()`](https://osu-v2.taevas.xyz/classes/API.html#revoketoken) instead of waiting for it to expire!
+
+### Retries
+
+Your `api` object has a configurable behaviour when it comes to handling requests that have failed for certain reasons. It may "retry" a request, meaning **not throwing and making the request again as if it hasn't failed** under the following circumstances:
+
+NOTE: [`retry_maximum_amount`](https://osu-v2.taevas.xyz/classes/API.html#retry_maximum_amount) must be above 0 for any retry to happen in the first place!
+
+- [`refresh_token_on_401`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_401) is set, the refresh is successful, and [`retry_on_automatic_token_refresh`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_automatic_token_refresh) is also set
+- A failed request has a status code featured in [`retry_on_status_codes`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_status_codes)
+- [`retry_on_timeout`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_timeout) is set and a timeout has happened
+
+You can further configure retries through [`retry_delay`](https://osu-v2.taevas.xyz/classes/API.html#retry_delay) and the aforementioned `retry_maximum_amount`.
+
 ### Authorization flow
 A simple guide on how to do extra fancy stuff
 
@@ -82,17 +109,15 @@ const api = await osu.API.createAsync("<client_id>", "<client_secret>", {code: "
 
 #### Keep your api object somewhere safe
 
-Congrats on making your `api` object! As you may have seen from glancing at the documentation, it is pretty important as it holds a lot of information, such as:
-- the [`access_token`](https://osu-v2.taevas.xyz/classes/API.html#access_token) used for all requests and the [`refresh_token`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token) used to get a new `access_token` without asking the user for consent again
-- [`expires`](https://osu-v2.taevas.xyz/classes/API.html#expires), which tells you when your `access_token` will expire
-- [`user`](https://osu-v2.taevas.xyz/classes/API.html#user), which is the id of the osu! user who has gone through that whole authorization thingie
+Congrats on making your `api` object! As you may have seen from glancing at the documentation, it is pretty important as it holds a lot of information, such as the [`refresh_token`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token) which is needed to get a new `access_token` without asking the user for their consent again.
 
-It is important to note that it has features you can change or turn off, they are all listed in the documentation but those worth noting are:
-- [`refresh_token_on_expires`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_expires), automatically refresh the token when the expiration date is reached
-- [`refresh_token_on_401`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_401), automatically refresh the token upon encountering a 401 (usual sign of an expired token)
-- [`retry_on_automatic_token_refresh`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_automatic_token_refresh), automatically retry the request that had 401d after successfully refreshing the token
+So as a reminder, it has:
 
-Finally, do note that you can use the `refresh_token` yourself using [refreshToken()](https://osu-v2.taevas.xyz/classes/API.html#refreshtoken)!
+- Both the `access_token` and the `refresh_token`, as well as the expiry date
+- The scopes that have been granted, and the id of the user under the [`user`](https://osu-v2.taevas.xyz/classes/API.html#user) property
+- All kinds of options and methods to use and deal with the tokens
+
+Everything is available to read about in the documentation!
 
 #### Full example
 
