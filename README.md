@@ -26,6 +26,7 @@ bun a osu-api-v2-js # if using bun
 ```
 
 You will want to create your own OAuth application: https://osu.ppy.sh/home/account/edit#oauth
+
 To use (import) the package in your project and start interacting with the API, you may do something like that:
 
 ```typescript
@@ -56,15 +57,16 @@ logUserTopPlayBeatmap("Doomsday fanboy")
 Your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object has many properties (listed as *Accessors* in the documentation) which you can modify in order to change its behaviour. There are two ways to do that, the first of which is to do it at any point after you've created your object:
 
 ```typescript
-// Log all requests made by this api object, as well as the amount of seconds when it comes to timeouts
 const api = await osu.API.createAsync(0, "<client_secret>")
+// Log all requests made by this api object
 api.verbose = "all"
+// Change the amount of seconds it takes for requests to timeout
 api.timeout = 10
 ```
 
 The other way would be if you're creating your `api` object manually through `new osu.API()`, like that:
 ```typescript
-// Log all requests made by this api object, as well as the amount of seconds when it comes to timeouts
+// Same as above, in one line as the api object gets created
 const api = new API({access_token: "my_token", client_id: 0, client_secret: "<client_secret>", verbose: "all", timeout: 10})
 
 // PS: Specifying the `client_id` and `client_secret` here can make it more convenient to use features related to token refreshing!
@@ -76,7 +78,7 @@ An [`access_token`](https://osu-v2.taevas.xyz/classes/API.html#access_token) is 
 
 Once an `access_token` has become invalid, the server will no longer respond correctly to requests made with it, instead responding with [401](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/401). Thankfully, there are solutions to get and set new `access_token`s in a convenient way, so there is no need to create a new `api` object every day!
 
-- If you'd like to manually get a new `access_token`, calling [refreshToken()](https://osu-v2.taevas.xyz/classes/API.html#refreshtoken) will automatically replace your previous one
+- If you'd like to manually get a new `access_token`, calling [`refreshToken()`](https://osu-v2.taevas.xyz/classes/API.html#refreshtoken) will replace your previous token with a new one
 - If you'd prefer to automatically do that as soon as it expires, set the [`refresh_token_on_expires`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_expires) option to true (it's false by default)
 - By default, the [`refresh_token_on_401`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_401) option is set to true, which (as its name indicates) will do that upon encountering a 401
 - When that happens, if [`retry_on_automatic_token_refresh`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_automatic_token_refresh) is set to true as it is by default, it will retry the request it has encountered a 401 on, with the new token! (note that loops are prevented, it won't retry or refresh if the same request with the new token gets a 401)
