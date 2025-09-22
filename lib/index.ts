@@ -300,6 +300,9 @@ export class API {
 
 	// REFRESH TOKEN STUFF
 
+	/** In other words, are we currently busy getting a new {@link API.access_token}? */
+	private is_refreshing_token: boolean = false
+
 	private _refresh_token?: string
 	/**
 	 * Valid for an unknown amount of time, it allows you to get a new token without going through the Authorization Code Grant again!
@@ -374,6 +377,7 @@ export class API {
 	 */
 	public async refreshToken(): Promise<boolean> {
 		const old_token = this.access_token
+		this.is_refreshing_token = true
 
 		try {
 			if (this.refresh_token) {
@@ -388,6 +392,8 @@ export class API {
 			if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
 		} catch(e) {
 			this.log(true, "Failed to refresh the token :(", e)
+		} finally {
+			this.is_refreshing_token = false
 		}
 
 		return old_token !== this.access_token
@@ -483,11 +489,20 @@ export class API {
 				
 				if (response.status === 401) {
 					if (this.refresh_token_on_401 && !info.just_refreshed) {
-						this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
-						
-						if (await this.refreshToken() && this.retry_on_automatic_token_refresh) {
-							to_retry = true
-							info.just_refreshed = true
+						if (!this.is_refreshing_token) {
+							this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
+							if (await this.refreshToken() && this.retry_on_automatic_token_refresh) {
+								to_retry = true
+								info.just_refreshed = true
+							}
+						} else {
+							this.log(true, "Server responded with status code 401, your token is currently being refreshed because of another 401 response!")
+							if (this.retry_on_automatic_token_refresh) {
+								/** Wait for 2 *additional* seconds before retrying, as the time it takes to refresh a token may be longer than {@link API.retry_delay} */
+								await new Promise(resolve => setTimeout(resolve, 2000))
+								to_retry = true
+								info.just_refreshed = true
+							}
 						}
 					} else {
 						this.log(true, "Server responded with status code 401, maybe you need to do this action as a user?")
@@ -509,7 +524,7 @@ export class API {
 			 * So we wait a bit to make our request, repeat the process a few times if needed
 			*/
 			if (to_retry === true && info.number_try <= this.retry_maximum_amount) {
-				this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(going for retry #${info.number_try}/${this.retry_maximum_amount})`)
+				this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(retry #${info.number_try}/${this.retry_maximum_amount})`)
 				await new Promise(res => setTimeout(res, this.retry_delay * 1000))
 				return await this.request(method, endpoint, parameters, settings, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}

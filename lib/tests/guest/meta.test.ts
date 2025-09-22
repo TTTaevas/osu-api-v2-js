@@ -41,8 +41,12 @@ const abort: Test = async(api) => {
 const refresh_on_401: Test = async(api) => {
 	api.refresh_token_on_401 = true
 	await api.revokeToken()
-	const response = await api.getUser(2)
-	expect(response.id).to.equal(2)
+	const responses = await Promise.all([api.getUser(2), api.getUser(3)])
+	// The first request should trigger a token refresh, the second request should not (vice-versa would be fine too)
+	// Both requests should be successful upon retrying
+
+	expect(responses[0].id).to.equal(2)
+	expect(responses[1].id).to.equal(3)
 	return true
 }
 

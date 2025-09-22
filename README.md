@@ -33,22 +33,41 @@ To use (import) the package in your project and start interacting with the API, 
 import * as osu from "osu-api-v2-js"
 
 async function logUserTopPlayBeatmap(username: string) {
-    // It's more convenient to use `osu.API.createAsync()` instead of `new osu.API()` as it doesn't require you to directly provide an access_token!
-    // You may wish to make it so you can use your `api` object multiple times instead of creating multiple `api` objects
-    const api = await osu.API.createAsync("<client_id>", "<client_secret>") // id as a number, secret as a string
+  // It's more convenient to use `osu.API.createAsync()` instead of `new osu.API()` as it doesn't require you to directly provide an access_token!
+  // You may wish to make it so you can use your `api` object multiple times instead of creating multiple `api` objects
+  const api = await osu.API.createAsync("<client_id>", "<client_secret>") // id as a number, secret as a string
 
-    const user = await api.getUser(username) // We need to get the id of the user in order to request what we want
-    const scores = await api.getUserScores(user, "best", osu.Ruleset.osu, {lazer: false}, {limit: 1}) // Specifying the Ruleset is optional
-    const score = scores[0] // Array is already sorted
-    const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(score.beatmap, score.mods) // Specify the mods to get the appropriate SR
+  const user = await api.getUser(username) // We need to get the id of the user in order to request what we want
+  const scores = await api.getUserScores(user, "best", osu.Ruleset.osu, {lazer: false}, {limit: 1}) // Specifying the Ruleset is optional
+  const score = scores[0] // Array is already sorted
+  const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(score.beatmap, score.mods) // Specify the mods to get the appropriate SR
 
-    const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`
-    const y = `+${score.mods.map((m) => m.acronym).toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
-    console.log(`${username}'s top play is on: ${x} ${y}`)
-    // Doomsday fanboy's top play is on: Erio o Kamattechan - os-Uchuujin(Asterisk Makina Remix) [Mattress Actress] +DT,CL (8.87*)
+  const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`
+  const y = `+${score.mods.map((m) => m.acronym).toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
+  console.log(`${username}'s top play is on: ${x} ${y}`)
+  // Doomsday fanboy's top play is on: Erio o Kamattechan - os-Uchuujin(Asterisk Makina Remix) [Mattress Actress] +DT,CL (8.87*)
 }
 
 logUserTopPlayBeatmap("Doomsday fanboy")
+```
+
+### Configuration options
+
+Your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object has many properties (listed as *Accessors* in the documentation) which you can modify in order to change its behaviour. There are two ways to do that, the first of which is to do it at any point after you've created your object:
+
+```typescript
+// Log all requests made by this api object, as well as the amount of seconds when it comes to timeouts
+const api = await osu.API.createAsync(0, "<client_secret>")
+api.verbose = "all"
+api.timeout = 10
+```
+
+The other way would be if you're creating your `api` object manually through `new osu.API()`, like that:
+```typescript
+// Log all requests made by this api object, as well as the amount of seconds when it comes to timeouts
+const api = new API({access_token: "my_token", client_id: 0, client_secret: "<client_secret>", verbose: "all", timeout: 10})
+
+// PS: Specifying the `client_id` and `client_secret` here can make it more convenient to use features related to token refreshing!
 ```
 
 ### Tokens
@@ -141,43 +160,43 @@ const redirect_uri = "<application_callback_url>" // assuming localhost with any
 // Because we need to act as an authenticated user, we need to go through the authorization procedure
 // This function largely takes care of it by itself
 async function getCode(authorization_url: string): Promise<string> {
-	// Open a temporary server to receive the code when the browser is sent to the redirect_uri after confirming authorization
-	const httpserver = http.createServer()
-	const host = redirect_uri.substring(redirect_uri.indexOf("/") + 2, redirect_uri.lastIndexOf(":"))
-	const port = Number(redirect_uri.substring(redirect_uri.lastIndexOf(":") + 1).split("/")[0])
-	httpserver.listen({host, port})
+  // Open a temporary server to receive the code when the browser is sent to the redirect_uri after confirming authorization
+  const httpserver = http.createServer()
+  const host = redirect_uri.substring(redirect_uri.indexOf("/") + 2, redirect_uri.lastIndexOf(":"))
+  const port = Number(redirect_uri.substring(redirect_uri.lastIndexOf(":") + 1).split("/")[0])
+  httpserver.listen({host, port})
 
-	// Open the browser to the page on osu!web where you click a button to say you authorize your application
-	console.log("Waiting for code...")
-	const command = (process.platform == "darwin" ? "open" : process.platform == "win32" ? "start" : "xdg-open")
-	exec(`${command} "${authorization_url}"`)
+  // Open the browser to the page on osu!web where you click a button to say you authorize your application
+  console.log("Waiting for code...")
+  const command = (process.platform == "darwin" ? "open" : process.platform == "win32" ? "start" : "xdg-open")
+  exec(`${command} "${authorization_url}"`)
 
-	// Check the URL for a `code` GET parameter, get it if it's there
-	const code: string = await new Promise((resolve) => {
-		httpserver.on("request", (request, response) => {
-			if (request.url) {
-				console.log("Received code!")
-				response.end("Worked! You may now close this tab.", "utf-8")
-				httpserver.close() // Close the temporary server as it is no longer needed
-				resolve(request.url.substring(request.url.indexOf("code=") + 5))
-			}
-		})
-	})
-	return code
+  // Check the URL for a `code` GET parameter, get it if it's there
+  const code: string = await new Promise((resolve) => {
+    httpserver.on("request", (request, response) => {
+      if (request.url) {
+        console.log("Received code!")
+        response.end("Worked! You may now close this tab.", "utf-8")
+        httpserver.close() // Close the temporary server as it is no longer needed
+        resolve(request.url.substring(request.url.indexOf("code=") + 5))
+      }
+    })
+  })
+  return code
 }
 
 async function getSelf() {
-	// Get the code needed for the api object
-	const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "identify"])
-	const code = await getCode(url)
-	const api = await osu.API.createAsync(id, secret, {code, redirect_uri}, {verbose: "all"})
-	
-	// Use the `me` endpoint, which gives information about the authorized user!
-	const me = await api.getResourceOwner()
-	console.log("My id is", me.id, "but I'm better known as", me.username)
-	
-	// If you're not gonna use the token anymore, might as well revoke it for the sake of security
-	await api.revokeToken().then(() => console.log("Revoked the token, it can no longer be used!"))
+  // Get the code needed for the api object
+  const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "identify"])
+  const code = await getCode(url)
+  const api = await osu.API.createAsync(id, secret, {code, redirect_uri}, {verbose: "all"})
+
+  // Use the `me` endpoint, which gives information about the authorized user!
+  const me = await api.getResourceOwner()
+  console.log("My id is", me.id, "but I'm better known as", me.username)
+
+  // If you're not gonna use the token anymore, might as well revoke it for the sake of security
+  await api.revokeToken().then(() => console.log("Revoked the token, it can no longer be used!"))
 }
 
 getSelf()
