@@ -78,50 +78,42 @@ export class APIError {
 	) {}
 }
 
-/** You can create an API instance without directly providing an access_token by using {@link API.createAsync}! */
+/** An API instance is needed to make requests to the server! */
 export class API {
 	// CLIENT CREATION
 
-	/**
-	 * **Please use {@link API.createAsync} instead of the default constructor** if you don't have at least an {@link API.access_token}!
-	 * An API object without an `access_token` is pretty much useless!
-	 */
-	constructor(properties: Partial<API>) {
-		// delete every property that is `undefined` so the class defaults aren't overwritten by `undefined`
-		// for example, someone using `createAsync()` is extremely likely to leave `server` as `undefined`, which would call the constructor with that
-		Object.keys(properties)
-			.forEach(key => properties[key as keyof API] === undefined ? delete properties[key as keyof API] : {})
-		Object.assign(this, properties)
-	}
+	/** If you have the credentials for a client and do not wish to act on behalf of a user, you might want to use this constructor */
+	constructor(client_id: API["client_id"], client_secret: API["client_secret"], settings?: Partial<API>);
+	/** If you have the credentials for a client as well as a code that allows to act on behalf of a user, you might want to use this constructor */
+	constructor(client_id: API["client_id"], client_secret: API["client_secret"], redirect_uri: string, code: string, settings?: Partial<API>);
+	/** If you are already in possession of an {@link API.access_token} and don't necessarily wish to be able to refresh it, you might want to use this constructor */
+	constructor(access_token: API["access_token"], settings?: Partial<API>);
+	constructor(client_id_or_access_token: API["client_id"] | API["access_token"], client_secret_or_settings?: API["client_secret"] | Partial<API>,
+	redirect_uri_or_settings?: string | Partial<API>, code?: string, settings?: Partial<API>) {
+		this.is_refreshing_token = true
+		const actual_settings = settings ?? typeof redirect_uri_or_settings === "string" ?
+			typeof client_secret_or_settings === "string" ? undefined : client_secret_or_settings : redirect_uri_or_settings
+		if (actual_settings) {
+			/** delete every property that is `undefined` so the class defaults aren't overwritten by `undefined` */
+			Object.keys(actual_settings).forEach((key) => {
+				actual_settings[key as keyof API] === undefined ? delete actual_settings[key as keyof API] : {}
+			})
+			Object.assign(this, actual_settings)
+		}
 
-	/**
-	 * The normal way to create an API instance! Make sure to `await` it
-	 * @param client_id The ID of your client, which you can get on https://osu.ppy.sh/home/account/edit#oauth
-	 * @param client_secret The Secret of your client, which you can get or reset on https://osu.ppy.sh/home/account/edit#oauth
-	 * @param user If the instance is supposed to represent a user, use their Authorization Code and the Application Callback URL of your application!
-	 * @param settings Additional settings you'd like to specify now rather than later, check out the Accessors at https://osu-v2.taevas.xyz/classes/API.html
-	 * @returns A promise with an API instance
-	 */
-	public static async createAsync(
-		client_id: API["client_id"],
-		client_secret: API["client_secret"],
-		user?: {
-			/** The Application Callback URL; Where the User has been redirected to after saying "okay" to your application doing stuff */
-			redirect_uri: string,
-			/** The code that appeared as a GET argument when they got redirected to the Application Callback URL (`redirect_uri`) */
-			code: string
-		},
-		settings?: Partial<API>
-	): Promise<API> {
-		const new_api = new API({
-			client_id,
-			client_secret,
-			...settings
-		})
+		if (typeof client_id_or_access_token === "number" && typeof client_secret_or_settings === "string") {
+			this.client_id = client_id_or_access_token
+			this.client_secret = client_secret_or_settings
 
-		return user ?
-		await new_api.getAndSetToken({client_id, client_secret, grant_type: "authorization_code", ...user}, new_api) :
-		await new_api.getAndSetToken({client_id, client_secret, grant_type: "client_credentials", scope: "public"}, new_api)
+			const promise = typeof redirect_uri_or_settings === "string" && code ?
+				this.getAndSetToken({client_id: client_id_or_access_token, client_secret: client_secret_or_settings, grant_type: "authorization_code", redirect_uri: redirect_uri_or_settings, code}) :
+				this.getAndSetToken({client_id: client_id_or_access_token, client_secret: client_secret_or_settings, grant_type: "client_credentials", scope: "public"})
+
+			promise.then(() => this.log(false, "Set a first token!"))
+			promise.finally(() => this.is_refreshing_token = false)
+		} else {
+			this.is_refreshing_token = false
+		}
 	}
 
 
@@ -241,13 +233,12 @@ export class API {
 	/**
 	 * Set most of an `api`'s properties, like tokens, token_type, scopes, expiration_date  
 	 * @param body An Object with the client id & secret, grant_type, and stuff that depends of the grant_type
-	 * @param api The `api` which will see its properties change
 	 * @returns `api`, just in case, because in theory it should modify the original object
 	 */
-	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "authorization_code", redirect_uri: string, code: string}, api: API):
+	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "authorization_code", redirect_uri: string, code: string}):
 	Promise<API>;
-	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "client_credentials", scope: "public"}, api: API): Promise<API>;
-	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "refresh_token", refresh_token: string}, api: API): Promise<API>;
+	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "client_credentials", scope: "public"}): Promise<API>;
+	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "refresh_token", refresh_token: string}): Promise<API>;
 	private async getAndSetToken(body: {
 		client_id: number,
 		client_secret: string,
@@ -255,7 +246,7 @@ export class API {
 		redirect_uri?: string,
 		code?: string
 		refresh_token?: string	
-	}, api: API): Promise<API> {
+	}): Promise<API> {
 		const response = await fetch(`${this.server}/${this.route_token.join("/")}`, {
 			method: "post",
 			headers: this.headers,
@@ -271,21 +262,21 @@ export class API {
 			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
 			throw new APIError("No token obtained", this.server, "post", this.route_token, body, response.status)
 		}
-		api.token_type = json.token_type
-		if (json.refresh_token) {api.refresh_token = json.refresh_token}
+		this.token_type = json.token_type
+		if (json.refresh_token) {this.refresh_token = json.refresh_token}
 
 		const token = json.access_token
-		api.access_token = token
+		this.access_token = token
 
 		const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
-		api.scopes = token_payload.scopes
-		if (token_payload.sub && token_payload.sub.length) {api.user = Number(token_payload.sub)}
+		this.scopes = token_payload.scopes
+		if (token_payload.sub && token_payload.sub.length) {this.user = Number(token_payload.sub)}
 	
 		const expiration_date = new Date()
 		expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
-		api.expires = expiration_date
+		this.expires = expiration_date
 
-		return api
+		return this
 	}
 
 	/** 
@@ -381,13 +372,9 @@ export class API {
 
 		try {
 			if (this.refresh_token) {
-				await this.getAndSetToken({
-					client_id: this.client_id, client_secret: this.client_secret, grant_type: "refresh_token", refresh_token: this.refresh_token
-				}, this)
+				await this.getAndSetToken({client_id: this.client_id, client_secret: this.client_secret, grant_type: "refresh_token", refresh_token: this.refresh_token})
 			} else {
-				await this.getAndSetToken({
-					client_id: this.client_id, client_secret: this.client_secret, grant_type: "client_credentials", scope: "public"
-				}, this)
+				await this.getAndSetToken({client_id: this.client_id, client_secret: this.client_secret, grant_type: "client_credentials", scope: "public"})
 			}
 			if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
 		} catch(e) {
@@ -907,7 +894,7 @@ export class ChildAPI extends API {
 	withSettings = (...args: Parameters<API["withSettings"]>) => {return this.original.withSettings(...args)}
 	
 	constructor(original: ChildAPI["original"], additional_fetch_settings: ChildAPI["additional_fetch_settings"]) {
-		super({})
+		super(original.access_token)
 
 		this.original = original
 		this.additional_fetch_settings = additional_fetch_settings

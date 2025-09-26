@@ -14,7 +14,7 @@ const scopes: Scope[] = ["chat.read"]
 async function startTesting(id: number, secret: string, redirect_uri: string): Promise<void> {
 	const url = generateAuthorizationURL(id, redirect_uri, scopes, server)
 	const code = await getCode(url, redirect_uri)
-	const api = await API.createAsync(id, secret, {code, redirect_uri}, {server, retry_on_timeout: true, verbose: "errors"})
+	const api = new API(id, secret, code, redirect_uri, {server, retry_on_timeout: true, verbose: "errors"})
 
 	const websocket = api.generateChatWebsocket()
 	websocket.addEventListener("open", async () => {
