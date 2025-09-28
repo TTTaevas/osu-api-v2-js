@@ -94,22 +94,28 @@ export class API {
 			typeof client_secret_or_settings === "string" ? undefined : client_secret_or_settings : redirect_uri_or_settings
 
 		if (actual_settings) {
-			/** delete every property that is `undefined` so the class defaults aren't overwritten by `undefined` */
+			/** Delete every property that is `undefined` so the class defaults aren't overwritten by `undefined` */
 			Object.keys(actual_settings).forEach((key) => {
 				actual_settings[key as keyof API] === undefined ? delete actual_settings[key as keyof API] : {}
 			})
 			Object.assign(this, actual_settings)
 		}
 
+		/** We want to set a new token instantly if a client_id and client_secret have been provided */
 		if (typeof client_id_or_access_token === "number" && typeof client_secret_or_settings === "string") {
 			this.client_id = client_id_or_access_token
 			this.client_secret = client_secret_or_settings
 
-			const promise = typeof redirect_uri_or_settings === "string" && code ?
+			typeof redirect_uri_or_settings === "string" && code ?
 				this.setNewToken({redirect_uri: redirect_uri_or_settings, code}) :
 				this.setNewToken()
-
-			promise.then(() => this.log(false, "Set a first token!"))
+			.catch((e) => { // AFAIK, it is impossible for a user to catch this error, so try to help the user as best as we can
+				if (e instanceof APIError && e.parameters?.client_secret) {
+					e.parameters.client_secret = "<REDACTED>" // Yet, exposing the client_secret like that could be counter-productive, so don't!
+				}
+				this.log(true, "It may be tricky to catch the error in this context, so here's the error that was logged:", e)
+				throw e
+			})
 		}
 	}
 
@@ -198,6 +204,9 @@ export class API {
 	/** Has {@link API.setNewToken} been called and not yet returned anything? */
 	private is_setting_token: boolean = false
 
+	/** If {@link API.setNewToken} has been called, you can wait for it to be done through this promise */
+	private token_promise: Promise<void> = new Promise(r => r)
+
 	/**
 	 * This creates a new {@link API.access_token}, alongside a new {@link API.refresh_token} if arguments are provided or if a refresh_token already exists
 	 * @remarks The API object requires a {@link API.client_id} and a {@link API.client_secret} to successfully get any token
@@ -207,7 +216,7 @@ export class API {
 		const old_token = this.access_token
 		this.is_setting_token = true
 
-		try {
+		this.token_promise = new Promise((resolve, reject) => {
 			/// Request to the server
 			const grant_type = authorization ? "authorization_code" : this.refresh_token ? "refresh_token" : "client_credentials"
 			const body = {
@@ -219,41 +228,48 @@ export class API {
 				redirect_uri: authorization?.redirect_uri,
 				code: authorization?.code,
 			}
-			const response = await fetch(`${this.server}/${this.route_token.join("/")}`, {
+			fetch(`${this.server}/${this.route_token.join("/")}`, {
 				method: "post",
 				headers: this.headers,
 				body: JSON.stringify(body),
 				signal: this.timeout > 0 ? AbortSignal.timeout(this.timeout * 1000) : undefined
-			}).catch((e) => {
-				throw new APIError("Failed to fetch a token", this.server, "post", this.route_token, body, undefined, e)
 			})
+			.then((response) => {
+				response.json()
+				.then((json: any) => {
+					if (!json.access_token) {
+						this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
+						reject(new APIError("No token obtained", this.server, "post", this.route_token, body, response.status))
+					}
+					this.token_type = json.token_type
+					if (json.refresh_token) {this.refresh_token = json.refresh_token}
 
-			/// Response parsing
-			const json: any = await response.json()
-			if (!json.access_token) {
-				this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-				throw new APIError("No token obtained", this.server, "post", this.route_token, body, response.status)
-			}
-			this.token_type = json.token_type
-			if (json.refresh_token) {this.refresh_token = json.refresh_token}
+					const token = json.access_token
+					this.access_token = token
 
-			const token = json.access_token
-			this.access_token = token
+					const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
+					this.scopes = token_payload.scopes
+					if (token_payload.sub && token_payload.sub.length) {this.user = Number(token_payload.sub)}
 
-			const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
-			this.scopes = token_payload.scopes
-			if (token_payload.sub && token_payload.sub.length) {this.user = Number(token_payload.sub)}
+					const expiration_date = new Date()
+					expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
+					this.expires = expiration_date
 
-			const expiration_date = new Date()
-			expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
-			this.expires = expiration_date
-		} catch(e) {
-			this.log(true, "Failed to get a new token :(", e)
-		} finally {
-			this.is_setting_token = false
-		}
+					resolve()
+				})
+				.catch((e) => {
+					reject(new APIError("Failed to parse a token", this.server, "post", this.route_token, body, undefined, e))
+				})
+			})
+			.catch((e) => {
+				reject(new APIError("Failed to fetch a token", this.server, "post", this.route_token, body, undefined, e))
+			})
+		})
 
-		if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
+
+		await this.token_promise
+		this.is_setting_token = false
+		if (old_token !== this.access_token) {this.log(false, "A new token has been set!")}
 		return old_token !== this.access_token
 	}
 
@@ -431,6 +447,7 @@ export class API {
 			}).join("&"))
 		}
 
+		await this.token_promise.catch(() => this.token_promise = new Promise(r => r))
 		const response = await fetch(url, {
 			method,
 			...settings, // has priority over what's above, but not over what's lower
@@ -443,7 +460,7 @@ export class API {
 			signal: AbortSignal.any(signals)
 		})
 		.catch((error) => {
-			if (error.name === "TimeoutError" && this.retry_on_timeout) to_retry = true
+			if (error.name === "TimeoutError" && this.retry_on_timeout) {to_retry = true}
 			this.log(true, error.message)
 			error_object = error
 			error_message = `${error.name} (${error.message ?? error.errno ?? error.type})`
@@ -453,7 +470,7 @@ export class API {
 			if (response) {
 				error_code = response.status
 				error_message = response.statusText
-				if (this.retry_on_status_codes.includes(response.status)) to_retry = true
+				if (this.retry_on_status_codes.includes(response.status)) {to_retry = true}
 				
 				if (response.status === 401) {
 					if (this.refresh_token_on_401 && !info.just_refreshed) {
@@ -464,10 +481,8 @@ export class API {
 								info.just_refreshed = true
 							}
 						} else {
-							this.log(true, "Server responded with status code 401, your token is currently being refreshed because of another 401 response!")
+							this.log(true, "Server responded with status code 401, your token is currently in the process of being refreshed!")
 							if (this.retry_on_automatic_token_refresh) {
-								/** Wait for 2 *additional* seconds before retrying, as the time it takes to refresh a token may be longer than {@link API.retry_delay} */
-								await new Promise(resolve => setTimeout(resolve, 2000))
 								to_retry = true
 								info.just_refreshed = true
 							}
