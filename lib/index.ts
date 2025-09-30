@@ -57,7 +57,7 @@ export function generateAuthorizationURL(client_id: number, redirect_uri: string
 }
 
 /** If the {@link API} throws an error, it should always be an {@link APIError}! */
-export class APIError {
+export class APIError extends Error {
 	/**
 	 * @param message The reason why things didn't go as expected
 	 * @param server The server to which the request was sent
@@ -75,7 +75,7 @@ export class APIError {
 		public parameters: Parameters<API["request"]>[2],
 		public status_code?: number,
 		public original_error?: Error
-	) {}
+	) {super()}
 }
 
 /** An API instance is needed to make requests to the server! */
@@ -109,11 +109,10 @@ export class API {
 			typeof redirect_uri_or_settings === "string" && code ?
 				this.setNewToken({redirect_uri: redirect_uri_or_settings, code}) :
 				this.setNewToken()
-			.catch((e) => { // AFAIK, it is impossible for a user to catch this error, so try to help the user as best as we can
+			.catch((e) => { // Redact some information before throwing (safety first!)
 				if (e instanceof APIError && e.parameters?.client_secret) {
-					e.parameters.client_secret = "<REDACTED>" // Yet, exposing the client_secret like that could be counter-productive, so don't!
+					e.parameters.client_secret = "<REDACTED>"
 				}
-				this.log(true, "It may be tricky to catch the error in this context, so here's the error that was logged:", e)
 				throw e
 			})
 		}
@@ -197,6 +196,8 @@ export class API {
 	/** The osu! user id of the user who went through the Authorization Code Grant */
 	get user() {return this._user}
 	set user(user) {this._user = user}
+
+	private number_of_requests: number = 0
 
 
 	// TOKEN HANDLING
@@ -391,9 +392,19 @@ export class API {
 	 * @param is_error Is the logging happening because of an error?
 	 * @param to_log Whatever you would put between the parentheses of `console.log()`
 	 */
-	private log(is_error: boolean, ...to_log: any[]) {
-		if (this.verbose === "all" || (this.verbose === "errors" && is_error === true)) {
+	private log(is_error: boolean, ...to_log: any[]): void {
+		if (this.verbose !== "none" && is_error === true) {
+			console.error("osu!api v2 ->", ...to_log)
+		} else if (this.verbose === "all") {
 			console.log("osu!api v2 ->", ...to_log)
+		}
+	}
+
+	private logRequest(method: Parameters<API["request"]>[0], endpoint: Parameters<API["request"]>[1], parameters: Parameters<API["request"]>[2], response: Response, request_id?: string) {
+		if (this.verbose !== "none" && !response.ok) {
+			console.error("osu!api v2 ->", response.statusText, response.status, {method, endpoint, parameters}, request_id)
+		} else if (this.verbose === "all") {
+			console.log("osu!api v2 ->", response.statusText, response.status, {method, endpoint, parameters})
 		}
 	}
 
@@ -465,9 +476,12 @@ export class API {
 			error_object = error
 			error_message = `${error.name} (${error.message ?? error.errno ?? error.type})`
 		})
+		.finally(() => this.number_of_requests += 1)
 
 		if (!response || !response.ok) {
+			const request_id = "(" + String(this.number_of_requests).padStart(8, "0") + ")"
 			if (response) {
+				this.logRequest(method, endpoint, parameters, response, request_id)
 				error_code = response.status
 				error_message = response.statusText
 				if (this.retry_on_status_codes.includes(response.status)) {to_retry = true}
@@ -475,29 +489,27 @@ export class API {
 				if (response.status === 401) {
 					if (this.refresh_token_on_401 && !info.just_refreshed) {
 						if (!this.is_setting_token) {
-							this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
+							this.log(true, "Your token might have expired, I will attempt to refresh your token...", request_id)
 							if (await this.setNewToken() && this.retry_on_automatic_token_refresh) {
 								to_retry = true
 								info.just_refreshed = true
 							}
 						} else {
-							this.log(true, "Server responded with status code 401, your token is currently in the process of being refreshed!")
+							this.log(true, "Your token is currently in the process of being refreshed!", request_id)
 							if (this.retry_on_automatic_token_refresh) {
 								to_retry = true
 								info.just_refreshed = true
 							}
 						}
 					} else {
-						this.log(true, "Server responded with status code 401, maybe you need to do this action as a user?")
+						this.log(true, "Maybe you need to do this action as a user?", request_id)
 					}
 				} else if (response.status === 403) {
-					this.log(true, "Server responded with status code 403, you may lack the necessary scope for this action!")
+					this.log(true, "You may lack the necessary scope for this action!", request_id)
 				} else if (response.status === 422) {
-					this.log(true, "Server responded with status code 422, you may be unable to use those parameters together!")
+					this.log(true, "You may be unable to use those parameters together!", request_id)
 				} else if (response.status === 429) {
-					this.log(true, "Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
-				} else {
-					this.log(true, "Server responded with status:", response.status, response.statusText)
+					this.log(true, "You're sending too many requests at once and are getting rate-limited!", request_id)
 				}
 			}
 
@@ -507,7 +519,7 @@ export class API {
 			 * So we wait a bit to make our request, repeat the process a few times if needed
 			*/
 			if (to_retry === true && info.number_try <= this.retry_maximum_amount) {
-				this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(retry #${info.number_try}/${this.retry_maximum_amount})`)
+				this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(retry #${info.number_try}/${this.retry_maximum_amount})`, request_id)
 				await new Promise(res => setTimeout(res, this.retry_delay * 1000))
 				return await this.request(method, endpoint, parameters, settings, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
 			}
@@ -515,7 +527,7 @@ export class API {
 			throw new APIError(error_message, `${this.server}/${this.route_api.join("/")}`, method, endpoint, parameters, error_code, error_object)
 		}
 
-		this.log(false, response.statusText, response.status, {method, endpoint, parameters})
+		this.logRequest(method, endpoint, parameters, response)
 		// 204 means the request worked as intended and did not give us anything, so just return nothing
 		if (response.status === 204) return undefined
 
