@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { Test } from "../exports.js"
-import { APIError } from "../../index.js"
+import { API, APIError } from "../../index.js"
 
 const timeout: Test = async(api) => {
 	api.retry_on_timeout = false
@@ -25,7 +25,7 @@ const abort: Test = async(api) => {
 
 	try {
 		setTimeout(() => {controller.abort()}, 50)
-		expect(await api.withSettings({signal: controller.signal}).getUser(2)).to.be.false
+		await new API(api.access_token, {...api, signal: controller.signal}).getUser(2)
 	} catch(e) {
 		expect(e).to.be.instanceof(APIError)
 		if (e instanceof APIError) {
@@ -35,7 +35,7 @@ const abort: Test = async(api) => {
 		}
 	}
 
-	throw new Error("Abort test failed, check logs for details")
+	throw new Error("Abort test failed, likely that the request was a success (even though it shouldn't have been one)")
 }
 
 const refresh_on_401: Test = async(api) => {
