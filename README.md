@@ -34,9 +34,8 @@ To use (import) the package in your project and start interacting with the API, 
 import * as osu from "osu-api-v2-js"
 
 async function logUserTopPlayBeatmap(username: string) {
-  // It's more convenient to use `osu.API.createAsync()` instead of `new osu.API()` as it doesn't require you to directly provide an access_token!
-  // You may wish to make it so you can use your `api` object multiple times instead of creating multiple `api` objects
-  const api = await osu.API.createAsync("<client_id>", "<client_secret>") // id as a number, secret as a string
+  // Create an API object, it'll automatically get an access_token which it'll use in future requests
+  const api = new osu.API(client_id, "<client_secret>") // id as a number, secret as a string
 
   const user = await api.getUser(username) // We need to get the id of the user in order to request what we want
   const scores = await api.getUserScores(user, "best", osu.Ruleset.osu, {lazer: false}, {limit: 1}) // Specifying the Ruleset is optional
@@ -57,31 +56,29 @@ logUserTopPlayBeatmap("Doomsday fanboy")
 Your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object has many properties (listed as *Accessors* in the documentation) which you can modify in order to change its behaviour. There are two ways to do that, the first of which is to do it at any point after you've created your object:
 
 ```typescript
-const api = await osu.API.createAsync(0, "<client_secret>")
+const api = new osu.API(0, "<client_secret>")
 // Log all requests made by this api object
 api.verbose = "all"
 // Change the amount of seconds it takes for requests to timeout
 api.timeout = 10
 ```
 
-The other way would be if you're creating your `api` object manually through `new osu.API()`, like that:
+The other way would be at the same time you're creating your `api` object, like that:
 ```typescript
 // Same as above, in one line as the api object gets created
-const api = new API({access_token: "my_token", client_id: 0, client_secret: "<client_secret>", verbose: "all", timeout: 10})
-
-// PS: Specifying the `client_id` and `client_secret` here can make it more convenient to use features related to token refreshing!
+const api = new API(0, "<client_secret>", {verbose: "all", timeout: 10})
 ```
 
 ### Tokens
 
-An [`access_token`](https://osu-v2.taevas.xyz/classes/API.html#access_token) is required to access the API, and should be valid for 24 hours. When you first create your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object through [`createAsync()`](https://osu-v2.taevas.xyz/classes/API.html#createasync), that token is automatically set, so you don't have to worry about that! But how about after those 24 hours?
+An [`access_token`](https://osu-v2.taevas.xyz/classes/API.html#access_token) is required to access the API, and should be valid for 24 hours. When you first create your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object, that token is automatically set before any request is made, so you don't have to worry about that! But how about after those 24 hours?
 
 Once an `access_token` has become invalid, the server will no longer respond correctly to requests made with it, instead responding with [401](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/401). Thankfully, there are solutions to get and set new `access_token`s in a convenient way, so there is no need to create a new `api` object every day!
 
-- If you'd like to manually get a new `access_token`, calling [`refreshToken()`](https://osu-v2.taevas.xyz/classes/API.html#refreshtoken) will replace your previous token with a new one
-- If you'd prefer to automatically do that as soon as it expires, set the [`refresh_token_on_expires`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_expires) option to true (it's false by default)
-- By default, the [`refresh_token_on_401`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_401) option is set to true, which (as its name indicates) will do that upon encountering a 401
-- When that happens, if [`retry_on_automatic_token_refresh`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_automatic_token_refresh) is set to true as it is by default, it will retry the request it has encountered a 401 on, with the new token! (note that loops are prevented, it won't retry or refresh if the same request with the new token gets a 401)
+- If you'd like to manually get a new `access_token`, calling [`setNewToken()`](https://osu-v2.taevas.xyz/classes/API.html#setnewtoken) will replace your previous token with a new one
+- If you'd prefer to automatically do that as soon as it expires, set the [`set_token_on_expires`](https://osu-v2.taevas.xyz/classes/API.html#set_token_on_expires) option to true (it's false by default)
+- By default, the [`set_token_on_401`](https://osu-v2.taevas.xyz/classes/API.html#set_token_on_401) option is set to true, which (as its name indicates) will do that upon encountering a 401
+- When that happens, if [`retry_on_new_token`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_new_token) is set to true as it is by default, it will retry the request it has encountered a 401 on, with the new token! (note that loops are prevented, it won't retry or get another token if the same request with the new token gets a 401)
 
 At any point in time, you can see when the current `access_token` is set to expire through the [`expires`](https://osu-v2.taevas.xyz/classes/API.html#expires) property of the API.
 
@@ -93,7 +90,7 @@ Your `api` object has a configurable behaviour when it comes to handling request
 
 NOTE: [`retry_maximum_amount`](https://osu-v2.taevas.xyz/classes/API.html#retry_maximum_amount) must be above 0 for any retry to happen in the first place!
 
-- [`refresh_token_on_401`](https://osu-v2.taevas.xyz/classes/API.html#refresh_token_on_401) is set, the refresh is successful, and [`retry_on_automatic_token_refresh`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_automatic_token_refresh) is also set
+- [`set_token_on_401`](https://osu-v2.taevas.xyz/classes/API.html#set_token_on_401) is set, a token is obtained thanks to it, and [`retry_on_new_token`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_new_token) is also set
 - A failed request has a status code featured in [`retry_on_status_codes`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_status_codes)
 - [`retry_on_timeout`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_timeout) is set and a timeout has happened
 
@@ -123,9 +120,9 @@ The user clicked your link and authorized your application! ...Now what?
 
 When a user authorizes your application, they get redirected to your `Application Callback URL` with a *huge* code as a GET parameter (the name of the parameter is `code`), and it is this very code that will allow you to proceed with the authorization flow! So make sure that somehow, you retrieve this code!
 
-With this code, thanks to the [`createAsync()`](https://osu-v2.taevas.xyz/classes/API.html#createasync) method, you're able to create your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object:
+With this code, you're able to create your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object:
 ```typescript
-const api = await osu.API.createAsync("<client_id>", "<client_secret>", {code: "<code>", redirect_uri: "<application_callback_url>"})
+const api = new osu.API(client_id, "<client_secret>", "<application_callback_url>", "<code>")
 ```
 
 #### Keep your api object somewhere safe
@@ -191,7 +188,7 @@ async function getSelf() {
   // Get the code needed for the api object
   const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "identify"])
   const code = await getCode(url)
-  const api = await osu.API.createAsync(id, secret, {code, redirect_uri}, {verbose: "all"})
+  const api = new osu.API(id, secret, redirect_uri, code, {verbose: "all"})
 
   // Use the `me` endpoint, which gives information about the authorized user!
   const me = await api.getResourceOwner()

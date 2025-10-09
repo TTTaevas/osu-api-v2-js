@@ -86,19 +86,19 @@ export class API {
 	constructor(client_id: API["client_id"], client_secret: API["client_secret"], settings?: Partial<API>);
 	/** If you have the credentials for a client as well as a code that allows to act on behalf of a user, you might want to use this constructor */
 	constructor(client_id: API["client_id"], client_secret: API["client_secret"], redirect_uri: string, code: string, settings?: Partial<API>);
-	/** If you are already in possession of an {@link API.access_token} and don't necessarily wish to be able to refresh it, you might want to use this constructor */
+	/** If you are already in possession of an {@link API.access_token} and don't necessarily wish to be able to get a new one, you might want to use this constructor */
 	constructor(access_token: API["access_token"], settings?: Partial<API>);
 	constructor(client_id_or_access_token: API["client_id"] | API["access_token"], client_secret_or_settings?: API["client_secret"] | Partial<API>,
 	redirect_uri_or_settings?: string | Partial<API>, code?: string, settings?: Partial<API>) {
-		const actual_settings = settings ?? (typeof redirect_uri_or_settings === "string" || !redirect_uri_or_settings) ?
+		settings ??= (typeof redirect_uri_or_settings === "string" || !redirect_uri_or_settings) ?
 			typeof client_secret_or_settings === "string" ? undefined : client_secret_or_settings : redirect_uri_or_settings
 
-		if (actual_settings) {
+		if (settings) {
 			/** Delete every property that is `undefined` so the class defaults aren't overwritten by `undefined` */
-			Object.keys(actual_settings).forEach((key) => {
-				actual_settings[key as keyof API] === undefined ? delete actual_settings[key as keyof API] : {}
+			Object.keys(settings).forEach((key) => {
+				settings[key as keyof API] === undefined ? delete settings[key as keyof API] : {}
 			})
-			Object.assign(this, actual_settings)
+			Object.assign(this, settings)
 		}
 
 		/** We want to set a new token instantly if a client_id and client_secret have been provided */
@@ -126,13 +126,13 @@ export class API {
 	private _refresh_token?: string
 	/**
 	 * Valid for an unknown amount of time, it allows you to get a new token without going through the Authorization Code Grant again!
-	 * Use {@link API.refreshToken} to make use of this token
+	 * Use {@link API.setNewToken} to make use of this token
 	 * @remarks There is no refresh_token if the Authorization Code Grant hasn't been done, it would be pointless to have one in that case
 	 */
 	get refresh_token() {return this._refresh_token}
 	set refresh_token(token) {
 		this._refresh_token = token
-		this.updateRefreshTokenTimer() // because the refresh token may be specified last
+		this.updateTokenTimer() // because the refresh token may be specified last
 	}
 
 	private _token_type: string = "Bearer"
@@ -145,7 +145,7 @@ export class API {
 	get expires() {return this._expires}
 	set expires(date) {
 		this._expires = date
-		this.updateRefreshTokenTimer()
+		this.updateTokenTimer()
 	}
 
 
@@ -283,37 +283,37 @@ export class API {
 		return await this.request("delete", ["oauth", "tokens", "current"])
 	}
 
-	private _refresh_token_on_401: boolean = true
-	/** If true, upon failing a request due to a 401, it will call {@link API.refreshToken} (defaults to **true**) */
-	get refresh_token_on_401() {return this._refresh_token_on_401}
-	set refresh_token_on_401(refresh) {this._refresh_token_on_401 = refresh}
+	private _set_token_on_401: boolean = true
+	/** If true, upon failing a request due to a 401, it will call {@link API.setNewToken} (defaults to **true**) */
+	get set_token_on_401() {return this._set_token_on_401}
+	set set_token_on_401(bool) {this._set_token_on_401 = bool}
 
-	private _refresh_token_on_expires: boolean = false
+	private _set_token_on_expires: boolean = false
 	/**
-	 * If true, the application will silently call {@link API.refreshToken} when the{@link API.access_token} is set to expire,
+	 * If true, the application will silently call {@link API.setNewToken} when the {@link API.access_token} is set to expire,
 	 * as determined by {@link API.expires} (defaults to **false**)
 	 */
-	get refresh_token_on_expires() {return this._refresh_token_on_expires}
-	set refresh_token_on_expires(enabled) {
-		this._refresh_token_on_expires = enabled
-		this.updateRefreshTokenTimer()
+	get set_token_on_expires() {return this._set_token_on_expires}
+	set set_token_on_expires(enabled) {
+		this._set_token_on_expires = enabled
+		this.updateTokenTimer()
 	}
 
-	private _refresh_token_timer?: NodeJS.Timeout
-	get refresh_token_timer(): API["_refresh_token_timer"] {return this._refresh_token_timer}
-	set refresh_token_timer(timer: NodeJS.Timeout) {
+	private _token_timer?: NodeJS.Timeout
+	get token_timer(): API["_token_timer"] {return this._token_timer}
+	set token_timer(timer: NodeJS.Timeout) {
 		// if a previous one already exists, clear it
-		if (this._refresh_token_timer) {
-			clearTimeout(this._refresh_token_timer)
+		if (this._token_timer) {
+			clearTimeout(this._token_timer)
 		}
 
-		this._refresh_token_timer = timer
-		this._refresh_token_timer.unref() // don't prevent exiting the program while this timeout is going on
+		this._token_timer = timer
+		this._token_timer.unref() // don't prevent exiting the program while this timeout is going on
 	}
 
-	/** Add, remove, change the timeout used for refreshing the token automatically whenever certain properties change */
-	private updateRefreshTokenTimer() {
-		if (this.expires && this.refresh_token_on_expires) {
+	/** Add, remove, change the timeout used for setting a new token automatically whenever certain properties change */
+	private updateTokenTimer() {
+		if (this.expires && this.set_token_on_expires) {
 			const now = new Date()
 			const ms = this.expires.getTime() - now.getTime()
 
@@ -321,19 +321,19 @@ export class API {
 			 * Let's say that we used a refresh token *after* the expiration time, our refresh token would naturally get updated
 			 * However, if it is updated before the (local) expiration date is updated, then ms should be 0
 			 * This should mean that, upon using a refresh token, we would use our new refresh token instantly...
-			 * In other words, don't allow timeouts that would mean no timeout; {@link API.refreshToken} exists for that
+			 * In other words, don't allow timeouts that would mean no timeout; {@link API.setNewToken} exists for that
 			 */
 			if (ms <= 0) {
 				return undefined
 			}
 
-			this.refresh_token_timer = setTimeout(() => {
+			this.token_timer = setTimeout(() => {
 				try {
 					this.setNewToken()
 				} catch {}
 			}, ms)
-		} else if (this._refresh_token_timer) {
-			clearTimeout(this._refresh_token_timer)
+		} else if (this._token_timer) {
+			clearTimeout(this._token_timer)
 		}
 	}
 
@@ -374,10 +374,10 @@ export class API {
 	get retry_delay() {return this._retry_delay}
 	set retry_delay(retry_delay) {this._retry_delay = retry_delay}
 
-	private _retry_on_automatic_token_refresh: boolean = true
-	/** Should it retry a request upon successfully refreshing the token due to {@link API.refresh_token_on_401} being `true`? (defaults to **true**) */
-	get retry_on_automatic_token_refresh() {return this._retry_on_automatic_token_refresh}
-	set retry_on_automatic_token_refresh(retry_on_automatic_token_refresh) {this._retry_on_automatic_token_refresh = retry_on_automatic_token_refresh}
+	private _retry_on_new_token: boolean = true
+	/** Should it retry a request upon successfully setting a new token due to {@link API.set_token_on_401} being `true`? (defaults to **true**) */
+	get retry_on_new_token() {return this._retry_on_new_token}
+	set retry_on_new_token(retry_on_new_token) {this._retry_on_new_token = retry_on_new_token}
 
 	private _retry_on_status_codes: number[] = [429]
 	/** Upon failing a request and receiving a response, because of which received status code should the request be retried? (defaults to **[429]**) */
@@ -423,7 +423,7 @@ export class API {
 	 * @returns A Promise with the API's response
 	 */
 	public async request(method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>, parameters: {[k: string]: any} = {},
-	info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}):
+	info: {number_try: number, has_new_token: boolean} = {number_try: 1, has_new_token: false}):
 	Promise<any> {
 		let to_retry = false
 		let error_object: Error | undefined
@@ -476,18 +476,18 @@ export class API {
 				if (this.retry_on_status_codes.includes(response.status)) {to_retry = true}
 				
 				if (response.status === 401) {
-					if (this.refresh_token_on_401 && !info.just_refreshed) {
+					if (this.set_token_on_401 && !info.has_new_token) {
 						if (!this.is_setting_token) {
-							this.log(true, "Your token might have expired, I will attempt to refresh your token...", request_id)
-							if (await this.setNewToken() && this.retry_on_automatic_token_refresh) {
+							this.log(true, "Your token might have expired, I will attempt to get a new token...", request_id)
+							if (await this.setNewToken() && this.retry_on_new_token) {
 								to_retry = true
-								info.just_refreshed = true
+								info.has_new_token = true
 							}
 						} else {
-							this.log(true, "Your token is currently in the process of being refreshed!", request_id)
-							if (this.retry_on_automatic_token_refresh) {
+							this.log(true, "A new token is currently being obtained!", request_id)
+							if (this.retry_on_new_token) {
 								to_retry = true
-								info.just_refreshed = true
+								info.has_new_token = true
 							}
 						}
 					} else {
@@ -510,7 +510,7 @@ export class API {
 			if (to_retry === true && info.number_try <= this.retry_maximum_amount) {
 				this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(retry #${info.number_try}/${this.retry_maximum_amount})`, request_id)
 				await new Promise(res => setTimeout(res, this.retry_delay * 1000))
-				return await this.request(method, endpoint, parameters, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
+				return await this.request(method, endpoint, parameters, {number_try: info.number_try + 1, has_new_token: info.has_new_token})
 			}
 
 			throw new APIError(error_message, `${this.server}/${this.route_api.join("/")}`, method, endpoint, parameters, error_code, error_object)

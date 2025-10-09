@@ -39,7 +39,7 @@ const abort: Test = async(api) => {
 }
 
 const refresh_on_401: Test = async(api) => {
-	api.refresh_token_on_401 = true
+	api.set_token_on_401 = true
 	await api.revokeToken()
 	const responses = await Promise.all([api.getUser(2), api.getUser(3)])
 	// The first request should trigger a token refresh, the second request should not (vice-versa would be fine too)
@@ -52,7 +52,7 @@ const refresh_on_401: Test = async(api) => {
 
 const refresh_on_expires: Test = async(api) => {
 	api.revokeToken() // invalidate current token for safety purposes, no need to wait for it
-	api.refresh_token_on_expires = true
+	api.set_token_on_expires = true
 
 	const seconds_delay = 1
 	const date = new Date()
