@@ -38,7 +38,7 @@ const abort: Test = async(api) => {
 	throw new Error("Abort test failed, likely that the request was a success (even though it shouldn't have been one)")
 }
 
-const refresh_on_401: Test = async(api) => {
+const set_token_on_401: Test = async(api) => {
 	api.set_token_on_401 = true
 	await api.revokeToken()
 	const responses = await Promise.all([api.getUser(2), api.getUser(3)])
@@ -50,7 +50,7 @@ const refresh_on_401: Test = async(api) => {
 	return true
 }
 
-const refresh_on_expires: Test = async(api) => {
+const set_token_on_expires: Test = async(api) => {
 	api.revokeToken() // invalidate current token for safety purposes, no need to wait for it
 	api.set_token_on_expires = true
 
@@ -68,6 +68,6 @@ const refresh_on_expires: Test = async(api) => {
 export const tests = [
 	timeout,
 	abort,
-	refresh_on_401,
-	refresh_on_expires,
+	set_token_on_401,
+	set_token_on_expires,
 ]

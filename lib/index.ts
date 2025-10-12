@@ -75,7 +75,11 @@ export class APIError extends Error {
 		public parameters: Parameters<API["request"]>[2],
 		public status_code?: number,
 		public original_error?: Error
-	) {super()}
+	) {
+		super()
+		if (this.parameters?.client_secret) {this.parameters.client_secret = "<REDACTED>"}
+		if (this.parameters?.refresh_token) {this.parameters.refresh_token = "<REDACTED>"}
+	}
 }
 
 /** An API instance is needed to make requests to the server! */
@@ -109,12 +113,6 @@ export class API {
 			typeof redirect_uri_or_settings === "string" && code ?
 				this.setNewToken({redirect_uri: redirect_uri_or_settings, code}) :
 				this.setNewToken()
-			.catch((e) => { // Redact some information before throwing (safety first!)
-				if (e instanceof APIError && e.parameters?.client_secret) {
-					e.parameters.client_secret = "<REDACTED>"
-				}
-				throw e
-			})
 		}
 	}
 
@@ -186,7 +184,7 @@ export class API {
 		"Accept-Encoding": "gzip",
 		"Content-Type": "application/json",
 		"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
-		"x-api-version": "20250530",
+		"x-api-version": "20251012",
 	}
 	/** Used in practically all requests, those are all the headers the package uses excluding `Authorization`, the one with the token */
 	get headers() {return this._headers}
@@ -229,18 +227,15 @@ export class API {
 				redirect_uri: authorization?.redirect_uri,
 				code: authorization?.code,
 			}
-			fetch(`${this.server}/${this.route_token.join("/")}`, {
-				method: "post",
-				headers: this.headers,
-				body: JSON.stringify(body),
-				signal: this.timeout > 0 ? AbortSignal.timeout(this.timeout * 1000) : undefined
-			})
+
+			this.fetch(true, "post", [], body)
 			.then((response) => {
 				response.json()
 				.then((json: any) => {
 					if (!json.access_token) {
+						const error_message = json.error_description ?? json.message ?? "No token obtained" // Expect "Client authentication failed"
 						this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-						reject(new APIError("No token obtained", this.server, "post", this.route_token, body, response.status))
+						reject(new APIError(error_message, this.server, "post", this.route_token, body, response.status))
 					}
 					this.token_type = json.token_type
 					if (json.refresh_token) {this.refresh_token = json.refresh_token}
@@ -258,19 +253,14 @@ export class API {
 
 					resolve()
 				})
-				.catch((e) => {
-					reject(new APIError("Failed to parse a token", this.server, "post", this.route_token, body, undefined, e))
-				})
 			})
-			.catch((e) => {
-				reject(new APIError("Failed to fetch a token", this.server, "post", this.route_token, body, undefined, e))
-			})
+			.catch(reject) // reject the promise with the received error instead of throwing (is it even useful?)
 		})
 
 
 		await this.token_promise
 		this.is_setting_token = false
-		if (old_token !== this.access_token) {this.log(false, "A new token has been set!")}
+		if (old_token !== this.access_token) this.log(false, "A new token has been set!")
 		return old_token !== this.access_token
 	}
 
@@ -405,12 +395,98 @@ export class API {
 		}
 	}
 
-	private logRequest(method: Parameters<API["request"]>[0], endpoint: Parameters<API["request"]>[1], parameters: Parameters<API["request"]>[2], response: Response, request_id?: string) {
-		if (this.verbose !== "none" && !response.ok) {
-			console.error("osu!api v2 ->", response.statusText, response.status, {method, endpoint, parameters}, request_id)
-		} else if (this.verbose === "all") {
-			console.log("osu!api v2 ->", response.statusText, response.status, {method, endpoint, parameters})
+	private async fetch(token_related: boolean, method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>,
+	parameters: {[k: string]: any} = {}, info: {number_try: number, has_new_token: boolean} = {number_try: 1, has_new_token: false}): Promise<Response> {
+		let to_retry = false
+		let error_object: Error | undefined
+		let error_code: number | undefined
+		let error_message = "no error message available"
+
+		const route = token_related ? this.route_token : this.route_api
+		if (!token_related) await this.token_promise.catch(() => this.token_promise = new Promise(r => r))
+
+		let url = `${this.server}/${route.join("/")}`
+		if (route.length) url += "/" // if the server **is** the route, don't have `//` between the server and the endpoint
+		url += endpoint.join("/")
+		if (method === "get" && parameters) { // for GET requests specifically, requests need to be shaped in very particular ways
+			url += "?" + (Object.entries(adaptParametersForGETRequests(parameters)).map((param) => {
+				if (!Array.isArray(param[1])) {return `${param[0]}=${param[1]}`}
+				return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
+			}).join("&"))
 		}
+
+		const signals: AbortSignal[] = []
+		if (this.timeout > 0) signals.push(AbortSignal.timeout(this.timeout * 1000))
+		if (this.signal && !token_related) signals.push(this.signal)
+
+		const response = await fetch(url, {
+			method,
+			headers: {
+				"Authorization": token_related ? undefined : `${this.token_type} ${this.access_token}`,
+				...this.headers
+			},
+			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if method is NOT GET
+			signal: AbortSignal.any(signals)
+		})
+		.catch((error) => {
+			if (error.name === "TimeoutError" && this.retry_on_timeout) to_retry = true
+			this.log(true, error.message)
+			error_object = error
+			error_message = `${error.name} (${error.message ?? error.errno ?? error.type})`
+		})
+		.finally(() => this.number_of_requests += 1)
+
+		const request_id = `(${String(this.number_of_requests).padStart(8, "0")})`
+		if (response) {
+			if (parameters.client_secret) parameters.client_secret = "<REDACTED>"
+			if (parameters.refresh_token) parameters.refresh_token = "<REDACTED>"
+			this.log(this.verbose !== "none" && !response.ok, response.statusText, response.status, {method, endpoint, parameters}, request_id)
+
+			if (!response.ok) {
+				error_code = response.status
+				error_message = response.statusText
+				if (this.retry_on_status_codes.includes(response.status)) to_retry = true
+
+				if (!token_related) {
+					if (response.status === 401) {
+						if (this.set_token_on_401 && !info.has_new_token) {
+							if (!this.is_setting_token) {
+								this.log(true, "Your token might have expired, I will attempt to get a new token...", request_id)
+								if (await this.setNewToken() && this.retry_on_new_token) {
+									to_retry = true
+									info.has_new_token = true
+								}
+							} else {
+								this.log(true, "A new token is currently being obtained!", request_id)
+								if (this.retry_on_new_token) {
+									to_retry = true
+									info.has_new_token = true
+								}
+							}
+						} else {
+							this.log(true, "Maybe you need to do this action as a user?", request_id)
+						}
+					} else if (response.status === 403) {
+						this.log(true, "You may lack the necessary scope for this action!", request_id)
+					} else if (response.status === 422) {
+						this.log(true, "You may be unable to use those parameters together!", request_id)
+					} else if (response.status === 429) {
+						this.log(true, "You're sending too many requests at once and are getting rate-limited!", request_id)
+					}
+				}
+			}
+		}
+
+		if (to_retry === true && info.number_try <= this.retry_maximum_amount) {
+			this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(retry #${info.number_try}/${this.retry_maximum_amount})`, request_id)
+			await new Promise(res => setTimeout(res, this.retry_delay * 1000))
+			return await this.fetch(token_related, method, endpoint, parameters, {number_try: info.number_try + 1, has_new_token: info.has_new_token})
+		}
+
+		if (!response || !response.ok) {
+			throw new APIError(error_message, `${this.server}/${route.join("/")}`, method, endpoint, parameters, error_code, error_object)
+		}
+		return response
 	}
 
 	/**
@@ -419,114 +495,27 @@ export class API {
 	 * @param endpoint What comes in the URL after `api/`, **DO NOT USE TEMPLATE LITERALS (\`) OR THE ADDITION OPERATOR (+), put everything separately for type safety**
 	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
 	 * @param settings Additional settings **to add** to the current settings of the `fetch()` request
-	 * @param info Context given by a prior request
 	 * @returns A Promise with the API's response
 	 */
-	public async request(method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>, parameters: {[k: string]: any} = {},
-	info: {number_try: number, has_new_token: boolean} = {number_try: 1, has_new_token: false}):
-	Promise<any> {
-		let to_retry = false
-		let error_object: Error | undefined
-		let error_code: number | undefined
-		let error_message = "no error message available"
+	public async request(method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>, parameters: {[k: string]: any} = {}): Promise<any> {
+		try {
+			const response = await this.fetch(false, method, endpoint, parameters)
+			if (response.status === 204) return undefined // 204 means the request worked as intended and did not give us anything, so just return nothing
 
-		const signals: AbortSignal[] = []
-		if (this.signal) signals.push(this.signal)
-		if (this.timeout > 0) signals.push(AbortSignal.timeout(this.timeout * 1000))
+			const arrBuff = await response.arrayBuffer()
+			const buff = Buffer.from(arrBuff)
 
-		const second_slash = this.route_api.length ? "/" : "" // if the server **is** the route, don't have `//` between the server and the endpoint
-		let url = `${this.server}/${this.route_api.join("/")}${second_slash}${endpoint.join("/")}`
-
-		if (method === "get" && parameters) {
-			// For GET requests specifically, requests need to be shaped in very particular ways
-			// adaptParametersForGETRequests feels actually too long to fit in here
-			const get_parameters = adaptParametersForGETRequests(parameters)
-
-			// Let's add the parameters into the URL
-			url += "?" + (Object.entries(get_parameters).map((param) => {
-				if (!Array.isArray(param[1])) {return `${param[0]}=${param[1]}`}
-				return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
-			}).join("&"))
-		}
-
-		await this.token_promise.catch(() => this.token_promise = new Promise(r => r))
-		const response = await fetch(url, {
-			method,
-			headers: {
-				"Authorization": `${this.token_type} ${this.access_token}`,
-				...this.headers,
-			},
-			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
-			signal: AbortSignal.any(signals)
-		})
-		.catch((error) => {
-			if (error.name === "TimeoutError" && this.retry_on_timeout) {to_retry = true}
-			this.log(true, error.message)
-			error_object = error
-			error_message = `${error.name} (${error.message ?? error.errno ?? error.type})`
-		})
-		.finally(() => this.number_of_requests += 1)
-
-		if (!response || !response.ok) {
-			const request_id = "(" + String(this.number_of_requests).padStart(8, "0") + ")"
-			if (response) {
-				this.logRequest(method, endpoint, parameters, response, request_id)
-				error_code = response.status
-				error_message = response.statusText
-				if (this.retry_on_status_codes.includes(response.status)) {to_retry = true}
-				
-				if (response.status === 401) {
-					if (this.set_token_on_401 && !info.has_new_token) {
-						if (!this.is_setting_token) {
-							this.log(true, "Your token might have expired, I will attempt to get a new token...", request_id)
-							if (await this.setNewToken() && this.retry_on_new_token) {
-								to_retry = true
-								info.has_new_token = true
-							}
-						} else {
-							this.log(true, "A new token is currently being obtained!", request_id)
-							if (this.retry_on_new_token) {
-								to_retry = true
-								info.has_new_token = true
-							}
-						}
-					} else {
-						this.log(true, "Maybe you need to do this action as a user?", request_id)
-					}
-				} else if (response.status === 403) {
-					this.log(true, "You may lack the necessary scope for this action!", request_id)
-				} else if (response.status === 422) {
-					this.log(true, "You may be unable to use those parameters together!", request_id)
-				} else if (response.status === 429) {
-					this.log(true, "You're sending too many requests at once and are getting rate-limited!", request_id)
-				}
+			try { // Assume the response is in JSON format as it often is, it'll fail into the catch block if it isn't anyway
+				// My thorough testing leads me to believe nothing would change if the encoding was also "binary" here btw
+				return correctType(JSON.parse(buff.toString("utf-8")))
+			} catch { // Assume the response is supposed to not be in JSON format so return it as simple text
+				return buff.toString("binary")
 			}
-
-			/**
-			 * Under specific circumstances, we want to retry our request automatically
-			 * However, instantly trying the request again even though it failed (or was made to failed) is usually not desirable
-			 * So we wait a bit to make our request, repeat the process a few times if needed
-			*/
-			if (to_retry === true && info.number_try <= this.retry_maximum_amount) {
-				this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(retry #${info.number_try}/${this.retry_maximum_amount})`, request_id)
-				await new Promise(res => setTimeout(res, this.retry_delay * 1000))
-				return await this.request(method, endpoint, parameters, {number_try: info.number_try + 1, has_new_token: info.has_new_token})
-			}
-
-			throw new APIError(error_message, `${this.server}/${this.route_api.join("/")}`, method, endpoint, parameters, error_code, error_object)
-		}
-
-		this.logRequest(method, endpoint, parameters, response)
-		// 204 means the request worked as intended and did not give us anything, so just return nothing
-		if (response.status === 204) return undefined
-
-		const arrBuff = await response.arrayBuffer()
-		const buff = Buffer.from(arrBuff)
-		try { // Assume the response is in JSON format as it often is, it'll fail into the catch block if it isn't anyway
-			// My thorough testing leads me to believe nothing would change if the encoding was also "binary" here btw
-			return correctType(JSON.parse(buff.toString("utf-8")))
-		} catch { // Assume the response is supposed to not be in JSON format so return it as simple text
-			return buff.toString("binary")
+		} catch(e: any) {
+			if (e instanceof APIError) throw e
+			// Manual testing leads me to believe a TimeoutError is possible after the request ended (while arrayBuffer() is going on, presumably)
+			// Still no matter the Error, we want an APIError
+			throw new APIError(`${e?.name} (${e?.message ?? e?.errno ?? e?.type})`, `${this.server}/${this.route_api.join("/")}`, method, endpoint, parameters, undefined, e)
 		}
 	}
 
