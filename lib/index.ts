@@ -90,12 +90,12 @@ export class API {
 	constructor(client_id: API["client_id"], client_secret: API["client_secret"], settings?: Partial<API>);
 	/** If you have the credentials for a client as well as a code that allows to act on behalf of a user, you might want to use this constructor */
 	constructor(client_id: API["client_id"], client_secret: API["client_secret"], redirect_uri: string, code: string, settings?: Partial<API>);
-	/** If you are already in possession of an {@link API.access_token} and don't necessarily wish to be able to get a new one, you might want to use this constructor */
-	constructor(access_token: API["access_token"], settings?: Partial<API>);
-	constructor(client_id_or_access_token: API["client_id"] | API["access_token"], client_secret_or_settings?: API["client_secret"] | Partial<API>,
+	/** If you'd like the freedom to set an {@link API.access_token} that you already have and avoid specifying client credentials, this constructor might be for you */
+	constructor(settings: Partial<API>);
+	constructor(client_id_or_settings: API["client_id"] | Partial<API>, client_secret?: API["client_secret"],
 	redirect_uri_or_settings?: string | Partial<API>, code?: string, settings?: Partial<API>) {
 		settings ??= (typeof redirect_uri_or_settings === "string" || !redirect_uri_or_settings) ?
-			typeof client_secret_or_settings === "string" ? undefined : client_secret_or_settings : redirect_uri_or_settings
+			typeof client_id_or_settings === "number" ? undefined : client_id_or_settings : redirect_uri_or_settings
 
 		if (settings) {
 			/** Delete every property that is `undefined` so the class defaults aren't overwritten by `undefined` */
@@ -105,11 +105,11 @@ export class API {
 			Object.assign(this, settings)
 		}
 
-		/** We want to set a new token instantly if a client_id and client_secret have been provided */
-		if (typeof client_id_or_access_token === "number" && typeof client_secret_or_settings === "string") {
-			this.client_id = client_id_or_access_token
-			this.client_secret = client_secret_or_settings
+		if (typeof client_id_or_settings === "number") this.client_id = client_id_or_settings
+		if (client_secret) this.client_secret = client_secret
 
+		/** We want to set a new token instantly if we have client credentials */
+		if (this.set_token_on_creation && this.client_id > 0 && this.client_secret.length) {
 			typeof redirect_uri_or_settings === "string" && code ?
 				this.setNewToken({redirect_uri: redirect_uri_or_settings, code}) :
 				this.setNewToken()
@@ -138,8 +138,8 @@ export class API {
 	get token_type() {return this._token_type}
 	set token_type(token) {this._token_type = token}
 
-	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000) // 24 hours default, is set through getAndSetToken anyway
-	/** The expiration date of your access_token */
+	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000) // 24 hours default, is set through setNewToken anyway
+	/** The expiration date of your {@link API.access_token} */
 	get expires() {return this._expires}
 	set expires(date) {
 		this._expires = date
@@ -209,7 +209,7 @@ export class API {
 	/**
 	 * This creates a new {@link API.access_token}, alongside a new {@link API.refresh_token} if arguments are provided or if a refresh_token already exists
 	 * @remarks The API object requires a {@link API.client_id} and a {@link API.client_secret} to successfully get any token
-	 * @returns Whether or not the token has changed (this should never throw)
+	 * @returns Whether or not the token has changed (**should be true** as otherwise the server would complain and an {@link APIError} would be thrown to give you some details)
 	 */
 	public async setNewToken(authorization?: {redirect_uri: string, code: string}): Promise<boolean> {
 		const old_token = this.access_token
@@ -258,7 +258,7 @@ export class API {
 		})
 
 
-		await this.token_promise
+		await this.token_promise // Add the following for a no-throw behaviour: .catch(e => {})
 		this.is_setting_token = false
 		if (old_token !== this.access_token) this.log(false, "A new token has been set!")
 		return old_token !== this.access_token
@@ -272,6 +272,11 @@ export class API {
 		// Note that unlike when getting a token, we actually need to use the normal route to revoke a token for some reason
 		return await this.request("delete", ["oauth", "tokens", "current"])
 	}
+
+	private _set_token_on_creation: boolean = true
+	/** If true, when creating your API object, a call to {@link API.setNewToken} will be automatically made (defaults to **true**) */
+	get set_token_on_creation() {return this._set_token_on_creation}
+	set set_token_on_creation(bool) {this._set_token_on_creation = bool}
 
 	private _set_token_on_401: boolean = true
 	/** If true, upon failing a request due to a 401, it will call {@link API.setNewToken} (defaults to **true**) */
@@ -395,15 +400,24 @@ export class API {
 		}
 	}
 
-	private async fetch(token_related: boolean, method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>,
+	/**
+	 * Use this instead of a straight `fetch` to connect to the server
+	 * @param is_token_related Is the request related to getting a token? If so, uses `route_token` and bypasses `token_promise`
+	 * @param method The HTTP method https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods
+	 * @param endpoint The endpoint, may or may not be listed on https://osu.ppy.sh/docs/
+	 * @param parameters GET query in object form, or the request body if the method is not GET
+	 * @param info Relevant only when `fetch` calls itself, avoid setting it
+	 * @remarks Consider using the higher-level method called {@link API.request}
+	 */
+	private async fetch(is_token_related: boolean, method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>,
 	parameters: {[k: string]: any} = {}, info: {number_try: number, has_new_token: boolean} = {number_try: 1, has_new_token: false}): Promise<Response> {
 		let to_retry = false
 		let error_object: Error | undefined
 		let error_code: number | undefined
 		let error_message = "no error message available"
 
-		const route = token_related ? this.route_token : this.route_api
-		if (!token_related) await this.token_promise.catch(() => this.token_promise = new Promise(r => r))
+		const route = is_token_related ? this.route_token : this.route_api
+		if (!is_token_related) await this.token_promise.catch(() => this.token_promise = new Promise(r => r))
 
 		let url = `${this.server}/${route.join("/")}`
 		if (route.length) url += "/" // if the server **is** the route, don't have `//` between the server and the endpoint
@@ -417,12 +431,12 @@ export class API {
 
 		const signals: AbortSignal[] = []
 		if (this.timeout > 0) signals.push(AbortSignal.timeout(this.timeout * 1000))
-		if (this.signal && !token_related) signals.push(this.signal)
+		if (this.signal && !is_token_related) signals.push(this.signal)
 
 		const response = await fetch(url, {
 			method,
 			headers: {
-				"Authorization": token_related ? undefined : `${this.token_type} ${this.access_token}`,
+				"Authorization": is_token_related ? undefined : `${this.token_type} ${this.access_token}`,
 				...this.headers
 			},
 			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if method is NOT GET
@@ -447,7 +461,7 @@ export class API {
 				error_message = response.statusText
 				if (this.retry_on_status_codes.includes(response.status)) to_retry = true
 
-				if (!token_related) {
+				if (!is_token_related) {
 					if (response.status === 401) {
 						if (this.set_token_on_401 && !info.has_new_token) {
 							if (!this.is_setting_token) {
@@ -480,7 +494,7 @@ export class API {
 		if (to_retry === true && info.number_try <= this.retry_maximum_amount) {
 			this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(retry #${info.number_try}/${this.retry_maximum_amount})`, request_id)
 			await new Promise(res => setTimeout(res, this.retry_delay * 1000))
-			return await this.fetch(token_related, method, endpoint, parameters, {number_try: info.number_try + 1, has_new_token: info.has_new_token})
+			return await this.fetch(is_token_related, method, endpoint, parameters, {number_try: info.number_try + 1, has_new_token: info.has_new_token})
 		}
 
 		if (!response || !response.ok) {
@@ -490,11 +504,10 @@ export class API {
 	}
 
 	/**
-	 * The function that directly communicates with the API! Almost every functions of the API object uses this function!
+	 * The function that directly communicates with the API! Almost all functions of the API object uses this function!
 	 * @param method The type of request, each endpoint uses a specific one (if it uses multiple, the intent and parameters become different)
 	 * @param endpoint What comes in the URL after `api/`, **DO NOT USE TEMPLATE LITERALS (\`) OR THE ADDITION OPERATOR (+), put everything separately for type safety**
 	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
-	 * @param settings Additional settings **to add** to the current settings of the `fetch()` request
 	 * @returns A Promise with the API's response
 	 */
 	public async request(method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>, parameters: {[k: string]: any} = {}): Promise<any> {

@@ -63,13 +63,13 @@ export function correctType(x: any, force_string?: boolean): any {
 		const vals = Object.values(x)
 
 		// If a key is any of those, the value is expected to be a string, so we use `force_string` to make correctType convert them to string for us
-		const unconvertables = [
-			"name", "username", "new_user_username", "source_user_username", "previousUsername", "previous_usernames", "display_name", "github_username", "osu_username", "short_name",
-			"artist", "artist_unicode", "title", "title_unicode", "tags", "location", "interests", "occupation", "twitter", "discord",
+		const unconvertables: string[] = [
+			"artist", "artist_unicode", "title", "title_unicode", "tags", "location", "interests", "occupation", "twitter", "discord", "category",
 			"beatmap_version", "version", "display_version", "author", "raw", "bbcode", "message", "creator", "source",
 		]
+		const unconvertables_substrings: string[] = ["string", "name"] // or if the key contains any of those substrings
 		for (let i = 0; i < keys.length; i++) {
-			x[keys[i]] = correctType(vals[i], unconvertables.some((p) => keys[i] === p))
+			x[keys[i]] = correctType(vals[i], unconvertables.some((p) => keys[i] === p) || unconvertables_substrings.some((s) => keys[i].toLowerCase().includes(s)))
 		}
 
 		return x

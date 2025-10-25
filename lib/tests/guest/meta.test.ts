@@ -25,7 +25,7 @@ const abort: Test = async(api) => {
 
 	try {
 		setTimeout(() => {controller.abort()}, 50)
-		await new API(api.access_token, {...api, signal: controller.signal}).getUser(2)
+		await new API({...api, signal: controller.signal, set_token_on_creation: false}).getUser(2)
 	} catch(e) {
 		expect(e).to.be.instanceof(APIError)
 		if (e instanceof APIError) {
