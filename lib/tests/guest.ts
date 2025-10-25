@@ -39,7 +39,7 @@ const domains: Test[][] = [
 ]
 
 async function startRunningTests(id: number, secret: string): Promise<void> {
-	const api = await API.createAsync(id, secret, undefined, {server: "https://osu.ppy.sh", retry_on_timeout: true, verbose: "all"})
+	const api = new API(id, secret, {server: "https://osu.ppy.sh", retry_on_timeout: true, verbose: "all"})
 	await runTests(api, domains)
 }
 

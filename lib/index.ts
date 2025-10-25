@@ -57,7 +57,7 @@ export function generateAuthorizationURL(client_id: number, redirect_uri: string
 }
 
 /** If the {@link API} throws an error, it should always be an {@link APIError}! */
-export class APIError {
+export class APIError extends Error {
 	/**
 	 * @param message The reason why things didn't go as expected
 	 * @param server The server to which the request was sent
@@ -75,53 +75,75 @@ export class APIError {
 		public parameters: Parameters<API["request"]>[2],
 		public status_code?: number,
 		public original_error?: Error
-	) {}
+	) {
+		super()
+		if (this.parameters?.client_secret) {this.parameters.client_secret = "<REDACTED>"}
+		if (this.parameters?.refresh_token) {this.parameters.refresh_token = "<REDACTED>"}
+	}
 }
 
-/** You can create an API instance without directly providing an access_token by using {@link API.createAsync}! */
+/** An API instance is needed to make requests to the server! */
 export class API {
-	// CLIENT CREATION
+	// CLIENT CREATION & TOKENS
 
-	/**
-	 * **Please use {@link API.createAsync} instead of the default constructor** if you don't have at least an {@link API.access_token}!
-	 * An API object without an `access_token` is pretty much useless!
-	 */
-	constructor(properties: Partial<API>) {
-		// delete every property that is `undefined` so the class defaults aren't overwritten by `undefined`
-		// for example, someone using `createAsync()` is extremely likely to leave `server` as `undefined`, which would call the constructor with that
-		Object.keys(properties)
-			.forEach(key => properties[key as keyof API] === undefined ? delete properties[key as keyof API] : {})
-		Object.assign(this, properties)
+	/** If you have the credentials for a client and do not wish to act on behalf of a user, you might want to use this constructor */
+	constructor(client_id: API["client_id"], client_secret: API["client_secret"], settings?: Partial<API>);
+	/** If you have the credentials for a client as well as a code that allows to act on behalf of a user, you might want to use this constructor */
+	constructor(client_id: API["client_id"], client_secret: API["client_secret"], redirect_uri: string, code: string, settings?: Partial<API>);
+	/** If you'd like the freedom to set an {@link API.access_token} that you already have and avoid specifying client credentials, this constructor might be for you */
+	constructor(settings: Partial<API>);
+	constructor(client_id_or_settings: API["client_id"] | Partial<API>, client_secret?: API["client_secret"],
+	redirect_uri_or_settings?: string | Partial<API>, code?: string, settings?: Partial<API>) {
+		settings ??= (typeof redirect_uri_or_settings === "string" || !redirect_uri_or_settings) ?
+			typeof client_id_or_settings === "number" ? undefined : client_id_or_settings : redirect_uri_or_settings
+
+		if (settings) {
+			/** Delete every property that is `undefined` so the class defaults aren't overwritten by `undefined` */
+			Object.keys(settings).forEach((key) => {
+				settings[key as keyof API] === undefined ? delete settings[key as keyof API] : {}
+			})
+			Object.assign(this, settings)
+		}
+
+		if (typeof client_id_or_settings === "number") this.client_id = client_id_or_settings
+		if (client_secret) this.client_secret = client_secret
+
+		/** We want to set a new token instantly if we have client credentials */
+		if (this.set_token_on_creation && this.client_id > 0 && this.client_secret.length) {
+			typeof redirect_uri_or_settings === "string" && code ?
+				this.setNewToken({redirect_uri: redirect_uri_or_settings, code}) :
+				this.setNewToken()
+		}
 	}
 
-	/**
-	 * The normal way to create an API instance! Make sure to `await` it
-	 * @param client_id The ID of your client, which you can get on https://osu.ppy.sh/home/account/edit#oauth
-	 * @param client_secret The Secret of your client, which you can get or reset on https://osu.ppy.sh/home/account/edit#oauth
-	 * @param user If the instance is supposed to represent a user, use their Authorization Code and the Application Callback URL of your application!
-	 * @param settings Additional settings you'd like to specify now rather than later, check out the Accessors at https://osu-v2.taevas.xyz/classes/API.html
-	 * @returns A promise with an API instance
-	 */
-	public static async createAsync(
-		client_id: API["client_id"],
-		client_secret: API["client_secret"],
-		user?: {
-			/** The Application Callback URL; Where the User has been redirected to after saying "okay" to your application doing stuff */
-			redirect_uri: string,
-			/** The code that appeared as a GET argument when they got redirected to the Application Callback URL (`redirect_uri`) */
-			code: string
-		},
-		settings?: Partial<API>
-	): Promise<API> {
-		const new_api = new API({
-			client_id,
-			client_secret,
-			...settings
-		})
+	private _access_token: string = ""
+	/** The key that allows you to talk with the API */
+	get access_token() {return this._access_token}
+	set access_token(token) {this._access_token = token}
 
-		return user ?
-		await new_api.getAndSetToken({client_id, client_secret, grant_type: "authorization_code", ...user}, new_api) :
-		await new_api.getAndSetToken({client_id, client_secret, grant_type: "client_credentials", scope: "public"}, new_api)
+	private _refresh_token?: string
+	/**
+	 * Valid for an unknown amount of time, it allows you to get a new token without going through the Authorization Code Grant again!
+	 * Use {@link API.setNewToken} to make use of this token
+	 * @remarks There is no refresh_token if the Authorization Code Grant hasn't been done, it would be pointless to have one in that case
+	 */
+	get refresh_token() {return this._refresh_token}
+	set refresh_token(token) {
+		this._refresh_token = token
+		this.updateTokenTimer() // because the refresh token may be specified last
+	}
+
+	private _token_type: string = "Bearer"
+	/** Should always be "Bearer" */
+	get token_type() {return this._token_type}
+	set token_type(token) {this._token_type = token}
+
+	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000) // 24 hours default, is set through setNewToken anyway
+	/** The expiration date of your {@link API.access_token} */
+	get expires() {return this._expires}
+	set expires(date) {
+		this._expires = date
+		this.updateTokenTimer()
 	}
 
 
@@ -162,7 +184,7 @@ export class API {
 		"Accept-Encoding": "gzip",
 		"Content-Type": "application/json",
 		"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
-		"x-api-version": "20250530",
+		"x-api-version": "20251012",
 	}
 	/** Used in practically all requests, those are all the headers the package uses excluding `Authorization`, the one with the token */
 	get headers() {return this._headers}
@@ -172,6 +194,143 @@ export class API {
 	/** The osu! user id of the user who went through the Authorization Code Grant */
 	get user() {return this._user}
 	set user(user) {this._user = user}
+
+	private number_of_requests: number = 0
+
+
+	// TOKEN HANDLING
+
+	/** Has {@link API.setNewToken} been called and not yet returned anything? */
+	private is_setting_token: boolean = false
+
+	/** If {@link API.setNewToken} has been called, you can wait for it to be done through this promise */
+	private token_promise: Promise<void> = new Promise(r => r)
+
+	/**
+	 * This creates a new {@link API.access_token}, alongside a new {@link API.refresh_token} if arguments are provided or if a refresh_token already exists
+	 * @remarks The API object requires a {@link API.client_id} and a {@link API.client_secret} to successfully get any token
+	 * @returns Whether or not the token has changed (**should be true** as otherwise the server would complain and an {@link APIError} would be thrown to give you some details)
+	 */
+	public async setNewToken(authorization?: {redirect_uri: string, code: string}): Promise<boolean> {
+		const old_token = this.access_token
+		this.is_setting_token = true
+
+		this.token_promise = new Promise((resolve, reject) => {
+			/// Request to the server
+			const grant_type = authorization ? "authorization_code" : this.refresh_token ? "refresh_token" : "client_credentials"
+			const body = {
+				grant_type,
+				client_id: this.client_id,
+				client_secret: this.client_secret,
+				refresh_token: this.refresh_token, // may be undefined, as expected from most grant_types
+				scope: grant_type === "client_credentials" ? "public" : undefined,
+				redirect_uri: authorization?.redirect_uri,
+				code: authorization?.code,
+			}
+
+			this.fetch(true, "post", [], body)
+			.then((response) => {
+				response.json()
+				.then((json: any) => {
+					if (!json.access_token) {
+						const error_message = json.error_description ?? json.message ?? "No token obtained" // Expect "Client authentication failed"
+						this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
+						reject(new APIError(error_message, this.server, "post", this.route_token, body, response.status))
+					}
+					this.token_type = json.token_type
+					if (json.refresh_token) {this.refresh_token = json.refresh_token}
+
+					const token = json.access_token
+					this.access_token = token
+
+					const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
+					this.scopes = token_payload.scopes
+					if (token_payload.sub && token_payload.sub.length) {this.user = Number(token_payload.sub)}
+
+					const expiration_date = new Date()
+					expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
+					this.expires = expiration_date
+
+					resolve()
+				})
+			})
+			.catch(reject) // reject the promise with the received error instead of throwing (is it even useful?)
+		})
+
+
+		await this.token_promise // Add the following for a no-throw behaviour: .catch(e => {})
+		this.is_setting_token = false
+		if (old_token !== this.access_token) this.log(false, "A new token has been set!")
+		return old_token !== this.access_token
+	}
+
+	/**
+	 * Revoke your current token! **This will revoke the {@link API.refresh_token} as well if it exists**, so use this with care
+	 * @remarks Uses {@link API.route_api} instead of {@link API.route_token}, as normally expected by the server
+	 */
+	public async revokeToken(): Promise<void> {
+		// Note that unlike when getting a token, we actually need to use the normal route to revoke a token for some reason
+		return await this.request("delete", ["oauth", "tokens", "current"])
+	}
+
+	private _set_token_on_creation: boolean = true
+	/** If true, when creating your API object, a call to {@link API.setNewToken} will be automatically made (defaults to **true**) */
+	get set_token_on_creation() {return this._set_token_on_creation}
+	set set_token_on_creation(bool) {this._set_token_on_creation = bool}
+
+	private _set_token_on_401: boolean = true
+	/** If true, upon failing a request due to a 401, it will call {@link API.setNewToken} (defaults to **true**) */
+	get set_token_on_401() {return this._set_token_on_401}
+	set set_token_on_401(bool) {this._set_token_on_401 = bool}
+
+	private _set_token_on_expires: boolean = false
+	/**
+	 * If true, the application will silently call {@link API.setNewToken} when the {@link API.access_token} is set to expire,
+	 * as determined by {@link API.expires} (defaults to **false**)
+	 */
+	get set_token_on_expires() {return this._set_token_on_expires}
+	set set_token_on_expires(enabled) {
+		this._set_token_on_expires = enabled
+		this.updateTokenTimer()
+	}
+
+	private _token_timer?: NodeJS.Timeout
+	get token_timer(): API["_token_timer"] {return this._token_timer}
+	set token_timer(timer: NodeJS.Timeout) {
+		// if a previous one already exists, clear it
+		if (this._token_timer) {
+			clearTimeout(this._token_timer)
+		}
+
+		this._token_timer = timer
+		this._token_timer.unref() // don't prevent exiting the program while this timeout is going on
+	}
+
+	/** Add, remove, change the timeout used for setting a new token automatically whenever certain properties change */
+	private updateTokenTimer() {
+		if (this.expires && this.set_token_on_expires) {
+			const now = new Date()
+			const ms = this.expires.getTime() - now.getTime()
+
+			/**
+			 * Let's say that we used a refresh token *after* the expiration time, our refresh token would naturally get updated
+			 * However, if it is updated before the (local) expiration date is updated, then ms should be 0
+			 * This should mean that, upon using a refresh token, we would use our new refresh token instantly...
+			 * In other words, don't allow timeouts that would mean no timeout; {@link API.setNewToken} exists for that
+			 */
+			if (ms <= 0) {
+				return undefined
+			}
+
+			this.token_timer = setTimeout(() => {
+				try {
+					this.setNewToken()
+				} catch {}
+			}, ms)
+		} else if (this._token_timer) {
+			clearTimeout(this._token_timer)
+		}
+	}
 
 
 	// CLIENT CONFIGURATION
@@ -189,23 +348,31 @@ export class API {
 	get timeout() {return this._timeout}
 	set timeout(timeout) {this._timeout = timeout}
 
-	private _retry_delay: number = 2
-	/** In seconds, how long should it wait after a request failed before retrying? (defaults to **2**) */
-	get retry_delay() {return this._retry_delay}
-	set retry_delay(retry_delay) {this._retry_delay = retry_delay}
+	private _signal?: AbortSignal
+	/** The `AbortSignal` used in every request */
+	get signal() {return this._signal}
+	set signal(signal) {this._signal = signal}
+
+
+	// RETRIES
 
 	private _retry_maximum_amount: number = 4
-	/** 
+	/**
 	 * How many retries maximum before throwing an {@link APIError} (defaults to **4**)
 	 * @remarks Pro tip: Set that to 0 to **completely** disable retries!
 	 */
 	get retry_maximum_amount() {return this._retry_maximum_amount}
 	set retry_maximum_amount(retry_maximum_amount) {this._retry_maximum_amount = retry_maximum_amount}
 
-	private _retry_on_automatic_token_refresh: boolean = true
-	/** Should it retry a request upon successfully refreshing the token due to {@link API.refresh_token_on_401} being `true`? (defaults to **true**) */
-	get retry_on_automatic_token_refresh() {return this._retry_on_automatic_token_refresh}
-	set retry_on_automatic_token_refresh(retry_on_automatic_token_refresh) {this._retry_on_automatic_token_refresh = retry_on_automatic_token_refresh}
+	private _retry_delay: number = 2
+	/** In seconds, how long should it wait after a request failed before retrying? (defaults to **2**) */
+	get retry_delay() {return this._retry_delay}
+	set retry_delay(retry_delay) {this._retry_delay = retry_delay}
+
+	private _retry_on_new_token: boolean = true
+	/** Should it retry a request upon successfully setting a new token due to {@link API.set_token_on_401} being `true`? (defaults to **true**) */
+	get retry_on_new_token() {return this._retry_on_new_token}
+	set retry_on_new_token(retry_on_new_token) {this._retry_on_new_token = retry_on_new_token}
 
 	private _retry_on_status_codes: number[] = [429]
 	/** Upon failing a request and receiving a response, because of which received status code should the request be retried? (defaults to **[429]**) */
@@ -218,188 +385,6 @@ export class API {
 	set retry_on_timeout(retry_on_timeout) {this._retry_on_timeout = retry_on_timeout}
 
 
-	// ACCESS TOKEN STUFF
-
-	private _access_token: string = ""
-	/** The key that allows you to talk with the API */
-	get access_token() {return this._access_token}
-	set access_token(token) {this._access_token = token}
-
-	private _token_type: string = "Bearer"
-	/** Should always be "Bearer" */
-	get token_type() {return this._token_type}
-	set token_type(token) {this._token_type = token}
-
-	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000) // 24 hours default, is set through getAndSetToken anyway
-	/** The expiration date of your access_token */
-	get expires() {return this._expires}
-	set expires(date) {
-		this._expires = date
-		this.updateRefreshTokenTimer()
-	}
-
-	/**
-	 * Set most of an `api`'s properties, like tokens, token_type, scopes, expiration_date  
-	 * @param body An Object with the client id & secret, grant_type, and stuff that depends of the grant_type
-	 * @param api The `api` which will see its properties change
-	 * @returns `api`, just in case, because in theory it should modify the original object
-	 */
-	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "authorization_code", redirect_uri: string, code: string}, api: API):
-	Promise<API>;
-	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "client_credentials", scope: "public"}, api: API): Promise<API>;
-	private async getAndSetToken(body: {client_id: number, client_secret: string, grant_type: "refresh_token", refresh_token: string}, api: API): Promise<API>;
-	private async getAndSetToken(body: {
-		client_id: number,
-		client_secret: string,
-		grant_type: "authorization_code" | "client_credentials" | "refresh_token",
-		redirect_uri?: string,
-		code?: string
-		refresh_token?: string	
-	}, api: API): Promise<API> {
-		const response = await fetch(`${this.server}/${this.route_token.join("/")}`, {
-			method: "post",
-			headers: this.headers,
-			body: JSON.stringify(body),
-			signal: this.timeout > 0 ? AbortSignal.timeout(this.timeout * 1000) : undefined
-		})
-		.catch((e) => {
-			throw new APIError("Failed to fetch a token", this.server, "post", this.route_token, body, undefined, e)
-		})
-
-		const json: any = await response.json()
-		if (!json.access_token) {
-			this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-			throw new APIError("No token obtained", this.server, "post", this.route_token, body, response.status)
-		}
-		api.token_type = json.token_type
-		if (json.refresh_token) {api.refresh_token = json.refresh_token}
-
-		const token = json.access_token
-		api.access_token = token
-
-		const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
-		api.scopes = token_payload.scopes
-		if (token_payload.sub && token_payload.sub.length) {api.user = Number(token_payload.sub)}
-	
-		const expiration_date = new Date()
-		expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
-		api.expires = expiration_date
-
-		return api
-	}
-
-	/** 
-	 * Revoke your current token! **This will revoke the {@link API.refresh_token} as well if it exists**, so use this with care
-	 * @remarks Uses {@link API.route_api} instead of {@link API.route_token}, as normally expected by the server
-	 */
-	public async revokeToken(): Promise<void> {
-		// Note that unlike when getting a token, we actually need to use the normal route to revoke a token for some reason
-		return await this.request("delete", ["oauth", "tokens", "current"])
-	}
-
-
-	// REFRESH TOKEN STUFF
-
-	/** In other words, are we currently busy getting a new {@link API.access_token}? */
-	private is_refreshing_token: boolean = false
-
-	private _refresh_token?: string
-	/**
-	 * Valid for an unknown amount of time, it allows you to get a new token without going through the Authorization Code Grant again!
-	 * Use {@link API.refreshToken} to make use of this token
-	 * @remarks There is no refresh_token if the Authorization Code Grant hasn't been done, it would be pointless to have one in that case
-	 */
-	get refresh_token() {return this._refresh_token}
-	set refresh_token(token) {
-		this._refresh_token = token
-		this.updateRefreshTokenTimer() // because the refresh token may be specified last
-	}
-	
-	private _refresh_token_on_401: boolean = true
-	/** If true, upon failing a request due to a 401, it will call {@link API.refreshToken} (defaults to **true**) */
-	get refresh_token_on_401() {return this._refresh_token_on_401}
-	set refresh_token_on_401(refresh) {this._refresh_token_on_401 = refresh}
-	
-	private _refresh_token_on_expires: boolean = false
-	/**
-	 * If true, the application will silently call {@link API.refreshToken} when the{@link API.access_token} is set to expire,
-	 * as determined by {@link API.expires} (defaults to **false**)
-	 */
-	get refresh_token_on_expires() {return this._refresh_token_on_expires}
-	set refresh_token_on_expires(enabled) {
-		this._refresh_token_on_expires = enabled
-		this.updateRefreshTokenTimer()
-	}
-
-	private _refresh_token_timer?: NodeJS.Timeout
-	get refresh_token_timer(): API["_refresh_token_timer"] {return this._refresh_token_timer}
-	set refresh_token_timer(timer: NodeJS.Timeout) {
-		// if a previous one already exists, clear it
-		if (this._refresh_token_timer) {
-			clearTimeout(this._refresh_token_timer)
-		}
-
-		this._refresh_token_timer = timer
-		this._refresh_token_timer.unref() // don't prevent exiting the program while this timeout is going on
-	}
-
-	/** Add, remove, change the timeout used for refreshing the token automatically whenever certain properties change */
-	private updateRefreshTokenTimer() {
-		if (this.expires && this.refresh_token_on_expires) {
-			const now = new Date()
-			const ms = this.expires.getTime() - now.getTime()
-
-			/**
-			 * Let's say that we used a refresh token *after* the expiration time, our refresh token would naturally get updated
-			 * However, if it is updated before the (local) expiration date is updated, then ms should be 0
-			 * This should mean that, upon using a refresh token, we would use our new refresh token instantly...
-			 * In other words, don't allow timeouts that would mean no timeout; {@link API.refreshToken} exists for that
-			 */
-			if (ms <= 0) {
-				return undefined
-			}
-
-			this.refresh_token_timer = setTimeout(() => {
-				try {
-					this.refreshToken()
-				} catch {}
-			}, ms)
-		} else if (this._refresh_token_timer) {
-			clearTimeout(this._refresh_token_timer)
-		}
-	}
-
-	/**
-	 * - Uses the {@link API.refresh_token}, {@link API.client_id}, and {@link API.client_secret}
-	 * to set a new {@link API.access_token} and {@link API.refresh_token}
-	 * - Or uses the {@link API.client_id} and {@link API.client_secret} to set a new {@link API.access_token}
-	 * @returns Whether or not the token has been refreshed
-	 */
-	public async refreshToken(): Promise<boolean> {
-		const old_token = this.access_token
-		this.is_refreshing_token = true
-
-		try {
-			if (this.refresh_token) {
-				await this.getAndSetToken({
-					client_id: this.client_id, client_secret: this.client_secret, grant_type: "refresh_token", refresh_token: this.refresh_token
-				}, this)
-			} else {
-				await this.getAndSetToken({
-					client_id: this.client_id, client_secret: this.client_secret, grant_type: "client_credentials", scope: "public"
-				}, this)
-			}
-			if (old_token !== this.access_token) {this.log(false, "The token has been refreshed!")}
-		} catch(e) {
-			this.log(true, "Failed to refresh the token :(", e)
-		} finally {
-			this.is_refreshing_token = false
-		}
-
-		return old_token !== this.access_token
-	}
-
-
 	// OTHER METHODS
 
 	/**
@@ -407,71 +392,54 @@ export class API {
 	 * @param is_error Is the logging happening because of an error?
 	 * @param to_log Whatever you would put between the parentheses of `console.log()`
 	 */
-	private log(is_error: boolean, ...to_log: any[]) {
-		if (this.verbose === "all" || (this.verbose === "errors" && is_error === true)) {
+	private log(is_error: boolean, ...to_log: any[]): void {
+		if (this.verbose !== "none" && is_error === true) {
+			console.error("osu!api v2 ->", ...to_log)
+		} else if (this.verbose === "all") {
 			console.log("osu!api v2 ->", ...to_log)
 		}
 	}
 
 	/**
-	 * You can use this to specify additional settings for the method you're going to call, such as `headers`, an `AbortSignal`, and more advanced things!
-	 * @example
-	 * ```ts
-	 * const controller = new AbortController() // this controller can be used to abort any request that uses its signal!
-	 * const user = await api.withSettings({signal: controller.signal}).getUser(7276846)
-	 * ```
-	 * @param additional_fetch_settings You may get more info at https://developer.mozilla.org/en-US/docs/Web/API/RequestInit#instance_properties
-	 * @returns A special version of the `API` that changes how requests are done
+	 * Use this instead of a straight `fetch` to connect to the server
+	 * @param is_token_related Is the request related to getting a token? If so, uses `route_token` and bypasses `token_promise`
+	 * @param method The HTTP method https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods
+	 * @param endpoint The endpoint, may or may not be listed on https://osu.ppy.sh/docs/
+	 * @param parameters GET query in object form, or the request body if the method is not GET
+	 * @param info Relevant only when `fetch` calls itself, avoid setting it
+	 * @remarks Consider using the higher-level method called {@link API.request}
 	 */
-	public withSettings(additional_fetch_settings: ChildAPI["additional_fetch_settings"]): ChildAPI {
-		return new ChildAPI(this, additional_fetch_settings)
-	}
-
-	/**
-	 * The function that directly communicates with the API! Almost every functions of the API object uses this function!
-	 * @param method The type of request, each endpoint uses a specific one (if it uses multiple, the intent and parameters become different)
-	 * @param endpoint What comes in the URL after `api/`, **DO NOT USE TEMPLATE LITERALS (\`) OR THE ADDITION OPERATOR (+), put everything separately for type safety**
-	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
-	 * @param settings Additional settings **to add** to the current settings of the `fetch()` request
-	 * @param info Context given by a prior request
-	 * @returns A Promise with the API's response
-	 */
-	public async request(method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>, parameters: {[k: string]: any} = {},
-	settings?: ChildAPI["additional_fetch_settings"], info: {number_try: number, just_refreshed: boolean} = {number_try: 1, just_refreshed: false}):
-	Promise<any> {
+	private async fetch(is_token_related: boolean, method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>,
+	parameters: {[k: string]: any} = {}, info: {number_try: number, has_new_token: boolean} = {number_try: 1, has_new_token: false}): Promise<Response> {
 		let to_retry = false
 		let error_object: Error | undefined
 		let error_code: number | undefined
 		let error_message = "no error message available"
 
-		const signals: AbortSignal[] = []
-		if (settings?.signal) signals.push(settings.signal)
-		if (this.timeout > 0) signals.push(AbortSignal.timeout(this.timeout * 1000))
+		const route = is_token_related ? this.route_token : this.route_api
+		if (!is_token_related) await this.token_promise.catch(() => this.token_promise = new Promise(r => r))
 
-		const second_slash = this.route_api.length ? "/" : "" // if the server **is** the route, don't have `//` between the server and the endpoint
-		let url = `${this.server}/${this.route_api.join("/")}${second_slash}${endpoint.join("/")}`
-
-		if (method === "get" && parameters) {
-			// For GET requests specifically, requests need to be shaped in very particular ways
-			// adaptParametersForGETRequests feels actually too long to fit in here
-			const get_parameters = adaptParametersForGETRequests(parameters)
-
-			// Let's add the parameters into the URL
-			url += "?" + (Object.entries(get_parameters).map((param) => {
+		let url = `${this.server}/${route.join("/")}`
+		if (route.length) url += "/" // if the server **is** the route, don't have `//` between the server and the endpoint
+		url += endpoint.join("/")
+		if (method === "get" && parameters) { // for GET requests specifically, requests need to be shaped in very particular ways
+			url += "?" + (Object.entries(adaptParametersForGETRequests(parameters)).map((param) => {
 				if (!Array.isArray(param[1])) {return `${param[0]}=${param[1]}`}
 				return param[1].map((array_element) => `${param[0]}=${array_element}`).join("&")
 			}).join("&"))
 		}
 
+		const signals: AbortSignal[] = []
+		if (this.timeout > 0) signals.push(AbortSignal.timeout(this.timeout * 1000))
+		if (this.signal && !is_token_related) signals.push(this.signal)
+
 		const response = await fetch(url, {
 			method,
-			...settings, // has priority over what's above, but not over what's lower
 			headers: {
-				"Authorization": `${this.token_type} ${this.access_token}`,
-				...this.headers,
-				...settings?.headers // written that way, custom headers with (for example) only a user-agent would only overwrite the default user-agent
+				"Authorization": is_token_related ? undefined : `${this.token_type} ${this.access_token}`,
+				...this.headers
 			},
-			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if request is NOT GET
+			body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if method is NOT GET
 			signal: AbortSignal.any(signals)
 		})
 		.catch((error) => {
@@ -480,69 +448,87 @@ export class API {
 			error_object = error
 			error_message = `${error.name} (${error.message ?? error.errno ?? error.type})`
 		})
+		.finally(() => this.number_of_requests += 1)
 
-		if (!response || !response.ok) {
-			if (response) {
+		const request_id = `(${String(this.number_of_requests).padStart(8, "0")})`
+		if (response) {
+			if (parameters.client_secret) parameters.client_secret = "<REDACTED>"
+			if (parameters.refresh_token) parameters.refresh_token = "<REDACTED>"
+			this.log(this.verbose !== "none" && !response.ok, response.statusText, response.status, {method, endpoint, parameters}, request_id)
+
+			if (!response.ok) {
 				error_code = response.status
 				error_message = response.statusText
 				if (this.retry_on_status_codes.includes(response.status)) to_retry = true
-				
-				if (response.status === 401) {
-					if (this.refresh_token_on_401 && !info.just_refreshed) {
-						if (!this.is_refreshing_token) {
-							this.log(true, "Server responded with status code 401, your token might have expired, I will attempt to refresh your token...")
-							if (await this.refreshToken() && this.retry_on_automatic_token_refresh) {
-								to_retry = true
-								info.just_refreshed = true
+
+				if (!is_token_related) {
+					if (response.status === 401) {
+						if (this.set_token_on_401 && !info.has_new_token) {
+							if (!this.is_setting_token) {
+								this.log(true, "Your token might have expired, I will attempt to get a new token...", request_id)
+								if (await this.setNewToken() && this.retry_on_new_token) {
+									to_retry = true
+									info.has_new_token = true
+								}
+							} else {
+								this.log(true, "A new token is currently being obtained!", request_id)
+								if (this.retry_on_new_token) {
+									to_retry = true
+									info.has_new_token = true
+								}
 							}
 						} else {
-							this.log(true, "Server responded with status code 401, your token is currently being refreshed because of another 401 response!")
-							if (this.retry_on_automatic_token_refresh) {
-								/** Wait for 2 *additional* seconds before retrying, as the time it takes to refresh a token may be longer than {@link API.retry_delay} */
-								await new Promise(resolve => setTimeout(resolve, 2000))
-								to_retry = true
-								info.just_refreshed = true
-							}
+							this.log(true, "Maybe you need to do this action as a user?", request_id)
 						}
-					} else {
-						this.log(true, "Server responded with status code 401, maybe you need to do this action as a user?")
+					} else if (response.status === 403) {
+						this.log(true, "You may lack the necessary scope for this action!", request_id)
+					} else if (response.status === 422) {
+						this.log(true, "You may be unable to use those parameters together!", request_id)
+					} else if (response.status === 429) {
+						this.log(true, "You're sending too many requests at once and are getting rate-limited!", request_id)
 					}
-				} else if (response.status === 403) {
-					this.log(true, "Server responded with status code 403, you may lack the necessary scope for this action!")
-				} else if (response.status === 422) {
-					this.log(true, "Server responded with status code 422, you may be unable to use those parameters together!")
-				} else if (response.status === 429) {
-					this.log(true, "Server responded with status code 429, you're sending too many requests at once and are getting rate-limited!")
-				} else {
-					this.log(true, "Server responded with status:", response.status, response.statusText)
 				}
 			}
-
-			/**
-			 * Under specific circumstances, we want to retry our request automatically
-			 * However, instantly trying the request again even though it failed (or was made to failed) is usually not desirable
-			 * So we wait a bit to make our request, repeat the process a few times if needed
-			*/
-			if (to_retry === true && info.number_try <= this.retry_maximum_amount) {
-				this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(retry #${info.number_try}/${this.retry_maximum_amount})`)
-				await new Promise(res => setTimeout(res, this.retry_delay * 1000))
-				return await this.request(method, endpoint, parameters, settings, {number_try: info.number_try + 1, just_refreshed: info.just_refreshed})
-			}
-
-			throw new APIError(error_message, `${this.server}/${this.route_api.join("/")}`, method, endpoint, parameters, error_code, error_object)
 		}
 
-		this.log(false, response.statusText, response.status, {method, endpoint, parameters})
-		// 204 means the request worked as intended and did not give us anything, so just return nothing
-		if (response.status === 204) return undefined
+		if (to_retry === true && info.number_try <= this.retry_maximum_amount) {
+			this.log(true, `Will request again in ${this.retry_delay} seconds...`, `(retry #${info.number_try}/${this.retry_maximum_amount})`, request_id)
+			await new Promise(res => setTimeout(res, this.retry_delay * 1000))
+			return await this.fetch(is_token_related, method, endpoint, parameters, {number_try: info.number_try + 1, has_new_token: info.has_new_token})
+		}
 
-		const arrBuff = await response.arrayBuffer()
-		const buff = Buffer.from(arrBuff)
-		try { // Assume the response is in JSON format as it often is, it'll fail into the catch block if it isn't anyway
-			// My thorough testing leads me to believe nothing would change if the encoding was also "binary" here btw
-			return correctType(JSON.parse(buff.toString("utf-8")))
-		} catch { // Assume the response is supposed to not be in JSON format so return it as simple text
-			return buff.toString("binary")
+		if (!response || !response.ok) {
+			throw new APIError(error_message, `${this.server}/${route.join("/")}`, method, endpoint, parameters, error_code, error_object)
+		}
+		return response
+	}
+
+	/**
+	 * The function that directly communicates with the API! Almost all functions of the API object uses this function!
+	 * @param method The type of request, each endpoint uses a specific one (if it uses multiple, the intent and parameters become different)
+	 * @param endpoint What comes in the URL after `api/`, **DO NOT USE TEMPLATE LITERALS (\`) OR THE ADDITION OPERATOR (+), put everything separately for type safety**
+	 * @param parameters The things to specify in the request, such as the beatmap_id when looking for a beatmap
+	 * @returns A Promise with the API's response
+	 */
+	public async request(method: "get" | "post" | "put" | "delete", endpoint: Array<string | number>, parameters: {[k: string]: any} = {}): Promise<any> {
+		try {
+			const response = await this.fetch(false, method, endpoint, parameters)
+			if (response.status === 204) return undefined // 204 means the request worked as intended and did not give us anything, so just return nothing
+
+			const arrBuff = await response.arrayBuffer()
+			const buff = Buffer.from(arrBuff)
+
+			try { // Assume the response is in JSON format as it often is, it'll fail into the catch block if it isn't anyway
+				// My thorough testing leads me to believe nothing would change if the encoding was also "binary" here btw
+				return correctType(JSON.parse(buff.toString("utf-8")))
+			} catch { // Assume the response is supposed to not be in JSON format so return it as simple text
+				return buff.toString("binary")
+			}
+		} catch(e: any) {
+			if (e instanceof APIError) throw e
+			// Manual testing leads me to believe a TimeoutError is possible after the request ended (while arrayBuffer() is going on, presumably)
+			// Still no matter the Error, we want an APIError
+			throw new APIError(`${e?.name} (${e?.message ?? e?.errno ?? e?.type})`, `${this.server}/${this.route_api.join("/")}`, method, endpoint, parameters, undefined, e)
 		}
 	}
 
@@ -839,77 +825,4 @@ export class API {
 
 	/** {@inheritDoc WikiPage.getOne} @group WikiPage Methods */
 	readonly getWikiPage = WikiPage.getOne
-}
-
-/**
- * Created with {@link API.withSettings}, this special version of the {@link API} specifies additional fetch settings to every request!
- * @remarks This **is not** to be used for any purpose other than calling methods; The original {@link ChildAPI.original} handles tokens & configuration
- */
-export class ChildAPI extends API {
-	/** The {@link API} where {@link API.withSettings} was used; this `ChildAPI` gets everything from it! */
-	original: API
-	/** The additional settings that are used for every request made by this object */
-	additional_fetch_settings: Omit<RequestInit, "body">
-	request = async (...args: Parameters<API["request"]>) => {
-		args[3] ??= this.additional_fetch_settings // args[3] is `settings` **for now**
-		return await this.original.request(...args)
-	}
-
-	// Those are first in accessors -> methods order, then in alphabetical order
-	// For the sake of decent documentation and autocomplete
-	/** @hidden @deprecated use API equivalent */
-	get access_token() {return this.original.access_token}
-	/** @hidden @deprecated use API equivalent */
-	get client_id() {return this.original.client_id}
-	/** @hidden @deprecated use API equivalent */
-	get client_secret() {return this.original.client_secret}
-	/** @hidden @deprecated use API equivalent */
-	get expires() {return this.original.expires}
-	/** @hidden @deprecated use API equivalent */
-	get refresh_token_on_401() {return this.original.refresh_token_on_401}
-	/** @hidden @deprecated use API equivalent */
-	get refresh_token_on_expires() {return this.original.refresh_token_on_expires}
-	/** @hidden @deprecated use API equivalent */
-	get refresh_token_timer() {return this.original.refresh_token_timer}
-	/** @hidden @deprecated use API equivalent */
-	get refresh_token() {return this.original.refresh_token}
-	/** @hidden @deprecated use API equivalent */
-	get retry_delay() {return this.original.retry_delay}
-	/** @hidden @deprecated use API equivalent */
-	get retry_maximum_amount() {return this.original.retry_maximum_amount}
-	/** @hidden @deprecated use API equivalent */
-	get retry_on_automatic_token_refresh() {return this.original.retry_on_automatic_token_refresh}
-	/** @hidden @deprecated use API equivalent */
-	get retry_on_status_codes() {return this.original.retry_on_status_codes}
-	/** @hidden @deprecated use API equivalent */
-	get retry_on_timeout() {return this.original.retry_on_timeout}
-	/** @hidden @deprecated use API equivalent */
-	get route_api() {return this.original.route_api}
-	/** @hidden @deprecated use API equivalent */
-	get route_token() {return this.original.route_token}
-	/** @hidden @deprecated use API equivalent */
-	get scopes() {return this.original.scopes}
-	/** @hidden @deprecated use API equivalent */
-	get server() {return this.original.server}
-	/** @hidden @deprecated use API equivalent */
-	get timeout() {return this.original.timeout}
-	/** @hidden @deprecated use API equivalent */
-	get token_type() {return this.original.token_type}
-	/** @hidden @deprecated use API equivalent */
-	get user() {return this.original.user}
-	/** @hidden @deprecated use API equivalent */
-	get verbose() {return this.original.verbose}
-	/** @hidden @deprecated use API equivalent */
-	refreshToken = async () => {return await this.original.refreshToken()}
-	/** @hidden @deprecated use API equivalent */
-	revokeToken = async () => {return await this.original.revokeToken()}
-	/** @hidden @deprecated use API equivalent */
-	withSettings = (...args: Parameters<API["withSettings"]>) => {return this.original.withSettings(...args)}
-	
-	constructor(original: ChildAPI["original"], additional_fetch_settings: ChildAPI["additional_fetch_settings"]) {
-		super({})
-
-		this.original = original
-		this.additional_fetch_settings = additional_fetch_settings
-	}
 }

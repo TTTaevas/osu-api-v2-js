@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { Test } from "../exports.js"
-import { APIError } from "../../index.js"
+import { API, APIError } from "../../index.js"
 
 const timeout: Test = async(api) => {
 	api.retry_on_timeout = false
@@ -25,7 +25,7 @@ const abort: Test = async(api) => {
 
 	try {
 		setTimeout(() => {controller.abort()}, 50)
-		expect(await api.withSettings({signal: controller.signal}).getUser(2)).to.be.false
+		await new API({...api, signal: controller.signal, set_token_on_creation: false}).getUser(2)
 	} catch(e) {
 		expect(e).to.be.instanceof(APIError)
 		if (e instanceof APIError) {
@@ -35,11 +35,11 @@ const abort: Test = async(api) => {
 		}
 	}
 
-	throw new Error("Abort test failed, check logs for details")
+	throw new Error("Abort test failed, likely that the request was a success (even though it shouldn't have been one)")
 }
 
-const refresh_on_401: Test = async(api) => {
-	api.refresh_token_on_401 = true
+const set_token_on_401: Test = async(api) => {
+	api.set_token_on_401 = true
 	await api.revokeToken()
 	const responses = await Promise.all([api.getUser(2), api.getUser(3)])
 	// The first request should trigger a token refresh, the second request should not (vice-versa would be fine too)
@@ -50,9 +50,9 @@ const refresh_on_401: Test = async(api) => {
 	return true
 }
 
-const refresh_on_expires: Test = async(api) => {
+const set_token_on_expires: Test = async(api) => {
 	api.revokeToken() // invalidate current token for safety purposes, no need to wait for it
-	api.refresh_token_on_expires = true
+	api.set_token_on_expires = true
 
 	const seconds_delay = 1
 	const date = new Date()
@@ -68,6 +68,6 @@ const refresh_on_expires: Test = async(api) => {
 export const tests = [
 	timeout,
 	abort,
-	refresh_on_401,
-	refresh_on_expires,
+	set_token_on_401,
+	set_token_on_expires,
 ]
