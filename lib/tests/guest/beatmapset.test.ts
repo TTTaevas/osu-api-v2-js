@@ -20,9 +20,10 @@ const lookupBeatmapset: Test = async(api) => {
 }
 
 const getBeatmapset: Test = async(api) => {
-	const beatmapset = await api.getBeatmapset(1971037)
-	expect(beatmapset.id).to.equal(1971037)
-	expect(beatmapset.submitted_date?.toISOString().substring(0, 10)).to.equal("2023-04-07")
+	const beatmapset = await api.getBeatmapset(2398569)
+	expect(beatmapset.id).to.equal(2398569)
+	expect(beatmapset.submitted_date?.toISOString().substring(0, 10)).to.equal("2025-07-06")
+	expect(beatmapset.version_count).to.be.greaterThanOrEqual(2)
 	expect(validate(beatmapset, "Beatmapset.Extended.Plus")).to.be.true
 	return true
 }

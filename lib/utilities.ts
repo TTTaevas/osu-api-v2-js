@@ -59,7 +59,7 @@ export function correctType(x: any, force_string?: boolean): any {
 	// those MUST be strings; turn the server's numbers into strings and keep the server's strings as strings
 	const bannedProperties = [
 		"name", "username", "new_user_username", "source_user_username", "previousUsername", "previous_usernames", "display_name", "github_username", "osu_username", "short_name",
-		"artist", "artist_unicode", "title", "title_unicode", "tags", "location", "interests", "occupation", "twitter", "discord",
+		"artist", "artist_unicode", "title", "title_unicode", "tags", "location", "interests", "occupation", "twitter", "discord", "category",
 		"beatmap_version", "version", "display_version", "author", "raw", "bbcode", "message", "creator", "source",
 	]
 	if (force_string && typeof x !== "object") {

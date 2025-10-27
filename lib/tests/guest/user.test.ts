@@ -3,9 +3,15 @@ import { expect } from "chai"
 import { validate, Test } from "../exports.js"
 
 const getUser: Test = async(api) => {
-	const user = await api.getUser(7276846)
-	expect(user.id).to.equal(7276846)
-	expect(validate(user, "User.Extended")).to.be.true
+	console.log("| active user")
+	const active_user = await api.getUser(2)
+	expect(active_user.id).to.equal(2)
+	expect(validate(active_user, "User.Extended")).to.be.true
+
+	console.log("| inactive user")
+	const inactive_user = await api.getUser(2112092)
+	expect(inactive_user.id).to.equal(2112092)
+	expect(validate(inactive_user, "User.Extended")).to.be.true
 	return true
 }
 

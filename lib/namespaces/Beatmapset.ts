@@ -435,7 +435,7 @@ export namespace Beatmapset {
 
 	export interface Extended extends WithHype {
 		availability: {
-			/** So it's `false` if you can download it */
+			/** So it's `false` if you CAN download it */
 			download_disabled: boolean
 			more_information: string | null
 		}
@@ -458,6 +458,7 @@ export namespace Beatmapset {
 		}
 		ranked: RankStatus
 		ranked_date: Date | null
+		rating: number
 		storyboard: boolean
 		submitted_date: Date | null
 		tags: string
@@ -509,6 +510,7 @@ export namespace Beatmapset {
 			related_users: User[]
 			/** Tags that have been voted for by users in some of this Beatmapset's Beatmaps! */
 			related_tags: Beatmap.UserTag.WithDates[]
+			version_count: number
 			/** Only exists if authorized user */
 			has_favourited?: boolean
 		}
