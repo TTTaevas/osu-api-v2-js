@@ -71,6 +71,7 @@ export namespace Score {
 		// Copied from osu-web's score-json.ts's ScoreStatisticsAttribute
 		combo_break?: number
 		good?: number
+		great?: number
 		ignore_hit?: number
 		ignore_miss?: number
 		large_bonus?: number
