@@ -1,6 +1,6 @@
 {
   "name": "osu-api-v2-js",
-  "version": "2.1.3",
+  "version": "2.1.5",
   "description": "Package to easily access the new api of osu!",
   "type": "module",
   "main": "dist/index.js",
