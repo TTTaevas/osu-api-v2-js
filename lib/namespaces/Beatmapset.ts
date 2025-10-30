@@ -1,6 +1,8 @@
 import { API, Beatmap, Miscellaneous, Ruleset, User } from "../index.js"
 
 export interface Beatmapset {
+	/** @remarks The context behind this property can be found here: https://github.com/ppy/osu-web/issues/12415 */
+	anime_cover: boolean
 	artist: string
 	artist_unicode: string
 	covers: {

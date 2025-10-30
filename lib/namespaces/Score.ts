@@ -68,18 +68,23 @@ export namespace Score {
 
 	/** All of its properties are optional because instead of being 0, the property actually disappears instead */
 	export interface Statistics {
-		great?: number
-		ok?: number
-		meh?: number
-		miss?: number
+		// Copied from osu-web's score-json.ts's ScoreStatisticsAttribute
+		combo_break?: number
+		good?: number
 		ignore_hit?: number
 		ignore_miss?: number
+		large_bonus?: number
 		large_tick_hit?: number
+		large_tick_miss?: number
+		legacy_combo_increase?: number
+		meh?: number
+		miss?: number
+		ok?: number
+		perfect?: number
+		slider_tail_hit?: number
+		small_bonus?: number
 		small_tick_hit?: number
 		small_tick_miss?: number
-		large_bonus?: number
-		small_bonus?: number
-		legacy_combo_increase?: number
 	}
 
 	/** @obtainableFrom {@link API.getMatch} */
