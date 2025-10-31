@@ -1,4 +1,4 @@
-name: Test endpoints as guest user
+name: Node.js Test CI
 on:
   push:
     branches:
@@ -19,7 +19,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
-      - run: echo "The ref is: ${{ github.ref }}"
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
