@@ -1,7 +1,7 @@
 name: Test endpoints as guest user
 on:
   push:
-    branches: 
+    branches:
       - "**"
   workflow_dispatch: # Manual triggers, should work with PRs
   schedule:
@@ -16,18 +16,18 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        ref: ${{ github.ref }}
-    - run: echo "The ref is: ${{ github.ref }}"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - run: echo "The ref is: ${{ github.ref }}"
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run test
-      env:
-        ID: ${{ secrets.OSU_ID }}
-        SECRET: ${{ secrets.OSU_SECRET }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test
+        env:
+          ID: ${{ secrets.OSU_ID }}
+          SECRET: ${{ secrets.OSU_SECRET }}
