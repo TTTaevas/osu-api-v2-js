@@ -214,6 +214,8 @@ export namespace User {
 			progress: number
 		}
 		global_rank: number | null
+		/** Is in the `global_rank_percent` of best ranked players globally, **where 100% is 1.0 and 50% is 0.5** */
+		global_rank_percent: number | null
 		pp: number | null
 		ranked_score: number
 		/** Where 96.56% would be `96.56` */
