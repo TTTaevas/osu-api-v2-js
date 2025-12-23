@@ -23,6 +23,7 @@ async function startRunningTests(id: number, secret: string, redirect_uri: strin
 	const url = generateAuthorizationURL(id, redirect_uri, scopes, server)
 	const code = await getCode(url, redirect_uri)
 	const api = new API(id, secret, redirect_uri, code, {server, retry_on_timeout: true, verbose: "all"})
+	// const api = await API.createAsync(id, secret, {redirect_uri, code}, {server, retry_on_timeout: true, verbose: "all"}) // Async alternative
 	await runTests(api, domains)
 }
 

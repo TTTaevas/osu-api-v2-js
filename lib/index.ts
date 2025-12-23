@@ -116,6 +116,43 @@ export class API {
 		}
 	}
 
+	/**
+	 * The legacy way of creating an API instance, awaiting this method waits for the server's authorization
+	 * @param client_id The ID of your client, which you can get on https://osu.ppy.sh/home/account/edit#oauth
+	 * @param client_secret The Secret of your client, which you can get or reset on https://osu.ppy.sh/home/account/edit#oauth
+	 * @param user If the instance is supposed to represent a user, use their Authorization Code and your application's Callback URL (keep undefined otherwise)
+	 * @param settings Additional settings you'd like to specify now rather than later, check out the Accessors at https://osu-v2.taevas.xyz/classes/API.html
+	 * @remarks Consider using `new API()` instead, it's more flexible & its default behaviour is to wait for authorization before sending the requests you make
+	 */
+	public static async createAsync(
+		client_id: API["client_id"],
+		client_secret: API["client_secret"],
+		user?: {
+			/** The Application Callback URL; Where the User has been redirected to after saying "okay" to your application doing stuff */
+			redirect_uri: string,
+			/** The code that appeared as a GET argument when they got redirected to the Application Callback URL (`redirect_uri`) */
+			code: string
+		},
+		settings?: Partial<API>
+	): Promise<API> {
+		// We don't want `new API` to set the token, as we can't await it (and awaiting `token_promise` sounds like a bad idea)
+		if (settings) {
+			settings.set_token_on_creation = false
+		} else {
+			settings = {set_token_on_creation: false}
+		}
+
+		const new_api = new API({
+			client_id,
+			client_secret,
+			...settings,
+		})
+
+		// We set the token ourselves, which also means we'll be the first to throw if it fails, so the APIError should be useful to users
+		await new_api.setNewToken(user)
+		return new_api
+	}
+
 	private _access_token: string = ""
 	/** The key that allows you to talk with the API */
 	get access_token() {return this._access_token}
