@@ -70,7 +70,7 @@ export namespace User {
 	/** @obtainableFrom {@link API.getBeatmapUserScore} */
 	export interface WithCountryCoverTeam extends WithCountryCover {
 		team: {
-			flag_url: string
+			flag_url: string | null
 			id: number
 			name: string
 			short_name: string
@@ -98,7 +98,7 @@ export namespace User {
 		}[]
 	}
 
-	export interface WithCountryCoverGroupsTeamStatisticsSupport extends WithCountryCover, WithGroups {
+	export interface WithCountryCoverGroupsTeamStatisticsSupport extends WithCountryCoverTeam, WithGroups {
 		statistics: Statistics
 		support_level: number
 	}
