@@ -448,7 +448,7 @@ export namespace Beatmapset {
 		is_scoreable: boolean
 		last_updated: Date
 		/** In the following format: `https://osu.ppy.sh/community/forums/topics/<topic_id>` */
-		legacy_thread_url: string
+		legacy_thread_url: string | null
 		nominations_summary: {
 			current: number
 			eligible_main_rulesets: (keyof typeof Ruleset)[] | null
