@@ -35,13 +35,18 @@ export type Mod = {
 	settings?: {[k: string]: any}
 }
 
+/** {@link Scope}s that are compatible with delegation (for bot accounts) https://osu.ppy.sh/docs/#client-credentials-delegation */
+export type DelegableScope = "chat.write" | "chat.write_manage" | "delegate" | "forum.write" | "forum.write_manage" | "group_permissions"
+
+/** {@link Scope}s that cannot be used with the {@link DelegableScope} "delegate" */
+export type UndelegableScope = "chat.read" | "friends.read" | "identify" | "public"
+
 /**
- * Scopes determine what the API instance can do as a user!
- * https://osu.ppy.sh/docs/index.html#scopes
- * @remarks "identify" is always implicity provided, **"public" is implicitly needed for almost everything!!**
+ * Scopes determine what the API instance can do as a user! https://osu.ppy.sh/docs/index.html#scopes
+ * @remarks "identify" is always implicitly provided, **"public" is implicitly needed for almost everything!!**
  * The need for the "public" scope is only made explicit when the function can't be used unless the application acts as as a user (non-guest)
  */
-export type Scope = "chat.read" | "chat.write" | "chat.write_manage" | "delegate" | "forum.write" | "friends.read" | "identify" | "public"
+export type Scope = UndelegableScope | DelegableScope
 
 /**
  * Generates a link for users to click on in order to use your application!
@@ -212,7 +217,7 @@ export class API {
 	set route_token(route_token) {this._route_token = route_token}
 
 	private _scopes: Scope[] = []
-	/** The {@link Scope}s your application has, assuming it acts as a user */
+	/** The {@link Scope}s your application has, assuming it acts as a user or a delegated bot account */
 	get scopes() {return this._scopes}
 	set scopes(scopes) {this._scopes = scopes}
 
@@ -221,7 +226,7 @@ export class API {
 		"Accept-Encoding": "gzip",
 		"Content-Type": "application/json",
 		"User-Agent": "osu-api-v2-js (https://github.com/TTTaevas/osu-api-v2-js)",
-		"x-api-version": "20251012",
+		"x-api-version": "20260105",
 	}
 	/** Used in practically all requests, those are all the headers the package uses excluding `Authorization`, the one with the token */
 	get headers() {return this._headers}
@@ -255,12 +260,14 @@ export class API {
 		this.token_promise = new Promise((resolve, reject) => {
 			/// Request to the server
 			const grant_type = authorization ? "authorization_code" : this.refresh_token ? "refresh_token" : "client_credentials"
+			const client_credentials_scope = this.scopes.includes("delegate") ? this.scopes.join(" ") : "public" as Scope
+
 			const body = {
 				grant_type,
 				client_id: this.client_id,
 				client_secret: this.client_secret,
 				refresh_token: this.refresh_token, // may be undefined, as expected from most grant_types
-				scope: grant_type === "client_credentials" ? "public" : undefined,
+				scope: grant_type === "client_credentials" ? client_credentials_scope : undefined,
 				redirect_uri: authorization?.redirect_uri,
 				code: authorization?.code,
 			}

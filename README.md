@@ -66,7 +66,7 @@ api.timeout = 10
 The other way would be at the same time you're creating your `api` object, like that:
 ```typescript
 // Same as above, in one line as the api object gets created
-const api = new API(0, "<client_secret>", {verbose: "all", timeout: 10})
+const api = new osu.API(0, "<client_secret>", {verbose: "all", timeout: 10})
 ```
 
 ### Tokens
@@ -202,6 +202,20 @@ getSelf()
 ```
 
 If you're looking for an example that involves WebSockets, you might wanna take a look at `lib/tests/websocket.ts` in the package's repository!
+
+### Bot accounts (delegate scope)
+
+If you are lucky, you may be in possession of a [bot account](https://osu.ppy.sh/wiki/en/Bot_account), which can also create OAuth applications. However, those applications can be used with the "delegate" scope, alongside [other scopes marked as "can delegate" on the official documentation](https://osu.ppy.sh/docs/#client-credentials-delegation)!
+
+This allows you, thanks to the application's id and secret, to do things with the bot account that would usually require going through the aforementioned authorization flow, such as sending chat messages or even creating posts on the forums. It's very powerful, although the "public" scope is incompatible, which is needed to access most endpoints!
+
+This package supports that feature, all you need to do is to **specify the scopes when you create your API object.**  This can be done through configuration options, like this:
+
+```typescript
+// Assuming we want to write in chat through the bot account
+const api = new osu.API(0, "<client_secret>", {scopes: ["delegate", "chat.write"]})
+const api = await osu.API.createAsync(0, "<client_secret>", undefined, {scopes: ["delegate", "chat.write"]}) // Alternative with `createAsync()`
+```
 
 ### Calling the functions, but literally
 

@@ -4,7 +4,6 @@ import util from "util"
 import { exec } from "child_process"
 import http from "http"
 import { API, APIError } from "../index.js";
-import { AssertionError } from "assert"
 
 export type AR<T extends (...args: any) => any> = Awaited<ReturnType<T>>;
 export type Test = (api: API) => Promise<true>;
@@ -97,11 +96,11 @@ export const runTests = async (api: API, domains: Test[][]): Promise<void> => {
 				api.retry_on_timeout = retry_on_timeout
 				api.timeout = timeout
 			}
-		} catch(err) {
+		} catch(err: any) {
 			console.error(err)
 			errors.push(err)
 
-			if (!(err instanceof APIError) && !(err instanceof AssertionError)) {
+			if (!(err instanceof APIError) && !(err["name"] === "AssertionError")) { // instanceof AssertionError doesn't work :(
 				console.error("That Error was not an APIError! All Errors need to be APIErrors. Throwing now to stop the tests...")
 				throw new Error("Spotted an Error that was not an APIError!")
 			}
