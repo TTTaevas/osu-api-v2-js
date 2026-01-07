@@ -70,7 +70,7 @@ export namespace User {
 	/** @obtainableFrom {@link API.getBeatmapUserScore} */
 	export interface WithCountryCoverTeam extends WithCountryCover {
 		team: {
-			flag_url: string
+			flag_url: string | null
 			id: number
 			name: string
 			short_name: string
@@ -98,7 +98,7 @@ export namespace User {
 		}[]
 	}
 
-	export interface WithCountryCoverGroupsTeamStatisticsSupport extends WithCountryCover, WithGroups {
+	export interface WithCountryCoverGroupsTeamStatisticsSupport extends WithCountryCoverTeam, WithGroups {
 		statistics: Statistics
 		support_level: number
 	}
@@ -205,11 +205,29 @@ export namespace User {
 	}
 
 	export interface Statistics {
-		count_300: number
 		count_100: number
+		count_300: number
 		count_50: number
 		count_miss: number
+		level: {
+			current: number
+			progress: number
+		}
 		global_rank: number | null
+		/** Is in the `global_rank_percent` of best ranked players globally, **where 100% is 1.0 and 50% is 0.5** */
+		global_rank_percent: number | null
+		pp: number | null
+		ranked_score: number
+		/** Where 96.56% would be `96.56` */
+		hit_accuracy: Score.Accuracy100
+		play_count: number
+		play_time: number | null
+		total_score: number
+		total_hits: number
+		maximum_combo: number
+		replays_watched_by_others: number
+		/** Hasn't become inactive in the rankings */
+		is_ranked: boolean
 		grade_counts: {
 			a: number
 			s: number
@@ -217,22 +235,6 @@ export namespace User {
 			ss: number
 			ssh: number
 		}
-		/** Where 96.56% would be `96.56` */
-		hit_accuracy: Score.Accuracy100
-		/** Hasn't become inactive in the rankings */
-		is_ranked: boolean
-		level: {
-			current: number
-			progress: number
-		}
-		maximum_combo: number
-		play_count: number
-		play_time: number | null
-		pp: number | null
-		ranked_score: number
-		replays_watched_by_others: number
-		total_hits: number
-		total_score: number
 	}
 
 	export namespace Statistics {

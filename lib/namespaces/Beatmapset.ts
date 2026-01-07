@@ -1,6 +1,8 @@
 import { API, Beatmap, Miscellaneous, Ruleset, User } from "../index.js"
 
 export interface Beatmapset {
+	/** @remarks The context behind this property can be found here: https://github.com/ppy/osu-web/issues/12415 */
+	anime_cover: boolean
 	artist: string
 	artist_unicode: string
 	covers: {
@@ -435,7 +437,7 @@ export namespace Beatmapset {
 
 	export interface Extended extends WithHype {
 		availability: {
-			/** So it's `false` if you can download it */
+			/** So it's `false` if you CAN download it */
 			download_disabled: boolean
 			more_information: string | null
 		}
@@ -446,7 +448,7 @@ export namespace Beatmapset {
 		is_scoreable: boolean
 		last_updated: Date
 		/** In the following format: `https://osu.ppy.sh/community/forums/topics/<topic_id>` */
-		legacy_thread_url: string
+		legacy_thread_url: string | null
 		nominations_summary: {
 			current: number
 			eligible_main_rulesets: (keyof typeof Ruleset)[] | null
@@ -458,6 +460,7 @@ export namespace Beatmapset {
 		}
 		ranked: RankStatus
 		ranked_date: Date | null
+		rating: number
 		storyboard: boolean
 		submitted_date: Date | null
 		tags: string
@@ -509,6 +512,7 @@ export namespace Beatmapset {
 			related_users: User[]
 			/** Tags that have been voted for by users in some of this Beatmapset's Beatmaps! */
 			related_tags: Beatmap.UserTag.WithDates[]
+			version_count: number
 			/** Only exists if authorized user */
 			has_favourited?: boolean
 		}
