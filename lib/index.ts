@@ -78,8 +78,11 @@ export class APIError extends Error {
 		public method: Parameters<API["request"]>[0],
 		public endpoint: Parameters<API["request"]>[1],
 		public parameters: Parameters<API["request"]>[2],
-		public status_code?: number,
-		public original_error?: Error
+		public response?: {
+			status_code: number,
+			json: unknown,
+		},
+		public original_error?: Error,
 	) {
 		super()
 		if (this.parameters?.client_secret) {this.parameters.client_secret = "<REDACTED>"}
@@ -279,7 +282,7 @@ export class API {
 					if (!json.access_token) {
 						const error_message = json.error_description ?? json.message ?? "No token obtained" // Expect "Client authentication failed"
 						this.log(true, "Unable to obtain a token! Here's what was received from the API:", json)
-						reject(new APIError(error_message, this.server, "post", this.route_token, body, response.status))
+						reject(new APIError(error_message, this.server, "post", this.route_token, body, {status_code: response.status, json}))
 					}
 					this.token_type = json.token_type
 					if (json.refresh_token) {this.refresh_token = json.refresh_token}
@@ -457,7 +460,6 @@ export class API {
 	parameters: {[k: string]: any} = {}, info: {number_try: number, has_new_token: boolean} = {number_try: 1, has_new_token: false}): Promise<Response> {
 		let to_retry = false
 		let error_object: Error | undefined
-		let error_code: number | undefined
 		let error_message = "no error message available"
 
 		const route = is_token_related ? this.route_token : this.route_api
@@ -501,7 +503,6 @@ export class API {
 			this.log(this.verbose !== "none" && !response.ok, response.statusText, response.status, {method, endpoint, parameters}, request_id)
 
 			if (!response.ok) {
-				error_code = response.status
 				error_message = response.statusText
 				if (this.retry_on_status_codes.includes(response.status)) to_retry = true
 
@@ -542,7 +543,11 @@ export class API {
 		}
 
 		if (!response || !response.ok) {
-			throw new APIError(error_message, `${this.server}/${route.join("/")}`, method, endpoint, parameters, error_code, error_object)
+			const resp = response ? {
+				status_code: response.status,
+				json: await response.json()
+			} : undefined
+			throw new APIError(error_message, `${this.server}/${route.join("/")}`, method, endpoint, parameters, resp, error_object)
 		}
 		return response
 	}
