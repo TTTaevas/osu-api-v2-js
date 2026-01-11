@@ -1,5 +1,5 @@
 import "dotenv/config"
-import { API } from "../index.js"
+import { API, Ruleset } from "../index.js"
 import { runTests, Test } from "./exports.js"
 
 import * as Beatmap from "./guest/beatmap.test.js"

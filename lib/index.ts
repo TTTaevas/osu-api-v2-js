@@ -28,6 +28,13 @@ export enum Ruleset {
 	mania 	= 3,
 }
 
+/** A major style of a {@link Ruleset}, currently only refers to osu!mania's 4k and 7k */
+export enum Variant {
+	"" = 0,
+	"4k" = 4,
+	"7k" = 7,
+}
+
 /** Also known as "Game Modifier" https://osu.ppy.sh/wiki/en/Gameplay/Game_modifier */
 export type Mod = {
 	acronym: string

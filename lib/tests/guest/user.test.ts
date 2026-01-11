@@ -25,11 +25,12 @@ const getUsers: Test = async(api) => {
 }
 
 const lookupUsers: Test = async(api) => {
-	const users = await api.lookupUsers([7276846, 2])
+	const users = await api.lookupUsers([7276846, 2], Ruleset.osu)
 	expect(users).to.have.lengthOf(2)
 	expect(users.at(0)?.id).to.equal(2)
 	expect(users.at(1)?.id).to.equal(7276846)
-	expect(validate(users, "User.WithCountryCoverGroupsTeam")).to.be.true
+	users.forEach((user) => expect(user.global_rank?.ruleset_id).to.equal(Ruleset.osu))
+	expect(validate(users, "User.WithCountryCoverGroupsTeamGlobalrank")).to.be.true
 	return true
 }
 
