@@ -231,6 +231,8 @@ export namespace User {
 	}
 
 	export interface Statistics {
+		/** Where 96.40% would be `0.9640` */
+		accuracy: Score.Accuracy1
 		count_100: number
 		count_300: number
 		count_50: number
@@ -244,7 +246,10 @@ export namespace User {
 		global_rank_percent: number | null
 		pp: number | null
 		ranked_score: number
-		/** Where 96.56% would be `96.56` */
+		/**
+		 * Where 96.56% would be `96.56`
+		 * @deprecated Use `accuracy` instead
+		 */
 		hit_accuracy: Score.Accuracy100
 		play_count: number
 		play_time: number | null

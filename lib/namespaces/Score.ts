@@ -49,20 +49,19 @@ export namespace Score {
 	export type Grade = "XH" | "X" | "SH" | "S" | "A" | "B" | "C" | "D" | "F"
 
 	/**
-	 * Accuracy comes in two ways: From 0 to 1, and from 0 to 100
+	 * Accuracy is almost always represented as **a float from 0 to 1**, such that
+	 * a score displayed in-game as "95.74%" will be `0.9574` here (with more digits)
 	 *
-	 * This is the type that represents accuracy that goes **from 0 to 1**,
-	 * meaning a score that is displayed in-game as "95.74%" will be `0.9574` here
-	 * (with more digits)
+	 * This is the type used to represent accuracy that respects this very common format!
 	 */
 	export type Accuracy1 = number
 
 	/**
-	 * Accuracy comes in two ways: From 0 to 1, and from 0 to 100
+	 * Accuracy is very rarely represented as **a float from 0 to 100**, such that
+	 * a score that is displayed in-game as "95.74%" will be `95.74` here (with more digits)
 	 *
-	 * This is the type that represents accuracy that goes **from 0 to 100**,
-	 * meaning a score that is displayed in-game as "95.74%" will be `95.74` here
-	 * (with more digits)
+	 * This is the type used to represent accuracy that respects this very rarely used format!
+	 * @remarks {@link Score.Accuracy1} is the type that represents the more commonly used format
 	 */
 	export type Accuracy100 = number
 

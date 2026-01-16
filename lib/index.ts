@@ -46,7 +46,7 @@ export type Mod = {
  * Scopes determine what the API instance can do as a user!
  * https://osu.ppy.sh/docs/index.html#scopes
  * @remarks "identify" is always implicity provided, **"public" is implicitly needed for almost everything!!**
- * The need for the "public" scope is only made explicit when the function can't be used unless the application acts as as a user (non-guest)
+ * The need for the "public" scope is only made explicit when the method can only be used as a user (non-guest)
  */
 export type Scope = "chat.read" | "chat.write" | "chat.write_manage" | "delegate" | "forum.write" | "friends.read" | "identify" | "public"
 
