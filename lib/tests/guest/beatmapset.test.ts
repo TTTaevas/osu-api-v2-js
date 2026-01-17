@@ -48,7 +48,8 @@ const getBeatmapsetDiscussionPosts: Test = async(api) => {
 }
 
 const getBeatmapsetDiscussionVotes: Test = async(api) => {
-	const response = await api.getBeatmapsetDiscussionVotes({vote_receiver: 7276846})
+	const response = await api.getBeatmapsetDiscussionVotes({vote_receiver: 3533958})
+	response.discussions.forEach((discussion) => expect(discussion.user_id).to.equal(3533958))
 	expect(validate(response.users, "User.WithGroups")).to.be.true
 	expect(validate(response.discussions, "Beatmapset.Discussion")).to.be.true
 	expect(validate(response.votes, "Beatmapset.Discussion.Vote")).to.be.true

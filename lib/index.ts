@@ -116,8 +116,12 @@ export class API {
 		if (typeof client_id_or_settings === "number") this.client_id = client_id_or_settings
 		if (client_secret) this.client_secret = client_secret
 
-		/** We want to set a new token instantly if we have client credentials */
-		if (this.set_token_on_creation && this.client_id > 0 && this.client_secret.length) {
+		if (this.is_setting_token) { // Very likely a clone created while the original didn't have a valid token
+			this.set_token_on_expires = false // In which case allow the clone to get its own token, but not renewing it automatically
+		} // And if the clone keeps getting used, `set_token_on_401` being true should cover that
+
+		/** We want to set a new token instantly if we have client credentials, unless we already have a token */
+		if (this.set_token_on_creation && !this.access_token.length && this.client_id > 0 && this.client_secret.length) {
 			typeof redirect_uri_or_settings === "string" && code ?
 				this.setNewToken({redirect_uri: redirect_uri_or_settings, code}) :
 				this.setNewToken()
@@ -173,10 +177,7 @@ export class API {
 	 * @remarks There is no refresh_token if the Authorization Code Grant hasn't been done, it would be pointless to have one in that case
 	 */
 	get refresh_token() {return this._refresh_token}
-	set refresh_token(token) {
-		this._refresh_token = token
-		this.updateTokenTimer() // because the refresh token may be specified last
-	}
+	set refresh_token(token) {this._refresh_token = token}
 
 	private _token_type: string = "Bearer"
 	/** Should always be "Bearer" */
@@ -186,10 +187,7 @@ export class API {
 	private _expires: Date = new Date(new Date().getTime() + 24 * 60 * 60 * 1000) // 24 hours default, is set through setNewToken anyway
 	/** The expiration date of your {@link API.access_token} */
 	get expires() {return this._expires}
-	set expires(date) {
-		this._expires = date
-		this.updateTokenTimer()
-	}
+	set expires(date) {this._expires = date}
 
 
 	// CLIENT INFO
@@ -290,13 +288,22 @@ export class API {
 					const token = json.access_token
 					this.access_token = token
 
+					// Some data is hidden within the token itself, catch it
 					const token_payload = JSON.parse(Buffer.from(token.substring(token.indexOf(".") + 1, token.lastIndexOf(".")), "base64").toString('ascii'))
 					this.scopes = token_payload.scopes
-					if (token_payload.sub && token_payload.sub.length) {this.user = Number(token_payload.sub)}
+					if (token_payload.sub && token_payload.sub.length) {
+						this.user = Number(token_payload.sub)
+					}
 
 					const expiration_date = new Date()
 					expiration_date.setSeconds(expiration_date.getSeconds() + json.expires_in)
 					this.expires = expiration_date
+
+					this.token_timer = setTimeout(() => {
+						if (this.set_token_on_expires) {
+							this.setNewToken().catch()
+						}
+					}, json.expires_in)
 
 					resolve()
 				})
@@ -330,16 +337,13 @@ export class API {
 	get set_token_on_401() {return this._set_token_on_401}
 	set set_token_on_401(bool) {this._set_token_on_401 = bool}
 
-	private _set_token_on_expires: boolean = false
+	private _set_token_on_expires: boolean = true
 	/**
 	 * If true, the application will silently call {@link API.setNewToken} when the {@link API.access_token} is set to expire,
-	 * as determined by {@link API.expires} (defaults to **false**)
+	 * as determined by {@link API.expires} (defaults to **true**)
 	 */
 	get set_token_on_expires() {return this._set_token_on_expires}
-	set set_token_on_expires(enabled) {
-		this._set_token_on_expires = enabled
-		this.updateTokenTimer()
-	}
+	set set_token_on_expires(enabled) {this._set_token_on_expires = enabled}
 
 	private _token_timer?: NodeJS.Timeout
 	get token_timer(): API["_token_timer"] {return this._token_timer}
@@ -351,32 +355,6 @@ export class API {
 
 		this._token_timer = timer
 		this._token_timer.unref() // don't prevent exiting the program while this timeout is going on
-	}
-
-	/** Add, remove, change the timeout used for setting a new token automatically whenever certain properties change */
-	private updateTokenTimer() {
-		if (this.expires && this.set_token_on_expires) {
-			const now = new Date()
-			const ms = this.expires.getTime() - now.getTime()
-
-			/**
-			 * Let's say that we used a refresh token *after* the expiration time, our refresh token would naturally get updated
-			 * However, if it is updated before the (local) expiration date is updated, then ms should be 0
-			 * This should mean that, upon using a refresh token, we would use our new refresh token instantly...
-			 * In other words, don't allow timeouts that would mean no timeout; {@link API.setNewToken} exists for that
-			 */
-			if (ms <= 0) {
-				return undefined
-			}
-
-			this.token_timer = setTimeout(() => {
-				try {
-					this.setNewToken()
-				} catch {}
-			}, ms)
-		} else if (this._token_timer) {
-			clearTimeout(this._token_timer)
-		}
 	}
 
 
