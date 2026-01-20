@@ -76,7 +76,7 @@ export class APIError extends Error {
 	 * @param method The method used for this request (like "get", "post", etc...)
 	 * @param endpoint The type of resource that was requested from the server
 	 * @param parameters The filters that were used to specify what resource was wanted
-	 * @param status_code The status code that was returned by the server, if there is one
+	 * @param response The status code and the original body that was returned by the server, if there is one
 	 * @param original_error The error that caused the api to throw an {@link APIError} in the first place, if there is one
 	 */
 	constructor(
@@ -136,12 +136,12 @@ export class API {
 	}
 
 	/**
-	 * The legacy way of creating an API instance, awaiting this method waits for the server's authorization
+	 * The alternative way of creating an API instance, awaiting this method waits for the server's authorization
+	 * and allows you to catch errors if the authorization fails
 	 * @param client_id The ID of your client, which you can get on https://osu.ppy.sh/home/account/edit#oauth
 	 * @param client_secret The Secret of your client, which you can get or reset on https://osu.ppy.sh/home/account/edit#oauth
 	 * @param user If the instance is supposed to represent a user, use their Authorization Code and your application's Callback URL (keep undefined otherwise)
 	 * @param settings Additional settings you'd like to specify now rather than later, check out the Accessors at https://osu-v2.taevas.xyz/classes/API.html
-	 * @remarks Consider using `new API()` instead, it's more flexible & its default behaviour is to wait for authorization before sending the requests you make
 	 */
 	public static async createAsync(
 		client_id: API["client_id"],
@@ -348,11 +348,13 @@ export class API {
 	/**
 	 * If true, the application will silently call {@link API.setNewToken} when the {@link API.access_token} is set to expire,
 	 * as determined by {@link API.expires} (defaults to **true**)
+	 * @remarks For this to work, the token must have been set by {@link API.setNewToken} (no matter if the method itself was called manually or not)
 	 */
 	get set_token_on_expires() {return this._set_token_on_expires}
 	set set_token_on_expires(enabled) {this._set_token_on_expires = enabled}
 
 	private _token_timer?: NodeJS.Timeout
+	/** The Timeout (set by {@link API.setNewToken}) which, once expired, if {@link API.set_token_on_expires} is true, will call {@link API.setNewToken} */
 	get token_timer(): API["_token_timer"] {return this._token_timer}
 	set token_timer(timer: NodeJS.Timeout) {
 		// if a previous one already exists, clear it

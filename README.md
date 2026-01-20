@@ -76,7 +76,7 @@ An [`access_token`](https://osu-v2.taevas.xyz/classes/API.html#access_token) is 
 Once an `access_token` has become invalid, the server will no longer respond correctly to requests made with it, instead responding with [401](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/401). Thankfully, there are solutions to get and set new `access_token`s in a convenient way, so there is no need to create a new `api` object every day!
 
 - If you'd like to manually get a new `access_token`, calling [`setNewToken()`](https://osu-v2.taevas.xyz/classes/API.html#setnewtoken) will replace your previous token with a new one
-- If you'd prefer to automatically do that as soon as it expires, set the [`set_token_on_expires`](https://osu-v2.taevas.xyz/classes/API.html#set_token_on_expires) option to true (it's false by default)
+- Keep the [`set_token_on_expires`](https://osu-v2.taevas.xyz/classes/API.html#set_token_on_expires) option to true if you'd like the object to call it automatically as soon as the token expires
 - By default, the [`set_token_on_401`](https://osu-v2.taevas.xyz/classes/API.html#set_token_on_401) option is set to true, which (as its name indicates) will do that upon encountering a 401
 - When that happens, if [`retry_on_new_token`](https://osu-v2.taevas.xyz/classes/API.html#retry_on_new_token) is set to true as it is by default, it will retry the request it has encountered a 401 on, with the new token! (note that loops are prevented, it won't retry or get another token if the same request with the new token gets a 401)
 
@@ -122,7 +122,14 @@ When a user authorizes your application, they get redirected to your `Applicatio
 
 With this code, you're able to create your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object:
 ```typescript
-const api = new osu.API(client_id, "<client_secret>", "<application_callback_url>", "<code>")
+const api = await osu.API.createAsync(client_id, "<client_secret>", {redirect_uri: "<application_callback_url>", code: "<code>"})
+```
+
+Here to create our API object, we use [the `createAsync` method](https://osu-v2.taevas.xyz/classes/API.html#createasync) so that we can potentially catch an error that can easily happen, for example if the user decides *not* to authorize your application. Alternatively, we can use the regular constructor to safely construct the `api` object, and *then* deal with the authorization:
+
+```typescript
+const api = new osu.API(client_id, "<client_secret>", {set_token_on_creation: false})
+await api.setNewToken({redirect_uri: "<application_callback_url>", code: "<code>"}) // at any point before the first request
 ```
 
 #### Keep your api object somewhere safe
@@ -188,7 +195,7 @@ async function getSelf() {
   // Get the code needed for the api object
   const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "identify"])
   const code = await getCode(url)
-  const api = new osu.API(id, secret, redirect_uri, code, {verbose: "all"})
+  const api = await osu.API.createAsync(id, secret, {redirect_uri, code}, {verbose: "all"})
 
   // Use the `me` endpoint, which gives information about the authorized user!
   const me = await api.getResourceOwner()
