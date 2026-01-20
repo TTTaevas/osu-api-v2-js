@@ -3,7 +3,7 @@ import tsj from "ts-json-schema-generator"
 import util from "util"
 import { exec } from "child_process"
 import http from "http"
-import { API } from "../index.js";
+import { API, APIError } from "../index.js";
 
 export type AR<T extends (...args: any) => any> = Awaited<ReturnType<T>>;
 export type Test = (api: API) => Promise<true>;
@@ -96,9 +96,19 @@ export const runTests = async (api: API, domains: Test[][]): Promise<void> => {
 				api.retry_on_timeout = retry_on_timeout
 				api.timeout = timeout
 			}
-		} catch(err) {
+		} catch(err: any) {
 			console.error(err)
 			errors.push(err)
+
+			if (!(err instanceof APIError) && !(err["name"] === "AssertionError")) { // instanceof AssertionError doesn't work :(
+				console.error("That Error was not an APIError! All Errors need to be APIErrors. Throwing now to stop the tests...")
+				throw new Error("Spotted an Error that was not an APIError!")
+			}
+
+			if (err instanceof APIError && err.original_error instanceof APIError) {
+				console.error("Found an APIError as the `original_error` of another APIError! This behaviour is not desirable. Throwing now to stop the tests...")
+				throw new Error("Spotted an APIError as the original_error of another APIError!")
+			}
 		}
 		console.log(`\n---- ${i+1}/${domains.length} ----`)
 	}

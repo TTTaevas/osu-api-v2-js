@@ -19,7 +19,7 @@
   "author": "Taevas",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TTTaevas/osu-api-v2-js.git"
+    "url": "git+https://github.com/TTTaevas/osu-api-v2-js.git"
   },
   "homepage": "https://osu-v2.taevas.xyz/",
   "keywords": [
@@ -33,13 +33,13 @@
   ],
   "license": "Unlicense",
   "devDependencies": {
-    "@types/chai": "^5.2.2",
+    "@types/chai": "^5.2.3",
     "@types/node": "^24.3.1",
     "ajv": "^8.17.1",
-    "chai": "^6.0.1",
-    "dotenv": "^17.2.2",
+    "chai": "^6.2.2",
+    "dotenv": "^17.2.3",
     "ts-json-schema-generator": "^2.4.0",
-    "typedoc": "^0.28.13",
-    "typescript": "^5.9.2"
+    "typedoc": "^0.28.15",
+    "typescript": "^5.9.3"
   }
 }

@@ -14,17 +14,21 @@ const scopes: Scope[] = ["chat.read"]
 async function startTesting(id: number, secret: string, redirect_uri: string): Promise<void> {
 	const url = generateAuthorizationURL(id, redirect_uri, scopes, server)
 	const code = await getCode(url, redirect_uri)
-	const api = await API.createAsync(id, secret, {code, redirect_uri}, {server, retry_on_timeout: true, verbose: "errors"})
+	const api = new API(id, secret, redirect_uri, code, {server, retry_on_timeout: true, verbose: "errors"})
 
+	// The API method ensures we have been authorized to send commands across the websocket
+	// (swapping the methods creates a race condition, we need to receive the token created by new API before we can generate a websocket)
+	await api.keepChatAlive().then(() => console.log("Made the initial ping!"))
 	const websocket = api.generateChatWebsocket()
+
 	websocket.addEventListener("open", async () => {
 		websocket.send(Chat.Websocket.Command.chatStart)
-		await api.keepChatAlive().then(() => console.log("Made the initial ping!"))
 		setInterval(async () => {
 			console.time("Server ping made in")
 			const silences = await api.keepChatAlive()
 			console.timeEnd("Server ping made in")
 			expect(validate(silences, "Chat.UserSilence")).to.be.true
+			silences.forEach((s) => console.log("New silence:", s))
 		}, 30 * 1000)
 	})
 
@@ -32,16 +36,6 @@ async function startTesting(id: number, secret: string, redirect_uri: string): P
 		const parsed: Chat.Websocket.Event.Any = JSON.parse(m.data.toString())
 		console.log("Received event:", parsed.event)
 		expect(validate(parsed, "Chat.Websocket.Event.Any")).to.be.true
-
-		/**
-		 * Apparently, something in the authentication process is unstable, as it is possible to
-		 * get an "authentication failed" error roughly 1 out of 2 times (inconsistently) upon running this whole code,
-		 * and getting this error means we aren't actually listening to any incoming messages, therefore we need to throw
-		 */
-		if (!parsed.event && parsed.error) {
-			console.error("Looks like you encountered an error, maybe try again!")
-			throw new Error(parsed.error)
-		}
 	})
 }
 

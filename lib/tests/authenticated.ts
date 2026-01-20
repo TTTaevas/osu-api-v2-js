@@ -22,7 +22,9 @@ const domains: Test[][] = [
 async function startRunningTests(id: number, secret: string, redirect_uri: string): Promise<void> {
 	const url = generateAuthorizationURL(id, redirect_uri, scopes, server)
 	const code = await getCode(url, redirect_uri)
-	const api = await API.createAsync(id, secret, {code, redirect_uri}, {server, retry_on_timeout: true, verbose: "all"})
+	const api = new API(id, secret, redirect_uri, code, {server, retry_on_timeout: true, verbose: "all"})
+	// const api = await API.createAsync(id, secret, undefined, {server, scopes: ["delegate", "chat.write"]}) // Bot alternative
+	// const api = await API.createAsync(id, secret, {redirect_uri, code}, {server, retry_on_timeout: true, verbose: "all"}) // Async alternative
 	await runTests(api, domains)
 }
 
