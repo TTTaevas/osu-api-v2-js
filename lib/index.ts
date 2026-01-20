@@ -28,6 +28,13 @@ export enum Ruleset {
 	mania 	= 3,
 }
 
+/** A major style of a {@link Ruleset}, currently only refers to osu!mania's 4k and 7k */
+export enum Variant {
+	"" = 0,
+	"4k" = 4,
+	"7k" = 7,
+}
+
 /** Also known as "Game Modifier" https://osu.ppy.sh/wiki/en/Gameplay/Game_modifier */
 export type Mod = {
 	acronym: string
@@ -44,7 +51,7 @@ export type UndelegableScope = "chat.read" | "friends.read" | "identify" | "publ
 /**
  * Scopes determine what the API instance can do as a user! https://osu.ppy.sh/docs/index.html#scopes
  * @remarks "identify" is always implicitly provided, **"public" is implicitly needed for almost everything!!**
- * The need for the "public" scope is only made explicit when the function can't be used unless the application acts as as a user (non-guest)
+ * The need for the "public" scope is only made explicit when the method can only be used as a user (non-guest)
  */
 export type Scope = UndelegableScope | DelegableScope
 

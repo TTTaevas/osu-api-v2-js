@@ -1,4 +1,4 @@
-import { API, Beatmap, Beatmapset, Event, Miscellaneous, Ruleset, Score } from "../index.js"
+import { API, Beatmap, Beatmapset, Event, Miscellaneous, Ruleset, Score, Variant } from "../index.js"
 
 export interface User {
 	avatar_url: string
@@ -77,8 +77,16 @@ export namespace User {
 		} | null
 	}
 
-	/** @obtainableFrom {@link API.lookupUsers} */
 	export interface WithCountryCoverGroupsTeam extends WithCountryCoverTeam, WithGroups {}
+
+	/** @obtainableFrom {@link API.lookupUsers} */
+	export interface WithCountryCoverGroupsTeamGlobalrank extends WithCountryCoverGroupsTeam {
+		/** @remarks A Ruleset has to be specified in the request for this to not be undefined */
+		global_rank?: {
+			rank: number | undefined
+			ruleset_id: Ruleset
+		}
+	}
 
 	/** @obtainableFrom {@link API.getUsers} */
 	export interface WithCountryCoverGroupsTeamStatisticsrulesets extends WithCountryCoverGroupsTeam {
@@ -91,7 +99,7 @@ export namespace User {
 		/** Exists only if `include_variant_statistics` was ever specified to be true in a request */
 		variants?: {
 			mode: keyof typeof Ruleset
-			variant: string
+			variant: Exclude<keyof typeof Variant, "">
 			country_rank: Statistics.WithCountryrank["country_rank"]
 			global_rank: Statistics["global_rank"]
 			pp: number
@@ -157,6 +165,24 @@ export namespace User {
 		}
 		follower_count: number
 		mapping_follower_count: number
+		matchmaking_stats: {
+			first_placements: number
+			is_rating_provisional: boolean
+			plays: number
+			pool_id: number
+			rank: number | null
+			rating: number
+			total_points: number
+			user_id: User["id"]
+			pool: {
+				active: boolean
+				id: number
+				name: string
+				ruleset_id: Ruleset
+				/** Would be 0 for the osu! ruleset, 4 for mania 4k, 7 for mania 7k */
+				variant_id: Variant
+			}
+		}[]
 		monthly_playcounts: {
 			start_date: Date
 			count: number
@@ -205,6 +231,8 @@ export namespace User {
 	}
 
 	export interface Statistics {
+		/** Where 96.40% would be `0.9640` */
+		accuracy: Score.Accuracy1
 		count_100: number
 		count_300: number
 		count_50: number
@@ -218,7 +246,10 @@ export namespace User {
 		global_rank_percent: number | null
 		pp: number | null
 		ranked_score: number
-		/** Where 96.56% would be `96.56` */
+		/**
+		 * Where 96.56% would be `96.56`
+		 * @deprecated Use `accuracy` instead
+		 */
 		hit_accuracy: Score.Accuracy100
 		play_count: number
 		play_time: number | null
@@ -315,7 +346,7 @@ export namespace User {
 		/** Only get players from a specific country, using its ISO 3166-1 alpha-2 country code! (France would be `FR`, United States `US`) */
 		country?: Miscellaneous.Country["code"]
 		/** If `type` is `performance` and `ruleset` is mania, choose between 4k and 7k! */
-		variant?: "4k" | "7k"
+		variant?: Exclude<keyof typeof Variant, "">
 	}): Promise<Ranking> {
 		return await this.request("get", ["rankings", Ruleset[ruleset], type], {...config})
 	}
@@ -344,10 +375,11 @@ export namespace User {
 	/**
 	 * Lookup user data for up to 50 users at once!
 	 * @param users An array containing user ids or/and `User` objects!
+	 * @param ruleset The data should be relevant to which ruleset?
 	 */
-	export async function lookupMultiple(this: API, users: Array<User["id"] | User>): Promise<User.WithCountryCoverGroupsTeam[]> {
+	export async function lookupMultiple(this: API, users: Array<User["id"] | User>, ruleset?: Ruleset): Promise<User.WithCountryCoverGroupsTeamGlobalrank[]> {
 		const ids = users.map((user) => typeof user === "number" ? user : user.id)
-		const response = await this.request("get", ["users", "lookup"], {ids})
+		const response = await this.request("get", ["users", "lookup"], {ids, ruleset_id: ruleset})
 		return response.users // It's the only property
 	}
 
