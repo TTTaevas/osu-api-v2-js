@@ -31,42 +31,52 @@ To use (import) the package in your project and start interacting with the API, 
 
 ```typescript
 // TypeScript
-import * as osu from "osu-api-v2-js"
+import * as osu from "osu-api-v2-js";
 
 async function logUserTopPlayBeatmap(username: string) {
   // Create an API object, it'll automatically get an access_token which it'll use in future requests
-  const api = new osu.API(client_id, "<client_secret>") // id as a number, secret as a string
+  const api = new osu.API(client_id, "<client_secret>"); // id as a number, secret as a string
 
-  const user = await api.getUser(username) // We need to get the id of the user in order to request what we want
-  const scores = await api.getUserScores(user, "best", osu.Ruleset.osu, {lazer: false}, {limit: 1}) // Specifying the Ruleset is optional
-  const score = scores[0] // Array is already sorted
-  const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(score.beatmap, score.mods) // Specify the mods to get the appropriate SR
+  const user = await api.getUser(username); // We need to get the id of the user in order to request what we want
+  const scores = await api.getUserScores(
+    user,
+    "best",
+    osu.Ruleset.osu,
+    { lazer: false },
+    { limit: 1 },
+  ); // Specifying the Ruleset is optional
+  const score = scores[0]; // Array is already sorted
+  const beatmapDifficulty = await api.getBeatmapDifficultyAttributesOsu(
+    score.beatmap,
+    score.mods,
+  ); // Specify the mods to get the appropriate SR
 
-  const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`
-  const y = `+${score.mods.map((m) => m.acronym).toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`
-  console.log(`${username}'s top play is on: ${x} ${y}`)
+  const x = `${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]`;
+  const y = `+${score.mods.map((m) => m.acronym).toString()} (${beatmapDifficulty.star_rating.toFixed(2)}*)`;
+  console.log(`${username}'s top play is on: ${x} ${y}`);
   // Doomsday fanboy's top play is on: Erio o Kamattechan - os-Uchuujin(Asterisk Makina Remix) [Mattress Actress] +DT,CL (8.87*)
 }
 
-logUserTopPlayBeatmap("Doomsday fanboy")
+logUserTopPlayBeatmap("Doomsday fanboy");
 ```
 
 ### Configuration options
 
-Your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object has many properties (listed as *Accessors* in the documentation) which you can modify in order to change its behaviour. There are two ways to do that, the first of which is to do it at any point after you've created your object:
+Your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object has many properties (listed as _Accessors_ in the documentation) which you can modify in order to change its behaviour. There are two ways to do that, the first of which is to do it at any point after you've created your object:
 
 ```typescript
-const api = new osu.API(0, "<client_secret>")
+const api = new osu.API(0, "<client_secret>");
 // Log all requests made by this api object
-api.verbose = "all"
+api.verbose = "all";
 // Change the amount of seconds it takes for requests to timeout
-api.timeout = 10
+api.timeout = 10;
 ```
 
 The other way would be at the same time you're creating your `api` object, like that:
+
 ```typescript
 // Same as above, in one line as the api object gets created
-const api = new osu.API(0, "<client_secret>", {verbose: "all", timeout: 10})
+const api = new osu.API(0, "<client_secret>", { verbose: "all", timeout: 10 });
 ```
 
 ### Tokens
@@ -97,6 +107,7 @@ NOTE: [`retry_maximum_amount`](https://osu-v2.taevas.xyz/classes/API.html#retry_
 You can further configure retries through [`retry_delay`](https://osu-v2.taevas.xyz/classes/API.html#retry_delay) and the aforementioned `retry_maximum_amount`.
 
 ### Authorization flow
+
 A simple guide on how to do extra fancy stuff
 
 #### Create and share the authorization link with your users
@@ -106,6 +117,7 @@ If your application is meant to act on behalf of a user after they've clicked on
 Let's take it step by step! First, this package comes with [`generateAuthorizationURL()`](https://osu-v2.taevas.xyz/functions/generateAuthorizationURL.html), which will create a link for you that you can share so users can click on it and allow your application to do stuff on their behalf.
 
 This function requires you to specify [scopes](https://osu-v2.taevas.xyz/types/Scope.html). Here are some useful things to know about scopes:
+
 - `identify` is always **implicitly SPECIFIED**, so you should always use it
 - `public` is always **implicitely REQUIRED**, so you should (basically) always use it
 - when a method requires another scope, it will be **explicit** about it in its documentation
@@ -118,18 +130,27 @@ The TLDR of scopes: Use `identify` and `public`, add other scopes on top of that
 
 The user clicked your link and authorized your application! ...Now what?
 
-When a user authorizes your application, they get redirected to your `Application Callback URL` with a *huge* code as a GET parameter (the name of the parameter is `code`), and it is this very code that will allow you to proceed with the authorization flow! So make sure that somehow, you retrieve this code!
+When a user authorizes your application, they get redirected to your `Application Callback URL` with a _huge_ code as a GET parameter (the name of the parameter is `code`), and it is this very code that will allow you to proceed with the authorization flow! So make sure that somehow, you retrieve this code!
 
 With this code, you're able to create your [`api`](https://osu-v2.taevas.xyz/classes/API.html) object:
+
 ```typescript
-const api = await osu.API.createAsync(client_id, "<client_secret>", {redirect_uri: "<application_callback_url>", code: "<code>"})
+const api = await osu.API.createAsync(client_id, "<client_secret>", {
+  redirect_uri: "<application_callback_url>",
+  code: "<code>",
+});
 ```
 
-Here to create our API object, we use [the `createAsync` method](https://osu-v2.taevas.xyz/classes/API.html#createasync) so that we can potentially catch an error that can easily happen, for example if the user decides *not* to authorize your application. Alternatively, we can use the regular constructor to safely construct the `api` object, and *then* deal with the authorization:
+Here to create our API object, we use [the `createAsync` method](https://osu-v2.taevas.xyz/classes/API.html#createasync) so that we can potentially catch an error that can easily happen, for example if the user decides _not_ to authorize your application. Alternatively, we can use the regular constructor to safely construct the `api` object, and _then_ deal with the authorization:
 
 ```typescript
-const api = new osu.API(client_id, "<client_secret>", {set_token_on_creation: false})
-await api.setNewToken({redirect_uri: "<application_callback_url>", code: "<code>"}) // at any point before the first request
+const api = new osu.API(client_id, "<client_secret>", {
+  set_token_on_creation: false,
+});
+await api.setNewToken({
+  redirect_uri: "<application_callback_url>",
+  code: "<code>",
+}); // at any point before the first request
 ```
 
 #### Keep your api object somewhere safe
@@ -147,6 +168,7 @@ Everything is available to read about in the documentation!
 #### Full example
 
 Here's a full example where you will launch a server that will:
+
 - listen for an authorization code
 - create the authorization URL and open it in your browser
 - create the api object with the authorization code it has received
@@ -154,58 +176,78 @@ Here's a full example where you will launch a server that will:
 
 ```typescript
 // TypeScript
-import * as osu from "osu-api-v2-js"
-import * as http from "http"
-import { exec } from "child_process"
+import * as osu from "osu-api-v2-js";
+import * as http from "http";
+import { exec } from "child_process";
 
 // This should be from an application registered on https://osu.ppy.sh/home/account/edit#oauth
-const id = 0 // replace with your client id
-const secret = "<client_secret>"
-const redirect_uri = "<application_callback_url>" // assuming localhost with any unused port for convenience (like http://localhost:7272/)
+const id = 0; // replace with your client id
+const secret = "<client_secret>";
+const redirect_uri = "<application_callback_url>"; // assuming localhost with any unused port for convenience (like http://localhost:7272/)
 
 // Because we need to act as an authenticated user, we need to go through the authorization procedure
 // This function largely takes care of it by itself
 async function getCode(authorization_url: string): Promise<string> {
   // Open a temporary server to receive the code when the browser is sent to the redirect_uri after confirming authorization
-  const httpserver = http.createServer()
-  const host = redirect_uri.substring(redirect_uri.indexOf("/") + 2, redirect_uri.lastIndexOf(":"))
-  const port = Number(redirect_uri.substring(redirect_uri.lastIndexOf(":") + 1).split("/")[0])
-  httpserver.listen({host, port})
+  const httpserver = http.createServer();
+  const host = redirect_uri.substring(
+    redirect_uri.indexOf("/") + 2,
+    redirect_uri.lastIndexOf(":"),
+  );
+  const port = Number(
+    redirect_uri.substring(redirect_uri.lastIndexOf(":") + 1).split("/")[0],
+  );
+  httpserver.listen({ host, port });
 
   // Open the browser to the page on osu!web where you click a button to say you authorize your application
-  console.log("Waiting for code...")
-  const command = (process.platform == "darwin" ? "open" : process.platform == "win32" ? "start" : "xdg-open")
-  exec(`${command} "${authorization_url}"`)
+  console.log("Waiting for code...");
+  const command =
+    process.platform == "darwin"
+      ? "open"
+      : process.platform == "win32"
+        ? "start"
+        : "xdg-open";
+  exec(`${command} "${authorization_url}"`);
 
   // Check the URL for a `code` GET parameter, get it if it's there
   const code: string = await new Promise((resolve) => {
     httpserver.on("request", (request, response) => {
       if (request.url) {
-        console.log("Received code!")
-        response.end("Worked! You may now close this tab.", "utf-8")
-        httpserver.close() // Close the temporary server as it is no longer needed
-        resolve(request.url.substring(request.url.indexOf("code=") + 5))
+        console.log("Received code!");
+        response.end("Worked! You may now close this tab.", "utf-8");
+        httpserver.close(); // Close the temporary server as it is no longer needed
+        resolve(request.url.substring(request.url.indexOf("code=") + 5));
       }
-    })
-  })
-  return code
+    });
+  });
+  return code;
 }
 
 async function getSelf() {
   // Get the code needed for the api object
-  const url = osu.generateAuthorizationURL(id, redirect_uri, ["public", "identify"])
-  const code = await getCode(url)
-  const api = await osu.API.createAsync(id, secret, {redirect_uri, code}, {verbose: "all"})
+  const url = osu.generateAuthorizationURL(id, redirect_uri, [
+    "public",
+    "identify",
+  ]);
+  const code = await getCode(url);
+  const api = await osu.API.createAsync(
+    id,
+    secret,
+    { redirect_uri, code },
+    { verbose: "all" },
+  );
 
   // Use the `me` endpoint, which gives information about the authorized user!
-  const me = await api.getResourceOwner()
-  console.log("My id is", me.id, "but I'm better known as", me.username)
+  const me = await api.getResourceOwner();
+  console.log("My id is", me.id, "but I'm better known as", me.username);
 
   // If you're not gonna use the token anymore, might as well revoke it for the sake of security
-  await api.revokeToken().then(() => console.log("Revoked the token, it can no longer be used!"))
+  await api
+    .revokeToken()
+    .then(() => console.log("Revoked the token, it can no longer be used!"));
 }
 
-getSelf()
+getSelf();
 ```
 
 If you're looking for an example that involves WebSockets, you might wanna take a look at `lib/tests/websocket.ts` in the package's repository!
@@ -216,12 +258,16 @@ If you are lucky, you may be in possession of a [bot account](https://osu.ppy.sh
 
 This allows you, thanks to the application's id and secret, to do things with the bot account that would usually require going through the aforementioned authorization flow, such as sending chat messages or even creating posts on the forums. It's very powerful, although the "public" scope is incompatible, which is needed to access most endpoints!
 
-This package supports that feature, all you need to do is to **specify the scopes when you create your API object.**  This can be done through configuration options, like this:
+This package supports that feature, all you need to do is to **specify the scopes when you create your API object.** This can be done through configuration options, like this:
 
 ```typescript
 // Assuming we want to write in chat through the bot account
-const api = new osu.API(0, "<client_secret>", {scopes: ["delegate", "chat.write"]})
-const api = await osu.API.createAsync(0, "<client_secret>", undefined, {scopes: ["delegate", "chat.write"]}) // Alternative with `createAsync()`
+const api = new osu.API(0, "<client_secret>", {
+  scopes: ["delegate", "chat.write"],
+});
+const api = await osu.API.createAsync(0, "<client_secret>", undefined, {
+  scopes: ["delegate", "chat.write"],
+}); // Alternative with `createAsync()`
 ```
 
 ### Calling the functions, but literally
@@ -230,13 +276,13 @@ This package's functions can be accessed both through the api object and through
 
 ```typescript
 // Obtaining a match, assuming an `api` object already exists and everything from the package is imported as `osu`
-const match_1 = await api.getMatch(103845156) // through the api object
-const match_2 = await osu.Match.getOne.call(api, 103845156) // through the namespaces
+const match_1 = await api.getMatch(103845156); // through the api object
+const match_2 = await osu.Match.getOne.call(api, 103845156); // through the namespaces
 // `match_1` and `match_2` are the same, because they're essentially using the same function!
 
 // The same, but for obtaining multiple lazer updates
-const builds_1 = await api.getChangelogBuilds("lazer")
-const builds_2 = await osu.Changelog.Build.getMultiple.call(api, "lazer")
+const builds_1 = await api.getChangelogBuilds("lazer");
+const builds_2 = await osu.Changelog.Build.getMultiple.call(api, "lazer");
 // `build_1` and `build_2` are also the same!
 ```
 
@@ -249,13 +295,16 @@ Of course, using [the apply() method](https://developer.mozilla.org/en-US/docs/W
 In the same order as on [the API's official documentation](https://osu.ppy.sh/docs/):
 
 ### Account
+
 - `GET /me/beatmapset-favourites` -> [getFavouriteBeatmapsetsIds()](https://osu-v2.taevas.xyz/classes/API.html#getfavouritebeatmapsetsids)
 
 ### Beatmap Packs
+
 - `GET /beatmaps/packs` -> [getBeatmapPacks()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmappacks)
 - `GET /beatmaps/packs/{pack}` -> [getBeatmapPack()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmappack)
 
 ### Beatmaps
+
 - `GET /beatmaps/lookup` -> [lookupBeatmap()](https://osu-v2.taevas.xyz/classes/API.html#lookupbeatmap)
 - `GET /beatmaps/{beatmap}/scores/users/{user}` -> [getBeatmapUserScore()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapuserscore)
 - `GET /beatmaps/{beatmap}/scores/users/{user}/all` -> [getBeatmapUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapuserscores)
@@ -265,21 +314,25 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `POST /beatmaps/{beatmap}/attributes` -> [getBeatmapDifficultyAttributes()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapdifficultyattributes)
 
 ### Beatmapset Discussions
+
 - `GET /beatmapsets/discussions/posts` -> [getBeatmapsetDiscussionPosts()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetdiscussionposts)
 - `GET /beatmapsets/discussions/votes` -> [getBeatmapsetDiscussionVotes()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetdiscussionvotes)
 - `GET /beatmapsets/discussions` -> [getBeatmapsetDiscussions()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetdiscussions)
 
 ### Beatmapsets
+
 - `GET /beatmapsets/search` -> [searchBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#searchbeatmapsets)
 - `GET /beatmapsets/lookup` -> [lookupBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#lookupbeatmapset)
 - `GET /beatmapsets/{beatmapset}` -> [getBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapset)
 
 ### Changelog
+
 - `GET /changelog/{stream}/{build}` -> [getChangelogBuild()](https://osu-v2.taevas.xyz/classes/API.html#getchangelogbuild)
 - `GET /changelog` -> [getChangelogBuilds()](https://osu-v2.taevas.xyz/classes/API.html#getchangelogbuilds) and [getChangelogStreams()](https://osu-v2.taevas.xyz/classes/API.html#getchangelogstreams) (removing `search`, putting `builds` behind getChangelogBuilds(), and `streams` behind getChangelogStreams())
 - `GET /changelog/{changelog}` -> [lookupChangelogBuild()](https://osu-v2.taevas.xyz/classes/API.html#lookupchangelogbuild)
 
 ### Chat
+
 - `POST /chat/ack` -> [keepChatAlive()](https://osu-v2.taevas.xyz/classes/API.html#keepchatalive)
 - `POST /chat/new` -> [sendChatPrivateMessage()](https://osu-v2.taevas.xyz/classes/API.html#sendchatprivatemessage)
 - `GET /chat/channels/{channel}/messages` -> [getChatMessages()](https://osu-v2.taevas.xyz/classes/API.html#getchatmessages)
@@ -293,14 +346,17 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### Comments
+
 - `GET /comments` -> [getComments()](https://osu-v2.taevas.xyz/classes/API.html#getcomments)
 - `GET /comments/{comment}` -> [getComment()](https://osu-v2.taevas.xyz/classes/API.html#getcomment)
 - While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### Events
+
 - `GET /events` -> [getEvents()](https://osu-v2.taevas.xyz/classes/API.html#getevents)
 
 ### Forum
+
 - `POST /forums/topics/{topic}/reply` -> [replyForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#replyforumtopic)
 - `GET /forums/topics` -> [getForumTopics()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopics)
 - `POST /forums/topics` -> [createForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#createforumtopic)
@@ -311,33 +367,41 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /forums/{forum}` -> [getForum()](https://osu-v2.taevas.xyz/classes/API.html#getforum)
 
 ### Home
+
 - `GET /search` -> [searchUser()](https://osu-v2.taevas.xyz/classes/API.html#searchuser) and [searchWiki()](https://osu-v2.taevas.xyz/classes/API.html#searchwiki)
 
 ### Matches
+
 - `GET /matches` -> [getMatches()](https://osu-v2.taevas.xyz/classes/API.html#getmatches)
 - `GET /matches/{match}` -> [getMatch()](https://osu-v2.taevas.xyz/classes/API.html#getmatch)
 
 ### Multiplayer
+
 - `GET /rooms/{room}/playlist/{playlist}/scores` -> [getPlaylistItemScores()](https://osu-v2.taevas.xyz/classes/API.html#getplaylistitemscores)
 - `GET /rooms` -> [getRooms()](https://osu-v2.taevas.xyz/classes/API.html#getrooms)
 - While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### News
+
 - `GET /news` -> [getNewsPosts()](https://osu-v2.taevas.xyz/classes/API.html#getnewsposts) (removing everything except `news_sidebar.news_posts`)
 - `GET /news/{news}` -> [getNewsPost()](https://osu-v2.taevas.xyz/classes/API.html#getnewspost)
 
 ### Ranking
+
 - `GET /rankings/kudosu` -> [getKudosuRanking()](https://osu-v2.taevas.xyz/classes/API.html#getkudosuranking)
 - `GET /rankings/{mode}/{type}` -> [getUserRanking()](https://osu-v2.taevas.xyz/classes/API.html#getuserranking) and [getCountryRanking()](https://osu-v2.taevas.xyz/classes/API.html#getcountryranking) and [getSpotlightRanking()](https://osu-v2.taevas.xyz/classes/API.html#getspotlightranking)
 - `GET /spotlights` -> [getSpotlights()](https://osu-v2.taevas.xyz/classes/API.html#getspotlights)
 
 ### Scores
+
 - `GET /scores` -> [getScores()](https://osu-v2.taevas.xyz/classes/API.html#getscores)
 
 ### Teams
+
 - `GET /teams/{team}/{ruleset?}` -> [getTeam()](https://osu-v2.taevas.xyz/classes/API.html#getteam) (in v3.0.1 onwards)
 
 ### Under "Undocumented" or missing from docs
+
 - `GET /beatmapsets/events` -> [getBeatmapsetEvents()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetevents)
 - `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)
 - `GET /rooms/{room}` -> [getRoom()](https://osu-v2.taevas.xyz/classes/API.html#getroom)
@@ -350,6 +414,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)
 
 ### Users
+
 - `GET /users/{user}/kudosu` -> [getUserKudosuHistory()](https://osu-v2.taevas.xyz/classes/API.html#getuserkudosuhistory)
 - `GET /users/{user}/scores/{type}` -> [getUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getuserscores)
 - `GET /users/{user}/beatmapsets/{type}` -> [getUserBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getuserbeatmaps) and [getUserMostPlayed()](https://osu-v2.taevas.xyz/classes/API.html#getusermostplayed)
@@ -360,4 +425,5 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /me/{mode?}` -> [getResourceOwner()](https://osu-v2.taevas.xyz/classes/API.html#getresourceowner)
 
 ### Wiki
+
 - `GET /wiki/{locale}/{path}` -> [getWikiPage()](https://osu-v2.taevas.xyz/classes/API.html#getwikipage)

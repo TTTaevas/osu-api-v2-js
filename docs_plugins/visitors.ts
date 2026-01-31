@@ -5,19 +5,19 @@
 import { Application, JSX, ParameterType } from "typedoc";
 
 export function load(app: Application) {
-	app.options.addDeclaration({
-		name: "visitors",
-		help: "Set the script from visitors.taevas.xyz",
-		type: ParameterType.String,
-	});
+  app.options.addDeclaration({
+    name: "visitors",
+    help: "Set the script from visitors.taevas.xyz",
+    type: ParameterType.String,
+  });
 
-	app.renderer.hooks.on("head.end", () => {
-		return JSX.createElement(JSX.Fragment, null, [
-			JSX.createElement("script", {
-				defer: true,
-				"data-website-id": "02d78ab3-89d2-463a-8a2c-a4552dfea57a",
-				src: "https://visitors.taevas.xyz/script.js"
-			}),
-		])
-	})
+  app.renderer.hooks.on("head.end", () => {
+    return JSX.createElement(JSX.Fragment, null, [
+      JSX.createElement("script", {
+        defer: true,
+        "data-website-id": "02d78ab3-89d2-463a-8a2c-a4552dfea57a",
+        src: "https://visitors.taevas.xyz/script.js",
+      }),
+    ]);
+  });
 }

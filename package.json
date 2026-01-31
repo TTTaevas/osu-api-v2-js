@@ -8,6 +8,7 @@
   "scripts": {
     "prepublish": "npm run build",
     "build": "tsc",
+    "prettier": "prettier . --write",
     "test": "npm run build && node ./dist/tests/guest.js",
     "test-authenticated": "npm run build && node ./dist/tests/authenticated.js",
     "test-websocket": "npm run build && node ./dist/tests/websocket.js",
@@ -38,6 +39,7 @@
     "ajv": "^8.17.1",
     "chai": "^6.2.2",
     "dotenv": "^17.2.3",
+    "prettier": "3.8.1",
     "ts-json-schema-generator": "^2.4.0",
     "typedoc": "^0.28.15",
     "typescript": "^5.9.3"
