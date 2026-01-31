@@ -13,11 +13,12 @@ import { Multiplayer } from "./namespaces/Multiplayer.js"
 import { NewsPost } from "./namespaces/NewsPost.js"
 import { Score } from "./namespaces/Score.js"
 import { Spotlight } from "./namespaces/Spotlight.js"
+import { Team } from "./namespaces/Team.js"
 import { User } from "./namespaces/User.js"
 import { WikiPage } from "./namespaces/Wiki.js"
 
 export { Beatmap, Beatmapset, Changelog, Chat, Comment, Event, Forum, Home,
-	Match, Miscellaneous, Multiplayer, NewsPost, Score, Spotlight, User, WikiPage }
+	Match, Miscellaneous, Multiplayer, NewsPost, Score, Spotlight, Team, User, WikiPage }
 
 /** The name "Ruleset" is synonymous with "Game mode" or "Gamemode" */
 export enum Ruleset {
@@ -810,6 +811,12 @@ export class API {
 
 	/** {@inheritDoc Spotlight.getRanking} @group Spotlight Methods */
 	readonly getSpotlightRanking = Spotlight.getRanking
+
+
+	// TEAM STUFF
+
+	/** {@inheritDoc Team.getOne} @group Team Methods */
+	readonly getTeam = Team.getOne
 
 
 	// USER STUFF

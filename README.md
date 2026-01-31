@@ -334,6 +334,9 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 ### Scores
 - `GET /scores` -> [getScores()](https://osu-v2.taevas.xyz/classes/API.html#getscores)
 
+### Teams
+- `GET /teams/{team}/{ruleset?}` -> [getTeam()](https://osu-v2.taevas.xyz/classes/API.html#getteam) (in v3.0.1 onwards)
+
 ### Under "Undocumented" or missing from docs
 - `GET /beatmapsets/events` -> [getBeatmapsetEvents()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetevents)
 - `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)

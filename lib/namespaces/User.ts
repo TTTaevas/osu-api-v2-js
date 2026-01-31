@@ -1,4 +1,4 @@
-import { API, Beatmap, Beatmapset, Event, Miscellaneous, Ruleset, Score, Variant } from "../index.js"
+import { API, Beatmap, Beatmapset, Event, Miscellaneous, Ruleset, Score, Team, Variant } from "../index.js"
 
 export interface User {
 	avatar_url: string
@@ -69,12 +69,7 @@ export namespace User {
 
 	/** @obtainableFrom {@link API.getBeatmapUserScore} */
 	export interface WithCountryCoverTeam extends WithCountryCover {
-		team: {
-			flag_url: string | null
-			id: number
-			name: string
-			short_name: string
-		} | null
+		team: Team | null
 	}
 
 	export interface WithCountryCoverGroupsTeam extends WithCountryCoverTeam, WithGroups {}
