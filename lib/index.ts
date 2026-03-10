@@ -67,7 +67,8 @@ export type DelegableScope =
   | "delegate"
   | "forum.write"
   | "forum.write_manage"
-  | "group_permissions";
+  | "group_permissions"
+  | "multiplayer.write_manage";
 
 /** {@link Scope}s that cannot be used with the {@link DelegableScope} "delegate" */
 export type UndelegableScope =

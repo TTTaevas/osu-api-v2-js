@@ -13,7 +13,8 @@ import {
 export interface User {
   avatar_url: string;
   country_code: Miscellaneous.Country["code"];
-  default_group: string;
+  /** @remarks The default group for most users is `default`, but some users simply have no default group */
+  default_group: string | null;
   id: number;
   is_active: boolean;
   is_bot: boolean;

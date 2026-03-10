@@ -6,7 +6,7 @@ on:
 
 jobs:
   docs:
-    name: Publish on NPM
+    name: Create and publish documentation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

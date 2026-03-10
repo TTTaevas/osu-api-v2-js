@@ -15,8 +15,8 @@ export namespace Team {
     description: string | null;
     is_open: boolean;
     empty_slots: number;
-    leader: User;
-    members_count: number;
+    leader: User.WithCountryCoverGroupsTeam;
+    members: User.WithCountryCoverGroupsTeam[];
     statistics: {
       team_id: Team["id"];
       ruleset_id: Ruleset;
