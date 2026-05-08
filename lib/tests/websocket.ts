@@ -43,6 +43,14 @@ async function startTesting(
   websocket.addEventListener("message", (m) => {
     const parsed: Chat.Websocket.Event.Any = JSON.parse(m.data.toString());
     console.log("Received event:", parsed.event);
+
+    if (!parsed.event) {
+      console.log(
+        "Looks like there was no event, here's the JSON itself:",
+        parsed,
+      );
+    }
+
     expect(validate(parsed, "Chat.Websocket.Event.Any")).to.be.true;
   });
 }

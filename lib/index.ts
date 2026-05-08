@@ -162,6 +162,13 @@ export class API {
     code?: string,
     settings?: Partial<API>,
   ) {
+    /** Only possible in plain JavaScript, prevent https://github.com/TTTaevas/osu-api-v2-js/issues/60 */
+    if (client_id_or_settings === undefined) {
+      console.warn(
+        "You have initiated an API client with osu-api-v2-js with an empty constructor. Please use one of the documented constructors to prevent unexpected behaviours!",
+      );
+    }
+
     settings ??=
       typeof redirect_uri_or_settings === "string" || !redirect_uri_or_settings
         ? typeof client_id_or_settings === "number"
@@ -671,19 +678,25 @@ export class API {
           .join("&");
     }
 
+    const headers = new Headers(this.headers);
+    if (!is_token_related) {
+      headers.append(
+        "Authorization",
+        `${this.token_type} ${this.access_token}`,
+      );
+    }
+
     const signals: AbortSignal[] = [];
-    if (this.timeout > 0)
+    if (this.timeout > 0) {
       signals.push(AbortSignal.timeout(this.timeout * 1000));
-    if (this.signal && !is_token_related) signals.push(this.signal);
+    }
+    if (this.signal && !is_token_related) {
+      signals.push(this.signal);
+    }
 
     const response = await fetch(url, {
       method,
-      headers: {
-        Authorization: is_token_related
-          ? undefined
-          : `${this.token_type} ${this.access_token}`,
-        ...this.headers,
-      },
+      headers,
       body: method !== "get" ? JSON.stringify(parameters) : undefined, // parameters are here if method is NOT GET
       signal: AbortSignal.any(signals),
     })
@@ -722,7 +735,8 @@ export class API {
                   "Your token might have expired, I will attempt to get a new token...",
                   request_id,
                 );
-                if ((await this.setNewToken()) && this.retry_on_new_token) {
+                const new_token = await this.setNewToken();
+                if (new_token && this.retry_on_new_token) {
                   to_retry = true;
                   info.has_new_token = true;
                 }
@@ -775,6 +789,10 @@ export class API {
         request_id,
       );
       await new Promise((res) => setTimeout(res, this.retry_delay * 1000));
+
+      if (response) {
+        await response.text(); // Consume the response to avoid connection pool exhaustion (must be awaited)
+      }
       return await this.fetch(is_token_related, method, endpoint, parameters, {
         number_try: info.number_try + 1,
         has_new_token: info.has_new_token,
@@ -815,10 +833,10 @@ export class API {
   ): Promise<any> {
     try {
       const response = await this.fetch(false, method, endpoint, parameters);
-      if (response.status === 204) return undefined; // 204 means the request worked as intended and did not give us anything, so just return nothing
-
-      const arrBuff = await response.arrayBuffer();
+      const arrBuff = await response.arrayBuffer(); // note: immediately consume the response to prevent connection pool leaks
       const buff = Buffer.from(arrBuff);
+
+      if (response.status === 204) return undefined; // 204 means the request worked as intended and did not give us anything, so just return nothing
 
       try {
         // Assume the response is in JSON format as it often is, it'll fail into the catch block if it isn't anyway

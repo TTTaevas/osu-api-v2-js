@@ -28,7 +28,7 @@ export namespace Team {
 
   /**
    * Get extensive data about whichever team you want!
-   * @param user A team id, a team shortname or a `Team` object!
+   * @param team A team id, a team shortname or a `Team` object!
    * @param ruleset The data should be relevant to which ruleset? (defaults to the **team's default Ruleset**)
    */
   export async function getOne(

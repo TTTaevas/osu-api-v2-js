@@ -3,7 +3,9 @@
     "lib": ["ES2023"],
     "module": "Node16",
     "target": "ES2022",
+    "types": ["node"],
     "declaration": true,
+    "rootDir": "./lib",
     "outDir": "./dist",
     "strict": true
   },

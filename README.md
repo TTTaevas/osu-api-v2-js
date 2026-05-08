@@ -357,6 +357,8 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 
 ### Forum
 
+- `POST /forums/topics/{topic}/lock` -> soon!
+- `POST /forums/topics/{topic}/pin` -> soon!
 - `POST /forums/topics/{topic}/reply` -> [replyForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#replyforumtopic)
 - `GET /forums/topics` -> [getForumTopics()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopics)
 - `POST /forums/topics` -> [createForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#createforumtopic)
@@ -365,6 +367,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `PUT /forums/posts/{post}` -> [editForumPost()](https://osu-v2.taevas.xyz/classes/API.html#editforumpost)
 - `GET /forums` -> [getForums()](https://osu-v2.taevas.xyz/classes/API.html#getforums)
 - `GET /forums/{forum}` -> [getForum()](https://osu-v2.taevas.xyz/classes/API.html#getforum)
+- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### Home
 
@@ -395,23 +398,25 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 ### Scores
 
 - `GET /scores` -> [getScores()](https://osu-v2.taevas.xyz/classes/API.html#getscores)
+- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### Teams
 
-- `GET /teams/{team}/{ruleset?}` -> [getTeam()](https://osu-v2.taevas.xyz/classes/API.html#getteam) (in v3.0.1 onwards)
+- `GET /teams/{team}/{ruleset?}` -> [getTeam()](https://osu-v2.taevas.xyz/classes/API.html#getteam)
 
 ### Under "Undocumented" or missing from docs
 
 - `GET /beatmapsets/events` -> [getBeatmapsetEvents()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapsetevents)
-- `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)
-- `GET /rooms/{room}` -> [getRoom()](https://osu-v2.taevas.xyz/classes/API.html#getroom)
 - `GET /rooms/{room}/leaderboard` -> [getRoomLeaderboard()](https://osu-v2.taevas.xyz/classes/API.html#getroomleaderboard)
 - `GET /rooms/{room}/events` -> [getRoomEvents()](https://osu-v2.taevas.xyz/classes/API.html#getroomevents)
+- `GET /rooms/{room}` -> [getRoom()](https://osu-v2.taevas.xyz/classes/API.html#getroom)
+- `GET /seasonal-backgrounds` -> [getSeasonalBackgrounds()](https://osu-v2.taevas.xyz/classes/API.html#getseasonalbackgrounds)
 - `GET /scores/{score}/download` -> [getReplay()](https://osu-v2.taevas.xyz/classes/API.html#getreplay)
 - `GET /scores/{rulesetOrScore}/{score?}` -> [getScore()](https://osu-v2.taevas.xyz/classes/API.html#getscore)
 - `GET /users/lookup` -> [lookupUsers()](https://osu-v2.taevas.xyz/classes/API.html#lookupusers)
 - `GET /friends` -> [getFriends()](https://osu-v2.taevas.xyz/classes/API.html#getfriends)
 - `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)
+- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### Users
 
@@ -423,6 +428,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /users/{user}/{mode?}` -> [getUser()](https://osu-v2.taevas.xyz/classes/API.html#getuser)
 - `GET /users` -> [getUsers()](https://osu-v2.taevas.xyz/classes/API.html#getusers)
 - `GET /me/{mode?}` -> [getResourceOwner()](https://osu-v2.taevas.xyz/classes/API.html#getresourceowner)
+- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### Wiki
 
