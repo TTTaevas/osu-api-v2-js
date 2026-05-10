@@ -1026,6 +1026,12 @@ export class API {
   /** {@inheritDoc Forum.Topic.editTitle} @group Forum Methods */
   readonly editForumTopicTitle = Forum.Topic.editTitle;
 
+  /** {@inheritDoc Forum.Topic.lock} @group Forum Methods */
+  readonly lockForumTopic = Forum.Topic.lock;
+
+  /** {@inheritDoc Forum.Topic.pin} @group Forum Methods */
+  readonly pinForumTopic = Forum.Topic.pin;
+
   /** {@inheritDoc Forum.Post.edit} @group Forum Methods */
   readonly editForumPost = Forum.Post.edit;
 

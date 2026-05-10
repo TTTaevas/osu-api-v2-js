@@ -4,7 +4,7 @@
 [![Chat on Matrix](https://matrix.to/img/matrix-badge.svg)](https://matrix.to/#/!UDoTSsVxLnywpVCGmE:matrix.org)
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V4J78L0)
 
-[**osu-api-v2-js**](https://github.com/TTTaevas/osu-api-v2-js) is a JavaScript & TypeScript package that helps you interact with [osu!api (v2)](https://docs.ppy.sh).
+[**osu-api-v2-js**](https://github.com/TTTaevas/osu-api-v2-js) is a JavaScript & TypeScript package that helps you interact with [osu!api (v2)](https://osu.ppy.sh/docs/).
 
 The documentation for the latest version of this package can be found at any time on [osu-v2.taevas.xyz](https://osu-v2.taevas.xyz)!
 
@@ -290,7 +290,7 @@ As you may have noticed, when calling the functions through the namespaces, inst
 
 Of course, using [the apply() method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply) would also work, so just do things the way you prefer or the way that is more intuitive to you!
 
-## List of implemented endpoints
+## List of endpoints and their functions
 
 In the same order as on [the API's official documentation](https://osu.ppy.sh/docs/):
 
@@ -309,6 +309,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /beatmaps/{beatmap}/scores/users/{user}` -> [getBeatmapUserScore()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapuserscore)
 - `GET /beatmaps/{beatmap}/scores/users/{user}/all` -> [getBeatmapUserScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapuserscores)
 - `GET /beatmaps/{beatmap}/scores` -> [getBeatmapScores()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapscores)
+- `GET /beatmaps/{beatmap}/solo-scores` -> Not supported (deprecated endpoint)
 - `GET /beatmaps` -> [getBeatmaps()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmaps)
 - `GET /beatmaps/{beatmap}` -> [getBeatmap()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmap)
 - `POST /beatmaps/{beatmap}/attributes` -> [getBeatmapDifficultyAttributes()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapdifficultyattributes)
@@ -324,6 +325,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /beatmapsets/search` -> [searchBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#searchbeatmapsets)
 - `GET /beatmapsets/lookup` -> [lookupBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#lookupbeatmapset)
 - `GET /beatmapsets/{beatmapset}` -> [getBeatmapset()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapset)
+- `GET /beatmapsets/{beatmapset}/download` -> Not supported (only lazer clients)
 
 ### Changelog
 
@@ -335,6 +337,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 
 - `POST /chat/ack` -> [keepChatAlive()](https://osu-v2.taevas.xyz/classes/API.html#keepchatalive)
 - `POST /chat/new` -> [sendChatPrivateMessage()](https://osu-v2.taevas.xyz/classes/API.html#sendchatprivatemessage)
+- `GET /chat/updates` -> Not supported (only lazer clients)
 - `GET /chat/channels/{channel}/messages` -> [getChatMessages()](https://osu-v2.taevas.xyz/classes/API.html#getchatmessages)
 - `POST /chat/channels/{channel}/messages` -> [sendChatMessage()](https://osu-v2.taevas.xyz/classes/API.html#sendchatmessage)
 - `PUT /chat/channels/{channel}/users/{user}` -> [joinChatChannel()](https://osu-v2.taevas.xyz/classes/API.html#joinchatchannel)
@@ -343,13 +346,16 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /chat/channels` -> [getChatChannels()](https://osu-v2.taevas.xyz/classes/API.html#getchatchannels)
 - `POST /chat/channels` -> [createChatPrivateChannel()](https://osu-v2.taevas.xyz/classes/API.html#createchatprivatechannel) and [createChatAnnouncementChannel()](https://osu-v2.taevas.xyz/classes/API.html#createchatannouncementchannel)
 - `GET /chat/channels/{channel}` -> [getChatChannel()](https://osu-v2.taevas.xyz/classes/API.html#getchatchannel) (without `users` because `channel` would already have this property)
-- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### Comments
 
 - `GET /comments` -> [getComments()](https://osu-v2.taevas.xyz/classes/API.html#getcomments)
+- `POST /comments` -> Not supported (only lazer clients)
 - `GET /comments/{comment}` -> [getComment()](https://osu-v2.taevas.xyz/classes/API.html#getcomment)
-- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
+- `PUT /comments/{comment}` -> Not supported (only lazer clients)
+- `DELETE /comments/{comment}` -> Not supported (only lazer clients)
+- `POST /comments/{comment}/vote` -> Not supported (only lazer clients)
+- `DELETE /comments/{comment}/vote` -> Not supported (only lazer clients)
 
 ### Events
 
@@ -357,8 +363,9 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 
 ### Forum
 
-- `POST /forums/topics/{topic}/lock` -> soon!
-- `POST /forums/topics/{topic}/pin` -> soon!
+- `POST /forums/topics/{topic}/lock` -> [lockForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#lockforumtopic)
+- `POST /forums/topics/{topic}/move` -> Not supported (only lazer clients)
+- `POST /forums/topics/{topic}/pin` -> [pinForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#pinforumtopic)
 - `POST /forums/topics/{topic}/reply` -> [replyForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#replyforumtopic)
 - `GET /forums/topics` -> [getForumTopics()](https://osu-v2.taevas.xyz/classes/API.html#getforumtopics)
 - `POST /forums/topics` -> [createForumTopic()](https://osu-v2.taevas.xyz/classes/API.html#createforumtopic)
@@ -367,7 +374,6 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `PUT /forums/posts/{post}` -> [editForumPost()](https://osu-v2.taevas.xyz/classes/API.html#editforumpost)
 - `GET /forums` -> [getForums()](https://osu-v2.taevas.xyz/classes/API.html#getforums)
 - `GET /forums/{forum}` -> [getForum()](https://osu-v2.taevas.xyz/classes/API.html#getforum)
-- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### Home
 
@@ -380,9 +386,10 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 
 ### Multiplayer
 
+- `GET /rooms/{room}/playlist/{playlist}/scores/users/{user}` -> Not supported (only lazer clients)
 - `GET /rooms/{room}/playlist/{playlist}/scores` -> [getPlaylistItemScores()](https://osu-v2.taevas.xyz/classes/API.html#getplaylistitemscores)
+- `GET /rooms/{room}/playlist/{playlist}/scores/{score}` -> Not supported (only lazer clients)
 - `GET /rooms` -> [getRooms()](https://osu-v2.taevas.xyz/classes/API.html#getrooms)
-- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
 
 ### News
 
@@ -398,7 +405,9 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 ### Scores
 
 - `GET /scores` -> [getScores()](https://osu-v2.taevas.xyz/classes/API.html#getscores)
-- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
+- `POST /score-pins/{score}/reorder` -> Not supported (only lazer clients)
+- `DELETE /score-pins/{score}` -> Not supported (only lazer clients)
+- `PUT /score-pins/{score}` -> Not supported (only lazer clients)
 
 ### Teams
 
@@ -416,7 +425,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /users/lookup` -> [lookupUsers()](https://osu-v2.taevas.xyz/classes/API.html#lookupusers)
 - `GET /friends` -> [getFriends()](https://osu-v2.taevas.xyz/classes/API.html#getfriends)
 - `GET /tags` -> [getBeatmapUserTags()](https://osu-v2.taevas.xyz/classes/API.html#getbeatmapusertags)
-- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
+- While other endpoints exist, they are only officially supported through the lazer client
 
 ### Users
 
@@ -428,7 +437,7 @@ In the same order as on [the API's official documentation](https://osu.ppy.sh/do
 - `GET /users/{user}/{mode?}` -> [getUser()](https://osu-v2.taevas.xyz/classes/API.html#getuser)
 - `GET /users` -> [getUsers()](https://osu-v2.taevas.xyz/classes/API.html#getusers)
 - `GET /me/{mode?}` -> [getResourceOwner()](https://osu-v2.taevas.xyz/classes/API.html#getresourceowner)
-- While other relevant endpoints exist, they are only officially supported through the osu! client (lazer)
+- `GET /me/achievements/{achievementId}` -> Not supported (only lazer clients)
 
 ### Wiki
 

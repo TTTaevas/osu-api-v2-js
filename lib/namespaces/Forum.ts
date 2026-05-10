@@ -269,6 +269,46 @@ export namespace Forum {
         forum_topic: { topic_title: new_title },
       });
     }
+
+    /**
+     * Lock or unlock a Forum.Topic that you're allowed to moderate!
+     * @scope {@link Scope"forum.write_manage"}
+     * @param topic The topic or the id of the topic in question
+     * @param lock True if locking, false if unlocking (defaults to **true**)
+     */
+    export async function lock(
+      this: API,
+      topic: Topic["id"] | Topic,
+      lock: boolean = true,
+    ): Promise<void> {
+      const topic_id = typeof topic === "number" ? topic : topic.id;
+      return await this.request(
+        "post",
+        ["forums", "topics", topic_id, "lock"],
+        {
+          lock,
+        },
+      );
+    }
+
+    /**
+     * Pin or unpin a Forum.Topic that you're allowed to moderate!
+     * @scope {@link Scope"forum.write_manage"}
+     * @param topic The topic or the id of the topic in question
+     * @param pin_type The exact action, as in what kind of pin if you're not unpinning
+     */
+    export async function pin(
+      this: API,
+      topic: Topic["id"] | Topic,
+      pin_type: "unpin" | "sticky" | "announcement",
+    ): Promise<void> {
+      const topic_id = typeof topic === "number" ? topic : topic.id;
+      const pin =
+        pin_type === "sticky" ? 1 : pin_type === "announcement" ? 2 : 0;
+      return await this.request("post", ["forums", "topics", topic_id, "pin"], {
+        pin,
+      });
+    }
   }
 
   /**
