@@ -21,7 +21,7 @@ async function startTesting(
   const api = new API(id, secret, redirect_uri, code, {
     server,
     retry_on_timeout: true,
-    verbose: "errors",
+    verbose: "all",
   });
 
   // The API method ensures we have been authorized to send commands across the websocket

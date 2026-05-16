@@ -372,7 +372,10 @@ export class API {
   /** Has {@link API.setNewToken} been called and not yet returned anything? */
   private is_setting_token: boolean = false;
 
-  /** If {@link API.setNewToken} has been called, you can wait for it to be done through this promise */
+  /**
+   * If {@link API.setNewToken} has been called, you can wait for it to be done through this promise
+   * @privateRemarks Its initial form is a promise that never resolves, this is intentional so to avoid a race condition between the request that fetches the initial token and the first request that a user may make, though I'm unsure how reliable this is...
+   */
   private token_promise: Promise<void> = new Promise((r) => r);
 
   /**
@@ -463,7 +466,7 @@ export class API {
               if (this.set_token_on_expires) {
                 this.setNewToken().catch();
               }
-            }, json.expires_in);
+            }, json.expires_in * 1000);
 
             resolve();
           });
@@ -655,8 +658,11 @@ export class API {
 
     const route = is_token_related ? this.route_token : this.route_api;
     if (!is_token_related)
+      // writing a line such as `console.log("!");` here closes the program on Node 26, this makes no sense and I hate JavaScript
+
+      // Wait if there's another request fetching a token
       await this.token_promise.catch(
-        () => (this.token_promise = new Promise((r) => r)),
+        () => (this.token_promise = new Promise((r) => r())), // Should the token promise fail, replace it with a fulfilled promise
       );
 
     let url = `${this.server}/${route.join("/")}`;
