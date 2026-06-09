@@ -205,6 +205,8 @@ export class API {
       typeof redirect_uri_or_settings === "string" && code
         ? this.setNewToken({ redirect_uri: redirect_uri_or_settings, code })
         : this.setNewToken();
+    } else {
+      this.token_promise = new Promise((r) => r()); // We're not gonna seek another token, set token_promise to fulfilled
     }
   }
 
@@ -464,14 +466,23 @@ export class API {
 
             this.token_timer = setTimeout(() => {
               if (this.set_token_on_expires) {
-                this.setNewToken().catch();
+                // Not catching can lead to the whole application closing, which is far from desirable
+                this.setNewToken().catch((_e) => {
+                  this.log(
+                    true,
+                    "Unable to set a new token at expiration date, the API object will likely fail its requests until a new token is set!",
+                  );
+                  this.token_promise = new Promise((r) => r()); // The promise failed, make it fulfilled to prevent bad behaviour
+                  this.is_setting_token = false;
+                });
               }
             }, json.expires_in * 1000);
 
             resolve();
           });
         })
-        .catch(reject); // reject the promise with the received error instead of throwing (is it even useful?)
+        .catch((e) => reject(e)); // reject the promise with the received error instead of throwing, so to pass errors around
+      // NOTE: It is desirable to replace token_promise with a resolved one, for proper behaviour with `await this.token_promise`
     });
 
     await this.token_promise; // Add the following for a no-throw behaviour: .catch(e => {})
@@ -749,7 +760,7 @@ export class API {
               } else {
                 this.log(
                   true,
-                  "A new token is currently being obtained!",
+                  "Not requesting a new token, one is already being obtained right now!",
                   request_id,
                 );
                 if (this.retry_on_new_token) {
