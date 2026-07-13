@@ -136,8 +136,8 @@ export namespace Score {
   export interface Extended extends Omit<WithUserBeatmapBeatmapset, "user"> {
     user: User.WithCountryCoverGroupsTeam;
     processed: boolean;
-    total_score_without_mods: number;
     rank_global: number;
+    total_score_without_mods?: number; // Some Scores (7023105173 or 7068952210) don't have that since 2026-07-06
   }
 
   /**
