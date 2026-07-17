@@ -443,11 +443,7 @@ export namespace Beatmapset {
 
     /** @group Kudosu Change */
     export type AnyKudosuChange =
-      | KudosuAllow
-      | KudosuDeny
-      | KudosuRecalculate
-      | KudosuGain
-      | KudosuLost;
+      KudosuAllow | KudosuDeny | KudosuRecalculate | KudosuGain | KudosuLost;
 
     export type Any =
       | AnyBeatmapChange
@@ -591,12 +587,7 @@ export namespace Beatmapset {
     user_id: User["id"];
     deleted_by_id: User["id"] | null;
     message_type:
-      | "suggestion"
-      | "problem"
-      | "mapper_note"
-      | "praise"
-      | "hype"
-      | "review";
+      "suggestion" | "problem" | "mapper_note" | "praise" | "hype" | "review";
     /** For example, the id of the review this discussion is included in */
     parent_id: number | null;
     timestamp: number | null;
@@ -739,11 +730,7 @@ export namespace Beatmapset {
         beatmapset?: Beatmapset["id"] | Beatmapset;
         user?: User["id"] | User;
         status?:
-          | "all"
-          | "ranked"
-          | "qualified"
-          | "disqualified"
-          | "never_qualified";
+          "all" | "ranked" | "qualified" | "disqualified" | "never_qualified";
       },
       filter?: {
         types?: Beatmapset.Discussion["message_type"][];
@@ -840,14 +827,7 @@ export namespace Beatmapset {
       extra?: ("must_have_video" | "must_have_storyboard")[];
       /** Does the authorized user with osu!supporter have already achieved certain ranks on those sets? */
       rank_achieved?: (
-        | "Silver SS"
-        | "SS"
-        | "Silver S"
-        | "S"
-        | "A"
-        | "B"
-        | "C"
-        | "D"
+        "Silver SS" | "SS" | "Silver S" | "S" | "A" | "B" | "C" | "D"
       )[];
       /** Does the authorized user with osu!supporter have already played those sets, or have they not played them yet? */
       played?: "Played" | "Unplayed";

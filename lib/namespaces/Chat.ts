@@ -366,11 +366,7 @@ export namespace Chat {
 
       /** That's the type of `JSON.parse(m.toString())` where `m` is a WebSocket's `MessageEvent`! */
       export type Any =
-        | Error
-        | Ready
-        | ChatChannelJoin
-        | ChatChannelLeave
-        | ChatMessageNew;
+        Error | Ready | ChatChannelJoin | ChatChannelLeave | ChatMessageNew;
     }
 
     /**

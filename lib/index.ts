@@ -72,10 +72,7 @@ export type DelegableScope =
 
 /** {@link Scope}s that cannot be used with the {@link DelegableScope} "delegate" */
 export type UndelegableScope =
-  | "chat.read"
-  | "friends.read"
-  | "identify"
-  | "public";
+  "chat.read" | "friends.read" | "identify" | "public";
 
 /**
  * Scopes determine what the API instance can do as a user! https://osu.ppy.sh/docs/index.html#scopes

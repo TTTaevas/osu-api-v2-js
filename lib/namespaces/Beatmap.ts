@@ -13,6 +13,7 @@ export interface Beatmap {
   /** Better known as Star Rating (SR) https://osu.ppy.sh/wiki/en/Beatmap/Star_rating */
   difficulty_rating: number;
   id: number;
+  lazer_only: boolean;
   mode: keyof typeof Ruleset;
   status: Lowercase<keyof typeof Beatmapset.RankStatus>;
   /** In seconds */
