@@ -75,7 +75,12 @@ export namespace Beatmap {
     count_spinners: number;
     cs: number;
     deleted_at: Date | null;
-    /** Drain length/time is how long the beatmap is if you remove the intro and breaks (in seconds) */
+    /**
+     * HP drain rate (HP) determines the amount of health recovery or damage from accurate or mistimed hits.
+     * In osu! and osu!catch, it also affects the rate of passive health drain.
+     * Higher values provide lower health recovery with higher punishments.
+     * https://osu.ppy.sh/wiki/en/Beatmap/HP_drain_rate
+     */
     drain: number;
     hit_length: number;
     is_scoreable: boolean;
